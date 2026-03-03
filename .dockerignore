@@ -1,0 +1,8 @@
+.git
+.idea
+*.iml
+**/target/
+Docker.dmg
+docs/
+design/
+_prototypes/

@@ -1,0 +1,217 @@
+services:
+
+  # --- PostgreSQL Databases (one per SCS + Keycloak) ---
+
+  postgres-iam:
+    image: postgres:16-alpine
+    container_name: travelmate-postgres-iam
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: travelmate_iam
+      POSTGRES_USER: travelmate
+      POSTGRES_PASSWORD: travelmate
+    volumes:
+      - postgres-iam-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U travelmate -d travelmate_iam"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  postgres-trips:
+    image: postgres:16-alpine
+    container_name: travelmate-postgres-trips
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_DB: travelmate_trips
+      POSTGRES_USER: travelmate
+      POSTGRES_PASSWORD: travelmate
+    volumes:
+      - postgres-trips-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U travelmate -d travelmate_trips"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  postgres-expense:
+    image: postgres:16-alpine
+    container_name: travelmate-postgres-expense
+    ports:
+      - "5434:5432"
+    environment:
+      POSTGRES_DB: travelmate_expense
+      POSTGRES_USER: travelmate
+      POSTGRES_PASSWORD: travelmate
+    volumes:
+      - postgres-expense-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U travelmate -d travelmate_expense"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  postgres-keycloak:
+    image: postgres:16-alpine
+    container_name: travelmate-postgres-keycloak
+    ports:
+      - "5435:5432"
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: keycloak
+    volumes:
+      - postgres-keycloak-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # --- Keycloak Identity Provider ---
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1.4
+    container_name: travelmate-keycloak
+    command: start-dev --import-realm
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-keycloak:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: keycloak
+      KC_HOSTNAME: http://localhost:7082
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+    ports:
+      - "7082:8080"
+    volumes:
+      - ./docker/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+    depends_on:
+      postgres-keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+
+  # --- RabbitMQ Message Broker ---
+
+  rabbitmq:
+    image: rabbitmq:4.0-management-alpine
+    container_name: travelmate-rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # --- Application Services ---
+
+  gateway:
+    build:
+      context: .
+      args:
+        MODULE: travelmate-gateway
+    container_name: travelmate-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      # Route to internal service containers
+      IAM_SERVICE_URL: http://iam:8081
+      TRIPS_SERVICE_URL: http://trips:8082
+      EXPENSE_SERVICE_URL: http://expense:8083
+      # Keycloak: browser-facing stays localhost:7082, server-to-server uses keycloak:8080
+      KEYCLOAK_TOKEN_URI: http://keycloak:8080/realms/travelmate/protocol/openid-connect/token
+      KEYCLOAK_JWK_URI: http://keycloak:8080/realms/travelmate/protocol/openid-connect/certs
+      KEYCLOAK_USERINFO_URI: http://keycloak:8080/realms/travelmate/protocol/openid-connect/userinfo
+    depends_on:
+      keycloak:
+        condition: service_healthy
+
+  iam:
+    build:
+      context: .
+      args:
+        MODULE: travelmate-iam
+    container_name: travelmate-iam
+    ports:
+      - "8081:8081"
+    environment:
+      DB_HOST: postgres-iam
+      DB_PORT: 5432
+      DB_NAME: travelmate_iam
+      DB_USER: travelmate
+      DB_PASSWORD: travelmate
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      KEYCLOAK_JWK_URI: http://keycloak:8080/realms/travelmate/protocol/openid-connect/certs
+    depends_on:
+      postgres-iam:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+
+  trips:
+    build:
+      context: .
+      args:
+        MODULE: travelmate-trips
+    container_name: travelmate-trips
+    ports:
+      - "8082:8082"
+    environment:
+      DB_HOST: postgres-trips
+      DB_PORT: 5432
+      DB_NAME: travelmate_trips
+      DB_USER: travelmate
+      DB_PASSWORD: travelmate
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      KEYCLOAK_JWK_URI: http://keycloak:8080/realms/travelmate/protocol/openid-connect/certs
+    depends_on:
+      postgres-trips:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+
+  expense:
+    build:
+      context: .
+      args:
+        MODULE: travelmate-expense
+    container_name: travelmate-expense
+    ports:
+      - "8083:8083"
+    environment:
+      DB_HOST: postgres-expense
+      DB_PORT: 5432
+      DB_NAME: travelmate_expense
+      DB_USER: travelmate
+      DB_PASSWORD: travelmate
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      KEYCLOAK_JWK_URI: http://keycloak:8080/realms/travelmate/protocol/openid-connect/certs
+    depends_on:
+      postgres-expense:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+
+volumes:
+  postgres-iam-data:
+  postgres-trips-data:
+  postgres-expense-data:
+  postgres-keycloak-data:
