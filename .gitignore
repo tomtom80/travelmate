@@ -1,0 +1,49 @@
+# Maven
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+# IDE
+.idea/
+*.iml
+*.iws
+.project
+.classpath
+.settings/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Compiled
+*.class
+*.jar
+*.war
+
+# Logs
+*.log
+
+# Environment
+.env
+*.env.local
+
+# Prototypes (archived reference, not part of new codebase)
+_prototypes/
+
+# Disk images
+*.dmg
+*.iso
+
+# Personal data
+data/
+
+# Maven flatten plugin
+.flattened-pom.xml
+
+# Temporary files
+~$*

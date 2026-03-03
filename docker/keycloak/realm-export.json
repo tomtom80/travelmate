@@ -1,0 +1,113 @@
+{
+  "realm": "travelmate",
+  "enabled": true,
+  "displayName": "Travelmate",
+  "registrationAllowed": true,
+  "registrationEmailAsUsername": false,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "resetPasswordAllowed": true,
+  "editUsernameAllowed": false,
+  "sslRequired": "none",
+  "roles": {
+    "realm": [
+      {
+        "name": "organizer",
+        "description": "Can create and manage trips"
+      },
+      {
+        "name": "participant",
+        "description": "Can join trips and participate"
+      }
+    ]
+  },
+  "groups": [
+    {
+      "name": "organizers",
+      "realmRoles": ["organizer"]
+    },
+    {
+      "name": "participants",
+      "realmRoles": ["participant"]
+    }
+  ],
+  "clients": [
+    {
+      "clientId": "travelmate-gateway",
+      "name": "Travelmate Gateway",
+      "enabled": true,
+      "publicClient": false,
+      "secret": "travelmate-gateway-secret",
+      "redirectUris": [
+        "http://localhost:8080/*"
+      ],
+      "webOrigins": [
+        "http://localhost:8080"
+      ],
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "authorizationServicesEnabled": false,
+      "fullScopeAllowed": true,
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "testuser",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Test",
+      "lastName": "User",
+      "email": "testuser@travelmate.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "testpassword",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "organizer",
+        "participant"
+      ]
+    },
+    {
+      "username": "admin",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Admin",
+      "lastName": "User",
+      "email": "admin@travelmate.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "organizer",
+        "participant"
+      ]
+    }
+  ],
+  "scopeMappings": [],
+  "clientScopeMappings": {},
+  "smtpServer": {},
+  "identityProviders": [],
+  "identityProviderMappers": []
+}
