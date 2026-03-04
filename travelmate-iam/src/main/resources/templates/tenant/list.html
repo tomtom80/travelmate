@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="de">
+<body>
+<div th:fragment="content">
+    <h1>Tenants</h1>
+    <p><a th:href="@{/tenants/new}">Neuen Tenant anlegen</a></p>
+    <table th:if="${!tenants.isEmpty()}">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Beschreibung</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="tenant : ${tenants}">
+                <td th:text="${tenant.name}"></td>
+                <td th:text="${tenant.description}"></td>
+                <td><a th:href="@{/tenants/{id}(id=${tenant.tenantId})}">Details</a></td>
+            </tr>
+        </tbody>
+    </table>
+    <p th:if="${tenants.isEmpty()}">Noch keine Tenants vorhanden.</p>
+</div>
+</body>
+</html>

@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="de">
+<body>
+<div th:fragment="content">
+    <h1>Accounts — <span th:text="${tenant.name}"></span></h1>
+    <p><a th:href="@{/tenants/{id}/accounts/new(id=${tenant.tenantId})}">Neuen Account registrieren</a></p>
+    <table th:if="${!accounts.isEmpty()}">
+        <thead>
+            <tr>
+                <th>Username</th>
+                <th>Name</th>
+                <th>E-Mail</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="account : ${accounts}">
+                <td th:text="${account.username}"></td>
+                <td th:text="${account.firstName + ' ' + account.lastName}"></td>
+                <td th:text="${account.email}"></td>
+                <td><a th:href="@{/tenants/{tid}/accounts/{aid}(tid=${tenant.tenantId},aid=${account.accountId})}">Details</a></td>
+            </tr>
+        </tbody>
+    </table>
+    <p th:if="${accounts.isEmpty()}">Noch keine Accounts vorhanden.</p>
+    <p><a th:href="@{/tenants/{id}(id=${tenant.tenantId})}">Zurueck zum Tenant</a></p>
+</div>
+</body>
+</html>

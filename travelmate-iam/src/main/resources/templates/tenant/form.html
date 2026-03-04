@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="de">
+<body>
+<div th:fragment="content">
+    <h1>Neuen Tenant anlegen</h1>
+    <form th:action="@{/tenants}" method="post">
+        <div>
+            <label for="name">Name</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        <div>
+            <label for="description">Beschreibung</label>
+            <textarea id="description" name="description"></textarea>
+        </div>
+        <button type="submit">Anlegen</button>
+    </form>
+    <p><a th:href="@{/tenants}">Zurueck zur Liste</a></p>
+</div>
+</body>
+</html>
