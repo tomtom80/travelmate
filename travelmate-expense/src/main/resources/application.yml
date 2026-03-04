@@ -2,6 +2,8 @@ server:
   port: 8083
   servlet:
     context-path: /expense
+  tomcat:
+    use-relative-redirects: true
 
 spring:
   application:
