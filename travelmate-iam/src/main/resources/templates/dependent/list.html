@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="de">
+<body>
+<div th:fragment="content">
+    <table th:if="${!dependents.isEmpty()}">
+        <thead>
+            <tr>
+                <th>Vorname</th>
+                <th>Nachname</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="dep : ${dependents}">
+                <td th:text="${dep.firstName}"></td>
+                <td th:text="${dep.lastName}"></td>
+            </tr>
+        </tbody>
+    </table>
+    <p th:if="${dependents.isEmpty()}">Noch keine Mitreisenden.</p>
+
+    <h3>Mitreisenden hinzufuegen</h3>
+    <form hx-post th:hx-post="@{/tenants/{tid}/accounts/{aid}/dependents(tid=${tenantId},aid=${accountId})}"
+          hx-target="#dependents"
+          hx-swap="innerHTML">
+        <div>
+            <label for="depFirstName">Vorname</label>
+            <input type="text" id="depFirstName" name="firstName" required>
+        </div>
+        <div>
+            <label for="depLastName">Nachname</label>
+            <input type="text" id="depLastName" name="lastName" required>
+        </div>
+        <button type="submit">Hinzufuegen</button>
+    </form>
+</div>
+</body>
+</html>

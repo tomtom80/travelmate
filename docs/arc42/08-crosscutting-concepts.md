@@ -21,21 +21,39 @@ Jedes Aggregat ist durch eine `TenantId` scoped. Die Mandantentrennung ist ein z
 
 ## Event-basierte Integration (travelmate-common)
 
-Die asynchrone Kommunikation zwischen SCS basiert auf Domain Events:
+Die asynchrone Kommunikation zwischen SCS basiert auf Domain Events ueber RabbitMQ:
 
 - **DomainEvent-Interface:** Definiert `occurredOn(): LocalDate`
-- **Kafka Topics:** `role-assigned`, `role-unassigned`
-- **JSON-Serialisierung:** Spring Kafka mit Jackson
-- **Event-Verträge:** Gemeinsame Event-Definitionen in `travelmate-common` (Maven-Modul)
-- **Idempotenz:** Consumer müssen idempotent mit wiederholten Events umgehen
+- **RabbitMQ Topic Exchange:** `travelmate.events` mit Routing Keys in `RoutingKeys.java`
+- **JSON-Serialisierung:** Spring AMQP mit Jackson2JsonMessageConverter
+- **Event-Vertraege:** Gemeinsame Event-Definitionen in `travelmate-common` (Maven-Modul)
+- **Idempotenz:** Consumer muessen idempotent mit wiederholten Events umgehen
+- **Event-Publishing:** Domain-Events werden nach `repository.save()` ueber Spring `ApplicationEventPublisher` veroeffentlicht. Ein `@TransactionalEventListener(AFTER_COMMIT)` leitet an RabbitMQ weiter.
+
+### IAM Events
+
+| Event | Routing Key | Beschreibung |
+|-------|------------|--------------|
+| `AccountRegistered` | `iam.account-registered` | Account wurde registriert |
+| `MemberAddedToTenant` | `iam.member-added` | Mitglied zu Tenant hinzugefuegt |
+| `DependentAddedToTenant` | `iam.dependent-added` | Mitreisender hinzugefuegt |
+
+### Trips Events
+
+| Event | Routing Key | Beschreibung |
+|-------|------------|--------------|
+| `TripCreated` | `trips.trip-created` | Trip wurde erstellt |
+| `ParticipantJoinedTrip` | `trips.participant-confirmed` | Teilnehmer bestaetigt |
+| `TripCompleted` | `trips.trip-completed` | Trip abgeschlossen |
 
 ### Event-Flow
 
 ```
-IAM                         Trips / Expense
- │                               │
- │──RoleAssignedToUser──────────▶│  → Organizer/Participant aktivieren
- │──RoleUnassignedFromUser──────▶│  → Organizer/Participant deaktivieren
+IAM                         RabbitMQ             Trips / Expense
+ │                               │                      │
+ │──AccountRegistered───────────▶│──────────────────────▶│  → TravelParty anlegen
+ │──DependentAddedToTenant──────▶│──────────────────────▶│  → Dependent in Party
+ │──RoleAssignedToUser──────────▶│──────────────────────▶│  → Rolle aktivieren
 ```
 
 ## Validierung (Assertion-Utility)

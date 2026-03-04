@@ -14,9 +14,9 @@
 
 | Schuld | Beschreibung | Priorität |
 |--------|-------------|-----------|
-| **In-Memory-Repositories** | Einige Repository-Implementierungen sind noch In-Memory statt PostgreSQL | Hoch |
+| ~~**In-Memory-Repositories**~~ | ~~Einige Repository-Implementierungen sind noch In-Memory statt PostgreSQL~~ — **Geloest in Iteration 2**: IAM hat vollstaendige JPA-Persistence-Adapter | ~~Hoch~~ |
 | **Fehlende Expense-SCS-Implementierung** | Der Expense Bounded Context ist noch nicht implementiert | Mittel |
 | **Security im Test-Profil deaktiviert** | Integrationstests testen nicht die Security-Konfiguration | Niedrig |
-| **Fehlende End-to-End-Tests** | Keine automatisierten E2E-Tests über die SCS-Grenzen hinweg | Mittel |
+| ~~**Fehlende End-to-End-Tests**~~ | ~~Keine automatisierten E2E-Tests ueber die SCS-Grenzen hinweg~~ — **Adressiert**: E2E-Modul mit Playwright angelegt (siehe ADR-0010), Grundstruktur vorhanden | ~~Mittel~~ |
 | **Monitoring und Observability** | Kein zentrales Logging, Tracing oder Metriken eingerichtet | Mittel |
 | **Kubernetes-Manifeste unvollständig** | Deployment-Manifeste nur für IAM vorhanden, nicht für alle SCS | Mittel |

@@ -74,6 +74,43 @@ Browser        Expense-SCS     PostgreSQL
 4. Gewichtungen (Erwachsener=1.0, Teilzeit=0.5, Kind<3=0.0) bestimmen die Aufteilung
 5. Pro Familie wird ein Saldo (Settlement) berechnet
 
+## Szenario 5: Account-Registrierung
+
+```
+Browser        Gateway        IAM-SCS        PostgreSQL     RabbitMQ
+  │               │              │               │              │
+  │──POST account─▶              │               │              │
+  │               │──Route───────▶               │              │
+  │               │              │──INSERT────────▶              │
+  │               │              │◀──OK──────────│              │
+  │               │              │──AccountRegistered───────────▶
+  │◀──Redirect to detail────────│               │              │
+```
+
+1. Benutzer fuellt das Registrierungsformular aus (Username, E-Mail, Name, Keycloak User ID)
+2. Gateway routet den Request an den IAM-SCS
+3. IAM-SCS prueft Username-Eindeutigkeit und persistiert den Account
+4. `AccountRegistered`-Event wird nach Commit via RabbitMQ publiziert
+5. Trips-SCS konsumiert das Event und legt eine TravelParty-Projektion an
+
+## Szenario 6: Dependent hinzufuegen (HTMX)
+
+```
+Browser                     IAM-SCS        PostgreSQL     RabbitMQ
+  │                            │               │              │
+  │──hx-post /dependents───────▶               │              │
+  │                            │──INSERT────────▶              │
+  │                            │◀──OK──────────│              │
+  │                            │──DependentAddedToTenant──────▶
+  │◀──HTML Fragment (HTMX)─────│               │              │
+```
+
+1. Guardian klickt auf "Mitreisenden hinzufuegen" im Account-Detail
+2. HTMX sendet POST via `hx-post`, Ziel ist das Dependent-Fragment
+3. IAM-SCS prueft ob Guardian existiert, erstellt Dependent
+4. `DependentAddedToTenant`-Event wird via RabbitMQ publiziert
+5. Thymeleaf rendert das aktualisierte Fragment, HTMX tauscht den DOM-Bereich aus
+
 ## Referenz
 
 ![Event Storming](../../design/evia.team.orc.thomas-klingler%20-%20Event%20Storming.jpg)

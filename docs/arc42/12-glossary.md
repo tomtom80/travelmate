@@ -5,6 +5,9 @@
 | Begriff (EN) | Begriff (DE) | Beschreibung |
 |-------------|-------------|-------------|
 | **Tenant** | Mandant | Eine isolierte Einheit im System, z.B. eine Familie oder Freundesgruppe. Jeder Mandant hat eigene Benutzer, Trips und Abrechnungen. |
+| **Account** | Benutzerkonto | Ein registriertes Benutzerkonto innerhalb eines Tenants, verknuepft mit einem Keycloak-User ueber die KeycloakUserId (JWT `sub` Claim). |
+| **Dependent** | Mitreisender | Eine Person ohne eigenen Login (z.B. Kind), die einem Guardian-Account zugeordnet ist und an Trips teilnehmen kann. |
+| **Guardian** | Erziehungsberechtigter | Ein Account, der fuer einen oder mehrere Dependents verantwortlich ist. |
 | **Trip** | Hüttenurlaub / Reise | Ein geplanter Hüttenurlaub mit Zeitraum, Unterkunft, Teilnehmern und Mahlzeiten. |
 | **Organizer** | Organisator | Ein Benutzer mit der Rolle, Trips zu erstellen und zu verwalten. |
 | **Participant** | Teilnehmer | Ein Benutzer, der an einem Trip teilnimmt. |

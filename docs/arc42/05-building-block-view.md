@@ -75,9 +75,10 @@ de.evia.travelmate.<service>/
 ### Aggregate pro Bounded Context
 
 **IAM:**
-- Tenant (Mandant)
-- User (Benutzer mit Rollen und Gruppen)
-- Role, Group, Policy
+- Tenant (Mandant mit Name und Beschreibung)
+- Account (Benutzerkonto, verknuepft mit Keycloak-User via KeycloakUserId)
+- Dependent (Mitreisender ohne eigenen Login, einem Guardian-Account zugeordnet)
+- Role, Group, Policy (bestehend aus Iteration 1)
 
 **Trips:**
 - Trip (mit Organizer, Participants)

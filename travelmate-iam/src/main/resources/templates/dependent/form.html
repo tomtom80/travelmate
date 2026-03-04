@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="de">
+<body>
+<div th:fragment="content">
+    <h3>Mitreisenden hinzufuegen</h3>
+    <form hx-post th:hx-post="@{/tenants/{tid}/accounts/{aid}/dependents(tid=${tenantId},aid=${accountId})}"
+          hx-target="#dependents"
+          hx-swap="innerHTML">
+        <div>
+            <label for="firstName">Vorname</label>
+            <input type="text" id="firstName" name="firstName" required>
+        </div>
+        <div>
+            <label for="lastName">Nachname</label>
+            <input type="text" id="lastName" name="lastName" required>
+        </div>
+        <button type="submit">Hinzufuegen</button>
+    </form>
+</div>
+</body>
+</html>

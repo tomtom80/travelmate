@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="de">
+<body>
+<div th:fragment="content">
+    <h1 th:text="${tenant.name}"></h1>
+    <p th:if="${tenant.description}" th:text="${tenant.description}"></p>
+    <p>
+        <a th:href="@{/tenants/{id}/accounts(id=${tenant.tenantId})}">Accounts verwalten</a>
+    </p>
+    <p><a th:href="@{/tenants}">Zurueck zur Liste</a></p>
+</div>
+</body>
+</html>
