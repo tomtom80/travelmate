@@ -22,7 +22,8 @@ public class SecurityConfig {
             .oauth2Login(oauth2 -> oauth2
                 .authenticationSuccessHandler(successHandler)
             )
-            .oauth2Client(Customizer.withDefaults());
+            .oauth2Client(Customizer.withDefaults())
+            .csrf(csrf -> csrf.disable());
         return http.build();
     }
 }
