@@ -2,6 +2,8 @@ server:
   port: 8082
   servlet:
     context-path: /trips
+  tomcat:
+    use-relative-redirects: true
 
 spring:
   application:

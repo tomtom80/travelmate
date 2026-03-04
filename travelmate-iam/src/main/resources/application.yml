@@ -2,6 +2,8 @@ server:
   port: 8081
   servlet:
     context-path: /iam
+  tomcat:
+    use-relative-redirects: true
 
 spring:
   application:
