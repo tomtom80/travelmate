@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<body>
+<div th:fragment="content">
+    <hgroup>
+        <h1 th:text="#{dashboard.title}">Meine Reisepartei</h1>
+        <p th:text="${tenant.name()}">Reisepartei-Name</p>
+    </hgroup>
+    <p th:if="${tenant.description() != null and !tenant.description().isEmpty()}"
+       th:text="${tenant.description()}"></p>
+
+    <section>
+        <h2 th:text="#{dashboard.members}">Mitglieder</h2>
+        <div id="members">
+            <div th:replace="~{dashboard/members :: memberList}"></div>
+        </div>
+
+        <h3 th:text="#{member.invite}">Mitglied einladen</h3>
+        <form hx-post th:hx-post="@{/dashboard/members}"
+              hx-target="#members"
+              hx-swap="innerHTML"
+              hx-on::after-request="if(event.detail.successful) this.reset()">
+            <div class="grid">
+                <label>
+                    <span th:text="#{member.firstName}">Vorname</span>
+                    <input type="text" name="firstName" required>
+                </label>
+                <label>
+                    <span th:text="#{member.lastName}">Nachname</span>
+                    <input type="text" name="lastName" required>
+                </label>
+            </div>
+            <div class="grid">
+                <label>
+                    <span th:text="#{member.email}">E-Mail</span>
+                    <input type="email" name="email" required>
+                </label>
+                <label>
+                    <span th:text="#{common.dateOfBirth}">Geburtsdatum</span>
+                    <input type="date" name="dateOfBirth">
+                </label>
+            </div>
+            <button type="submit" th:text="#{member.invite}">Mitglied einladen</button>
+        </form>
+    </section>
+
+    <section>
+        <h2 th:text="#{dashboard.companions}">Mitreisende</h2>
+        <div id="companions">
+            <div th:replace="~{dashboard/companions :: companionList}"></div>
+        </div>
+
+        <h3 th:text="#{companion.add}">Mitreisende(n) hinzufuegen</h3>
+        <form hx-post th:hx-post="@{/dashboard/companions}"
+              hx-target="#companions"
+              hx-swap="innerHTML"
+              hx-on::after-request="if(event.detail.successful) this.reset()">
+            <div class="grid">
+                <label>
+                    <span th:text="#{companion.firstName}">Vorname</span>
+                    <input type="text" name="firstName" required>
+                </label>
+                <label>
+                    <span th:text="#{companion.lastName}">Nachname</span>
+                    <input type="text" name="lastName" required>
+                </label>
+            </div>
+            <label>
+                <span th:text="#{common.dateOfBirth}">Geburtsdatum</span>
+                <input type="date" name="dateOfBirth">
+            </label>
+            <button type="submit" th:text="#{companion.submit}">Hinzufuegen</button>
+        </form>
+    </section>
+
+    <section>
+        <h2 th:text="#{dashboard.dangerZone}">Gefahrenzone</h2>
+        <p th:text="#{dashboard.deleteTenantHint}">Das Loeschen der Reisepartei entfernt alle Mitglieder und Mitreisenden.</p>
+        <button hx-delete th:hx-delete="@{/dashboard/tenant}"
+                hx-confirm th:hx-confirm="#{dashboard.deleteTenantConfirm}"
+                class="outline secondary"
+                th:text="#{dashboard.deleteTenant}">Reisepartei loeschen</button>
+    </section>
+</div>
+</body>
+</html>

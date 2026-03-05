@@ -69,7 +69,7 @@ class AccountControllerTest {
     void registerRedirectsToDetail() throws Exception {
         when(accountService.registerAccount(any(RegisterAccountCommand.class)))
             .thenReturn(new AccountRepresentation(accountId, tenantId, "testuser",
-                "test@example.com", "Max", "Mustermann"));
+                "test@example.com", "Max", "Mustermann", null));
 
         mockMvc.perform(post("/tenants/" + tenantId + "/accounts")
                 .param("keycloakUserId", "kc-123")
@@ -87,7 +87,7 @@ class AccountControllerTest {
             .thenReturn(new TenantRepresentation(tenantId, "Test", null));
         when(accountService.findById(any(AccountId.class)))
             .thenReturn(new AccountRepresentation(accountId, tenantId, "testuser",
-                "test@example.com", "Max", "Mustermann"));
+                "test@example.com", "Max", "Mustermann", null));
         when(accountService.findDependentsByGuardian(any(AccountId.class)))
             .thenReturn(List.of());
 

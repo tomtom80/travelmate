@@ -10,7 +10,13 @@ public interface AccountJpaRepository extends JpaRepository<AccountJpaEntity, UU
 
     Optional<AccountJpaEntity> findByTenantIdAndKeycloakUserId(UUID tenantId, String keycloakUserId);
 
+    Optional<AccountJpaEntity> findByKeycloakUserId(String keycloakUserId);
+
     List<AccountJpaEntity> findAllByTenantId(UUID tenantId);
 
     boolean existsByTenantIdAndUsername(UUID tenantId, String username);
+
+    void deleteAllByTenantId(UUID tenantId);
+
+    long countByTenantId(UUID tenantId);
 }

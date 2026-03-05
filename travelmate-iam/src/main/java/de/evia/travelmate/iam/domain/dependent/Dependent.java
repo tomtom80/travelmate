@@ -8,7 +8,9 @@ import java.util.UUID;
 import de.evia.travelmate.common.domain.AggregateRoot;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.common.events.iam.DependentAddedToTenant;
+import de.evia.travelmate.common.events.iam.DependentRemovedFromTenant;
 import de.evia.travelmate.iam.domain.account.AccountId;
+import de.evia.travelmate.iam.domain.account.DateOfBirth;
 import de.evia.travelmate.iam.domain.account.FullName;
 
 public class Dependent extends AggregateRoot {
@@ -17,11 +19,13 @@ public class Dependent extends AggregateRoot {
     private final TenantId tenantId;
     private final AccountId guardianAccountId;
     private final FullName fullName;
+    private final DateOfBirth dateOfBirth;
 
     public Dependent(final DependentId dependentId,
                      final TenantId tenantId,
                      final AccountId guardianAccountId,
-                     final FullName fullName) {
+                     final FullName fullName,
+                     final DateOfBirth dateOfBirth) {
         argumentIsNotNull(dependentId, "dependentId");
         argumentIsNotNull(tenantId, "tenantId");
         argumentIsNotNull(guardianAccountId, "guardianAccountId");
@@ -30,16 +34,19 @@ public class Dependent extends AggregateRoot {
         this.tenantId = tenantId;
         this.guardianAccountId = guardianAccountId;
         this.fullName = fullName;
+        this.dateOfBirth = dateOfBirth;
     }
 
     public static Dependent add(final TenantId tenantId,
                                 final AccountId guardianAccountId,
-                                final FullName fullName) {
+                                final FullName fullName,
+                                final DateOfBirth dateOfBirth) {
         final Dependent dependent = new Dependent(
             new DependentId(UUID.randomUUID()),
             tenantId,
             guardianAccountId,
-            fullName
+            fullName,
+            dateOfBirth
         );
         dependent.registerEvent(new DependentAddedToTenant(
             tenantId.value(),
@@ -50,6 +57,20 @@ public class Dependent extends AggregateRoot {
             LocalDate.now()
         ));
         return dependent;
+    }
+
+    public static Dependent add(final TenantId tenantId,
+                                final AccountId guardianAccountId,
+                                final FullName fullName) {
+        return add(tenantId, guardianAccountId, fullName, null);
+    }
+
+    public void markForRemoval() {
+        registerEvent(new DependentRemovedFromTenant(
+            tenantId.value(),
+            dependentId.value(),
+            LocalDate.now()
+        ));
     }
 
     public DependentId dependentId() {
@@ -66,5 +87,9 @@ public class Dependent extends AggregateRoot {
 
     public FullName fullName() {
         return fullName;
+    }
+
+    public DateOfBirth dateOfBirth() {
+        return dateOfBirth;
     }
 }

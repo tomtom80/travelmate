@@ -9,6 +9,7 @@ import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.iam.domain.account.Account;
 import de.evia.travelmate.iam.domain.account.AccountId;
 import de.evia.travelmate.iam.domain.account.AccountRepository;
+import de.evia.travelmate.iam.domain.account.DateOfBirth;
 import de.evia.travelmate.iam.domain.account.Email;
 import de.evia.travelmate.iam.domain.account.FullName;
 import de.evia.travelmate.iam.domain.account.KeycloakUserId;
@@ -42,6 +43,12 @@ public class AccountRepositoryAdapter implements AccountRepository {
     }
 
     @Override
+    public Optional<Account> findByKeycloakUserId(final KeycloakUserId keycloakUserId) {
+        return jpaRepository.findByKeycloakUserId(keycloakUserId.value())
+            .map(this::toDomain);
+    }
+
+    @Override
     public List<Account> findAllByTenantId(final TenantId tenantId) {
         return jpaRepository.findAllByTenantId(tenantId.value()).stream()
             .map(this::toDomain)
@@ -53,6 +60,21 @@ public class AccountRepositoryAdapter implements AccountRepository {
         return jpaRepository.existsByTenantIdAndUsername(tenantId.value(), username.value());
     }
 
+    @Override
+    public void deleteById(final AccountId accountId) {
+        jpaRepository.deleteById(accountId.value());
+    }
+
+    @Override
+    public void deleteAllByTenantId(final TenantId tenantId) {
+        jpaRepository.deleteAllByTenantId(tenantId.value());
+    }
+
+    @Override
+    public long countByTenantId(final TenantId tenantId) {
+        return jpaRepository.countByTenantId(tenantId.value());
+    }
+
     private AccountJpaEntity toJpaEntity(final Account account) {
         return new AccountJpaEntity(
             account.accountId().value(),
@@ -61,7 +83,8 @@ public class AccountRepositoryAdapter implements AccountRepository {
             account.username().value(),
             account.email().value(),
             account.fullName().firstName(),
-            account.fullName().lastName()
+            account.fullName().lastName(),
+            account.dateOfBirth() != null ? account.dateOfBirth().value() : null
         );
     }
 
@@ -72,7 +95,8 @@ public class AccountRepositoryAdapter implements AccountRepository {
             new KeycloakUserId(entity.getKeycloakUserId()),
             new Username(entity.getUsername()),
             new Email(entity.getEmail()),
-            new FullName(entity.getFirstName(), entity.getLastName())
+            new FullName(entity.getFirstName(), entity.getLastName()),
+            entity.getDateOfBirth() != null ? new DateOfBirth(entity.getDateOfBirth()) : null
         );
     }
 }

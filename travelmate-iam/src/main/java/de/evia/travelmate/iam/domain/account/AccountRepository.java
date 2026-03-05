@@ -13,7 +13,15 @@ public interface AccountRepository {
 
     Optional<Account> findByKeycloakUserId(TenantId tenantId, KeycloakUserId keycloakUserId);
 
+    Optional<Account> findByKeycloakUserId(KeycloakUserId keycloakUserId);
+
     List<Account> findAllByTenantId(TenantId tenantId);
 
     boolean existsByUsername(TenantId tenantId, Username username);
+
+    void deleteById(AccountId accountId);
+
+    void deleteAllByTenantId(TenantId tenantId);
+
+    long countByTenantId(TenantId tenantId);
 }

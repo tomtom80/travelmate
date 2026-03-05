@@ -97,7 +97,8 @@ class AccountRepositoryAdapterTest {
             new KeycloakUserId(keycloakId),
             new Username(username),
             new Email(username + "@example.com"),
-            new FullName("Test", "User")
+            new FullName("Test", "User"),
+            null
         );
     }
 }

@@ -1,12 +1,10 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="de">
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="content">
-    <h1>IAM — Identity &amp; Access Management</h1>
-    <p>Tenants, Accounts und Mitreisende verwalten.</p>
-    <ul>
-        <li><a th:href="@{/tenants}">Tenants</a></li>
-    </ul>
+    <h1 th:text="#{nav.travelParty}">Reisepartei</h1>
+    <p th:text="#{travelParty.manageMembers}">Mitglieder verwalten</p>
+    <p><a href="/iam/dashboard" th:text="#{dashboard.title}">Meine Reisepartei</a></p>
 </div>
 </body>
 </html>

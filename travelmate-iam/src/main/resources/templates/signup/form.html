@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<body>
+<div th:fragment="content">
+    <h1 th:text="#{signup.title}">Reisepartei erstellen</h1>
+    <p th:text="#{signup.subtitle}">Erstelle deine Reisepartei und registriere dich als erstes Mitglied.</p>
+
+    <div th:if="${error}" class="error">
+        <p th:text="#{${error}}"></p>
+    </div>
+
+    <form method="post" th:action="@{/signup}">
+        <label for="tenantName" th:text="#{signup.tenantName}">Name der Reisepartei</label>
+        <input type="text" id="tenantName" name="tenantName" th:value="${tenantName}" required>
+
+        <div class="grid">
+            <label>
+                <span th:text="#{signup.firstName}">Vorname</span>
+                <input type="text" id="firstName" name="firstName" th:value="${firstName}" required>
+            </label>
+            <label>
+                <span th:text="#{signup.lastName}">Nachname</span>
+                <input type="text" id="lastName" name="lastName" th:value="${lastName}" required>
+            </label>
+        </div>
+
+        <label for="email" th:text="#{signup.email}">E-Mail-Adresse</label>
+        <input type="email" id="email" name="email" th:value="${email}" required>
+
+        <div class="grid">
+            <label>
+                <span th:text="#{signup.password}">Passwort</span>
+                <input type="password" id="password" name="password" required minlength="8">
+            </label>
+            <label>
+                <span th:text="#{signup.passwordConfirm}">Passwort wiederholen</span>
+                <input type="password" id="passwordConfirm" name="passwordConfirm" required minlength="8">
+            </label>
+        </div>
+
+        <button type="submit" th:text="#{signup.submit}">Registrieren</button>
+    </form>
+
+    <p><a href="/oauth2/authorization/keycloak" th:text="#{signup.login}">Bereits registriert? Einloggen</a></p>
+</div>
+</body>
+</html>

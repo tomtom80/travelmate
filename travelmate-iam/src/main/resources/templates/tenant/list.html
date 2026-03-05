@@ -1,14 +1,14 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="de">
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="content">
-    <h1>Tenants</h1>
-    <p><a th:href="@{/tenants/new}">Neuen Tenant anlegen</a></p>
+    <h1 th:text="#{travelParty.title}">Reisepartei</h1>
+    <p><a th:href="@{/tenants/new}" th:text="#{travelParty.create}">Neue Reisepartei anlegen</a></p>
     <table th:if="${!tenants.isEmpty()}">
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Beschreibung</th>
+                <th th:text="#{travelParty.name}">Name</th>
+                <th th:text="#{travelParty.description}">Beschreibung</th>
                 <th></th>
             </tr>
         </thead>
@@ -16,11 +16,11 @@
             <tr th:each="tenant : ${tenants}">
                 <td th:text="${tenant.name}"></td>
                 <td th:text="${tenant.description}"></td>
-                <td><a th:href="@{/tenants/{id}(id=${tenant.tenantId})}">Details</a></td>
+                <td><a th:href="@{/tenants/{id}(id=${tenant.tenantId})}" th:text="#{travelParty.detail}">Details</a></td>
             </tr>
         </tbody>
     </table>
-    <p th:if="${tenants.isEmpty()}">Noch keine Tenants vorhanden.</p>
+    <p th:if="${tenants.isEmpty()}" th:text="#{travelParty.empty}">Noch keine Reisepartei vorhanden.</p>
 </div>
 </body>
 </html>

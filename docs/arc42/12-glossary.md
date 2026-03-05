@@ -1,16 +1,20 @@
 # 12. Glossar
 
-## Ubiquitous Language
+## Ubiquitous Language (ADR-0011)
 
-| Begriff (EN) | Begriff (DE) | Beschreibung |
-|-------------|-------------|-------------|
-| **Tenant** | Mandant | Eine isolierte Einheit im System, z.B. eine Familie oder Freundesgruppe. Jeder Mandant hat eigene Benutzer, Trips und Abrechnungen. |
-| **Account** | Benutzerkonto | Ein registriertes Benutzerkonto innerhalb eines Tenants, verknuepft mit einem Keycloak-User ueber die KeycloakUserId (JWT `sub` Claim). |
-| **Dependent** | Mitreisender | Eine Person ohne eigenen Login (z.B. Kind), die einem Guardian-Account zugeordnet ist und an Trips teilnehmen kann. |
-| **Guardian** | Erziehungsberechtigter | Ein Account, der fuer einen oder mehrere Dependents verantwortlich ist. |
-| **Trip** | Hüttenurlaub / Reise | Ein geplanter Hüttenurlaub mit Zeitraum, Unterkunft, Teilnehmern und Mahlzeiten. |
-| **Organizer** | Organisator | Ein Benutzer mit der Rolle, Trips zu erstellen und zu verwalten. |
-| **Participant** | Teilnehmer | Ein Benutzer, der an einem Trip teilnimmt. |
+UI verwendet Fachsprache, Code verwendet technische Namen. Siehe ADR-0011 fuer die vollstaendige Begriffsmatrix.
+
+| Fachbegriff (DE) | Fachbegriff (EN) | Technisch (Code) | Kontext | Beschreibung |
+|---|---|---|---|---|
+| **Reisepartei** | Travel Party | Tenant | IAM | Registrierungseinheit: Einzelperson, Paar oder Familie |
+| **Mitglied** | Member | Account | IAM | Person mit eigenem Login, plant aktiv mit |
+| **Mitreisende(r)** | Companion | Dependent | IAM | Person ohne Login, reist mit (Kind, Partner der nicht plant) |
+| **Reise** | Trip | Trip | Trips | Ein konkreter Urlaub/Event mit Zeitraum |
+| **Reisegruppe** | Travel Group | — | Trips | Alle Teilnehmer einer Reise (entsteht durch Einladungen) |
+| **Einladung** | Invitation | Invitation | Trips | Einladung einer Reisepartei zu einer Reise |
+| **Organisator** | Organizer | — | Trips | Mitglied das eine Reise erstellt und verwaltet |
+| **Teilnehmer** | Participant | Participant | Trips | Reisepartei die an einer Reise teilnimmt |
+| **Aufenthaltsdauer** | Stay Period | StayPeriod | Trips | Individueller An-/Abreisezeitraum eines Teilnehmers innerhalb des Trip-Zeitraums |
 | **MealPlan** | Essensplan | Der Gesamtplan für alle Mahlzeiten eines Trips (7 Frühstück + 7 Abendessen). |
 | **Meal** | Mahlzeit | Eine einzelne Mahlzeit, entweder Frühstück oder Abendessen. |
 | **Ingredient** | Zutat | Eine Zutat für ein Gericht innerhalb einer Mahlzeit. |
@@ -37,5 +41,5 @@
 | **Domain Event** | Ein fachliches Ereignis, das eine Zustandsänderung in einem Bounded Context signalisiert und asynchron an andere Kontexte weitergegeben wird. |
 | **TenantId** | Technischer Schlüssel zur Mandantentrennung, der in jedem Aggregat enthalten ist. |
 | **OIDC** | OpenID Connect — Authentifizierungsprotokoll auf Basis von OAuth 2.0, implementiert über Keycloak. |
-| **KRaft** | Kafka Raft — Betriebsmodus von Apache Kafka ohne separaten Zookeeper-Cluster. |
+| **RabbitMQ** | Message Broker fuer asynchrone Kommunikation zwischen SCS via AMQP (Topic Exchange `travelmate.events`). |
 | **PWA** | Progressive Web App — Webanwendung mit App-ähnlichem Verhalten und Offline-Fähigkeit. |

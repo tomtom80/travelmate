@@ -8,6 +8,7 @@ import java.util.UUID;
 import de.evia.travelmate.common.domain.AggregateRoot;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.common.events.iam.AccountRegistered;
+import de.evia.travelmate.common.events.iam.MemberRemovedFromTenant;
 
 public class Account extends AggregateRoot {
 
@@ -17,13 +18,15 @@ public class Account extends AggregateRoot {
     private final Username username;
     private final Email email;
     private final FullName fullName;
+    private final DateOfBirth dateOfBirth;
 
     public Account(final AccountId accountId,
                    final TenantId tenantId,
                    final KeycloakUserId keycloakUserId,
                    final Username username,
                    final Email email,
-                   final FullName fullName) {
+                   final FullName fullName,
+                   final DateOfBirth dateOfBirth) {
         argumentIsNotNull(accountId, "accountId");
         argumentIsNotNull(tenantId, "tenantId");
         argumentIsNotNull(keycloakUserId, "keycloakUserId");
@@ -36,20 +39,23 @@ public class Account extends AggregateRoot {
         this.username = username;
         this.email = email;
         this.fullName = fullName;
+        this.dateOfBirth = dateOfBirth;
     }
 
     public static Account register(final TenantId tenantId,
                                    final KeycloakUserId keycloakUserId,
                                    final Username username,
                                    final Email email,
-                                   final FullName fullName) {
+                                   final FullName fullName,
+                                   final DateOfBirth dateOfBirth) {
         final Account account = new Account(
             new AccountId(UUID.randomUUID()),
             tenantId,
             keycloakUserId,
             username,
             email,
-            fullName
+            fullName,
+            dateOfBirth
         );
         account.registerEvent(new AccountRegistered(
             tenantId.value(),
@@ -61,6 +67,23 @@ public class Account extends AggregateRoot {
             LocalDate.now()
         ));
         return account;
+    }
+
+    public static Account register(final TenantId tenantId,
+                                   final KeycloakUserId keycloakUserId,
+                                   final Username username,
+                                   final Email email,
+                                   final FullName fullName) {
+        return register(tenantId, keycloakUserId, username, email, fullName, null);
+    }
+
+    public void markForRemoval() {
+        registerEvent(new MemberRemovedFromTenant(
+            tenantId.value(),
+            accountId.value(),
+            email.value(),
+            LocalDate.now()
+        ));
     }
 
     public AccountId accountId() {
@@ -85,5 +108,9 @@ public class Account extends AggregateRoot {
 
     public FullName fullName() {
         return fullName;
+    }
+
+    public DateOfBirth dateOfBirth() {
+        return dateOfBirth;
     }
 }

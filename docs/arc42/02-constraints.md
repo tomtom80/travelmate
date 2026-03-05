@@ -8,7 +8,7 @@
 | **Spring Boot 3.2.x** | Framework für alle Self-Contained Systems |
 | **Maven Monorepo** | Alle Services in einem Repository mit Maven Wrapper |
 | **PostgreSQL** | Relationale Datenbank, pro Service eine eigene Instanz |
-| **Apache Kafka (KRaft)** | Asynchrone Kommunikation zwischen Services, ohne Zookeeper |
+| **RabbitMQ 4.0 (AMQP)** | Asynchrone Kommunikation zwischen Services via Topic Exchange |
 | **Keycloak** | Identity Provider für OIDC-basierte Authentifizierung |
 | **Thymeleaf + HTMX** | Server-Side Rendering mit partiellen Updates (kein SPA-Framework) |
 | **Spring Cloud Gateway** | Zentraler Eintrittspunkt und Routing zu den SCS |

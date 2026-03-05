@@ -1,25 +1,25 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="de">
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="content">
     <h1 th:text="${account.firstName + ' ' + account.lastName}"></h1>
     <dl>
-        <dt>Username</dt>
+        <dt th:text="#{member.username}">Benutzername</dt>
         <dd th:text="${account.username}"></dd>
-        <dt>E-Mail</dt>
+        <dt th:text="#{member.email}">E-Mail</dt>
         <dd th:text="${account.email}"></dd>
-        <dt>Tenant</dt>
+        <dt th:text="#{nav.travelParty}">Reisepartei</dt>
         <dd th:text="${tenant.name}"></dd>
     </dl>
 
-    <h2>Mitreisende (Dependents)</h2>
+    <h2 th:text="#{companion.title}">Mitreisende</h2>
     <div id="dependents"
          hx-get th:hx-get="@{/tenants/{tid}/accounts/{aid}/dependents(tid=${tenant.tenantId},aid=${account.accountId})}"
          hx-trigger="load"
          hx-swap="innerHTML">
     </div>
 
-    <p><a th:href="@{/tenants/{id}/accounts(id=${tenant.tenantId})}">Zurueck zur Liste</a></p>
+    <p><a th:href="@{/tenants/{id}/accounts(id=${tenant.tenantId})}" th:text="#{member.backToList}">Zurueck zur Liste</a></p>
 </div>
 </body>
 </html>

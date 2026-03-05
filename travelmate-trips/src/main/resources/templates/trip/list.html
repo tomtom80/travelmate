@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<body>
+<div th:fragment="content">
+    <h1 th:text="#{trip.title}">Reisen</h1>
+
+    <figure>
+        <table th:if="${!trips.isEmpty()}">
+            <thead>
+                <tr>
+                    <th th:text="#{trip.name}">Name</th>
+                    <th th:text="#{trip.startDate}">Von</th>
+                    <th th:text="#{trip.endDate}">Bis</th>
+                    <th th:text="#{trip.status}">Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="trip : ${trips}">
+                    <td>
+                        <a th:href="@{/{id}(id=${trip.tripId()})}"
+                           th:text="${trip.name()}"></a>
+                    </td>
+                    <td th:text="${trip.startDate()}"></td>
+                    <td th:text="${trip.endDate()}"></td>
+                    <td th:text="${trip.status()}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </figure>
+    <p th:if="${trips.isEmpty()}" th:text="#{trip.empty}">Noch keine Reisen geplant.</p>
+
+    <a th:href="@{/new}" role="button" th:text="#{trip.create}">Neue Reise planen</a>
+</div>
+</body>
+</html>

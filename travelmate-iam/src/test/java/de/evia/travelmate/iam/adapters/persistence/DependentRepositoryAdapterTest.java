@@ -54,7 +54,8 @@ class DependentRepositoryAdapterTest {
             new KeycloakUserId("kc-guardian-" + UUID.randomUUID()),
             new Username("guardian-" + UUID.randomUUID()),
             new Email("guardian@example.com"),
-            new FullName("Guardian", "User")
+            new FullName("Guardian", "User"),
+            null
         );
         accountRepository.save(guardian);
         guardianId = guardian.accountId();
@@ -64,7 +65,7 @@ class DependentRepositoryAdapterTest {
     void savesAndFindsById() {
         final Dependent dependent = new Dependent(
             new DependentId(UUID.randomUUID()), tenantId, guardianId,
-            new FullName("Child", "User")
+            new FullName("Child", "User"), null
         );
         dependentRepository.save(dependent);
 
@@ -79,11 +80,11 @@ class DependentRepositoryAdapterTest {
     void findsAllByGuardian() {
         final Dependent dep1 = new Dependent(
             new DependentId(UUID.randomUUID()), tenantId, guardianId,
-            new FullName("Child1", "User")
+            new FullName("Child1", "User"), null
         );
         final Dependent dep2 = new Dependent(
             new DependentId(UUID.randomUUID()), tenantId, guardianId,
-            new FullName("Child2", "User")
+            new FullName("Child2", "User"), null
         );
         dependentRepository.save(dep1);
         dependentRepository.save(dep2);
@@ -97,7 +98,7 @@ class DependentRepositoryAdapterTest {
     void findsAllByTenantId() {
         final Dependent dependent = new Dependent(
             new DependentId(UUID.randomUUID()), tenantId, guardianId,
-            new FullName("TenantChild", "User")
+            new FullName("TenantChild", "User"), null
         );
         dependentRepository.save(dependent);
 

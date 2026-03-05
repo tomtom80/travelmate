@@ -37,6 +37,15 @@ spring:
   thymeleaf:
     cache: false
 
+keycloak:
+  admin:
+    server-url: ${KEYCLOAK_URL:http://localhost:7082}
+    realm: master
+    client-id: admin-cli
+    username: ${KEYCLOAK_ADMIN:admin}
+    password: ${KEYCLOAK_ADMIN_PASSWORD:admin}
+    target-realm: travelmate
+
 management:
   endpoints:
     web:

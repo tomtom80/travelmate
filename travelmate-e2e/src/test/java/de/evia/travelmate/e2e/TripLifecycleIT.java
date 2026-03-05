@@ -1,0 +1,209 @@
+package de.evia.travelmate.e2e;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
+
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+class TripLifecycleIT extends E2ETestBase {
+
+    private static final String TENANT_NAME = "E2E-Trips " + RUN_ID;
+    private static final String EMAIL = "trips-" + RUN_ID + "@e2e.test";
+    private static final String PASSWORD = "Test1234!";
+    private static final String TRIP_NAME = "Sommerurlaub " + RUN_ID;
+
+    @Test
+    @Order(1)
+    void setUpTravelPartyAndNavigateToTrips() {
+        signUpAndLogin(TENANT_NAME, "Kai", "Trips", EMAIL, PASSWORD);
+        waitForTripsReady();
+
+        navigateAndWait("/trips/");
+        final String content = page.content();
+        assertThat(content).doesNotContain("Whitelabel Error Page");
+        assertThat(content).doesNotContain("Internal Server Error");
+        assertThat(content).doesNotContain("Forbidden");
+    }
+
+    @Test
+    @Order(2)
+    void tripsListShowsForNewUser() {
+        navigateAndWait("/trips/");
+
+        assertThat(page.content()).contains("Reisen");
+    }
+
+    @Test
+    @Order(3)
+    void tripsPageResolvesI18nMessages() {
+        navigateAndWait("/trips/");
+        final String content = page.content();
+
+        assertThat(content).doesNotContain("??");
+        assertThat(content).contains("Travelmate");
+    }
+
+    @Test
+    @Order(10)
+    void createTripFormDisplaysAllFields() {
+        navigateAndWait("/trips/new");
+        page.waitForLoadState();
+
+        assertThat(page.locator("input[name=name]").count()).isPositive();
+        assertThat(page.locator("textarea[name=description], input[name=description]").count()).isPositive();
+        assertThat(page.locator("input[name=startDate]").count()).isPositive();
+        assertThat(page.locator("input[name=endDate]").count()).isPositive();
+    }
+
+    @Test
+    @Order(11)
+    void createTripSucceeds() {
+        navigateAndWait("/trips/new");
+
+        page.fill("input[name=name]", TRIP_NAME);
+        page.fill("#description", "Ein E2E-Testurlaub");
+        page.fill("input[name=startDate]", "2026-07-01");
+        page.fill("input[name=endDate]", "2026-07-14");
+        page.click("button[type=submit]");
+        page.waitForURL(url -> url.endsWith("/trips") || url.endsWith("/trips/"));
+
+        assertThat(page.content()).contains(TRIP_NAME);
+    }
+
+    @Test
+    @Order(12)
+    void tripAppearsInList() {
+        navigateAndWait("/trips/");
+        final String content = page.content();
+
+        assertThat(content).contains(TRIP_NAME);
+        assertThat(content).contains("2026-07-01");
+        assertThat(content).contains("2026-07-14");
+        assertThat(content).contains("PLANNING");
+    }
+
+    @Test
+    @Order(20)
+    void tripDetailShowsCorrectInfo() {
+        navigateAndWait("/trips/");
+        page.locator("a", new com.microsoft.playwright.Page.LocatorOptions().setHasText(TRIP_NAME)).click();
+        page.waitForLoadState();
+
+        final String content = page.content();
+        assertThat(content).contains(TRIP_NAME);
+        assertThat(content).contains("Ein E2E-Testurlaub");
+        assertThat(content).contains("2026-07-01");
+        assertThat(content).contains("2026-07-14");
+        assertThat(content).contains("PLANNING");
+    }
+
+    @Test
+    @Order(21)
+    void tripDetailShowsOrganizerAsParticipant() {
+        assertThat(page.content()).contains("Teilnehmer");
+        assertThat(page.content()).contains("Kai");
+    }
+
+    @Test
+    @Order(22)
+    void tripDetailShowsStatusActionButtons() {
+        assertThat(page.locator("form[action$='/confirm'] button[type=submit]").count()).isPositive();
+        assertThat(page.locator("form[action$='/cancel'] button[type=submit]").count()).isPositive();
+    }
+
+    @Test
+    @Order(30)
+    void confirmTripChangesStatusToConfirmed() {
+        navigateAndWait("/trips/");
+        page.locator("a", new com.microsoft.playwright.Page.LocatorOptions().setHasText(TRIP_NAME)).click();
+        page.waitForLoadState();
+
+        page.locator("form[action$='/confirm'] button[type=submit]").click();
+        page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
+
+        assertThat(page.content()).contains("CONFIRMED");
+    }
+
+    @Test
+    @Order(31)
+    void startTripChangesStatusToInProgress() {
+        page.locator("form[action$='/start'] button[type=submit]").click();
+        page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
+
+        assertThat(page.content()).contains("IN_PROGRESS");
+    }
+
+    @Test
+    @Order(32)
+    void completeTripChangesStatusToCompleted() {
+        page.locator("form[action$='/complete'] button[type=submit]").click();
+        page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
+
+        assertThat(page.content()).contains("COMPLETED");
+    }
+
+    @Test
+    @Order(33)
+    void completedTripHasNoStatusActionButtons() {
+        assertThat(page.locator("form[action$='/confirm']").count()).isZero();
+        assertThat(page.locator("form[action$='/start']").count()).isZero();
+        assertThat(page.locator("form[action$='/complete']").count()).isZero();
+        assertThat(page.locator("form[action$='/cancel']").count()).isZero();
+    }
+
+    @Test
+    @Order(40)
+    void createAndCancelTrip() {
+        final String cancelTripName = "Storniert " + RUN_ID;
+
+        navigateAndWait("/trips/new");
+        page.fill("input[name=name]", cancelTripName);
+        page.fill("input[name=startDate]", "2026-08-01");
+        page.fill("input[name=endDate]", "2026-08-07");
+        page.click("button[type=submit]");
+        page.waitForURL(url -> url.endsWith("/trips") || url.endsWith("/trips/"));
+
+        page.locator("a", new com.microsoft.playwright.Page.LocatorOptions().setHasText(cancelTripName)).click();
+        page.waitForLoadState();
+        assertThat(page.content()).contains("PLANNING");
+
+        page.locator("form[action$='/cancel'] button[type=submit]").click();
+        page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
+
+        assertThat(page.content()).contains("CANCELLED");
+    }
+
+    @Test
+    @Order(25)
+    void setStayPeriodForOrganizer() {
+        navigateAndWait("/trips/");
+        page.locator("a", new com.microsoft.playwright.Page.LocatorOptions().setHasText(TRIP_NAME)).click();
+        page.waitForLoadState();
+
+        if (page.locator("form[action*='/stay-period']").count() > 0) {
+            page.locator("form[action*='/stay-period'] input[name=arrivalDate]").fill("2026-07-02");
+            page.locator("form[action*='/stay-period'] input[name=departureDate]").fill("2026-07-13");
+            page.locator("form[action*='/stay-period'] button[type=submit]").click();
+            page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
+
+            assertThat(page.content()).contains("2026-07-02");
+            assertThat(page.content()).contains("2026-07-13");
+        }
+    }
+
+    @Test
+    @Order(60)
+    void navigateBackFromTripDetail() {
+        navigateAndWait("/trips/");
+        page.locator("a", new com.microsoft.playwright.Page.LocatorOptions().setHasText(TRIP_NAME)).click();
+        page.waitForLoadState();
+
+        page.locator("main a[href='/trips/']").click();
+        page.waitForURL(url -> url.endsWith("/trips/"));
+
+        assertThat(page.url()).endsWith("/trips/");
+    }
+}

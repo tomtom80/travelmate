@@ -2,6 +2,7 @@
   "realm": "travelmate",
   "enabled": true,
   "displayName": "Travelmate",
+  "loginTheme": "travelmate",
   "registrationAllowed": true,
   "registrationEmailAsUsername": false,
   "loginWithEmailAllowed": true,
@@ -53,6 +54,7 @@
       "defaultClientScopes": [
         "web-origins",
         "acr",
+        "basic",
         "profile",
         "roles",
         "email"
@@ -107,7 +109,25 @@
   ],
   "scopeMappings": [],
   "clientScopeMappings": {},
-  "smtpServer": {},
+  "requiredActions": [
+    {
+      "alias": "VERIFY_EMAIL",
+      "name": "Verify Email",
+      "providerId": "VERIFY_EMAIL",
+      "enabled": true,
+      "defaultAction": false,
+      "priority": 50
+    }
+  ],
+  "smtpServer": {
+    "host": "mailpit",
+    "port": "1025",
+    "from": "noreply@travelmate.local",
+    "fromDisplayName": "Travelmate",
+    "ssl": "false",
+    "starttls": "false",
+    "auth": "false"
+  },
   "identityProviders": [],
   "identityProviderMappers": []
 }

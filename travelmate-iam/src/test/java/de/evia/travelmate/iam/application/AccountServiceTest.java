@@ -21,6 +21,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.common.events.iam.AccountRegistered;
 import de.evia.travelmate.common.events.iam.DependentAddedToTenant;
+import de.evia.travelmate.common.events.iam.DependentRemovedFromTenant;
+import de.evia.travelmate.common.events.iam.MemberRemovedFromTenant;
 import de.evia.travelmate.iam.application.command.AddDependentCommand;
 import de.evia.travelmate.iam.application.command.RegisterAccountCommand;
 import de.evia.travelmate.iam.application.representation.AccountRepresentation;
@@ -29,8 +31,10 @@ import de.evia.travelmate.iam.domain.IamTestFixtures;
 import de.evia.travelmate.iam.domain.account.Account;
 import de.evia.travelmate.iam.domain.account.AccountId;
 import de.evia.travelmate.iam.domain.account.AccountRepository;
+import de.evia.travelmate.iam.domain.account.IdentityProviderService;
 import de.evia.travelmate.iam.domain.account.Username;
 import de.evia.travelmate.iam.domain.dependent.Dependent;
+import de.evia.travelmate.iam.domain.dependent.DependentId;
 import de.evia.travelmate.iam.domain.dependent.DependentRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -41,6 +45,9 @@ class AccountServiceTest {
 
     @Mock
     private DependentRepository dependentRepository;
+
+    @Mock
+    private IdentityProviderService identityProviderService;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -83,7 +90,7 @@ class AccountServiceTest {
     void addsDependentToAccount() {
         final AddDependentCommand command = new AddDependentCommand(
             IamTestFixtures.TENANT_ID.value(), IamTestFixtures.ACCOUNT_ID.value(),
-            "Lena", "Mustermann"
+            "Lena", "Mustermann", null
         );
         when(accountRepository.findById(any(AccountId.class)))
             .thenReturn(Optional.of(IamTestFixtures.account()));
@@ -103,13 +110,47 @@ class AccountServiceTest {
     void rejectsAddDependentWithUnknownGuardian() {
         final AddDependentCommand command = new AddDependentCommand(
             IamTestFixtures.TENANT_ID.value(), UUID.randomUUID(),
-            "Lena", "Mustermann"
+            "Lena", "Mustermann", null
         );
         when(accountRepository.findById(any(AccountId.class))).thenReturn(Optional.empty());
 
         assertThatIllegalArgumentException()
             .isThrownBy(() -> accountService.addDependent(command))
             .withMessageContaining("Guardian account not found");
+    }
+
+    @Test
+    void deleteDependentPublishesEvent() {
+        final Dependent dependent = IamTestFixtures.dependent();
+        when(dependentRepository.findById(any(DependentId.class)))
+            .thenReturn(Optional.of(dependent));
+
+        accountService.deleteDependent(dependent.dependentId().value());
+
+        verify(eventPublisher).publishEvent(any(DependentRemovedFromTenant.class));
+        verify(dependentRepository).deleteById(dependent.dependentId());
+    }
+
+    @Test
+    void deleteMemberPublishesEvent() {
+        final Account account = IamTestFixtures.account();
+        when(accountRepository.countByTenantId(IamTestFixtures.TENANT_ID)).thenReturn(2L);
+        when(accountRepository.findById(IamTestFixtures.ACCOUNT_ID))
+            .thenReturn(Optional.of(account));
+
+        accountService.deleteMember(IamTestFixtures.ACCOUNT_ID, IamTestFixtures.TENANT_ID);
+
+        verify(eventPublisher).publishEvent(any(MemberRemovedFromTenant.class));
+        verify(accountRepository).deleteById(IamTestFixtures.ACCOUNT_ID);
+    }
+
+    @Test
+    void deleteMemberRejectsLastMember() {
+        when(accountRepository.countByTenantId(IamTestFixtures.TENANT_ID)).thenReturn(1L);
+
+        assertThatIllegalArgumentException()
+            .isThrownBy(() -> accountService.deleteMember(IamTestFixtures.ACCOUNT_ID, IamTestFixtures.TENANT_ID))
+            .withMessageContaining("lastMember");
     }
 
     @Test

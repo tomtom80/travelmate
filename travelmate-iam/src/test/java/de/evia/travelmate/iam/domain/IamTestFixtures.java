@@ -51,7 +51,7 @@ public final class IamTestFixtures {
     }
 
     public static Account account() {
-        return new Account(ACCOUNT_ID, TENANT_ID, keycloakUserId(), username(), email(), fullName());
+        return new Account(ACCOUNT_ID, TENANT_ID, keycloakUserId(), username(), email(), fullName(), null);
     }
 
     public static Account registeredAccount() {

@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException
 import org.junit.jupiter.api.Test;
 
 import de.evia.travelmate.common.events.iam.DependentAddedToTenant;
+import de.evia.travelmate.common.events.iam.DependentRemovedFromTenant;
 import de.evia.travelmate.iam.domain.IamTestFixtures;
 import de.evia.travelmate.iam.domain.account.FullName;
 
@@ -30,10 +31,25 @@ class DependentTest {
     }
 
     @Test
+    void markForRemovalRegistersEvent() {
+        final Dependent dependent = IamTestFixtures.dependent();
+        dependent.clearDomainEvents();
+        dependent.markForRemoval();
+
+        assertThat(dependent.domainEvents()).hasSize(1);
+        assertThat(dependent.domainEvents().getFirst()).isInstanceOf(DependentRemovedFromTenant.class);
+
+        final DependentRemovedFromTenant event = (DependentRemovedFromTenant) dependent.domainEvents().getFirst();
+        assertThat(event.tenantId()).isEqualTo(IamTestFixtures.TENANT_ID.value());
+        assertThat(event.dependentId()).isEqualTo(dependent.dependentId().value());
+        assertThat(event.occurredOn()).isNotNull();
+    }
+
+    @Test
     void throwsForNullDependentId() {
         assertThatIllegalArgumentException()
             .isThrownBy(() -> new Dependent(null, IamTestFixtures.TENANT_ID,
-                IamTestFixtures.ACCOUNT_ID, IamTestFixtures.fullName()))
+                IamTestFixtures.ACCOUNT_ID, IamTestFixtures.fullName(), null))
             .withMessageContaining("dependentId");
     }
 
@@ -41,7 +57,7 @@ class DependentTest {
     void throwsForNullTenantId() {
         assertThatIllegalArgumentException()
             .isThrownBy(() -> new Dependent(new DependentId(java.util.UUID.randomUUID()),
-                null, IamTestFixtures.ACCOUNT_ID, IamTestFixtures.fullName()))
+                null, IamTestFixtures.ACCOUNT_ID, IamTestFixtures.fullName(), null))
             .withMessageContaining("tenantId");
     }
 
@@ -49,7 +65,7 @@ class DependentTest {
     void throwsForNullGuardianAccountId() {
         assertThatIllegalArgumentException()
             .isThrownBy(() -> new Dependent(new DependentId(java.util.UUID.randomUUID()),
-                IamTestFixtures.TENANT_ID, null, new FullName("Lena", "Mustermann")))
+                IamTestFixtures.TENANT_ID, null, new FullName("Lena", "Mustermann"), null))
             .withMessageContaining("guardianAccountId");
     }
 }
