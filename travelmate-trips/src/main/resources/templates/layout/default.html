@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="de">
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,10 +9,14 @@
 </head>
 <body>
     <nav>
-        <a href="/">Travelmate</a>
-        <a href="/iam/">IAM</a>
-        <a href="/trips/">Trips</a>
-        <a href="/expense/">Abrechnung</a>
+        <a href="/" th:text="#{nav.brand}">Travelmate</a>
+        <a href="/iam/" th:text="#{nav.travelGroup}">Reisegruppe</a>
+        <a href="/trips/" th:text="#{nav.trips}">Reisen</a>
+        <a href="/expense/" th:text="#{nav.expense}">Abrechnung</a>
+        <span>
+            <a th:href="@{''(lang='de')}" th:text="#{common.german}">Deutsch</a> |
+            <a th:href="@{''(lang='en')}" th:text="#{common.english}">English</a>
+        </span>
     </nav>
     <main th:insert="~{${view} :: content}">
     </main>

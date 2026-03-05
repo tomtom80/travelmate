@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="de">
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="content">
-    <h1>Trips — Reiseplanung</h1>
-    <p>Trips erstellen, Teilnehmer verwalten, Essensplan und Einkaufslisten.</p>
+    <h1 th:text="#{trip.plan}">Reiseplanung</h1>
+    <p th:text="#{trip.subtitle}">Reisen erstellen, Teilnehmer verwalten, Essensplan und Einkaufslisten.</p>
 </div>
 </body>
 </html>

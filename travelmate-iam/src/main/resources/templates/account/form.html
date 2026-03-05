@@ -1,32 +1,32 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="de">
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="content">
-    <h1>Neuen Account registrieren</h1>
+    <h1 th:text="#{member.register}">Neues Mitglied registrieren</h1>
     <form th:action="@{/tenants/{id}/accounts(id=${tenantId})}" method="post">
         <div>
-            <label for="keycloakUserId">Keycloak User ID</label>
+            <label for="keycloakUserId" th:text="#{member.keycloakUserId}">Keycloak User ID</label>
             <input type="text" id="keycloakUserId" name="keycloakUserId" required>
         </div>
         <div>
-            <label for="username">Username</label>
+            <label for="username" th:text="#{member.username}">Benutzername</label>
             <input type="text" id="username" name="username" required>
         </div>
         <div>
-            <label for="email">E-Mail</label>
+            <label for="email" th:text="#{member.email}">E-Mail</label>
             <input type="email" id="email" name="email" required>
         </div>
         <div>
-            <label for="firstName">Vorname</label>
+            <label for="firstName" th:text="#{member.firstName}">Vorname</label>
             <input type="text" id="firstName" name="firstName" required>
         </div>
         <div>
-            <label for="lastName">Nachname</label>
+            <label for="lastName" th:text="#{member.lastName}">Nachname</label>
             <input type="text" id="lastName" name="lastName" required>
         </div>
-        <button type="submit">Registrieren</button>
+        <button type="submit" th:text="#{member.submit}">Registrieren</button>
     </form>
-    <p><a th:href="@{/tenants/{id}/accounts(id=${tenantId})}">Zurueck zur Liste</a></p>
+    <p><a th:href="@{/tenants/{id}/accounts(id=${tenantId})}" th:text="#{member.backToList}">Zurueck zur Liste</a></p>
 </div>
 </body>
 </html>
