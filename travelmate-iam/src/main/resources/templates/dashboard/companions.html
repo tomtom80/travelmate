@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<body>
+<div th:fragment="companionList">
+    <table th:if="${!dependents.isEmpty()}">
+        <thead>
+            <tr>
+                <th th:text="#{companion.firstName}">Vorname</th>
+                <th th:text="#{companion.lastName}">Nachname</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="dep : ${dependents}">
+                <td th:text="${dep.firstName()}"></td>
+                <td th:text="${dep.lastName()}"></td>
+            </tr>
+        </tbody>
+    </table>
+    <p th:if="${dependents.isEmpty()}" th:text="#{companion.empty}">Noch keine Mitreisenden eingetragen.</p>
+</div>
+</body>
+</html>

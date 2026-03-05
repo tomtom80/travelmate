@@ -1,9 +1,11 @@
 package de.evia.travelmate.iam.adapters.web;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
@@ -23,7 +25,9 @@ import org.springframework.test.web.servlet.MockMvc;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.iam.application.AccountService;
 import de.evia.travelmate.iam.application.TenantService;
+import de.evia.travelmate.iam.application.command.AddDependentCommand;
 import de.evia.travelmate.iam.application.representation.AccountRepresentation;
+import de.evia.travelmate.iam.application.representation.DependentRepresentation;
 import de.evia.travelmate.iam.application.representation.TenantRepresentation;
 import de.evia.travelmate.iam.domain.account.Account;
 import de.evia.travelmate.iam.domain.account.AccountId;
@@ -56,14 +60,7 @@ class DashboardControllerTest {
 
     @Test
     void dashboardShowsTenantAndMembers() throws Exception {
-        final Account account = new Account(
-            new AccountId(ACCOUNT_UUID),
-            new TenantId(TENANT_UUID),
-            new KeycloakUserId(KEYCLOAK_USER_ID),
-            new Username("max@example.com"),
-            new Email("max@example.com"),
-            new FullName("Max", "Mustermann")
-        );
+        final Account account = createAccount();
         when(accountRepository.findByKeycloakUserId(new KeycloakUserId(KEYCLOAK_USER_ID)))
             .thenReturn(Optional.of(account));
         when(tenantService.findById(new TenantId(TENANT_UUID)))
@@ -92,5 +89,38 @@ class DashboardControllerTest {
         mockMvc.perform(get("/dashboard")
                 .with(jwt().jwt(j -> j.subject("unknown-user"))))
             .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void addCompanionCreatesAndReturnsFragment() throws Exception {
+        final Account account = createAccount();
+        when(accountRepository.findByKeycloakUserId(new KeycloakUserId(KEYCLOAK_USER_ID)))
+            .thenReturn(Optional.of(account));
+        when(accountService.addDependent(any(AddDependentCommand.class)))
+            .thenReturn(new DependentRepresentation(UUID.randomUUID(), TENANT_UUID, ACCOUNT_UUID, "Lina", "Mustermann"));
+        when(accountService.findDependentsByTenantId(new TenantId(TENANT_UUID)))
+            .thenReturn(List.of(new DependentRepresentation(UUID.randomUUID(), TENANT_UUID, ACCOUNT_UUID, "Lina", "Mustermann")));
+
+        mockMvc.perform(post("/dashboard/companions")
+                .with(jwt().jwt(j -> j.subject(KEYCLOAK_USER_ID)))
+                .param("firstName", "Lina")
+                .param("lastName", "Mustermann"))
+            .andExpect(status().isOk())
+            .andExpect(view().name("dashboard/companions :: companionList"))
+            .andExpect(model().attributeExists("dependents"));
+
+        verify(accountService).addDependent(
+            new AddDependentCommand(TENANT_UUID, ACCOUNT_UUID, "Lina", "Mustermann"));
+    }
+
+    private Account createAccount() {
+        return new Account(
+            new AccountId(ACCOUNT_UUID),
+            new TenantId(TENANT_UUID),
+            new KeycloakUserId(KEYCLOAK_USER_ID),
+            new Username("max@example.com"),
+            new Email("max@example.com"),
+            new FullName("Max", "Mustermann")
+        );
     }
 }
