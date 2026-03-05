@@ -7,7 +7,7 @@
 | **Keycloak-Komplexität** | Hoch | Mittel | Keycloak ist mächtig, aber komplex in Konfiguration und Betrieb. Realm-Konfiguration, Theme-Anpassung und Multi-Tenancy erfordern tiefes Wissen. | Schrittweise Konfiguration, gute Dokumentation der Realm-Einstellungen, Automatisierung via Keycloak Admin CLI |
 | **SCS-Boundary-Evolution** | Mittel | Hoch | Die Grenzen der Bounded Contexts können sich im Laufe der Entwicklung als suboptimal herausstellen. Insbesondere die Abgrenzung zwischen Trips und Expense könnte sich verschieben. | Context Mapping regelmäßig überprüfen, Event-Verträge versionieren, Refactoring frühzeitig einplanen |
 | **PWA-Limitierungen** | Mittel | Mittel | PWAs haben Einschränkungen gegenüber nativen Apps (z.B. iOS-Restriktionen für Service Worker, eingeschränkter Kamera-Zugriff, kein Push auf iOS). | Graceful Degradation, kritische Funktionen auch online nutzbar, iOS-Einschränkungen dokumentieren |
-| **Kafka-Betriebskomplexität** | Niedrig | Mittel | Kafka KRaft vereinfacht den Betrieb, aber Monitoring, Topic-Management und Consumer-Group-Handling erfordern Erfahrung. | Kafka-UI für Monitoring, klare Topic-Naming-Konvention, Dead Letter Queue für fehlerhafte Events |
+| **RabbitMQ-Betriebskomplexität** | Niedrig | Mittel | RabbitMQ ist betrieblich einfach, aber Monitoring, Exchange/Queue-Management und Routing erfordern Erfahrung. | RabbitMQ Management UI für Monitoring, klare Routing-Key-Konvention, Dead Letter Queue für fehlerhafte Events |
 | **Kleine Teamgröße** | Hoch | Mittel | Ein kleines Team muss drei SCS plus Infrastruktur betreuen. Wissenssilos und Bus-Faktor sind Risiken. | Gemeinsame Architekturentscheidungen (ADRs), Code Reviews, Pair Programming, gute Dokumentation |
 
 ## Technische Schulden

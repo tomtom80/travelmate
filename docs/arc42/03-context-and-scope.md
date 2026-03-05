@@ -39,8 +39,8 @@ Travelmate ermöglicht Familien und Freundesgruppen die gemeinsame Planung von H
                   └─────┬─────┘────────────┘
                         │
                   ┌─────▼─────┐
-                  │   Kafka   │
-                  │  (KRaft)  │
+                  │ RabbitMQ  │
+                  │  (AMQP)   │
                   └───────────┘
                         │
                   ┌─────▼─────┐
@@ -55,8 +55,8 @@ Travelmate ermöglicht Familien und Freundesgruppen die gemeinsame Planung von H
 |-------|-----------|-----------|-------------|
 | HTTP/S | Browser → Gateway | HTTPS | Alle Benutzerinteraktionen |
 | HTTP | Gateway → SCS | HTTP | Internes Routing zu den Services |
-| Kafka | IAM → Trips | Async | Rollenzuweisungen (z.B. `RoleAssignedToUser`) |
-| Kafka | IAM → Expense | Async | Rollenzuweisungen |
+| AMQP | IAM → Trips | Async | Domain Events via Topic Exchange (z.B. `AccountRegistered`) |
+| AMQP | IAM → Expense | Async | Domain Events via Topic Exchange |
 | OIDC | SCS → Keycloak | HTTPS | Authentifizierung und Token-Validierung |
 | JDBC | SCS → PostgreSQL | TCP | Datenpersistierung (je Service eigene DB) |
 

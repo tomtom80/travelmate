@@ -11,19 +11,16 @@ docker-compose.yml
 ├── PostgreSQL (Trips)      Port 5433
 ├── PostgreSQL (Expense)    Port 5434
 ├── PostgreSQL (Keycloak)   Port 5435
-├── Keycloak                Port 8180
-├── Kafka (KRaft)           Port 9093 (extern) / 9092 (intern)
-└── Kafka-UI                Port 8090
+├── Keycloak                Port 7082
+├── RabbitMQ (AMQP)         Port 5672
+└── RabbitMQ Management UI  Port 15672
 ```
 
 ### Starten der lokalen Umgebung
 
 ```bash
-# IAM-Infrastruktur (Kafka + Keycloak + PostgreSQL)
-cd travelmate-iam/docker && docker compose up -d
-
-# Trips-Infrastruktur (Kafka + PostgreSQL)
-cd travelmate-trips/docker && docker compose up -d
+# Gesamte Infrastruktur (RabbitMQ + Keycloak + PostgreSQL)
+docker compose up -d
 ```
 
 Die Services selbst laufen lokal auf Port **8080** (jeweils einzeln):
@@ -45,7 +42,7 @@ cd travelmate-trips && ./mvnw spring-boot:run
 │  └────┬─────┘  └────┬─────┘  └──────┬───────┘  │
 │       │              │               │          │
 │  ┌────▼──────────────▼───────────────▼───────┐  │
-│  │              Kafka (KRaft)                │  │
+│  │            RabbitMQ (AMQP)               │  │
 │  └───────────────────────────────────────────┘  │
 │                                                  │
 │  ┌──────────┐  ┌──────────┐  ┌──────────────┐  │
