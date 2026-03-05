@@ -27,6 +27,7 @@ import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.trips.application.InvitationService;
 import de.evia.travelmate.trips.application.TripService;
 import de.evia.travelmate.trips.application.command.InviteParticipantCommand;
+import de.evia.travelmate.trips.application.command.SetStayPeriodCommand;
 import de.evia.travelmate.trips.application.representation.InvitationRepresentation;
 import de.evia.travelmate.trips.application.representation.TripRepresentation;
 import de.evia.travelmate.trips.domain.invitation.InvitationId;
@@ -150,5 +151,39 @@ class TripControllerTest {
             .andExpect(view().name("trip/invitations :: invitationList"));
 
         verify(invitationService).decline(new InvitationId(invitationUuid));
+    }
+
+    @Test
+    void confirmTripRedirectsToDetail() throws Exception {
+        mockMvc.perform(post("/trips/" + TRIP_UUID + "/confirm")
+                .param("tenantId", TENANT_UUID.toString())
+                .param("currentMemberId", ORGANIZER_UUID.toString()))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/trips/" + TRIP_UUID + "?tenantId=" + TENANT_UUID + "&currentMemberId=" + ORGANIZER_UUID));
+
+        verify(tripService).confirmTrip(new TripId(TRIP_UUID));
+    }
+
+    @Test
+    void completeTripRedirectsToDetail() throws Exception {
+        mockMvc.perform(post("/trips/" + TRIP_UUID + "/complete")
+                .param("tenantId", TENANT_UUID.toString())
+                .param("currentMemberId", ORGANIZER_UUID.toString()))
+            .andExpect(status().is3xxRedirection());
+
+        verify(tripService).completeTrip(new TripId(TRIP_UUID));
+    }
+
+    @Test
+    void setStayPeriodRedirectsToDetail() throws Exception {
+        mockMvc.perform(post("/trips/" + TRIP_UUID + "/participants/" + ORGANIZER_UUID + "/stay-period")
+                .param("tenantId", TENANT_UUID.toString())
+                .param("currentMemberId", ORGANIZER_UUID.toString())
+                .param("arrivalDate", "2026-03-16")
+                .param("departureDate", "2026-03-20"))
+            .andExpect(status().is3xxRedirection());
+
+        verify(tripService).setStayPeriod(new SetStayPeriodCommand(
+            TRIP_UUID, ORGANIZER_UUID, LocalDate.of(2026, 3, 16), LocalDate.of(2026, 3, 20)));
     }
 }

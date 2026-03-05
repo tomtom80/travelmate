@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import de.evia.travelmate.common.domain.AggregateRoot;
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.common.events.trips.TripCompleted;
 import de.evia.travelmate.common.events.trips.TripCreated;
 
 public class Trip extends AggregateRoot {
@@ -77,6 +78,20 @@ public class Trip extends AggregateRoot {
         participants.add(new Participant(participantId));
     }
 
+    public void setParticipantStayPeriod(final UUID participantId, final StayPeriod stayPeriod) {
+        argumentIsNotNull(stayPeriod, "stayPeriod");
+        if (!stayPeriod.isWithin(dateRange)) {
+            throw new IllegalArgumentException(
+                "Stay period must be within the trip date range.");
+        }
+        final Participant participant = participants.stream()
+            .filter(p -> p.participantId().equals(participantId))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException(
+                "Participant " + participantId + " not found in this trip."));
+        participant.setStayPeriod(stayPeriod);
+    }
+
     public boolean hasParticipant(final UUID participantId) {
         return participants.stream()
             .anyMatch(p -> p.participantId().equals(participantId));
@@ -95,6 +110,7 @@ public class Trip extends AggregateRoot {
     public void complete() {
         assertStatus(TripStatus.IN_PROGRESS, "complete");
         this.status = TripStatus.COMPLETED;
+        registerEvent(new TripCompleted(tenantId.value(), tripId.value(), LocalDate.now()));
     }
 
     public void cancel() {

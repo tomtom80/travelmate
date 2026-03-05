@@ -9,10 +9,12 @@ import org.springframework.transaction.annotation.Transactional;
 import de.evia.travelmate.common.domain.DomainEvent;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.trips.application.command.CreateTripCommand;
+import de.evia.travelmate.trips.application.command.SetStayPeriodCommand;
 import de.evia.travelmate.trips.application.representation.TripRepresentation;
 import de.evia.travelmate.trips.domain.travelparty.TravelParty;
 import de.evia.travelmate.trips.domain.travelparty.TravelPartyRepository;
 import de.evia.travelmate.trips.domain.trip.DateRange;
+import de.evia.travelmate.trips.domain.trip.StayPeriod;
 import de.evia.travelmate.trips.domain.trip.Trip;
 import de.evia.travelmate.trips.domain.trip.TripId;
 import de.evia.travelmate.trips.domain.trip.TripName;
@@ -60,9 +62,7 @@ public class TripService {
 
     @Transactional(readOnly = true)
     public TripRepresentation findById(final TripId tripId) {
-        final Trip trip = tripRepository.findById(tripId)
-            .orElseThrow(() -> new IllegalArgumentException("Trip not found: " + tripId.value()));
-        return new TripRepresentation(trip);
+        return new TripRepresentation(findTrip(tripId));
     }
 
     @Transactional(readOnly = true)
@@ -70,6 +70,45 @@ public class TripService {
         return tripRepository.findAllByTenantId(tenantId).stream()
             .map(TripRepresentation::new)
             .toList();
+    }
+
+    public void confirmTrip(final TripId tripId) {
+        final Trip trip = findTrip(tripId);
+        trip.confirm();
+        tripRepository.save(trip);
+    }
+
+    public void startTrip(final TripId tripId) {
+        final Trip trip = findTrip(tripId);
+        trip.start();
+        tripRepository.save(trip);
+    }
+
+    public void completeTrip(final TripId tripId) {
+        final Trip trip = findTrip(tripId);
+        trip.complete();
+        tripRepository.save(trip);
+        publishEvents(trip);
+    }
+
+    public void cancelTrip(final TripId tripId) {
+        final Trip trip = findTrip(tripId);
+        trip.cancel();
+        tripRepository.save(trip);
+    }
+
+    public void setStayPeriod(final SetStayPeriodCommand command) {
+        final Trip trip = findTrip(new TripId(command.tripId()));
+        trip.setParticipantStayPeriod(
+            command.participantId(),
+            new StayPeriod(command.arrivalDate(), command.departureDate())
+        );
+        tripRepository.save(trip);
+    }
+
+    private Trip findTrip(final TripId tripId) {
+        return tripRepository.findById(tripId)
+            .orElseThrow(() -> new IllegalArgumentException("Trip not found: " + tripId.value()));
     }
 
     private void publishEvents(final Trip trip) {
