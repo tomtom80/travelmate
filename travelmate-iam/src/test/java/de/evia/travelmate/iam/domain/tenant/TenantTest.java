@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException
 
 import org.junit.jupiter.api.Test;
 
+import de.evia.travelmate.common.events.iam.TenantCreated;
 import de.evia.travelmate.iam.domain.IamTestFixtures;
 
 class TenantTest {
@@ -23,6 +24,17 @@ class TenantTest {
         assertThat(tenant.tenantId()).isNotNull();
         assertThat(tenant.tenantId().value()).isNotNull();
         assertThat(tenant.name()).isEqualTo(IamTestFixtures.tenantName());
+    }
+
+    @Test
+    void createRegistersTenantCreatedEvent() {
+        final Tenant tenant = Tenant.create(IamTestFixtures.tenantName(), IamTestFixtures.description());
+        assertThat(tenant.domainEvents()).hasSize(1);
+        assertThat(tenant.domainEvents().getFirst()).isInstanceOf(TenantCreated.class);
+
+        final TenantCreated event = (TenantCreated) tenant.domainEvents().getFirst();
+        assertThat(event.tenantId()).isEqualTo(tenant.tenantId().value());
+        assertThat(event.tenantName()).isEqualTo(IamTestFixtures.tenantName().value());
     }
 
     @Test
