@@ -7,6 +7,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -67,7 +68,7 @@ class DashboardControllerTest {
             .thenReturn(new TenantRepresentation(TENANT_UUID, "Hüttenurlaub 2026", ""));
         when(accountService.findAllByTenantId(new TenantId(TENANT_UUID)))
             .thenReturn(List.of(new AccountRepresentation(ACCOUNT_UUID, TENANT_UUID,
-                "max@example.com", "max@example.com", "Max", "Mustermann")));
+                "max@example.com", "max@example.com", "Max", "Mustermann", null)));
         when(accountService.findDependentsByTenantId(any(TenantId.class)))
             .thenReturn(List.of());
 
@@ -82,13 +83,14 @@ class DashboardControllerTest {
     }
 
     @Test
-    void dashboardReturns404WhenAccountNotFound() throws Exception {
+    void dashboardRedirectsToSignupWhenAccountNotFound() throws Exception {
         when(accountRepository.findByKeycloakUserId(any(KeycloakUserId.class)))
             .thenReturn(Optional.empty());
 
         mockMvc.perform(get("/dashboard")
                 .with(jwt().jwt(j -> j.subject("unknown-user"))))
-            .andExpect(status().isNotFound());
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/signup"));
     }
 
     @Test
@@ -97,9 +99,9 @@ class DashboardControllerTest {
         when(accountRepository.findByKeycloakUserId(new KeycloakUserId(KEYCLOAK_USER_ID)))
             .thenReturn(Optional.of(account));
         when(accountService.addDependent(any(AddDependentCommand.class)))
-            .thenReturn(new DependentRepresentation(UUID.randomUUID(), TENANT_UUID, ACCOUNT_UUID, "Lina", "Mustermann"));
+            .thenReturn(new DependentRepresentation(UUID.randomUUID(), TENANT_UUID, ACCOUNT_UUID, "Lina", "Mustermann", null));
         when(accountService.findDependentsByTenantId(new TenantId(TENANT_UUID)))
-            .thenReturn(List.of(new DependentRepresentation(UUID.randomUUID(), TENANT_UUID, ACCOUNT_UUID, "Lina", "Mustermann")));
+            .thenReturn(List.of(new DependentRepresentation(UUID.randomUUID(), TENANT_UUID, ACCOUNT_UUID, "Lina", "Mustermann", null)));
 
         mockMvc.perform(post("/dashboard/companions")
                 .with(jwt().jwt(j -> j.subject(KEYCLOAK_USER_ID)))
@@ -110,7 +112,7 @@ class DashboardControllerTest {
             .andExpect(model().attributeExists("dependents"));
 
         verify(accountService).addDependent(
-            new AddDependentCommand(TENANT_UUID, ACCOUNT_UUID, "Lina", "Mustermann"));
+            new AddDependentCommand(TENANT_UUID, ACCOUNT_UUID, "Lina", "Mustermann", null));
     }
 
     private Account createAccount() {
@@ -120,7 +122,8 @@ class DashboardControllerTest {
             new KeycloakUserId(KEYCLOAK_USER_ID),
             new Username("max@example.com"),
             new Email("max@example.com"),
-            new FullName("Max", "Mustermann")
+            new FullName("Max", "Mustermann"),
+            null
         );
     }
 }

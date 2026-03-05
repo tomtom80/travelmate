@@ -51,6 +51,24 @@ class TravelPartyRepositoryAdapterTest {
     }
 
     @Test
+    void findsByMemberEmail() {
+        final TenantId tenantId = new TenantId(UUID.randomUUID());
+        final TravelParty party = TravelParty.create(tenantId, "Wanderurlaub");
+        party.addMember(UUID.randomUUID(), "hiker@example.com", "Hans", "Wanderer");
+        repository.save(party);
+
+        final Optional<TravelParty> found = repository.findByMemberEmail("hiker@example.com");
+        assertThat(found).isPresent();
+        assertThat(found.get().tenantId()).isEqualTo(tenantId);
+    }
+
+    @Test
+    void returnsEmptyForUnknownEmail() {
+        final Optional<TravelParty> found = repository.findByMemberEmail("nobody@example.com");
+        assertThat(found).isEmpty();
+    }
+
+    @Test
     void returnsEmptyForUnknownTenant() {
         final Optional<TravelParty> found = repository.findByTenantId(new TenantId(UUID.randomUUID()));
         assertThat(found).isEmpty();

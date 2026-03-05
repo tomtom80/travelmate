@@ -29,6 +29,7 @@ import de.evia.travelmate.iam.domain.IamTestFixtures;
 import de.evia.travelmate.iam.domain.account.Account;
 import de.evia.travelmate.iam.domain.account.AccountId;
 import de.evia.travelmate.iam.domain.account.AccountRepository;
+import de.evia.travelmate.iam.domain.account.IdentityProviderService;
 import de.evia.travelmate.iam.domain.account.Username;
 import de.evia.travelmate.iam.domain.dependent.Dependent;
 import de.evia.travelmate.iam.domain.dependent.DependentRepository;
@@ -41,6 +42,9 @@ class AccountServiceTest {
 
     @Mock
     private DependentRepository dependentRepository;
+
+    @Mock
+    private IdentityProviderService identityProviderService;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -83,7 +87,7 @@ class AccountServiceTest {
     void addsDependentToAccount() {
         final AddDependentCommand command = new AddDependentCommand(
             IamTestFixtures.TENANT_ID.value(), IamTestFixtures.ACCOUNT_ID.value(),
-            "Lena", "Mustermann"
+            "Lena", "Mustermann", null
         );
         when(accountRepository.findById(any(AccountId.class)))
             .thenReturn(Optional.of(IamTestFixtures.account()));
@@ -103,7 +107,7 @@ class AccountServiceTest {
     void rejectsAddDependentWithUnknownGuardian() {
         final AddDependentCommand command = new AddDependentCommand(
             IamTestFixtures.TENANT_ID.value(), UUID.randomUUID(),
-            "Lena", "Mustermann"
+            "Lena", "Mustermann", null
         );
         when(accountRepository.findById(any(AccountId.class))).thenReturn(Optional.empty());
 

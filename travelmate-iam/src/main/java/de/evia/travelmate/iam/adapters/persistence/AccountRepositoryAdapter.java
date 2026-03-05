@@ -59,6 +59,21 @@ public class AccountRepositoryAdapter implements AccountRepository {
         return jpaRepository.existsByTenantIdAndUsername(tenantId.value(), username.value());
     }
 
+    @Override
+    public void deleteById(final AccountId accountId) {
+        jpaRepository.deleteById(accountId.value());
+    }
+
+    @Override
+    public void deleteAllByTenantId(final TenantId tenantId) {
+        jpaRepository.deleteAllByTenantId(tenantId.value());
+    }
+
+    @Override
+    public long countByTenantId(final TenantId tenantId) {
+        return jpaRepository.countByTenantId(tenantId.value());
+    }
+
     private AccountJpaEntity toJpaEntity(final Account account) {
         return new AccountJpaEntity(
             account.accountId().value(),
@@ -67,7 +82,8 @@ public class AccountRepositoryAdapter implements AccountRepository {
             account.username().value(),
             account.email().value(),
             account.fullName().firstName(),
-            account.fullName().lastName()
+            account.fullName().lastName(),
+            account.dateOfBirth()
         );
     }
 
@@ -78,7 +94,8 @@ public class AccountRepositoryAdapter implements AccountRepository {
             new KeycloakUserId(entity.getKeycloakUserId()),
             new Username(entity.getUsername()),
             new Email(entity.getEmail()),
-            new FullName(entity.getFirstName(), entity.getLastName())
+            new FullName(entity.getFirstName(), entity.getLastName()),
+            entity.getDateOfBirth()
         );
     }
 }

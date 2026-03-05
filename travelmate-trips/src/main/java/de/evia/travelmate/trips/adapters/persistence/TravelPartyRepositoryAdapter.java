@@ -1,5 +1,6 @@
 package de.evia.travelmate.trips.adapters.persistence;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.stereotype.Repository;
@@ -34,6 +35,16 @@ public class TravelPartyRepositoryAdapter implements TravelPartyRepository {
     @Override
     public Optional<TravelParty> findByTenantId(final TenantId tenantId) {
         return jpaRepository.findById(tenantId.value()).map(this::toDomain);
+    }
+
+    @Override
+    public Optional<TravelParty> findByMemberEmail(final String email) {
+        return jpaRepository.findByMemberEmail(email).map(this::toDomain);
+    }
+
+    @Override
+    public List<TravelParty> findAll() {
+        return jpaRepository.findAll().stream().map(this::toDomain).toList();
     }
 
     private void syncMembers(final TravelPartyJpaEntity entity, final TravelParty domain) {

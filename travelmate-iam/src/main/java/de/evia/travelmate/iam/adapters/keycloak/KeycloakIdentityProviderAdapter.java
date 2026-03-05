@@ -35,13 +35,8 @@ public class KeycloakIdentityProviderAdapter implements IdentityProviderService 
 
     @Override
     public KeycloakUserId createUser(final Email email, final FullName fullName, final Password password) {
-        final UserRepresentation user = new UserRepresentation();
-        user.setEmail(email.value());
-        user.setUsername(email.value());
-        user.setFirstName(fullName.firstName());
-        user.setLastName(fullName.lastName());
-        user.setEnabled(true);
-        user.setEmailVerified(true);
+        final UserRepresentation user = buildUserRepresentation(email, fullName);
+        user.setRequiredActions(List.of("VERIFY_EMAIL"));
 
         final CredentialRepresentation credential = new CredentialRepresentation();
         credential.setType(CredentialRepresentation.PASSWORD);
@@ -49,22 +44,24 @@ public class KeycloakIdentityProviderAdapter implements IdentityProviderService 
         credential.setTemporary(false);
         user.setCredentials(List.of(credential));
 
-        try (final Response response = realmResource().users().create(user)) {
-            if (response.getStatus() != 201) {
-                throw new IdentityProviderException(
-                    "Failed to create Keycloak user for " + email.value()
-                        + ": " + response.readEntity(String.class));
-            }
+        return createKeycloakUser(user, email);
+    }
 
-            final URI location = response.getLocation();
-            if (location == null) {
-                throw new IdentityProviderException(
-                    "Keycloak returned 201 but no Location header for user " + email.value());
-            }
+    @Override
+    public KeycloakUserId createInvitedUser(final Email email, final FullName fullName) {
+        final UserRepresentation user = buildUserRepresentation(email, fullName);
+        user.setRequiredActions(List.of("UPDATE_PASSWORD", "VERIFY_EMAIL"));
+        return createKeycloakUser(user, email);
+    }
 
-            final String locationPath = location.getPath();
-            final String userId = locationPath.substring(locationPath.lastIndexOf('/') + 1);
-            return new KeycloakUserId(userId);
+    @Override
+    public void sendActionsEmail(final KeycloakUserId userId) {
+        try {
+            realmResource().users().get(userId.value())
+                .executeActionsEmail(List.of("UPDATE_PASSWORD", "VERIFY_EMAIL"));
+        } catch (final Exception e) {
+            throw new IdentityProviderException(
+                "Failed to send actions email for user " + userId.value(), e);
         }
     }
 
@@ -90,6 +87,37 @@ public class KeycloakIdentityProviderAdapter implements IdentityProviderService 
         } catch (final jakarta.ws.rs.NotFoundException e) {
             throw new IdentityProviderException(
                 "User " + userId.value() + " not found in Keycloak realm " + realm, e);
+        }
+    }
+
+    private UserRepresentation buildUserRepresentation(final Email email, final FullName fullName) {
+        final UserRepresentation user = new UserRepresentation();
+        user.setEmail(email.value());
+        user.setUsername(email.value());
+        user.setFirstName(fullName.firstName());
+        user.setLastName(fullName.lastName());
+        user.setEnabled(true);
+        user.setEmailVerified(false);
+        return user;
+    }
+
+    private KeycloakUserId createKeycloakUser(final UserRepresentation user, final Email email) {
+        try (final Response response = realmResource().users().create(user)) {
+            if (response.getStatus() != 201) {
+                throw new IdentityProviderException(
+                    "Failed to create Keycloak user for " + email.value()
+                        + ": " + response.readEntity(String.class));
+            }
+
+            final URI location = response.getLocation();
+            if (location == null) {
+                throw new IdentityProviderException(
+                    "Keycloak returned 201 but no Location header for user " + email.value());
+            }
+
+            final String locationPath = location.getPath();
+            final String userId = locationPath.substring(locationPath.lastIndexOf('/') + 1);
+            return new KeycloakUserId(userId);
         }
     }
 

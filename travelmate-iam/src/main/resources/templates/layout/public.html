@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${title} ? ${title} + ' — Travelmate' : 'Travelmate'">Travelmate</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+</head>
+<body>
+    <nav class="container">
+        <ul>
+            <li><a th:href="@{/}"><strong th:text="#{nav.brand}">Travelmate</strong></a></li>
+        </ul>
+        <ul>
+            <li>
+                <a th:href="@{''(lang='de')}" th:text="#{common.german}">DE</a> /
+                <a th:href="@{''(lang='en')}" th:text="#{common.english}">EN</a>
+            </li>
+            <li><a th:href="@{/signup}" role="button" class="outline" th:text="#{landing.register}">Registrieren</a></li>
+            <li><a href="/oauth2/authorization/keycloak" role="button" th:text="#{landing.login}">Anmelden</a></li>
+        </ul>
+    </nav>
+    <main class="container" th:insert="~{${view} :: content}">
+    </main>
+</body>
+</html>

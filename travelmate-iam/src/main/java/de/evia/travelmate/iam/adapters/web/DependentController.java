@@ -40,7 +40,7 @@ public class DependentController {
                       @RequestParam final String firstName,
                       @RequestParam final String lastName,
                       final Model model) {
-        accountService.addDependent(new AddDependentCommand(tenantId, accountId, firstName, lastName));
+        accountService.addDependent(new AddDependentCommand(tenantId, accountId, firstName, lastName, null));
         model.addAttribute("tenantId", tenantId);
         model.addAttribute("accountId", accountId);
         model.addAttribute("dependents", accountService.findDependentsByGuardian(new AccountId(accountId)));

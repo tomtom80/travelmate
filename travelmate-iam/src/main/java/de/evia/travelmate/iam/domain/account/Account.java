@@ -17,13 +17,15 @@ public class Account extends AggregateRoot {
     private final Username username;
     private final Email email;
     private final FullName fullName;
+    private final LocalDate dateOfBirth;
 
     public Account(final AccountId accountId,
                    final TenantId tenantId,
                    final KeycloakUserId keycloakUserId,
                    final Username username,
                    final Email email,
-                   final FullName fullName) {
+                   final FullName fullName,
+                   final LocalDate dateOfBirth) {
         argumentIsNotNull(accountId, "accountId");
         argumentIsNotNull(tenantId, "tenantId");
         argumentIsNotNull(keycloakUserId, "keycloakUserId");
@@ -36,20 +38,23 @@ public class Account extends AggregateRoot {
         this.username = username;
         this.email = email;
         this.fullName = fullName;
+        this.dateOfBirth = dateOfBirth;
     }
 
     public static Account register(final TenantId tenantId,
                                    final KeycloakUserId keycloakUserId,
                                    final Username username,
                                    final Email email,
-                                   final FullName fullName) {
+                                   final FullName fullName,
+                                   final LocalDate dateOfBirth) {
         final Account account = new Account(
             new AccountId(UUID.randomUUID()),
             tenantId,
             keycloakUserId,
             username,
             email,
-            fullName
+            fullName,
+            dateOfBirth
         );
         account.registerEvent(new AccountRegistered(
             tenantId.value(),
@@ -61,6 +66,14 @@ public class Account extends AggregateRoot {
             LocalDate.now()
         ));
         return account;
+    }
+
+    public static Account register(final TenantId tenantId,
+                                   final KeycloakUserId keycloakUserId,
+                                   final Username username,
+                                   final Email email,
+                                   final FullName fullName) {
+        return register(tenantId, keycloakUserId, username, email, fullName, null);
     }
 
     public AccountId accountId() {
@@ -85,5 +98,9 @@ public class Account extends AggregateRoot {
 
     public FullName fullName() {
         return fullName;
+    }
+
+    public LocalDate dateOfBirth() {
+        return dateOfBirth;
     }
 }

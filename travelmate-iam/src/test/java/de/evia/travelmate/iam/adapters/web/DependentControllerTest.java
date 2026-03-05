@@ -50,7 +50,7 @@ class DependentControllerTest {
     @Test
     void addReturnsDependentsList() throws Exception {
         final DependentRepresentation dependent = new DependentRepresentation(
-            UUID.randomUUID(), tenantId, accountId, "Lena", "Mustermann");
+            UUID.randomUUID(), tenantId, accountId, "Lena", "Mustermann", null);
         when(accountService.addDependent(any(AddDependentCommand.class))).thenReturn(dependent);
         when(accountService.findDependentsByGuardian(any(AccountId.class)))
             .thenReturn(List.of(dependent));

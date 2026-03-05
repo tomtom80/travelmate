@@ -4,9 +4,7 @@
 <div th:fragment="content">
     <h1 th:text="#{nav.travelParty}">Reisepartei</h1>
     <p th:text="#{travelParty.manageMembers}">Mitglieder verwalten</p>
-    <ul>
-        <li><a th:href="@{/tenants}" th:text="#{travelParty.title}">Reisepartei</a></li>
-    </ul>
+    <p><a href="/iam/dashboard" th:text="#{dashboard.title}">Meine Reisepartei</a></p>
 </div>
 </body>
 </html>

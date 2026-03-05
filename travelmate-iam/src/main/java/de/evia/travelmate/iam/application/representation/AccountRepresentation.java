@@ -1,5 +1,6 @@
 package de.evia.travelmate.iam.application.representation;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 import de.evia.travelmate.iam.domain.account.Account;
@@ -10,7 +11,8 @@ public record AccountRepresentation(
     String username,
     String email,
     String firstName,
-    String lastName
+    String lastName,
+    LocalDate dateOfBirth
 ) {
 
     public AccountRepresentation(final Account account) {
@@ -20,7 +22,8 @@ public record AccountRepresentation(
             account.username().value(),
             account.email().value(),
             account.fullName().firstName(),
-            account.fullName().lastName()
+            account.fullName().lastName(),
+            account.dateOfBirth()
         );
     }
 }

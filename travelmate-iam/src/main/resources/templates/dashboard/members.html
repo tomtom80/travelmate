@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<body>
+<div th:fragment="memberList">
+    <div th:if="${memberError}" class="error">
+        <p th:text="#{${memberError}}"></p>
+    </div>
+    <figure>
+        <table th:if="${!members.isEmpty()}">
+            <thead>
+                <tr>
+                    <th th:text="#{member.firstName}">Vorname</th>
+                    <th th:text="#{member.lastName}">Nachname</th>
+                    <th th:text="#{member.email}">E-Mail</th>
+                    <th th:text="#{common.dateOfBirth}">Geburtsdatum</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="m : ${members}">
+                    <td th:text="${m.firstName()}"></td>
+                    <td th:text="${m.lastName()}"></td>
+                    <td th:text="${m.email()}"></td>
+                    <td th:text="${m.dateOfBirth()}"></td>
+                    <td>
+                        <button th:if="${currentAccount != null and m.accountId() != currentAccount.accountId().value()}"
+                                hx-delete th:hx-delete="@{'/dashboard/members/' + ${m.accountId()}}"
+                                hx-target="#members"
+                                hx-swap="innerHTML"
+                                hx-confirm th:hx-confirm="#{member.deleteConfirm}"
+                                class="outline secondary"
+                                th:text="#{common.delete}">Loeschen</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </figure>
+    <p th:if="${members.isEmpty()}" th:text="#{member.empty}">Noch keine Mitglieder.</p>
+</div>
+</body>
+</html>

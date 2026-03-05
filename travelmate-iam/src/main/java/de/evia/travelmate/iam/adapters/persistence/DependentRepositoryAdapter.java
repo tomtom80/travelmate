@@ -47,13 +47,24 @@ public class DependentRepositoryAdapter implements DependentRepository {
             .toList();
     }
 
+    @Override
+    public void deleteById(final DependentId dependentId) {
+        jpaRepository.deleteById(dependentId.value());
+    }
+
+    @Override
+    public void deleteAllByTenantId(final TenantId tenantId) {
+        jpaRepository.deleteAllByTenantId(tenantId.value());
+    }
+
     private DependentJpaEntity toJpaEntity(final Dependent dependent) {
         return new DependentJpaEntity(
             dependent.dependentId().value(),
             dependent.tenantId().value(),
             dependent.guardianAccountId().value(),
             dependent.fullName().firstName(),
-            dependent.fullName().lastName()
+            dependent.fullName().lastName(),
+            dependent.dateOfBirth()
         );
     }
 
@@ -62,7 +73,8 @@ public class DependentRepositoryAdapter implements DependentRepository {
             new DependentId(entity.getDependentId()),
             new TenantId(entity.getTenantId()),
             new AccountId(entity.getGuardianAccountId()),
-            new FullName(entity.getFirstName(), entity.getLastName())
+            new FullName(entity.getFirstName(), entity.getLastName()),
+            entity.getDateOfBirth()
         );
     }
 }

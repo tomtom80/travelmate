@@ -36,7 +36,7 @@ class SignUpControllerTest {
     void showSignUpFormReturnsSignUpView() throws Exception {
         mockMvc.perform(get("/signup"))
             .andExpect(status().isOk())
-            .andExpect(view().name("layout/default"))
+            .andExpect(view().name("layout/public"))
             .andExpect(model().attribute("view", "signup/form"));
     }
 
@@ -65,7 +65,7 @@ class SignUpControllerTest {
                 .param("password", "secureP4ss!")
                 .param("passwordConfirm", "differentPassword"))
             .andExpect(status().isOk())
-            .andExpect(view().name("layout/default"))
+            .andExpect(view().name("layout/public"))
             .andExpect(model().attribute("view", "signup/form"))
             .andExpect(model().attributeExists("error"));
     }
@@ -83,8 +83,8 @@ class SignUpControllerTest {
                 .param("password", "secureP4ss!")
                 .param("passwordConfirm", "secureP4ss!"))
             .andExpect(status().isOk())
-            .andExpect(view().name("layout/default"))
+            .andExpect(view().name("layout/public"))
             .andExpect(model().attribute("view", "signup/form"))
-            .andExpect(model().attributeExists("error"));
+            .andExpect(model().attribute("error", "signup.error.tenantExists"));
     }
 }

@@ -2,12 +2,18 @@ package de.evia.travelmate.e2e;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+import java.util.ArrayList;
+import java.util.List;
+
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.BrowserType;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.Playwright;
-import com.microsoft.playwright.options.WaitForSelectorState;
 import com.microsoft.playwright.options.WaitUntilState;
 
 import org.junit.jupiter.api.AfterAll;
@@ -21,9 +27,12 @@ import org.junit.jupiter.api.TestMethodOrder;
 class SmokeIT {
 
     private static final String BASE_URL = System.getProperty("e2e.baseUrl", "http://localhost:8080");
+    private static final String IAM_ADMIN_URL = System.getProperty("e2e.iamAdminUrl", "http://localhost:8081/iam");
     private static final String TEST_USER = "testuser";
     private static final String TEST_PASSWORD = "testpassword";
     private static final String RUN_ID = String.valueOf(System.currentTimeMillis());
+
+    private static final List<String> createdTenantIds = new ArrayList<>();
 
     private static Playwright playwright;
     private static Browser browser;
@@ -41,6 +50,7 @@ class SmokeIT {
 
     @AfterAll
     static void tearDown() {
+        cleanupTestData();
         if (context != null) {
             context.close();
         }
@@ -52,6 +62,21 @@ class SmokeIT {
         }
     }
 
+    private static void cleanupTestData() {
+        try (final HttpClient client = HttpClient.newHttpClient()) {
+            for (final String tenantId : createdTenantIds) {
+                try {
+                    final HttpRequest request = HttpRequest.newBuilder()
+                        .uri(URI.create(IAM_ADMIN_URL + "/admin/tenants/" + tenantId))
+                        .DELETE()
+                        .build();
+                    client.send(request, HttpResponse.BodyHandlers.ofString());
+                } catch (final Exception ignored) {
+                }
+            }
+        }
+    }
+
     private static void navigateAndWait(final String path) {
         page.navigate(BASE_URL + path, new Page.NavigateOptions().setWaitUntil(WaitUntilState.NETWORKIDLE));
     }
@@ -60,19 +85,42 @@ class SmokeIT {
         page.waitForNavigation(() -> page.click(selector));
     }
 
-    // --- Authentication ---
+    // --- Landing Page ---
 
     @Test
     @Order(1)
-    void gatewayRedirectsToKeycloakLogin() {
-        page.navigate(BASE_URL);
-        assertThat(page.title()).contains("Sign in to Travelmate");
+    void landingPageLoads() {
+        navigateAndWait("/");
+        assertThat(page.title()).contains("Travelmate");
+        assertThat(page.content()).contains("Gemeinsam Reisen planen");
+        assertThat(page.content()).contains("Registrieren");
+        assertThat(page.content()).contains("Anmelden");
     }
 
     @Test
     @Order(2)
+    void landingPageLanguageSwitchWorks() {
+        navigateAndWait("/iam/?lang=en");
+        assertThat(page.content()).contains("Plan trips together");
+        assertThat(page.content()).contains("Sign Up");
+        assertThat(page.content()).contains("Log In");
+
+        navigateAndWait("/iam/?lang=de");
+        assertThat(page.content()).contains("Gemeinsam Reisen planen");
+        assertThat(page.content()).contains("Registrieren");
+        assertThat(page.content()).contains("Anmelden");
+    }
+
+    // --- Authentication ---
+
+    @Test
+    @Order(3)
     void loginViaKeycloak() {
-        page.navigate(BASE_URL);
+        navigateAndWait("/iam/");
+        page.click("a[href='/oauth2/authorization/keycloak']");
+        page.waitForURL(url -> url.contains("realms/travelmate"));
+        assertThat(page.title()).contains("Sign in to Travelmate");
+
         page.fill("#username", TEST_USER);
         page.fill("#password", TEST_PASSWORD);
         page.click("#kc-login");
@@ -80,104 +128,36 @@ class SmokeIT {
         assertThat(page.url()).startsWith(BASE_URL);
     }
 
-    // --- Service Health (regression: Flyway autoconfiguration v0.2.1) ---
-
-    @Test
-    @Order(3)
-    void iamStartPageLoads() {
-        navigateAndWait("/iam/");
-        assertThat(page.url()).contains("/iam/");
-        assertThat(page.content()).doesNotContain("Whitelabel Error Page");
-    }
+    // --- Service Health ---
 
     @Test
     @Order(4)
+    void iamDashboardRedirectsToSignupForNewUser() {
+        navigateAndWait("/iam/dashboard");
+        if (page.url().contains("realms/travelmate")) {
+            page.fill("#username", TEST_USER);
+            page.fill("#password", TEST_PASSWORD);
+            page.click("#kc-login");
+            page.waitForURL(url -> !url.contains("realms/travelmate"));
+        }
+        assertThat(page.content()).doesNotContain("Whitelabel Error Page");
+        assertThat(page.content()).doesNotContain("Internal Server Error");
+        assertThat(page.url()).contains("/signup");
+    }
+
+    @Test
+    @Order(5)
     void tripsStartPageLoads() {
         navigateAndWait("/trips/");
         assertThat(page.url()).contains("/trips/");
         assertThat(page.content()).doesNotContain("Whitelabel Error Page");
     }
 
-    // --- Tenant CRUD (regression: CSRF on Gateway v0.2.4) ---
-
-    @Test
-    @Order(10)
-    void createTenant() {
-        final String tenantName = "Huettengaudi " + RUN_ID;
-
-        navigateAndWait("/iam/tenants/new");
-        assertThat(page.content()).contains("Neuen Tenant anlegen");
-
-        page.fill("#name", tenantName);
-        page.fill("#description", "E2E-Testlauf " + RUN_ID);
-        clickAndWaitForNavigation("button[type=submit]");
-
-        assertThat(page.content()).doesNotContain("Whitelabel Error Page");
-        assertThat(page.content()).contains(tenantName);
-    }
-
-    @Test
-    @Order(11)
-    void tenantAppearsInList() {
-        navigateAndWait("/iam/tenants");
-        assertThat(page.content()).contains("Huettengaudi " + RUN_ID);
-    }
-
-    // --- Account Registration (regression: CSRF on SCS v0.2.3) ---
-
-    @Test
-    @Order(20)
-    void registerAccount() {
-        navigateAndWait("/iam/tenants");
-
-        clickAndWaitForNavigation("a:has-text('Details')");
-        clickAndWaitForNavigation("a:has-text('Accounts verwalten')");
-        clickAndWaitForNavigation("a:has-text('Neuen Account')");
-        assertThat(page.content()).contains("Neuen Account registrieren");
-
-        page.fill("#keycloakUserId", "kc-e2e-" + RUN_ID);
-        page.fill("#username", "e2euser" + RUN_ID);
-        page.fill("#email", "e2e-" + RUN_ID + "@example.com");
-        page.fill("#firstName", "Max");
-        page.fill("#lastName", "Tester");
-        clickAndWaitForNavigation("button[type=submit]");
-
-        assertThat(page.content()).doesNotContain("Whitelabel Error Page");
-        assertThat(page.content()).contains("Max");
-        assertThat(page.content()).contains("Tester");
-    }
-
-    // --- Dependent (regression: CSRF on SCS for HTMX POST v0.2.3) ---
-
-    @Test
-    @Order(30)
-    void addDependent() {
-        navigateAndWait("/iam/tenants");
-
-        clickAndWaitForNavigation("a:has-text('Details')");
-        clickAndWaitForNavigation("a:has-text('Accounts verwalten')");
-        clickAndWaitForNavigation("a:has-text('Details')");
-
-        // Wait for HTMX to load the dependent form into #dependents
-        page.waitForSelector("#depFirstName",
-            new Page.WaitForSelectorOptions().setState(WaitForSelectorState.VISIBLE));
-
-        page.fill("#depFirstName", "Lina");
-        page.fill("#depLastName", "Tester");
-        page.click("#dependents button[type=submit]");
-
-        // HTMX replaces #dependents content — wait for the name to appear
-        page.waitForSelector("td:has-text('Lina')");
-        assertThat(page.content()).contains("Lina");
-        assertThat(page.content()).contains("Tester");
-    }
-
-    // --- Sign-up Flow (S3-A02) ---
+    // --- Sign-up Flow ---
 
     @Test
     @Order(40)
     void signUpPageIsPubliclyAccessible() {
-        // Sign-up does not require login — open in a fresh context
         navigateAndWait("/iam/signup");
         assertThat(page.content()).doesNotContain("Whitelabel Error Page");
         assertThat(page.content()).doesNotContain("Sign in to Travelmate");
@@ -196,45 +176,46 @@ class SmokeIT {
         page.fill("#passwordConfirm", "Test1234!");
         clickAndWaitForNavigation("button[type=submit]");
 
-        // After sign-up, user should be redirected (to login or dashboard)
         assertThat(page.content()).doesNotContain("Whitelabel Error Page");
     }
 
-    // --- Dashboard (S3-A03 + S3-A05) ---
+    // --- Navigation between SCS contexts ---
 
     @Test
-    @Order(50)
-    void dashboardShowsTravelPartyAfterLogin() {
-        // Login as testuser (existing Keycloak user)
+    @Order(55)
+    void navigateToTripsContextDoesNotError() {
+        navigateAndWait("/trips/");
+        assertThat(page.content()).doesNotContain("Whitelabel Error Page");
+        assertThat(page.content()).doesNotContain("Internal Server Error");
+        assertThat(page.content()).contains("Reiseplanung");
+    }
+
+    @Test
+    @Order(56)
+    void tripsPageResolvesI18nMessages() {
+        navigateAndWait("/trips/");
+        final String content = page.content();
+        assertThat(content).doesNotContain("??");
+        assertThat(content).contains("Travelmate");
+        assertThat(content).contains("Reisepartei");
+        assertThat(content).contains("Reisen");
+    }
+
+    @Test
+    @Order(57)
+    void iamPageResolvesI18nMessages() {
         navigateAndWait("/iam/dashboard");
-        // May redirect to Keycloak login if session expired
-        if (page.url().contains("realms/travelmate")) {
-            page.fill("#username", TEST_USER);
-            page.fill("#password", TEST_PASSWORD);
-            page.click("#kc-login");
-            page.waitForURL(url -> !url.contains("realms/travelmate"));
-        }
-        assertThat(page.content()).doesNotContain("Whitelabel Error Page");
+        final String content = page.content();
+        assertThat(content).doesNotContain("??");
+        assertThat(content).contains("Travelmate");
     }
 
-    // --- Trip Creation (S3-B03) ---
+    // --- Logout ---
 
     @Test
-    @Order(60)
-    void tripsListPageLoads() {
-        navigateAndWait("/trips/");
-        assertThat(page.content()).doesNotContain("Whitelabel Error Page");
-    }
-
-    // --- Trip Status Lifecycle (S3-B05) ---
-    // Note: Full trip lifecycle E2E requires tenantId + organizerId from JWT context.
-    // These are covered by the unit/integration tests. E2E validates pages render correctly.
-
-    @Test
-    @Order(70)
-    void tripsModuleServesStaticAssets() {
-        navigateAndWait("/trips/");
-        assertThat(page.content()).doesNotContain("Whitelabel Error Page");
-        assertThat(page.content()).contains("Travelmate");
+    @Order(90)
+    void logoutButtonIsPresent() {
+        navigateAndWait("/iam/dashboard");
+        assertThat(page.content()).contains("Abmelden");
     }
 }
