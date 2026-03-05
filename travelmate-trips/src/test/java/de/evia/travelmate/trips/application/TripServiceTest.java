@@ -18,11 +18,15 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.common.events.trips.TripCompleted;
 import de.evia.travelmate.trips.application.command.CreateTripCommand;
+import de.evia.travelmate.trips.application.command.SetStayPeriodCommand;
 import de.evia.travelmate.trips.application.representation.TripRepresentation;
 import de.evia.travelmate.trips.domain.travelparty.TravelParty;
 import de.evia.travelmate.trips.domain.travelparty.TravelPartyRepository;
+import de.evia.travelmate.trips.domain.trip.DateRange;
 import de.evia.travelmate.trips.domain.trip.Trip;
+import de.evia.travelmate.trips.domain.trip.TripName;
 import de.evia.travelmate.trips.domain.trip.TripRepository;
 
 @ExtendWith(MockitoExtension.class)
@@ -80,5 +84,52 @@ class TripServiceTest {
         assertThatThrownBy(() -> tripService.createTrip(command))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("not a member");
+    }
+
+    @Test
+    void confirmTripTransitionsToConfirmed() {
+        final Trip trip = createTrip();
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+
+        tripService.confirmTrip(trip.tripId());
+
+        assertThat(trip.status().name()).isEqualTo("CONFIRMED");
+        verify(tripRepository).save(trip);
+    }
+
+    @Test
+    void completeTripPublishesTripCompletedEvent() {
+        final Trip trip = createTrip();
+        trip.clearDomainEvents();
+        trip.confirm();
+        trip.start();
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+
+        tripService.completeTrip(trip.tripId());
+
+        assertThat(trip.status().name()).isEqualTo("COMPLETED");
+        verify(eventPublisher).publishEvent(any(TripCompleted.class));
+    }
+
+    @Test
+    void setStayPeriodUpdatesParticipant() {
+        final Trip trip = createTrip();
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+
+        tripService.setStayPeriod(new SetStayPeriodCommand(
+            trip.tripId().value(), ORGANIZER_ID,
+            LocalDate.of(2026, 3, 16), LocalDate.of(2026, 3, 20)
+        ));
+
+        assertThat(trip.participants().getFirst().stayPeriod()).isNotNull();
+        verify(tripRepository).save(trip);
+    }
+
+    private Trip createTrip() {
+        return Trip.plan(
+            new TenantId(TENANT_UUID), new TripName("Skiurlaub"),
+            null, new DateRange(LocalDate.of(2026, 3, 15), LocalDate.of(2026, 3, 22)),
+            ORGANIZER_ID
+        );
     }
 }

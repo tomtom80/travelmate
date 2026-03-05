@@ -17,8 +17,10 @@ import de.evia.travelmate.trips.application.InvitationService;
 import de.evia.travelmate.trips.application.TripService;
 import de.evia.travelmate.trips.application.command.CreateTripCommand;
 import de.evia.travelmate.trips.application.command.InviteParticipantCommand;
+import de.evia.travelmate.trips.application.command.SetStayPeriodCommand;
 import de.evia.travelmate.trips.application.representation.InvitationRepresentation;
 import de.evia.travelmate.trips.application.representation.InvitationView;
+import de.evia.travelmate.trips.application.representation.ParticipantView;
 import de.evia.travelmate.trips.application.representation.TripRepresentation;
 import de.evia.travelmate.trips.domain.invitation.InvitationId;
 import de.evia.travelmate.trips.domain.travelparty.Member;
@@ -71,16 +73,15 @@ public class TripController {
             .filter(m -> !alreadyInvitedOrParticipant.contains(m.memberId()))
             .toList();
 
-        final List<Member> participants = party.members().stream()
-            .filter(m -> trip.participantIds().contains(m.memberId()))
-            .toList();
+        final List<ParticipantView> participantViews = toParticipantViews(trip, party);
 
         model.addAttribute("view", "trip/detail");
         model.addAttribute("trip", trip);
-        model.addAttribute("participants", participants);
+        model.addAttribute("participants", participantViews);
         model.addAttribute("invitations", invitationViews);
         model.addAttribute("invitableMembers", invitableMembers);
         model.addAttribute("currentMemberId", currentMemberId);
+        model.addAttribute("isOrganizer", trip.organizerId().equals(currentMemberId));
         return "layout/default";
     }
 
@@ -134,6 +135,49 @@ public class TripController {
         return populateInvitationFragment(tripId, tenantId, currentMemberId, model);
     }
 
+    @PostMapping("/{tripId}/confirm")
+    public String confirm(@PathVariable final UUID tripId,
+                          @RequestParam final UUID tenantId,
+                          @RequestParam final UUID currentMemberId) {
+        tripService.confirmTrip(new TripId(tripId));
+        return "redirect:/trips/" + tripId + "?tenantId=" + tenantId + "&currentMemberId=" + currentMemberId;
+    }
+
+    @PostMapping("/{tripId}/start")
+    public String start(@PathVariable final UUID tripId,
+                        @RequestParam final UUID tenantId,
+                        @RequestParam final UUID currentMemberId) {
+        tripService.startTrip(new TripId(tripId));
+        return "redirect:/trips/" + tripId + "?tenantId=" + tenantId + "&currentMemberId=" + currentMemberId;
+    }
+
+    @PostMapping("/{tripId}/complete")
+    public String complete(@PathVariable final UUID tripId,
+                           @RequestParam final UUID tenantId,
+                           @RequestParam final UUID currentMemberId) {
+        tripService.completeTrip(new TripId(tripId));
+        return "redirect:/trips/" + tripId + "?tenantId=" + tenantId + "&currentMemberId=" + currentMemberId;
+    }
+
+    @PostMapping("/{tripId}/cancel")
+    public String cancel(@PathVariable final UUID tripId,
+                         @RequestParam final UUID tenantId,
+                         @RequestParam final UUID currentMemberId) {
+        tripService.cancelTrip(new TripId(tripId));
+        return "redirect:/trips/" + tripId + "?tenantId=" + tenantId + "&currentMemberId=" + currentMemberId;
+    }
+
+    @PostMapping("/{tripId}/participants/{participantId}/stay-period")
+    public String setStayPeriod(@PathVariable final UUID tripId,
+                                @PathVariable final UUID participantId,
+                                @RequestParam final UUID tenantId,
+                                @RequestParam final UUID currentMemberId,
+                                @RequestParam final LocalDate arrivalDate,
+                                @RequestParam final LocalDate departureDate) {
+        tripService.setStayPeriod(new SetStayPeriodCommand(tripId, participantId, arrivalDate, departureDate));
+        return "redirect:/trips/" + tripId + "?tenantId=" + tenantId + "&currentMemberId=" + currentMemberId;
+    }
+
     private String populateInvitationFragment(final UUID tripId, final UUID tenantId,
                                               final UUID currentMemberId, final Model model) {
         final TravelParty party = travelPartyRepository.findByTenantId(new TenantId(tenantId))
@@ -144,6 +188,22 @@ public class TripController {
         model.addAttribute("currentMemberId", currentMemberId);
         model.addAttribute("tenantId", tenantId);
         return "trip/invitations :: invitationList";
+    }
+
+    private List<ParticipantView> toParticipantViews(final TripRepresentation trip,
+                                                    final TravelParty party) {
+        return trip.participantDetails().stream()
+            .map(pd -> {
+                final Member member = party.members().stream()
+                    .filter(m -> m.memberId().equals(pd.participantId()))
+                    .findFirst()
+                    .orElse(null);
+                final String firstName = member != null ? member.firstName() : "Unknown";
+                final String lastName = member != null ? member.lastName() : "";
+                return new ParticipantView(pd.participantId(), firstName, lastName,
+                    pd.arrivalDate(), pd.departureDate());
+            })
+            .toList();
     }
 
     private List<InvitationView> toInvitationViews(final List<InvitationRepresentation> invitations,

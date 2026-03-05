@@ -9,6 +9,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.common.events.trips.TripCompleted;
 import de.evia.travelmate.common.events.trips.TripCreated;
 
 class TripTest {
@@ -116,5 +117,52 @@ class TripTest {
 
         assertThatThrownBy(trip::start)
             .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void completeRegistersTripCompletedEvent() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+        trip.clearDomainEvents();
+        trip.confirm();
+        trip.start();
+
+        trip.complete();
+
+        assertThat(trip.domainEvents()).hasSize(1);
+        assertThat(trip.domainEvents().getFirst()).isInstanceOf(TripCompleted.class);
+    }
+
+    @Test
+    void setParticipantStayPeriodWithinDateRange() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+        final StayPeriod stayPeriod = new StayPeriod(
+            LocalDate.of(2026, 3, 16), LocalDate.of(2026, 3, 20)
+        );
+
+        trip.setParticipantStayPeriod(ORGANIZER_ID, stayPeriod);
+
+        assertThat(trip.participants().getFirst().stayPeriod()).isEqualTo(stayPeriod);
+    }
+
+    @Test
+    void setParticipantStayPeriodRejectsOutsideDateRange() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+        final StayPeriod stayPeriod = new StayPeriod(
+            LocalDate.of(2026, 3, 10), LocalDate.of(2026, 3, 25)
+        );
+
+        assertThatThrownBy(() -> trip.setParticipantStayPeriod(ORGANIZER_ID, stayPeriod))
+            .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void setParticipantStayPeriodRejectsUnknownParticipant() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+        final StayPeriod stayPeriod = new StayPeriod(
+            LocalDate.of(2026, 3, 16), LocalDate.of(2026, 3, 20)
+        );
+
+        assertThatThrownBy(() -> trip.setParticipantStayPeriod(UUID.randomUUID(), stayPeriod))
+            .isInstanceOf(IllegalArgumentException.class);
     }
 }

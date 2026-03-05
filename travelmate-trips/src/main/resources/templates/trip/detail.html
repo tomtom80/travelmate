@@ -10,16 +10,59 @@
     </p>
     <p><span th:text="#{trip.status}">Status</span>: <span th:text="${trip.status()}"></span></p>
 
+    <div th:if="${isOrganizer}" style="margin-bottom:1em">
+        <form th:if="${trip.status() == 'PLANNING'}" method="post"
+              th:action="@{/trips/{id}/confirm(id=${trip.tripId()})}" style="display:inline">
+            <input type="hidden" name="tenantId" th:value="${trip.tenantId()}">
+            <input type="hidden" name="currentMemberId" th:value="${currentMemberId}">
+            <button type="submit" th:text="#{trip.confirm}">Bestaetigen</button>
+        </form>
+        <form th:if="${trip.status() == 'CONFIRMED'}" method="post"
+              th:action="@{/trips/{id}/start(id=${trip.tripId()})}" style="display:inline">
+            <input type="hidden" name="tenantId" th:value="${trip.tenantId()}">
+            <input type="hidden" name="currentMemberId" th:value="${currentMemberId}">
+            <button type="submit" th:text="#{trip.start}">Starten</button>
+        </form>
+        <form th:if="${trip.status() == 'IN_PROGRESS'}" method="post"
+              th:action="@{/trips/{id}/complete(id=${trip.tripId()})}" style="display:inline">
+            <input type="hidden" name="tenantId" th:value="${trip.tenantId()}">
+            <input type="hidden" name="currentMemberId" th:value="${currentMemberId}">
+            <button type="submit" th:text="#{trip.complete}">Abschliessen</button>
+        </form>
+        <form th:if="${trip.status() != 'COMPLETED' && trip.status() != 'CANCELLED'}" method="post"
+              th:action="@{/trips/{id}/cancel(id=${trip.tripId()})}" style="display:inline">
+            <input type="hidden" name="tenantId" th:value="${trip.tenantId()}">
+            <input type="hidden" name="currentMemberId" th:value="${currentMemberId}">
+            <button type="submit" th:text="#{trip.cancel}">Absagen</button>
+        </form>
+    </div>
+
     <h2 th:text="#{trip.participants}">Teilnehmer</h2>
     <table th:if="${!participants.isEmpty()}">
         <thead>
             <tr>
                 <th th:text="#{invitation.member}">Mitglied</th>
+                <th th:text="#{trip.arrivalDate}">Anreise</th>
+                <th th:text="#{trip.departureDate}">Abreise</th>
+                <th th:text="#{invitation.actions}">Aktionen</th>
             </tr>
         </thead>
         <tbody>
             <tr th:each="p : ${participants}">
                 <td th:text="${p.firstName() + ' ' + p.lastName()}"></td>
+                <td th:text="${p.arrivalDate()}"></td>
+                <td th:text="${p.departureDate()}"></td>
+                <td th:if="${p.participantId() == currentMemberId}">
+                    <form method="post"
+                          th:action="@{/trips/{tid}/participants/{pid}/stay-period(tid=${trip.tripId()},pid=${p.participantId()})}">
+                        <input type="hidden" name="tenantId" th:value="${trip.tenantId()}">
+                        <input type="hidden" name="currentMemberId" th:value="${currentMemberId}">
+                        <input type="date" name="arrivalDate" th:value="${p.arrivalDate()}" required>
+                        <input type="date" name="departureDate" th:value="${p.departureDate()}" required>
+                        <button type="submit" th:text="#{common.save}">Speichern</button>
+                    </form>
+                </td>
+                <td th:if="${p.participantId() != currentMemberId}"></td>
             </tr>
         </tbody>
     </table>
