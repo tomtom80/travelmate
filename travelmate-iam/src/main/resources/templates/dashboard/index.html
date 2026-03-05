@@ -33,21 +33,24 @@
 
     <section>
         <h3 th:text="#{dashboard.companions}">Mitreisende</h3>
-        <table th:if="${!dependents.isEmpty()}">
-            <thead>
-                <tr>
-                    <th th:text="#{companion.firstName}">Vorname</th>
-                    <th th:text="#{companion.lastName}">Nachname</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr th:each="dep : ${dependents}">
-                    <td th:text="${dep.firstName()}"></td>
-                    <td th:text="${dep.lastName()}"></td>
-                </tr>
-            </tbody>
-        </table>
-        <p th:if="${dependents.isEmpty()}" th:text="#{companion.empty}">Noch keine Mitreisenden eingetragen.</p>
+        <div id="companions">
+            <div th:replace="~{dashboard/companions :: companionList}"></div>
+        </div>
+
+        <h4 th:text="#{companion.add}">Mitreisende(n) hinzufuegen</h4>
+        <form hx-post th:hx-post="@{/dashboard/companions}"
+              hx-target="#companions"
+              hx-swap="innerHTML">
+            <div>
+                <label for="depFirstName" th:text="#{companion.firstName}">Vorname</label>
+                <input type="text" id="depFirstName" name="firstName" required>
+            </div>
+            <div>
+                <label for="depLastName" th:text="#{companion.lastName}">Nachname</label>
+                <input type="text" id="depLastName" name="lastName" required>
+            </div>
+            <button type="submit" th:text="#{companion.submit}">Hinzufuegen</button>
+        </form>
     </section>
 </div>
 </body>
