@@ -27,11 +27,11 @@ Jedes SCS besitzt eine eigene UI (Thymeleaf), eigene Datenbank (PostgreSQL) und 
 - Geringere Komplexität im Frontend, kein separater Build-Prozess
 - PWA-Fähigkeiten für Offline-Nutzung und App-ähnliches Verhalten
 
-### Asynchrone Kommunikation: Apache Kafka (KRaft)
+### Asynchrone Kommunikation: RabbitMQ 4.0 (AMQP)
 
 - Event-basierte Kommunikation zwischen den SCS
-- Kafka ohne Zookeeper (KRaft-Modus) für vereinfachten Betrieb
-- Domain Events als Integrationsverträge (z.B. `RoleAssignedToUser`, `RoleUnassignedFromUser`)
+- Topic Exchange `travelmate.events` mit Routing Keys für gezielte Event-Verteilung
+- Domain Events als Integrationsverträge (z.B. `AccountRegistered`, `MemberAddedToTenant`)
 - Gemeinsame Event-Definitionen in `travelmate-common`
 
 ### Domain-Driven Design + Hexagonale Architektur

@@ -38,21 +38,54 @@ Browser        Gateway        Trips-SCS      PostgreSQL
 3. Trips-SCS validiert die Eingaben und persistiert den Trip
 4. Thymeleaf rendert das HTML-Fragment, HTMX tauscht den DOM-Bereich aus
 
-## Szenario 3: Rollenzuweisung und Teilnehmer-Aktivierung
+## Szenario 3: Self-Service Sign-up (S3-A02)
 
 ```
-IAM-SCS              Kafka                Trips-SCS
-  │                    │                      │
-  │──RoleAssignedToUser▶                      │
-  │                    │──Event consumed───────▶
-  │                    │                      │──Activate Participant
-  │                    │                      │
+Browser        Gateway        IAM-SCS        Keycloak       PostgreSQL     RabbitMQ
+  │               │              │               │              │              │
+  │──GET /signup──▶              │               │              │              │
+  │               │──Route───────▶               │              │              │
+  │◀──Sign-up Form──────────────│               │              │              │
+  │──POST /signup─▶              │               │              │              │
+  │               │──Route───────▶               │              │              │
+  │               │              │──Tenant.create─────────────▶│              │
+  │               │              │──createUser───▶               │              │
+  │               │              │◀──keycloakUserId──│          │              │
+  │               │              │──Account.register──────────▶│              │
+  │               │              │──TenantCreated + AccountRegistered────────▶│
+  │◀──Redirect to Login─────────│               │              │              │
 ```
 
-1. Administrator weist einem Benutzer die Rolle `role/trips.organizer` oder `role/trips.participant` zu
-2. IAM publiziert ein `RoleAssignedToUser`-Event auf den Kafka-Topic `role-assigned`
-3. Trips-SCS konsumiert das Event und aktiviert den Benutzer als Organizer oder Participant
-4. Bei `RoleUnassignedFromUser` wird der Benutzer entsprechend deaktiviert
+1. Benutzer oeffnet die oeffentliche Sign-up-Seite (kein Login erforderlich)
+2. Formular: Reisepartei-Name, Vorname, Nachname, E-Mail, Passwort
+3. SignUpService orchestriert atomar: Tenant erstellen, Keycloak-User anlegen, Account registrieren
+4. Events (TenantCreated, AccountRegistered) werden via RabbitMQ publiziert
+5. Trips-SCS konsumiert die Events und legt eine TravelParty-Projektion an
+6. Redirect zum Gateway Login (OIDC Flow startet automatisch)
+
+## Szenario 3b: Teilnehmer einladen und annehmen (S3-B04)
+
+```
+Browser        Gateway        Trips-SCS      PostgreSQL     RabbitMQ
+  │               │              │               │              │
+  │──POST invite──▶              │               │              │
+  │               │──Route───────▶               │              │
+  │               │              │──Invitation.create──────────▶│
+  │◀──HTML Fragment (HTMX)──────│               │              │
+  │               │              │               │              │
+  │──POST accept──▶              │               │              │
+  │               │──Route───────▶               │              │
+  │               │              │──invitation.accept()         │
+  │               │              │──trip.addParticipant()       │
+  │               │              │──save both────▶              │
+  │               │              │──ParticipantJoinedTrip──────▶│
+  │◀──HTML Fragment (HTMX)──────│               │              │
+```
+
+1. Organisator laedt ein Mitglied der Reisepartei zu einem Trip ein
+2. Eingeladener sieht die Einladung mit Annehmen/Ablehnen-Buttons
+3. Bei Annahme: Invitation wird ACCEPTED, Participant wird zum Trip hinzugefuegt
+4. ParticipantJoinedTrip-Event wird via RabbitMQ publiziert
 
 ## Szenario 4: Abrechnung und Saldo
 

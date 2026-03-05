@@ -21,8 +21,8 @@ Das System besteht aus folgenden Bausteinen:
             │              │              │
             └──────────────┼──────────────┘
                      ┌─────▼─────┐
-                     │   Kafka   │
-                     │  (KRaft)  │
+                     │  RabbitMQ │
+                     │  (AMQP)  │
                      └───────────┘
             ┌──────────────┐
             │   Keycloak   │
@@ -33,10 +33,10 @@ Das System besteht aus folgenden Bausteinen:
 | Baustein | Verantwortung |
 |----------|--------------|
 | **Spring Cloud Gateway** | Zentrales Routing, Authentifizierungsprüfung |
-| **travelmate-iam** | Mandanten-, Benutzer-, Rollen- und Gruppenverwaltung |
-| **travelmate-trips** | Trip-Planung, Mahlzeiten, Einkaufslisten, Unterkünfte |
+| **travelmate-iam** | Reisepartei-Verwaltung (Tenants), Mitglieder (Accounts), Mitreisende (Dependents), Sign-up via Keycloak Admin API |
+| **travelmate-trips** | Trip-Planung, Einladungen, Teilnehmer, Aufenthaltsdauer, Trip-Status-Lifecycle |
 | **travelmate-expense** | Belege, Gewichtungen, Saldo-Berechnung |
-| **Kafka (KRaft)** | Asynchroner Nachrichtenaustausch zwischen den SCS |
+| **RabbitMQ (AMQP)** | Asynchroner Nachrichtenaustausch zwischen den SCS (Topic Exchange `travelmate.events`) |
 | **Keycloak** | Zentraler Identity Provider (OIDC) |
 | **PostgreSQL (je SCS)** | Datenhaltung, jeweils isoliert pro Service |
 
@@ -60,7 +60,7 @@ de.evia.travelmate.<service>/
 │   └── Representation (Record)     # Ausgehende Datenstrukturen
 │
 └── adapters/                       # Infrastruktur-Implementierungen
-    ├── messaging/                  # Kafka Producer / Consumer
+    ├── messaging/                  # RabbitMQ Producer / Consumer
     ├── persistence/                # Repository-Implementierungen
     ├── security/                   # Spring Security Konfiguration
     └── web/                        # REST Controller / Thymeleaf Controller
@@ -81,10 +81,10 @@ de.evia.travelmate.<service>/
 - Role, Group, Policy (bestehend aus Iteration 1)
 
 **Trips:**
-- Trip (mit Organizer, Participants)
-- MealPlan, Meal, Ingredient
-- ShoppingList
-- Accommodation, LocationPoll
+- TravelParty (Projektion der IAM-Daten, konsumiert IAM-Events)
+- Trip (Aggregate Root: TripId, Name, DateRange, Status, Organizer, Participants mit StayPeriod)
+- Invitation (Aggregate Root: Einladung eines Mitglieds zu einem Trip, Status: PENDING/ACCEPTED/DECLINED)
+- Zukuenftig: MealPlan, ShoppingList, Accommodation
 
 **Expense:**
 - Expense (pro Trip)
