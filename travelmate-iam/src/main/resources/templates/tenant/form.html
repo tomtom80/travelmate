@@ -1,20 +1,20 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" lang="de">
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="content">
-    <h1>Neuen Tenant anlegen</h1>
+    <h1 th:text="#{travelGroup.create}">Neue Reisegruppe anlegen</h1>
     <form th:action="@{/tenants}" method="post">
         <div>
-            <label for="name">Name</label>
+            <label for="name" th:text="#{travelGroup.name}">Name</label>
             <input type="text" id="name" name="name" required>
         </div>
         <div>
-            <label for="description">Beschreibung</label>
+            <label for="description" th:text="#{travelGroup.description}">Beschreibung</label>
             <textarea id="description" name="description"></textarea>
         </div>
-        <button type="submit">Anlegen</button>
+        <button type="submit" th:text="#{travelGroup.submit}">Anlegen</button>
     </form>
-    <p><a th:href="@{/tenants}">Zurueck zur Liste</a></p>
+    <p><a th:href="@{/tenants}" th:text="#{travelGroup.backToList}">Zurueck zur Liste</a></p>
 </div>
 </body>
 </html>
