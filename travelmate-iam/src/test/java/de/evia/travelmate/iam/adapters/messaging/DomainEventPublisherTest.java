@@ -14,6 +14,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 
 import de.evia.travelmate.common.events.iam.AccountRegistered;
 import de.evia.travelmate.common.events.iam.DependentAddedToTenant;
+import de.evia.travelmate.common.events.iam.TenantCreated;
 import de.evia.travelmate.common.messaging.RoutingKeys;
 
 @ExtendWith(MockitoExtension.class)
@@ -24,6 +25,18 @@ class DomainEventPublisherTest {
 
     @InjectMocks
     private DomainEventPublisher publisher;
+
+    @Test
+    void publishesTenantCreatedEvent() {
+        final TenantCreated event = new TenantCreated(
+            UUID.randomUUID(), "Hüttenurlaub 2026", LocalDate.now()
+        );
+
+        publisher.onTenantCreated(event);
+
+        verify(rabbitTemplate).convertAndSend(
+            RoutingKeys.EXCHANGE, RoutingKeys.TENANT_CREATED, event);
+    }
 
     @Test
     void publishesAccountRegisteredEvent() {
