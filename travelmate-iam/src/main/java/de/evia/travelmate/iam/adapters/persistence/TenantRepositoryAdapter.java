@@ -42,6 +42,11 @@ public class TenantRepositoryAdapter implements TenantRepository {
         return jpaRepository.existsByName(name.value());
     }
 
+    @Override
+    public void deleteById(final TenantId tenantId) {
+        jpaRepository.deleteById(tenantId.value());
+    }
+
     private TenantJpaEntity toJpaEntity(final Tenant tenant) {
         return new TenantJpaEntity(
             tenant.tenantId().value(),

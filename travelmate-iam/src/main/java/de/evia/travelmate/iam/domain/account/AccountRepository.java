@@ -18,4 +18,10 @@ public interface AccountRepository {
     List<Account> findAllByTenantId(TenantId tenantId);
 
     boolean existsByUsername(TenantId tenantId, Username username);
+
+    void deleteById(AccountId accountId);
+
+    void deleteAllByTenantId(TenantId tenantId);
+
+    long countByTenantId(TenantId tenantId);
 }

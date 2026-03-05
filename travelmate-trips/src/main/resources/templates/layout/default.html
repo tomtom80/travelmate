@@ -4,21 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="${title} ? ${title} + ' — Travelmate' : 'Travelmate'">Travelmate</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <script src="https://unpkg.com/htmx.org@2.0.8"></script>
 </head>
 <body>
-    <nav>
-        <a href="/" th:text="#{nav.brand}">Travelmate</a>
-        <a href="/iam/" th:text="#{nav.travelParty}">Reisepartei</a>
-        <a href="/trips/" th:text="#{nav.trips}">Reisen</a>
-        <a href="/expense/" th:text="#{nav.expense}">Abrechnung</a>
-        <span>
-            <a th:href="@{''(lang='de')}" th:text="#{common.german}">Deutsch</a> |
-            <a th:href="@{''(lang='en')}" th:text="#{common.english}">English</a>
-        </span>
+    <nav class="container">
+        <ul>
+            <li><a href="/iam/dashboard"><strong th:text="#{nav.brand}">Travelmate</strong></a></li>
+        </ul>
+        <ul>
+            <li><a href="/iam/dashboard" th:text="#{nav.travelParty}">Reisepartei</a></li>
+            <li><a href="/trips/" th:text="#{nav.trips}">Reisen</a></li>
+            <li>
+                <a th:href="@{''(lang='de')}" th:text="#{common.german}">DE</a> /
+                <a th:href="@{''(lang='en')}" th:text="#{common.english}">EN</a>
+            </li>
+            <li><a href="/logout" role="button" class="outline secondary" th:text="#{nav.logout}">Abmelden</a></li>
+        </ul>
     </nav>
-    <main th:insert="~{${view} :: content}">
+    <main class="container" th:insert="~{${view} :: content}">
     </main>
 </body>
 </html>

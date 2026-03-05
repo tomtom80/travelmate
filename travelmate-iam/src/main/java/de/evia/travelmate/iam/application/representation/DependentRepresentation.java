@@ -1,5 +1,6 @@
 package de.evia.travelmate.iam.application.representation;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 import de.evia.travelmate.iam.domain.dependent.Dependent;
@@ -9,7 +10,8 @@ public record DependentRepresentation(
     UUID tenantId,
     UUID guardianAccountId,
     String firstName,
-    String lastName
+    String lastName,
+    LocalDate dateOfBirth
 ) {
 
     public DependentRepresentation(final Dependent dependent) {
@@ -18,7 +20,8 @@ public record DependentRepresentation(
             dependent.tenantId().value(),
             dependent.guardianAccountId().value(),
             dependent.fullName().firstName(),
-            dependent.fullName().lastName()
+            dependent.fullName().lastName(),
+            dependent.dateOfBirth()
         );
     }
 }

@@ -14,4 +14,6 @@ public interface TenantRepository {
     List<Tenant> findAll();
 
     boolean existsByName(TenantName name);
+
+    void deleteById(TenantId tenantId);
 }

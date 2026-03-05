@@ -20,6 +20,9 @@ import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.iam.application.command.CreateTenantCommand;
 import de.evia.travelmate.iam.application.representation.TenantRepresentation;
 import de.evia.travelmate.iam.domain.IamTestFixtures;
+import de.evia.travelmate.iam.domain.account.AccountRepository;
+import de.evia.travelmate.iam.domain.account.IdentityProviderService;
+import de.evia.travelmate.iam.domain.dependent.DependentRepository;
 import de.evia.travelmate.iam.domain.tenant.Tenant;
 import de.evia.travelmate.iam.domain.tenant.TenantName;
 import de.evia.travelmate.iam.domain.tenant.TenantRepository;
@@ -29,6 +32,15 @@ class TenantServiceTest {
 
     @Mock
     private TenantRepository tenantRepository;
+
+    @Mock
+    private AccountRepository accountRepository;
+
+    @Mock
+    private DependentRepository dependentRepository;
+
+    @Mock
+    private IdentityProviderService identityProviderService;
 
     @InjectMocks
     private TenantService tenantService;

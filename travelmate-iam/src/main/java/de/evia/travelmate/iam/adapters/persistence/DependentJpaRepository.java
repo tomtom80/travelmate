@@ -10,4 +10,6 @@ public interface DependentJpaRepository extends JpaRepository<DependentJpaEntity
     List<DependentJpaEntity> findAllByGuardianAccountId(UUID guardianAccountId);
 
     List<DependentJpaEntity> findAllByTenantId(UUID tenantId);
+
+    void deleteAllByTenantId(UUID tenantId);
 }

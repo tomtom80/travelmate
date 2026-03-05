@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{landing.title}">Travelmate — Gemeinsam Reisen planen</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link rel="stylesheet" th:href="@{/css/landing.css}">
+</head>
+<body>
+    <nav class="container">
+        <ul>
+            <li><a th:href="@{/}"><strong th:text="#{nav.brand}">Travelmate</strong></a></li>
+        </ul>
+        <ul>
+            <li>
+                <a th:href="@{''(lang='de')}" th:text="#{common.german}">DE</a> /
+                <a th:href="@{''(lang='en')}" th:text="#{common.english}">EN</a>
+            </li>
+            <li><a th:href="@{/signup}" role="button" class="outline" th:text="#{landing.register}">Registrieren</a></li>
+            <li><a href="/oauth2/authorization/keycloak" role="button" th:text="#{landing.login}">Anmelden</a></li>
+        </ul>
+    </nav>
+
+    <header class="container hero">
+        <hgroup>
+            <h1 th:text="#{landing.hero.headline}">Gemeinsam Reisen planen.</h1>
+            <p th:text="#{landing.hero.subtitle}">Organisiere Reisen mit deiner Familie und Freunden.</p>
+        </hgroup>
+        <div class="hero-actions">
+            <a th:href="@{/signup}" role="button" th:text="#{landing.hero.cta}">Jetzt Reisepartei erstellen</a>
+            <a href="/oauth2/authorization/keycloak" role="button" class="outline" th:text="#{landing.hero.login}">Einloggen</a>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="features">
+            <div class="grid">
+                <article>
+                    <header>
+                        <span class="feature-icon">&#9992;</span>
+                        <h3 th:text="#{landing.feature.party.title}">Reisepartei</h3>
+                    </header>
+                    <p th:text="#{landing.feature.party.text}">Erstelle deine Reisepartei und lade Familie und Mitreisende ein.</p>
+                </article>
+                <article>
+                    <header>
+                        <span class="feature-icon">&#127965;</span>
+                        <h3 th:text="#{landing.feature.trips.title}">Reisen organisieren</h3>
+                    </header>
+                    <p th:text="#{landing.feature.trips.text}">Plane Reisen, verwalte Zeitraeume und behalte den Ueberblick.</p>
+                </article>
+                <article>
+                    <header>
+                        <span class="feature-icon">&#128176;</span>
+                        <h3 th:text="#{landing.feature.expense.title}">Abrechnung</h3>
+                    </header>
+                    <p th:text="#{landing.feature.expense.text}">Teile Ausgaben fair auf.</p>
+                </article>
+            </div>
+        </section>
+
+        <section class="how-it-works">
+            <hgroup>
+                <h2 th:text="#{landing.howItWorks.title}">So funktioniert's</h2>
+                <p th:text="#{landing.howItWorks.subtitle}">In drei einfachen Schritten zur perfekten Reiseplanung</p>
+            </hgroup>
+            <div class="grid">
+                <div>
+                    <h3><mark>1</mark> <th:block th:text="#{landing.step1.title}">Registrieren</th:block></h3>
+                    <p th:text="#{landing.step1.text}">Erstelle deine Reisepartei und fuege deine Mitreisenden hinzu.</p>
+                </div>
+                <div>
+                    <h3><mark>2</mark> <th:block th:text="#{landing.step2.title}">Reise planen</th:block></h3>
+                    <p th:text="#{landing.step2.text}">Lege eine neue Reise an, lade weitere Reisepartner ein.</p>
+                </div>
+                <div>
+                    <h3><mark>3</mark> <th:block th:text="#{landing.step3.title}">Gemeinsam geniessen</th:block></h3>
+                    <p th:text="#{landing.step3.text}">Auf der Reise teilt ihr Ausgaben, plant Mahlzeiten und behaltet alles im Blick.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="cta">
+            <article>
+                <hgroup>
+                    <h2 th:text="#{landing.cta.headline}">Bereit fuer euer naechstes Abenteuer?</h2>
+                    <p th:text="#{landing.cta.subtitle}">Starte jetzt und bringe deine Reiseplanung auf das naechste Level.</p>
+                </hgroup>
+                <a th:href="@{/signup}" role="button" th:text="#{landing.cta.button}">Kostenlos starten</a>
+            </article>
+        </section>
+    </main>
+
+    <footer class="container">
+        <small th:text="#{landing.footer}">Travelmate — Gemeinsam Reisen planen. Ein Projekt von evia.</small>
+    </footer>
+</body>
+</html>

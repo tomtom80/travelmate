@@ -1,5 +1,6 @@
 package de.evia.travelmate.iam.adapters.persistence;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -33,12 +34,16 @@ public class AccountJpaEntity {
     @Column(name = "last_name", nullable = false)
     private String lastName;
 
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
+
     protected AccountJpaEntity() {
     }
 
     public AccountJpaEntity(final UUID accountId, final UUID tenantId, final String keycloakUserId,
                             final String username, final String email,
-                            final String firstName, final String lastName) {
+                            final String firstName, final String lastName,
+                            final LocalDate dateOfBirth) {
         this.accountId = accountId;
         this.tenantId = tenantId;
         this.keycloakUserId = keycloakUserId;
@@ -46,6 +51,7 @@ public class AccountJpaEntity {
         this.email = email;
         this.firstName = firstName;
         this.lastName = lastName;
+        this.dateOfBirth = dateOfBirth;
     }
 
     public UUID getAccountId() {
@@ -102,5 +108,13 @@ public class AccountJpaEntity {
 
     public void setLastName(final String lastName) {
         this.lastName = lastName;
+    }
+
+    public LocalDate getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public void setDateOfBirth(final LocalDate dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
     }
 }

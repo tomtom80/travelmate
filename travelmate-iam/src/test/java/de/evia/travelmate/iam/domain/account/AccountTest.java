@@ -42,7 +42,7 @@ class AccountTest {
         assertThatIllegalArgumentException()
             .isThrownBy(() -> new Account(null, IamTestFixtures.TENANT_ID,
                 IamTestFixtures.keycloakUserId(), IamTestFixtures.username(),
-                IamTestFixtures.email(), IamTestFixtures.fullName()))
+                IamTestFixtures.email(), IamTestFixtures.fullName(), null))
             .withMessageContaining("accountId");
     }
 
@@ -51,7 +51,7 @@ class AccountTest {
         assertThatIllegalArgumentException()
             .isThrownBy(() -> new Account(IamTestFixtures.ACCOUNT_ID, null,
                 IamTestFixtures.keycloakUserId(), IamTestFixtures.username(),
-                IamTestFixtures.email(), IamTestFixtures.fullName()))
+                IamTestFixtures.email(), IamTestFixtures.fullName(), null))
             .withMessageContaining("tenantId");
     }
 
@@ -60,7 +60,7 @@ class AccountTest {
         assertThatIllegalArgumentException()
             .isThrownBy(() -> new Account(IamTestFixtures.ACCOUNT_ID, IamTestFixtures.TENANT_ID,
                 IamTestFixtures.keycloakUserId(), null,
-                IamTestFixtures.email(), IamTestFixtures.fullName()))
+                IamTestFixtures.email(), IamTestFixtures.fullName(), null))
             .withMessageContaining("username");
     }
 }

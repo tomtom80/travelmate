@@ -6,34 +6,38 @@
     <p th:text="#{signup.subtitle}">Erstelle deine Reisepartei und registriere dich als erstes Mitglied.</p>
 
     <div th:if="${error}" class="error">
-        <p th:text="${error}"></p>
+        <p th:text="#{${error}}"></p>
     </div>
 
     <form method="post" th:action="@{/signup}">
-        <div>
-            <label for="tenantName" th:text="#{signup.tenantName}">Name der Reisepartei</label>
-            <input type="text" id="tenantName" name="tenantName" th:value="${tenantName}" required>
+        <label for="tenantName" th:text="#{signup.tenantName}">Name der Reisepartei</label>
+        <input type="text" id="tenantName" name="tenantName" th:value="${tenantName}" required>
+
+        <div class="grid">
+            <label>
+                <span th:text="#{signup.firstName}">Vorname</span>
+                <input type="text" id="firstName" name="firstName" th:value="${firstName}" required>
+            </label>
+            <label>
+                <span th:text="#{signup.lastName}">Nachname</span>
+                <input type="text" id="lastName" name="lastName" th:value="${lastName}" required>
+            </label>
         </div>
-        <div>
-            <label for="firstName" th:text="#{signup.firstName}">Vorname</label>
-            <input type="text" id="firstName" name="firstName" th:value="${firstName}" required>
+
+        <label for="email" th:text="#{signup.email}">E-Mail-Adresse</label>
+        <input type="email" id="email" name="email" th:value="${email}" required>
+
+        <div class="grid">
+            <label>
+                <span th:text="#{signup.password}">Passwort</span>
+                <input type="password" id="password" name="password" required minlength="8">
+            </label>
+            <label>
+                <span th:text="#{signup.passwordConfirm}">Passwort wiederholen</span>
+                <input type="password" id="passwordConfirm" name="passwordConfirm" required minlength="8">
+            </label>
         </div>
-        <div>
-            <label for="lastName" th:text="#{signup.lastName}">Nachname</label>
-            <input type="text" id="lastName" name="lastName" th:value="${lastName}" required>
-        </div>
-        <div>
-            <label for="email" th:text="#{signup.email}">E-Mail-Adresse</label>
-            <input type="email" id="email" name="email" th:value="${email}" required>
-        </div>
-        <div>
-            <label for="password" th:text="#{signup.password}">Passwort</label>
-            <input type="password" id="password" name="password" required minlength="8">
-        </div>
-        <div>
-            <label for="passwordConfirm" th:text="#{signup.passwordConfirm}">Passwort wiederholen</label>
-            <input type="password" id="passwordConfirm" name="passwordConfirm" required minlength="8">
-        </div>
+
         <button type="submit" th:text="#{signup.submit}">Registrieren</button>
     </form>
 

@@ -1,6 +1,7 @@
 package de.evia.travelmate.iam.application;
 
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -9,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import de.evia.travelmate.common.domain.DomainEvent;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.iam.application.command.AddDependentCommand;
+import de.evia.travelmate.iam.application.command.InviteMemberCommand;
 import de.evia.travelmate.iam.application.command.RegisterAccountCommand;
 import de.evia.travelmate.iam.application.representation.AccountRepresentation;
 import de.evia.travelmate.iam.application.representation.DependentRepresentation;
@@ -17,9 +19,11 @@ import de.evia.travelmate.iam.domain.account.AccountId;
 import de.evia.travelmate.iam.domain.account.AccountRepository;
 import de.evia.travelmate.iam.domain.account.Email;
 import de.evia.travelmate.iam.domain.account.FullName;
+import de.evia.travelmate.iam.domain.account.IdentityProviderService;
 import de.evia.travelmate.iam.domain.account.KeycloakUserId;
 import de.evia.travelmate.iam.domain.account.Username;
 import de.evia.travelmate.iam.domain.dependent.Dependent;
+import de.evia.travelmate.iam.domain.dependent.DependentId;
 import de.evia.travelmate.iam.domain.dependent.DependentRepository;
 
 @Service
@@ -28,13 +32,16 @@ public class AccountService {
 
     private final AccountRepository accountRepository;
     private final DependentRepository dependentRepository;
+    private final IdentityProviderService identityProviderService;
     private final ApplicationEventPublisher eventPublisher;
 
     public AccountService(final AccountRepository accountRepository,
                           final DependentRepository dependentRepository,
+                          final IdentityProviderService identityProviderService,
                           final ApplicationEventPublisher eventPublisher) {
         this.accountRepository = accountRepository;
         this.dependentRepository = dependentRepository;
+        this.identityProviderService = identityProviderService;
         this.eventPublisher = eventPublisher;
     }
 
@@ -56,6 +63,37 @@ public class AccountService {
         return new AccountRepresentation(saved);
     }
 
+    public AccountRepresentation inviteMember(final InviteMemberCommand command) {
+        final TenantId tenantId = new TenantId(command.tenantId());
+        final Email email = new Email(command.email());
+        final FullName fullName = new FullName(command.firstName(), command.lastName());
+
+        if (accountRepository.existsByUsername(tenantId, new Username(email.value()))) {
+            throw new IllegalArgumentException("member.error.alreadyExists");
+        }
+
+        final KeycloakUserId keycloakUserId = identityProviderService.createInvitedUser(email, fullName);
+
+        try {
+            final Account account = Account.register(
+                tenantId,
+                keycloakUserId,
+                new Username(email.value()),
+                email,
+                fullName,
+                command.dateOfBirth()
+            );
+            final Account saved = accountRepository.save(account);
+            identityProviderService.assignRole(keycloakUserId, "organizer");
+            identityProviderService.sendActionsEmail(keycloakUserId);
+            publishEvents(saved);
+            return new AccountRepresentation(saved);
+        } catch (final Exception e) {
+            identityProviderService.deleteUser(keycloakUserId);
+            throw e;
+        }
+    }
+
     public DependentRepresentation addDependent(final AddDependentCommand command) {
         final TenantId tenantId = new TenantId(command.tenantId());
         final AccountId guardianId = new AccountId(command.guardianAccountId());
@@ -65,11 +103,30 @@ public class AccountService {
         final Dependent dependent = Dependent.add(
             tenantId,
             guardianId,
-            new FullName(command.firstName(), command.lastName())
+            new FullName(command.firstName(), command.lastName()),
+            command.dateOfBirth()
         );
         final Dependent saved = dependentRepository.save(dependent);
         publishEvents(saved);
         return new DependentRepresentation(saved);
+    }
+
+    public void deleteDependent(final UUID dependentId) {
+        dependentRepository.deleteById(new DependentId(dependentId));
+    }
+
+    public void deleteMember(final AccountId accountId, final TenantId tenantId) {
+        final long memberCount = accountRepository.countByTenantId(tenantId);
+        if (memberCount <= 1) {
+            throw new IllegalArgumentException("member.error.lastMember");
+        }
+        final Account account = accountRepository.findById(accountId)
+            .orElseThrow(() -> new IllegalArgumentException("Account not found: " + accountId.value()));
+        try {
+            identityProviderService.deleteUser(account.keycloakUserId());
+        } catch (final Exception ignored) {
+        }
+        accountRepository.deleteById(accountId);
     }
 
     @Transactional(readOnly = true)

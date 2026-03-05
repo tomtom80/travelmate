@@ -106,7 +106,8 @@ class KeycloakIdentityProviderAdapterTest {
             assertThat(user.getFirstName()).isEqualTo("John");
             assertThat(user.getLastName()).isEqualTo("Doe");
             assertThat(user.isEnabled()).isTrue();
-            assertThat(user.isEmailVerified()).isTrue();
+            assertThat(user.isEmailVerified()).isFalse();
+            assertThat(user.getRequiredActions()).contains("VERIFY_EMAIL");
         }
 
         @Test

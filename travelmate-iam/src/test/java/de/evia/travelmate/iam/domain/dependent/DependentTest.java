@@ -33,7 +33,7 @@ class DependentTest {
     void throwsForNullDependentId() {
         assertThatIllegalArgumentException()
             .isThrownBy(() -> new Dependent(null, IamTestFixtures.TENANT_ID,
-                IamTestFixtures.ACCOUNT_ID, IamTestFixtures.fullName()))
+                IamTestFixtures.ACCOUNT_ID, IamTestFixtures.fullName(), null))
             .withMessageContaining("dependentId");
     }
 
@@ -41,7 +41,7 @@ class DependentTest {
     void throwsForNullTenantId() {
         assertThatIllegalArgumentException()
             .isThrownBy(() -> new Dependent(new DependentId(java.util.UUID.randomUUID()),
-                null, IamTestFixtures.ACCOUNT_ID, IamTestFixtures.fullName()))
+                null, IamTestFixtures.ACCOUNT_ID, IamTestFixtures.fullName(), null))
             .withMessageContaining("tenantId");
     }
 
@@ -49,7 +49,7 @@ class DependentTest {
     void throwsForNullGuardianAccountId() {
         assertThatIllegalArgumentException()
             .isThrownBy(() -> new Dependent(new DependentId(java.util.UUID.randomUUID()),
-                IamTestFixtures.TENANT_ID, null, new FullName("Lena", "Mustermann")))
+                IamTestFixtures.TENANT_ID, null, new FullName("Lena", "Mustermann"), null))
             .withMessageContaining("guardianAccountId");
     }
 }

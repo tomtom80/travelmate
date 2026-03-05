@@ -3,6 +3,7 @@ package de.evia.travelmate.trips.adapters.web;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -15,6 +16,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -44,6 +46,8 @@ class TripControllerTest {
     private static final UUID TRIP_UUID = UUID.randomUUID();
     private static final UUID ORGANIZER_UUID = UUID.randomUUID();
     private static final UUID INVITEE_UUID = UUID.randomUUID();
+    private static final String ORGANIZER_EMAIL = "org@test.de";
+    private static final String INVITEE_EMAIL = "inv@test.de";
 
     @Autowired
     private MockMvc mockMvc;
@@ -57,12 +61,35 @@ class TripControllerTest {
     @MockitoBean
     private TravelPartyRepository travelPartyRepository;
 
+    private TravelParty party;
+
+    @BeforeEach
+    void setUpParty() {
+        party = TravelParty.create(new TenantId(TENANT_UUID), "Familie Test");
+        party.addMember(ORGANIZER_UUID, ORGANIZER_EMAIL, "Max", "Org");
+        party.addMember(INVITEE_UUID, INVITEE_EMAIL, "Lisa", "Inv");
+        when(travelPartyRepository.findByMemberEmail(ORGANIZER_EMAIL)).thenReturn(Optional.of(party));
+        when(travelPartyRepository.findByMemberEmail(INVITEE_EMAIL)).thenReturn(Optional.of(party));
+        when(travelPartyRepository.findByTenantId(new TenantId(TENANT_UUID))).thenReturn(Optional.of(party));
+    }
+
+    @Test
+    void listShowsEmptyTripsWhenNoTravelParty() throws Exception {
+        mockMvc.perform(get("/trips")
+                .with(jwt().jwt(j -> j.claim("email", "unknown@test.de"))))
+            .andExpect(status().isOk())
+            .andExpect(view().name("layout/default"))
+            .andExpect(model().attribute("view", "trip/list"))
+            .andExpect(model().attributeExists("trips"));
+    }
+
     @Test
     void listShowsTrips() throws Exception {
         when(tripService.findAllByTenantId(new TenantId(TENANT_UUID)))
             .thenReturn(List.of());
 
-        mockMvc.perform(get("/trips").param("tenantId", TENANT_UUID.toString()))
+        mockMvc.perform(get("/trips")
+                .with(jwt().jwt(j -> j.claim("email", ORGANIZER_EMAIL))))
             .andExpect(status().isOk())
             .andExpect(view().name("layout/default"))
             .andExpect(model().attribute("view", "trip/list"))
@@ -76,17 +103,12 @@ class TripControllerTest {
             LocalDate.of(2026, 3, 15), LocalDate.of(2026, 3, 22),
             "PLANNING", ORGANIZER_UUID, List.of(ORGANIZER_UUID)
         );
-        final TravelParty party = TravelParty.create(new TenantId(TENANT_UUID), "Familie Test");
-        party.addMember(ORGANIZER_UUID, "org@test.de", "Max", "Org");
-        party.addMember(INVITEE_UUID, "inv@test.de", "Lisa", "Inv");
 
         when(tripService.findById(new TripId(TRIP_UUID))).thenReturn(trip);
-        when(travelPartyRepository.findByTenantId(new TenantId(TENANT_UUID))).thenReturn(Optional.of(party));
         when(invitationService.findByTripId(new TripId(TRIP_UUID))).thenReturn(List.of());
 
         mockMvc.perform(get("/trips/" + TRIP_UUID)
-                .param("tenantId", TENANT_UUID.toString())
-                .param("currentMemberId", ORGANIZER_UUID.toString()))
+                .with(jwt().jwt(j -> j.claim("email", ORGANIZER_EMAIL))))
             .andExpect(status().isOk())
             .andExpect(view().name("layout/default"))
             .andExpect(model().attribute("view", "trip/detail"))
@@ -98,20 +120,16 @@ class TripControllerTest {
 
     @Test
     void inviteCreatesInvitationAndReturnsFragment() throws Exception {
-        final TravelParty party = TravelParty.create(new TenantId(TENANT_UUID), "Familie Test");
-        party.addMember(ORGANIZER_UUID, "org@test.de", "Max", "Org");
         final InvitationRepresentation inv = new InvitationRepresentation(
             UUID.randomUUID(), TENANT_UUID, TRIP_UUID, INVITEE_UUID, ORGANIZER_UUID, "PENDING"
         );
 
         when(invitationService.invite(any(InviteParticipantCommand.class))).thenReturn(inv);
-        when(travelPartyRepository.findByTenantId(new TenantId(TENANT_UUID))).thenReturn(Optional.of(party));
         when(invitationService.findByTripId(new TripId(TRIP_UUID))).thenReturn(List.of(inv));
 
         mockMvc.perform(post("/trips/" + TRIP_UUID + "/invitations")
-                .param("tenantId", TENANT_UUID.toString())
-                .param("inviteeId", INVITEE_UUID.toString())
-                .param("invitedBy", ORGANIZER_UUID.toString()))
+                .with(jwt().jwt(j -> j.claim("email", ORGANIZER_EMAIL)))
+                .param("inviteeId", INVITEE_UUID.toString()))
             .andExpect(status().isOk())
             .andExpect(view().name("trip/invitations :: invitationList"))
             .andExpect(model().attributeExists("invitations"));
@@ -120,15 +138,11 @@ class TripControllerTest {
     @Test
     void acceptInvitationReturnsFragment() throws Exception {
         final UUID invitationUuid = UUID.randomUUID();
-        final TravelParty party = TravelParty.create(new TenantId(TENANT_UUID), "Familie Test");
-        party.addMember(INVITEE_UUID, "inv@test.de", "Lisa", "Inv");
 
-        when(travelPartyRepository.findByTenantId(new TenantId(TENANT_UUID))).thenReturn(Optional.of(party));
         when(invitationService.findByTripId(new TripId(TRIP_UUID))).thenReturn(List.of());
 
         mockMvc.perform(post("/trips/" + TRIP_UUID + "/invitations/" + invitationUuid + "/accept")
-                .param("tenantId", TENANT_UUID.toString())
-                .param("currentMemberId", INVITEE_UUID.toString()))
+                .with(jwt().jwt(j -> j.claim("email", INVITEE_EMAIL))))
             .andExpect(status().isOk())
             .andExpect(view().name("trip/invitations :: invitationList"));
 
@@ -138,15 +152,11 @@ class TripControllerTest {
     @Test
     void declineInvitationReturnsFragment() throws Exception {
         final UUID invitationUuid = UUID.randomUUID();
-        final TravelParty party = TravelParty.create(new TenantId(TENANT_UUID), "Familie Test");
-        party.addMember(INVITEE_UUID, "inv@test.de", "Lisa", "Inv");
 
-        when(travelPartyRepository.findByTenantId(new TenantId(TENANT_UUID))).thenReturn(Optional.of(party));
         when(invitationService.findByTripId(new TripId(TRIP_UUID))).thenReturn(List.of());
 
         mockMvc.perform(post("/trips/" + TRIP_UUID + "/invitations/" + invitationUuid + "/decline")
-                .param("tenantId", TENANT_UUID.toString())
-                .param("currentMemberId", INVITEE_UUID.toString()))
+                .with(jwt().jwt(j -> j.claim("email", INVITEE_EMAIL))))
             .andExpect(status().isOk())
             .andExpect(view().name("trip/invitations :: invitationList"));
 
@@ -156,10 +166,9 @@ class TripControllerTest {
     @Test
     void confirmTripRedirectsToDetail() throws Exception {
         mockMvc.perform(post("/trips/" + TRIP_UUID + "/confirm")
-                .param("tenantId", TENANT_UUID.toString())
-                .param("currentMemberId", ORGANIZER_UUID.toString()))
+                .with(jwt().jwt(j -> j.claim("email", ORGANIZER_EMAIL))))
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/trips/" + TRIP_UUID + "?tenantId=" + TENANT_UUID + "&currentMemberId=" + ORGANIZER_UUID));
+            .andExpect(redirectedUrl("/trips/" + TRIP_UUID));
 
         verify(tripService).confirmTrip(new TripId(TRIP_UUID));
     }
@@ -167,8 +176,7 @@ class TripControllerTest {
     @Test
     void completeTripRedirectsToDetail() throws Exception {
         mockMvc.perform(post("/trips/" + TRIP_UUID + "/complete")
-                .param("tenantId", TENANT_UUID.toString())
-                .param("currentMemberId", ORGANIZER_UUID.toString()))
+                .with(jwt().jwt(j -> j.claim("email", ORGANIZER_EMAIL))))
             .andExpect(status().is3xxRedirection());
 
         verify(tripService).completeTrip(new TripId(TRIP_UUID));
@@ -177,8 +185,7 @@ class TripControllerTest {
     @Test
     void setStayPeriodRedirectsToDetail() throws Exception {
         mockMvc.perform(post("/trips/" + TRIP_UUID + "/participants/" + ORGANIZER_UUID + "/stay-period")
-                .param("tenantId", TENANT_UUID.toString())
-                .param("currentMemberId", ORGANIZER_UUID.toString())
+                .with(jwt().jwt(j -> j.claim("email", ORGANIZER_EMAIL)))
                 .param("arrivalDate", "2026-03-16")
                 .param("departureDate", "2026-03-20"))
             .andExpect(status().is3xxRedirection());

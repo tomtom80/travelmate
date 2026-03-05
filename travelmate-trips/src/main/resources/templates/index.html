@@ -2,8 +2,10 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="content">
-    <h1 th:text="#{trip.plan}">Reiseplanung</h1>
-    <p th:text="#{trip.subtitle}">Reisen erstellen, Teilnehmer verwalten, Essensplan und Einkaufslisten.</p>
+    <hgroup>
+        <h1 th:text="#{trip.plan}">Reiseplanung</h1>
+        <p th:text="#{trip.subtitle}">Reisen erstellen, Teilnehmer verwalten, Essensplan und Einkaufslisten.</p>
+    </hgroup>
 </div>
 </body>
 </html>

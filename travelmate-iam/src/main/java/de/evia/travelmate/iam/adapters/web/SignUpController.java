@@ -1,5 +1,9 @@
 package de.evia.travelmate.iam.adapters.web;
 
+import java.io.IOException;
+
+import jakarta.servlet.http.HttpServletResponse;
+
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,7 +27,7 @@ public class SignUpController {
     @GetMapping
     public String showSignUpForm(final Model model) {
         model.addAttribute("view", "signup/form");
-        return "layout/default";
+        return "layout/public";
     }
 
     @PostMapping
@@ -33,7 +37,8 @@ public class SignUpController {
                          @RequestParam final String email,
                          @RequestParam final String password,
                          @RequestParam final String passwordConfirm,
-                         final Model model) {
+                         final Model model,
+                         final HttpServletResponse response) throws IOException {
         if (!password.equals(passwordConfirm)) {
             model.addAttribute("view", "signup/form");
             model.addAttribute("error", "signup.error.passwordMismatch");
@@ -41,20 +46,21 @@ public class SignUpController {
             model.addAttribute("firstName", firstName);
             model.addAttribute("lastName", lastName);
             model.addAttribute("email", email);
-            return "layout/default";
+            return "layout/public";
         }
 
         try {
             signUpService.signUp(new SignUpCommand(tenantName, firstName, lastName, email, password));
-            return "redirect:/oauth2/authorization/keycloak";
+            response.sendRedirect("/oauth2/authorization/keycloak");
+            return null;
         } catch (final IllegalArgumentException e) {
             model.addAttribute("view", "signup/form");
-            model.addAttribute("error", e.getMessage());
+            model.addAttribute("error", "signup.error.tenantExists");
             model.addAttribute("tenantName", tenantName);
             model.addAttribute("firstName", firstName);
             model.addAttribute("lastName", lastName);
             model.addAttribute("email", email);
-            return "layout/default";
+            return "layout/public";
         }
     }
 }

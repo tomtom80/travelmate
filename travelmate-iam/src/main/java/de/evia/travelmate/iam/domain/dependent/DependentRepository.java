@@ -15,4 +15,8 @@ public interface DependentRepository {
     List<Dependent> findAllByGuardian(AccountId guardianAccountId);
 
     List<Dependent> findAllByTenantId(TenantId tenantId);
+
+    void deleteById(DependentId dependentId);
+
+    void deleteAllByTenantId(TenantId tenantId);
 }

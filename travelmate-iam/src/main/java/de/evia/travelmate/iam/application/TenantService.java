@@ -8,6 +8,10 @@ import org.springframework.transaction.annotation.Transactional;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.iam.application.command.CreateTenantCommand;
 import de.evia.travelmate.iam.application.representation.TenantRepresentation;
+import de.evia.travelmate.iam.domain.account.Account;
+import de.evia.travelmate.iam.domain.account.AccountRepository;
+import de.evia.travelmate.iam.domain.account.IdentityProviderService;
+import de.evia.travelmate.iam.domain.dependent.DependentRepository;
 import de.evia.travelmate.iam.domain.tenant.Description;
 import de.evia.travelmate.iam.domain.tenant.Tenant;
 import de.evia.travelmate.iam.domain.tenant.TenantName;
@@ -18,9 +22,18 @@ import de.evia.travelmate.iam.domain.tenant.TenantRepository;
 public class TenantService {
 
     private final TenantRepository tenantRepository;
+    private final AccountRepository accountRepository;
+    private final DependentRepository dependentRepository;
+    private final IdentityProviderService identityProviderService;
 
-    public TenantService(final TenantRepository tenantRepository) {
+    public TenantService(final TenantRepository tenantRepository,
+                         final AccountRepository accountRepository,
+                         final DependentRepository dependentRepository,
+                         final IdentityProviderService identityProviderService) {
         this.tenantRepository = tenantRepository;
+        this.accountRepository = accountRepository;
+        this.dependentRepository = dependentRepository;
+        this.identityProviderService = identityProviderService;
     }
 
     public TenantRepresentation createTenant(final CreateTenantCommand command) {
@@ -48,5 +61,18 @@ public class TenantService {
         return tenantRepository.findAll().stream()
             .map(TenantRepresentation::new)
             .toList();
+    }
+
+    public void deleteTenant(final TenantId tenantId) {
+        final List<Account> accounts = accountRepository.findAllByTenantId(tenantId);
+        for (final Account account : accounts) {
+            try {
+                identityProviderService.deleteUser(account.keycloakUserId());
+            } catch (final Exception ignored) {
+            }
+        }
+        dependentRepository.deleteAllByTenantId(tenantId);
+        accountRepository.deleteAllByTenantId(tenantId);
+        tenantRepository.deleteById(tenantId);
     }
 }
