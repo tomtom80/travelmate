@@ -9,6 +9,7 @@ import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.iam.domain.account.Account;
 import de.evia.travelmate.iam.domain.account.AccountId;
 import de.evia.travelmate.iam.domain.account.AccountRepository;
+import de.evia.travelmate.iam.domain.account.DateOfBirth;
 import de.evia.travelmate.iam.domain.account.Email;
 import de.evia.travelmate.iam.domain.account.FullName;
 import de.evia.travelmate.iam.domain.account.KeycloakUserId;
@@ -83,7 +84,7 @@ public class AccountRepositoryAdapter implements AccountRepository {
             account.email().value(),
             account.fullName().firstName(),
             account.fullName().lastName(),
-            account.dateOfBirth()
+            account.dateOfBirth() != null ? account.dateOfBirth().value() : null
         );
     }
 
@@ -95,7 +96,7 @@ public class AccountRepositoryAdapter implements AccountRepository {
             new Username(entity.getUsername()),
             new Email(entity.getEmail()),
             new FullName(entity.getFirstName(), entity.getLastName()),
-            entity.getDateOfBirth()
+            entity.getDateOfBirth() != null ? new DateOfBirth(entity.getDateOfBirth()) : null
         );
     }
 }

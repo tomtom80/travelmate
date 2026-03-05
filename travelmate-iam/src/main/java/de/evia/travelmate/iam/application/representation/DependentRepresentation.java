@@ -21,7 +21,7 @@ public record DependentRepresentation(
             dependent.guardianAccountId().value(),
             dependent.fullName().firstName(),
             dependent.fullName().lastName(),
-            dependent.dateOfBirth()
+            dependent.dateOfBirth() != null ? dependent.dateOfBirth().value() : null
         );
     }
 }

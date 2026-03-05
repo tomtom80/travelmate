@@ -17,12 +17,12 @@
                     <td th:text="${inv.status()}"></td>
                     <td th:if="${inv.status() == 'PENDING' && inv.inviteeId() == currentMemberId}">
                         <div class="grid">
-                            <form hx-post th:hx-post="@{/trips/{tid}/invitations/{iid}/accept(tid=${inv.tripId()},iid=${inv.invitationId()})}"
+                            <form hx-post th:hx-post="@{/{tid}/invitations/{iid}/accept(tid=${inv.tripId()},iid=${inv.invitationId()})}"
                                   hx-target="#invitations"
                                   hx-swap="innerHTML">
                                 <button type="submit" th:text="#{invitation.accept}">Annehmen</button>
                             </form>
-                            <form hx-post th:hx-post="@{/trips/{tid}/invitations/{iid}/decline(tid=${inv.tripId()},iid=${inv.invitationId()})}"
+                            <form hx-post th:hx-post="@{/{tid}/invitations/{iid}/decline(tid=${inv.tripId()},iid=${inv.invitationId()})}"
                                   hx-target="#invitations"
                                   hx-swap="innerHTML">
                                 <button type="submit" class="outline secondary" th:text="#{invitation.decline}">Ablehnen</button>

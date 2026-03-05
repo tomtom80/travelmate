@@ -2,9 +2,11 @@ package de.evia.travelmate.iam.application;
 
 import java.util.List;
 
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import de.evia.travelmate.common.domain.DomainEvent;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.iam.application.command.CreateTenantCommand;
 import de.evia.travelmate.iam.application.representation.TenantRepresentation;
@@ -25,15 +27,18 @@ public class TenantService {
     private final AccountRepository accountRepository;
     private final DependentRepository dependentRepository;
     private final IdentityProviderService identityProviderService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public TenantService(final TenantRepository tenantRepository,
                          final AccountRepository accountRepository,
                          final DependentRepository dependentRepository,
-                         final IdentityProviderService identityProviderService) {
+                         final IdentityProviderService identityProviderService,
+                         final ApplicationEventPublisher eventPublisher) {
         this.tenantRepository = tenantRepository;
         this.accountRepository = accountRepository;
         this.dependentRepository = dependentRepository;
         this.identityProviderService = identityProviderService;
+        this.eventPublisher = eventPublisher;
     }
 
     public TenantRepresentation createTenant(final CreateTenantCommand command) {
@@ -64,6 +69,10 @@ public class TenantService {
     }
 
     public void deleteTenant(final TenantId tenantId) {
+        final Tenant tenant = tenantRepository.findById(tenantId)
+            .orElseThrow(() -> new IllegalArgumentException("Tenant not found: " + tenantId.value()));
+        tenant.markForDeletion();
+
         final List<Account> accounts = accountRepository.findAllByTenantId(tenantId);
         for (final Account account : accounts) {
             try {
@@ -74,5 +83,10 @@ public class TenantService {
         dependentRepository.deleteAllByTenantId(tenantId);
         accountRepository.deleteAllByTenantId(tenantId);
         tenantRepository.deleteById(tenantId);
+
+        for (final DomainEvent event : tenant.domainEvents()) {
+            eventPublisher.publishEvent(event);
+        }
+        tenant.clearDomainEvents();
     }
 }

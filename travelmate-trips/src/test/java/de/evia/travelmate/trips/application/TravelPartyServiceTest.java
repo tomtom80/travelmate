@@ -36,6 +36,7 @@ class TravelPartyServiceTest {
     void onTenantCreatedCreatesTravelParty() {
         final UUID tenantId = UUID.randomUUID();
         final TenantCreated event = new TenantCreated(tenantId, "Hüttenurlaub 2026", LocalDate.now());
+        when(repository.findByTenantId(new TenantId(tenantId))).thenReturn(Optional.empty());
         when(repository.save(any(TravelParty.class))).thenAnswer(inv -> inv.getArgument(0));
 
         service.onTenantCreated(event);
@@ -45,6 +46,21 @@ class TravelPartyServiceTest {
         final TravelParty party = captor.getValue();
         assertThat(party.tenantId()).isEqualTo(new TenantId(tenantId));
         assertThat(party.name()).isEqualTo("Hüttenurlaub 2026");
+    }
+
+    @Test
+    void onTenantCreatedUpdatesNameIfPartyAlreadyExists() {
+        final UUID tenantId = UUID.randomUUID();
+        final TravelParty existingParty = TravelParty.create(new TenantId(tenantId), tenantId.toString());
+        when(repository.findByTenantId(new TenantId(tenantId))).thenReturn(Optional.of(existingParty));
+        when(repository.save(any(TravelParty.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        final TenantCreated event = new TenantCreated(tenantId, "Hüttenurlaub 2026", LocalDate.now());
+
+        service.onTenantCreated(event);
+
+        assertThat(existingParty.name()).isEqualTo("Hüttenurlaub 2026");
+        verify(repository).save(existingParty);
     }
 
     @Test
@@ -65,6 +81,28 @@ class TravelPartyServiceTest {
         assertThat(party.members()).hasSize(1);
         assertThat(party.members().getFirst().memberId()).isEqualTo(accountId);
         verify(repository).save(party);
+    }
+
+    @Test
+    void onAccountRegisteredCreatesPartyIfNotExists() {
+        final UUID tenantId = UUID.randomUUID();
+        final UUID accountId = UUID.randomUUID();
+        when(repository.findByTenantId(new TenantId(tenantId))).thenReturn(Optional.empty());
+        when(repository.save(any(TravelParty.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        final AccountRegistered event = new AccountRegistered(
+            tenantId, accountId, "max@example.com", "Max", "Mustermann",
+            "max@example.com", LocalDate.now()
+        );
+
+        service.onAccountRegistered(event);
+
+        final var captor = ArgumentCaptor.forClass(TravelParty.class);
+        verify(repository).save(captor.capture());
+        final TravelParty savedParty = captor.getValue();
+        assertThat(savedParty.tenantId()).isEqualTo(new TenantId(tenantId));
+        assertThat(savedParty.members()).hasSize(1);
+        assertThat(savedParty.members().getFirst().memberId()).isEqualTo(accountId);
     }
 
     @Test

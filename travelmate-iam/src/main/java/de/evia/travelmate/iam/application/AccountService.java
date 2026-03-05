@@ -17,6 +17,7 @@ import de.evia.travelmate.iam.application.representation.DependentRepresentation
 import de.evia.travelmate.iam.domain.account.Account;
 import de.evia.travelmate.iam.domain.account.AccountId;
 import de.evia.travelmate.iam.domain.account.AccountRepository;
+import de.evia.travelmate.iam.domain.account.DateOfBirth;
 import de.evia.travelmate.iam.domain.account.Email;
 import de.evia.travelmate.iam.domain.account.FullName;
 import de.evia.travelmate.iam.domain.account.IdentityProviderService;
@@ -75,13 +76,15 @@ public class AccountService {
         final KeycloakUserId keycloakUserId = identityProviderService.createInvitedUser(email, fullName);
 
         try {
+            final DateOfBirth dateOfBirth = command.dateOfBirth() != null
+                ? new DateOfBirth(command.dateOfBirth()) : null;
             final Account account = Account.register(
                 tenantId,
                 keycloakUserId,
                 new Username(email.value()),
                 email,
                 fullName,
-                command.dateOfBirth()
+                dateOfBirth
             );
             final Account saved = accountRepository.save(account);
             identityProviderService.assignRole(keycloakUserId, "organizer");
@@ -100,11 +103,13 @@ public class AccountService {
         accountRepository.findById(guardianId)
             .orElseThrow(() -> new IllegalArgumentException(
                 "Guardian account not found: " + command.guardianAccountId()));
+        final DateOfBirth dateOfBirth = command.dateOfBirth() != null
+            ? new DateOfBirth(command.dateOfBirth()) : null;
         final Dependent dependent = Dependent.add(
             tenantId,
             guardianId,
             new FullName(command.firstName(), command.lastName()),
-            command.dateOfBirth()
+            dateOfBirth
         );
         final Dependent saved = dependentRepository.save(dependent);
         publishEvents(saved);
@@ -112,6 +117,10 @@ public class AccountService {
     }
 
     public void deleteDependent(final UUID dependentId) {
+        final Dependent dependent = dependentRepository.findById(new DependentId(dependentId))
+            .orElseThrow(() -> new IllegalArgumentException("Dependent not found: " + dependentId));
+        dependent.markForRemoval();
+        publishEvents(dependent);
         dependentRepository.deleteById(new DependentId(dependentId));
     }
 
@@ -122,6 +131,8 @@ public class AccountService {
         }
         final Account account = accountRepository.findById(accountId)
             .orElseThrow(() -> new IllegalArgumentException("Account not found: " + accountId.value()));
+        account.markForRemoval();
+        publishEvents(account);
         try {
             identityProviderService.deleteUser(account.keycloakUserId());
         } catch (final Exception ignored) {

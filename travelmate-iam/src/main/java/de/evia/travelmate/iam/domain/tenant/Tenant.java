@@ -8,6 +8,7 @@ import java.util.UUID;
 import de.evia.travelmate.common.domain.AggregateRoot;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.common.events.iam.TenantCreated;
+import de.evia.travelmate.common.events.iam.TenantDeleted;
 
 public class Tenant extends AggregateRoot {
 
@@ -31,6 +32,13 @@ public class Tenant extends AggregateRoot {
             LocalDate.now()
         ));
         return tenant;
+    }
+
+    public void markForDeletion() {
+        registerEvent(new TenantDeleted(
+            tenantId.value(),
+            LocalDate.now()
+        ));
     }
 
     public TenantId tenantId() {

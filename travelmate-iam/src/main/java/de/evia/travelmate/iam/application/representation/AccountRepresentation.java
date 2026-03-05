@@ -23,7 +23,7 @@ public record AccountRepresentation(
             account.email().value(),
             account.fullName().firstName(),
             account.fullName().lastName(),
-            account.dateOfBirth()
+            account.dateOfBirth() != null ? account.dateOfBirth().value() : null
         );
     }
 }

@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException
 import org.junit.jupiter.api.Test;
 
 import de.evia.travelmate.common.events.iam.AccountRegistered;
+import de.evia.travelmate.common.events.iam.MemberRemovedFromTenant;
 import de.evia.travelmate.iam.domain.IamTestFixtures;
 
 class AccountTest {
@@ -34,6 +35,21 @@ class AccountTest {
         assertThat(event.accountId()).isEqualTo(account.accountId().value());
         assertThat(event.username()).isEqualTo(account.username().value());
         assertThat(event.email()).isEqualTo(account.email().value());
+        assertThat(event.occurredOn()).isNotNull();
+    }
+
+    @Test
+    void markForRemovalRegistersEvent() {
+        final Account account = IamTestFixtures.account();
+        account.markForRemoval();
+
+        assertThat(account.domainEvents()).hasSize(1);
+        assertThat(account.domainEvents().getFirst()).isInstanceOf(MemberRemovedFromTenant.class);
+
+        final MemberRemovedFromTenant event = (MemberRemovedFromTenant) account.domainEvents().getFirst();
+        assertThat(event.tenantId()).isEqualTo(IamTestFixtures.TENANT_ID.value());
+        assertThat(event.accountId()).isEqualTo(IamTestFixtures.ACCOUNT_ID.value());
+        assertThat(event.email()).isEqualTo("test@example.com");
         assertThat(event.occurredOn()).isNotNull();
     }
 

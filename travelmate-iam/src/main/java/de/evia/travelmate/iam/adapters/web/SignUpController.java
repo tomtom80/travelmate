@@ -1,9 +1,5 @@
 package de.evia.travelmate.iam.adapters.web;
 
-import java.io.IOException;
-
-import jakarta.servlet.http.HttpServletResponse;
-
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -37,8 +33,7 @@ public class SignUpController {
                          @RequestParam final String email,
                          @RequestParam final String password,
                          @RequestParam final String passwordConfirm,
-                         final Model model,
-                         final HttpServletResponse response) throws IOException {
+                         final Model model) {
         if (!password.equals(passwordConfirm)) {
             model.addAttribute("view", "signup/form");
             model.addAttribute("error", "signup.error.passwordMismatch");
@@ -51,8 +46,8 @@ public class SignUpController {
 
         try {
             signUpService.signUp(new SignUpCommand(tenantName, firstName, lastName, email, password));
-            response.sendRedirect("/oauth2/authorization/keycloak");
-            return null;
+            model.addAttribute("view", "signup/success");
+            return "layout/public";
         } catch (final IllegalArgumentException e) {
             model.addAttribute("view", "signup/form");
             model.addAttribute("error", "signup.error.tenantExists");

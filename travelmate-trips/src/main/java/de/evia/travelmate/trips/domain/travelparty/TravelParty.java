@@ -13,7 +13,7 @@ import de.evia.travelmate.common.domain.TenantId;
 public class TravelParty {
 
     private final TenantId tenantId;
-    private final String name;
+    private String name;
     private final List<Member> members;
     private final List<TravelPartyDependent> dependents;
 
@@ -31,6 +31,11 @@ public class TravelParty {
 
     public static TravelParty create(final TenantId tenantId, final String name) {
         return new TravelParty(tenantId, name, List.of(), List.of());
+    }
+
+    public void updateName(final String name) {
+        argumentIsNotBlank(name, "name");
+        this.name = name;
     }
 
     public void addMember(final UUID memberId, final String email,

@@ -75,7 +75,7 @@ class TripControllerTest {
 
     @Test
     void listShowsEmptyTripsWhenNoTravelParty() throws Exception {
-        mockMvc.perform(get("/trips")
+        mockMvc.perform(get("/")
                 .with(jwt().jwt(j -> j.claim("email", "unknown@test.de"))))
             .andExpect(status().isOk())
             .andExpect(view().name("layout/default"))
@@ -88,7 +88,7 @@ class TripControllerTest {
         when(tripService.findAllByTenantId(new TenantId(TENANT_UUID)))
             .thenReturn(List.of());
 
-        mockMvc.perform(get("/trips")
+        mockMvc.perform(get("/")
                 .with(jwt().jwt(j -> j.claim("email", ORGANIZER_EMAIL))))
             .andExpect(status().isOk())
             .andExpect(view().name("layout/default"))
@@ -107,7 +107,7 @@ class TripControllerTest {
         when(tripService.findById(new TripId(TRIP_UUID))).thenReturn(trip);
         when(invitationService.findByTripId(new TripId(TRIP_UUID))).thenReturn(List.of());
 
-        mockMvc.perform(get("/trips/" + TRIP_UUID)
+        mockMvc.perform(get("/" + TRIP_UUID)
                 .with(jwt().jwt(j -> j.claim("email", ORGANIZER_EMAIL))))
             .andExpect(status().isOk())
             .andExpect(view().name("layout/default"))
@@ -127,7 +127,7 @@ class TripControllerTest {
         when(invitationService.invite(any(InviteParticipantCommand.class))).thenReturn(inv);
         when(invitationService.findByTripId(new TripId(TRIP_UUID))).thenReturn(List.of(inv));
 
-        mockMvc.perform(post("/trips/" + TRIP_UUID + "/invitations")
+        mockMvc.perform(post("/" + TRIP_UUID + "/invitations")
                 .with(jwt().jwt(j -> j.claim("email", ORGANIZER_EMAIL)))
                 .param("inviteeId", INVITEE_UUID.toString()))
             .andExpect(status().isOk())
@@ -141,7 +141,7 @@ class TripControllerTest {
 
         when(invitationService.findByTripId(new TripId(TRIP_UUID))).thenReturn(List.of());
 
-        mockMvc.perform(post("/trips/" + TRIP_UUID + "/invitations/" + invitationUuid + "/accept")
+        mockMvc.perform(post("/" + TRIP_UUID + "/invitations/" + invitationUuid + "/accept")
                 .with(jwt().jwt(j -> j.claim("email", INVITEE_EMAIL))))
             .andExpect(status().isOk())
             .andExpect(view().name("trip/invitations :: invitationList"));
@@ -155,7 +155,7 @@ class TripControllerTest {
 
         when(invitationService.findByTripId(new TripId(TRIP_UUID))).thenReturn(List.of());
 
-        mockMvc.perform(post("/trips/" + TRIP_UUID + "/invitations/" + invitationUuid + "/decline")
+        mockMvc.perform(post("/" + TRIP_UUID + "/invitations/" + invitationUuid + "/decline")
                 .with(jwt().jwt(j -> j.claim("email", INVITEE_EMAIL))))
             .andExpect(status().isOk())
             .andExpect(view().name("trip/invitations :: invitationList"));
@@ -165,17 +165,17 @@ class TripControllerTest {
 
     @Test
     void confirmTripRedirectsToDetail() throws Exception {
-        mockMvc.perform(post("/trips/" + TRIP_UUID + "/confirm")
+        mockMvc.perform(post("/" + TRIP_UUID + "/confirm")
                 .with(jwt().jwt(j -> j.claim("email", ORGANIZER_EMAIL))))
             .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/trips/" + TRIP_UUID));
+            .andExpect(redirectedUrl("/" + TRIP_UUID));
 
         verify(tripService).confirmTrip(new TripId(TRIP_UUID));
     }
 
     @Test
     void completeTripRedirectsToDetail() throws Exception {
-        mockMvc.perform(post("/trips/" + TRIP_UUID + "/complete")
+        mockMvc.perform(post("/" + TRIP_UUID + "/complete")
                 .with(jwt().jwt(j -> j.claim("email", ORGANIZER_EMAIL))))
             .andExpect(status().is3xxRedirection());
 
@@ -184,7 +184,7 @@ class TripControllerTest {
 
     @Test
     void setStayPeriodRedirectsToDetail() throws Exception {
-        mockMvc.perform(post("/trips/" + TRIP_UUID + "/participants/" + ORGANIZER_UUID + "/stay-period")
+        mockMvc.perform(post("/" + TRIP_UUID + "/participants/" + ORGANIZER_UUID + "/stay-period")
                 .with(jwt().jwt(j -> j.claim("email", ORGANIZER_EMAIL)))
                 .param("arrivalDate", "2026-03-16")
                 .param("departureDate", "2026-03-20"))

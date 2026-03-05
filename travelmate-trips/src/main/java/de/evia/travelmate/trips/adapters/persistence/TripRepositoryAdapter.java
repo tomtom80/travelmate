@@ -53,9 +53,15 @@ public class TripRepositoryAdapter implements TripRepository {
 
     private void syncParticipants(final TripJpaEntity entity, final Trip trip) {
         for (final Participant participant : trip.participants()) {
-            final boolean exists = entity.getParticipants().stream()
-                .anyMatch(p -> p.getParticipantId().equals(participant.participantId()));
-            if (!exists) {
+            final Optional<ParticipantJpaEntity> existing = entity.getParticipants().stream()
+                .filter(p -> p.getParticipantId().equals(participant.participantId()))
+                .findFirst();
+            if (existing.isPresent()) {
+                existing.get().setArrivalDate(
+                    participant.stayPeriod() != null ? participant.stayPeriod().arrivalDate() : null);
+                existing.get().setDepartureDate(
+                    participant.stayPeriod() != null ? participant.stayPeriod().departureDate() : null);
+            } else {
                 entity.getParticipants().add(new ParticipantJpaEntity(
                     participant.participantId(), entity,
                     participant.stayPeriod() != null ? participant.stayPeriod().arrivalDate() : null,
