@@ -2,8 +2,8 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="content">
-    <h1 th:text="#{signup.title}">Reisegruppe erstellen</h1>
-    <p th:text="#{signup.subtitle}">Erstelle deine Reisegruppe und registriere dich als Organisator.</p>
+    <h1 th:text="#{signup.title}">Reisepartei erstellen</h1>
+    <p th:text="#{signup.subtitle}">Erstelle deine Reisepartei und registriere dich als erstes Mitglied.</p>
 
     <div th:if="${error}" class="error">
         <p th:text="${error}"></p>
@@ -11,7 +11,7 @@
 
     <form method="post" th:action="@{/signup}">
         <div>
-            <label for="tenantName" th:text="#{signup.tenantName}">Name der Reisegruppe</label>
+            <label for="tenantName" th:text="#{signup.tenantName}">Name der Reisepartei</label>
             <input type="text" id="tenantName" name="tenantName" th:value="${tenantName}" required>
         </div>
         <div>

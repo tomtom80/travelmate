@@ -2,10 +2,10 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="content">
-    <h1 th:text="#{nav.travelGroup}">Reisegruppe</h1>
-    <p th:text="#{travelGroup.manageMembers}">Mitglieder verwalten</p>
+    <h1 th:text="#{nav.travelParty}">Reisepartei</h1>
+    <p th:text="#{travelParty.manageMembers}">Mitglieder verwalten</p>
     <ul>
-        <li><a th:href="@{/tenants}" th:text="#{travelGroup.title}">Reisegruppen</a></li>
+        <li><a th:href="@{/tenants}" th:text="#{travelParty.title}">Reisepartei</a></li>
     </ul>
 </div>
 </body>

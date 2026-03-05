@@ -8,6 +8,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 import de.evia.travelmate.common.events.iam.AccountRegistered;
 import de.evia.travelmate.common.events.iam.DependentAddedToTenant;
+import de.evia.travelmate.common.events.iam.MemberAddedToTenant;
 import de.evia.travelmate.common.events.iam.TenantCreated;
 import de.evia.travelmate.common.messaging.RoutingKeys;
 
@@ -29,6 +30,11 @@ public class DomainEventPublisher {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onAccountRegistered(final AccountRegistered event) {
         rabbitTemplate.convertAndSend(RoutingKeys.EXCHANGE, RoutingKeys.ACCOUNT_REGISTERED, event);
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onMemberAddedToTenant(final MemberAddedToTenant event) {
+        rabbitTemplate.convertAndSend(RoutingKeys.EXCHANGE, RoutingKeys.MEMBER_ADDED, event);
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)

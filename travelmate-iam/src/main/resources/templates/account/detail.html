@@ -8,11 +8,11 @@
         <dd th:text="${account.username}"></dd>
         <dt th:text="#{member.email}">E-Mail</dt>
         <dd th:text="${account.email}"></dd>
-        <dt th:text="#{nav.travelGroup}">Reisegruppe</dt>
+        <dt th:text="#{nav.travelParty}">Reisepartei</dt>
         <dd th:text="${tenant.name}"></dd>
     </dl>
 
-    <h2 th:text="#{child.title}">Mitreisende Kinder</h2>
+    <h2 th:text="#{companion.title}">Mitreisende</h2>
     <div id="dependents"
          hx-get th:hx-get="@{/tenants/{tid}/accounts/{aid}/dependents(tid=${tenant.tenantId},aid=${account.accountId})}"
          hx-trigger="load"
