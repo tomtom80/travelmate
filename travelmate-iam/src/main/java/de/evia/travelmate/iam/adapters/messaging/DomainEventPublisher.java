@@ -8,8 +8,11 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 import de.evia.travelmate.common.events.iam.AccountRegistered;
 import de.evia.travelmate.common.events.iam.DependentAddedToTenant;
+import de.evia.travelmate.common.events.iam.DependentRemovedFromTenant;
 import de.evia.travelmate.common.events.iam.MemberAddedToTenant;
+import de.evia.travelmate.common.events.iam.MemberRemovedFromTenant;
 import de.evia.travelmate.common.events.iam.TenantCreated;
+import de.evia.travelmate.common.events.iam.TenantDeleted;
 import de.evia.travelmate.common.messaging.RoutingKeys;
 
 @Component
@@ -40,5 +43,20 @@ public class DomainEventPublisher {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onDependentAddedToTenant(final DependentAddedToTenant event) {
         rabbitTemplate.convertAndSend(RoutingKeys.EXCHANGE, RoutingKeys.DEPENDENT_ADDED, event);
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onMemberRemovedFromTenant(final MemberRemovedFromTenant event) {
+        rabbitTemplate.convertAndSend(RoutingKeys.EXCHANGE, RoutingKeys.MEMBER_REMOVED, event);
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onDependentRemovedFromTenant(final DependentRemovedFromTenant event) {
+        rabbitTemplate.convertAndSend(RoutingKeys.EXCHANGE, RoutingKeys.DEPENDENT_REMOVED, event);
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onTenantDeleted(final TenantDeleted event) {
+        rabbitTemplate.convertAndSend(RoutingKeys.EXCHANGE, RoutingKeys.TENANT_DELETED, event);
     }
 }

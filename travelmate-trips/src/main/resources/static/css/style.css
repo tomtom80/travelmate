@@ -1,4 +1,11 @@
 /* Travelmate — Custom overrides (PicoCSS provides the base) */
+:root {
+    --pico-primary: #0d9488;
+    --pico-primary-hover: #0f766e;
+    --pico-primary-focus: rgba(13, 148, 136, 0.25);
+    --pico-primary-inverse: #fff;
+}
+
 .error {
     color: var(--pico-del-color);
     border: 1px solid var(--pico-del-color);

@@ -17,7 +17,7 @@
             <tbody>
                 <tr th:each="trip : ${trips}">
                     <td>
-                        <a th:href="@{/trips/{id}(id=${trip.tripId()})}"
+                        <a th:href="@{/{id}(id=${trip.tripId()})}"
                            th:text="${trip.name()}"></a>
                     </td>
                     <td th:text="${trip.startDate()}"></td>
@@ -29,7 +29,7 @@
     </figure>
     <p th:if="${trips.isEmpty()}" th:text="#{trip.empty}">Noch keine Reisen geplant.</p>
 
-    <a href="/trips/new" role="button" th:text="#{trip.create}">Neue Reise planen</a>
+    <a th:href="@{/new}" role="button" th:text="#{trip.create}">Neue Reise planen</a>
 </div>
 </body>
 </html>

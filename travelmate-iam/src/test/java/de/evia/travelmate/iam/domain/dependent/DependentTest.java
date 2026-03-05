@@ -6,6 +6,7 @@ import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException
 import org.junit.jupiter.api.Test;
 
 import de.evia.travelmate.common.events.iam.DependentAddedToTenant;
+import de.evia.travelmate.common.events.iam.DependentRemovedFromTenant;
 import de.evia.travelmate.iam.domain.IamTestFixtures;
 import de.evia.travelmate.iam.domain.account.FullName;
 
@@ -27,6 +28,21 @@ class DependentTest {
         assertThat(event.dependentId()).isEqualTo(dependent.dependentId().value());
         assertThat(event.guardianAccountId()).isEqualTo(IamTestFixtures.ACCOUNT_ID.value());
         assertThat(event.firstName()).isEqualTo("Lena");
+    }
+
+    @Test
+    void markForRemovalRegistersEvent() {
+        final Dependent dependent = IamTestFixtures.dependent();
+        dependent.clearDomainEvents();
+        dependent.markForRemoval();
+
+        assertThat(dependent.domainEvents()).hasSize(1);
+        assertThat(dependent.domainEvents().getFirst()).isInstanceOf(DependentRemovedFromTenant.class);
+
+        final DependentRemovedFromTenant event = (DependentRemovedFromTenant) dependent.domainEvents().getFirst();
+        assertThat(event.tenantId()).isEqualTo(IamTestFixtures.TENANT_ID.value());
+        assertThat(event.dependentId()).isEqualTo(dependent.dependentId().value());
+        assertThat(event.occurredOn()).isNotNull();
     }
 
     @Test

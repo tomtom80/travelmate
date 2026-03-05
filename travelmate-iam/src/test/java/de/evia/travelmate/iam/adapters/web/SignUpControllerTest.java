@@ -6,7 +6,6 @@ import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
@@ -41,7 +40,7 @@ class SignUpControllerTest {
     }
 
     @Test
-    void signUpRedirectsToLoginOnSuccess() throws Exception {
+    void signUpShowsSuccessPageOnSuccess() throws Exception {
         mockMvc.perform(post("/signup")
                 .param("tenantName", "Hüttenurlaub 2026")
                 .param("firstName", "Max")
@@ -49,8 +48,9 @@ class SignUpControllerTest {
                 .param("email", "max@example.com")
                 .param("password", "secureP4ss!")
                 .param("passwordConfirm", "secureP4ss!"))
-            .andExpect(status().is3xxRedirection())
-            .andExpect(redirectedUrl("/oauth2/authorization/keycloak"));
+            .andExpect(status().isOk())
+            .andExpect(view().name("layout/public"))
+            .andExpect(model().attribute("view", "signup/success"));
 
         verify(signUpService).signUp(any(SignUpCommand.class));
     }

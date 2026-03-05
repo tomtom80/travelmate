@@ -15,8 +15,10 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.context.ApplicationEventPublisher;
 
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.common.events.iam.TenantDeleted;
 import de.evia.travelmate.iam.application.command.CreateTenantCommand;
 import de.evia.travelmate.iam.application.representation.TenantRepresentation;
 import de.evia.travelmate.iam.domain.IamTestFixtures;
@@ -41,6 +43,9 @@ class TenantServiceTest {
 
     @Mock
     private IdentityProviderService identityProviderService;
+
+    @Mock
+    private ApplicationEventPublisher eventPublisher;
 
     @InjectMocks
     private TenantService tenantService;
@@ -98,5 +103,17 @@ class TenantServiceTest {
 
         assertThat(result).hasSize(1);
         assertThat(result.getFirst().name()).isEqualTo("Reisegruppe Alpen");
+    }
+
+    @Test
+    void deleteTenantPublishesEvent() {
+        final Tenant tenant = IamTestFixtures.tenant();
+        when(tenantRepository.findById(IamTestFixtures.TENANT_ID)).thenReturn(Optional.of(tenant));
+        when(accountRepository.findAllByTenantId(IamTestFixtures.TENANT_ID)).thenReturn(List.of());
+
+        tenantService.deleteTenant(IamTestFixtures.TENANT_ID);
+
+        verify(eventPublisher).publishEvent(any(TenantDeleted.class));
+        verify(tenantRepository).deleteById(IamTestFixtures.TENANT_ID);
     }
 }

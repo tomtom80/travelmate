@@ -12,7 +12,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -33,7 +32,6 @@ import de.evia.travelmate.trips.domain.travelparty.TravelPartyRepository;
 import de.evia.travelmate.trips.domain.trip.TripId;
 
 @Controller
-@RequestMapping("/trips")
 public class TripController {
 
     private final TripService tripService;
@@ -111,7 +109,7 @@ public class TripController {
         tripService.createTrip(
             new CreateTripCommand(identity.tenantId().value(), name, description, startDate, endDate, identity.memberId())
         );
-        return "redirect:/trips";
+        return "redirect:/";
     }
 
     @PostMapping("/{tripId}/invitations")
@@ -150,7 +148,7 @@ public class TripController {
                           @PathVariable final UUID tripId) {
         requireIdentity(jwt);
         tripService.confirmTrip(new TripId(tripId));
-        return "redirect:/trips/" + tripId;
+        return "redirect:/" + tripId;
     }
 
     @PostMapping("/{tripId}/start")
@@ -158,7 +156,7 @@ public class TripController {
                         @PathVariable final UUID tripId) {
         requireIdentity(jwt);
         tripService.startTrip(new TripId(tripId));
-        return "redirect:/trips/" + tripId;
+        return "redirect:/" + tripId;
     }
 
     @PostMapping("/{tripId}/complete")
@@ -166,7 +164,7 @@ public class TripController {
                            @PathVariable final UUID tripId) {
         requireIdentity(jwt);
         tripService.completeTrip(new TripId(tripId));
-        return "redirect:/trips/" + tripId;
+        return "redirect:/" + tripId;
     }
 
     @PostMapping("/{tripId}/cancel")
@@ -174,7 +172,7 @@ public class TripController {
                          @PathVariable final UUID tripId) {
         requireIdentity(jwt);
         tripService.cancelTrip(new TripId(tripId));
-        return "redirect:/trips/" + tripId;
+        return "redirect:/" + tripId;
     }
 
     @PostMapping("/{tripId}/participants/{participantId}/stay-period")
@@ -185,7 +183,7 @@ public class TripController {
                                 @RequestParam final LocalDate departureDate) {
         requireIdentity(jwt);
         tripService.setStayPeriod(new SetStayPeriodCommand(tripId, participantId, arrivalDate, departureDate));
-        return "redirect:/trips/" + tripId;
+        return "redirect:/" + tripId;
     }
 
     private Optional<ResolvedIdentity> resolveIdentity(final Jwt jwt) {

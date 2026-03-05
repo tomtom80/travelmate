@@ -4,7 +4,7 @@
 <div th:fragment="content">
     <h1 th:text="#{trip.create}">Neue Reise planen</h1>
 
-    <form method="post" th:action="@{/trips}">
+    <form method="post" th:action="@{/}">
         <label for="name" th:text="#{trip.name}">Name</label>
         <input type="text" id="name" name="name" required>
 

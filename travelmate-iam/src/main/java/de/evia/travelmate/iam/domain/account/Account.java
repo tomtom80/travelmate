@@ -8,6 +8,7 @@ import java.util.UUID;
 import de.evia.travelmate.common.domain.AggregateRoot;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.common.events.iam.AccountRegistered;
+import de.evia.travelmate.common.events.iam.MemberRemovedFromTenant;
 
 public class Account extends AggregateRoot {
 
@@ -17,7 +18,7 @@ public class Account extends AggregateRoot {
     private final Username username;
     private final Email email;
     private final FullName fullName;
-    private final LocalDate dateOfBirth;
+    private final DateOfBirth dateOfBirth;
 
     public Account(final AccountId accountId,
                    final TenantId tenantId,
@@ -25,7 +26,7 @@ public class Account extends AggregateRoot {
                    final Username username,
                    final Email email,
                    final FullName fullName,
-                   final LocalDate dateOfBirth) {
+                   final DateOfBirth dateOfBirth) {
         argumentIsNotNull(accountId, "accountId");
         argumentIsNotNull(tenantId, "tenantId");
         argumentIsNotNull(keycloakUserId, "keycloakUserId");
@@ -46,7 +47,7 @@ public class Account extends AggregateRoot {
                                    final Username username,
                                    final Email email,
                                    final FullName fullName,
-                                   final LocalDate dateOfBirth) {
+                                   final DateOfBirth dateOfBirth) {
         final Account account = new Account(
             new AccountId(UUID.randomUUID()),
             tenantId,
@@ -76,6 +77,15 @@ public class Account extends AggregateRoot {
         return register(tenantId, keycloakUserId, username, email, fullName, null);
     }
 
+    public void markForRemoval() {
+        registerEvent(new MemberRemovedFromTenant(
+            tenantId.value(),
+            accountId.value(),
+            email.value(),
+            LocalDate.now()
+        ));
+    }
+
     public AccountId accountId() {
         return accountId;
     }
@@ -100,7 +110,7 @@ public class Account extends AggregateRoot {
         return fullName;
     }
 
-    public LocalDate dateOfBirth() {
+    public DateOfBirth dateOfBirth() {
         return dateOfBirth;
     }
 }

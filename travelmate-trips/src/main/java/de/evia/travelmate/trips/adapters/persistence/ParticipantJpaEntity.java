@@ -47,7 +47,9 @@ public class ParticipantJpaEntity {
 
     public UUID getParticipantId() { return participantId; }
     public LocalDate getArrivalDate() { return arrivalDate; }
+    public void setArrivalDate(final LocalDate arrivalDate) { this.arrivalDate = arrivalDate; }
     public LocalDate getDepartureDate() { return departureDate; }
+    public void setDepartureDate(final LocalDate departureDate) { this.departureDate = departureDate; }
 
     public static class ParticipantId implements Serializable {
         private UUID participantId;

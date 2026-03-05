@@ -75,7 +75,11 @@ services:
   keycloak:
     image: quay.io/keycloak/keycloak:26.1.4
     container_name: travelmate-keycloak
-    command: start-dev --import-realm --spi-theme-static-max-age=-1 --spi-theme-cache-themes=false
+    entrypoint: /bin/bash
+    command: >-
+      -c "/opt/keycloak/bin/kc.sh import --file /opt/keycloak/data/import/realm-export.json --override=true &&
+      /opt/keycloak/data/import/init-smtp.sh &
+      /opt/keycloak/bin/kc.sh start-dev --spi-theme-static-max-age=-1 --spi-theme-cache-themes=false"
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres-keycloak:5432/keycloak
@@ -88,6 +92,7 @@ services:
       - "7082:8080"
     volumes:
       - ./docker/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+      - ./docker/keycloak/init-smtp.sh:/opt/keycloak/data/import/init-smtp.sh:ro
       - ./docker/keycloak/themes/travelmate:/opt/keycloak/themes/travelmate:ro
     depends_on:
       postgres-keycloak:

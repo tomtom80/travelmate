@@ -7,6 +7,7 @@ import org.springframework.stereotype.Repository;
 
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.iam.domain.account.AccountId;
+import de.evia.travelmate.iam.domain.account.DateOfBirth;
 import de.evia.travelmate.iam.domain.account.FullName;
 import de.evia.travelmate.iam.domain.dependent.Dependent;
 import de.evia.travelmate.iam.domain.dependent.DependentId;
@@ -64,7 +65,7 @@ public class DependentRepositoryAdapter implements DependentRepository {
             dependent.guardianAccountId().value(),
             dependent.fullName().firstName(),
             dependent.fullName().lastName(),
-            dependent.dateOfBirth()
+            dependent.dateOfBirth() != null ? dependent.dateOfBirth().value() : null
         );
     }
 
@@ -74,7 +75,7 @@ public class DependentRepositoryAdapter implements DependentRepository {
             new TenantId(entity.getTenantId()),
             new AccountId(entity.getGuardianAccountId()),
             new FullName(entity.getFirstName(), entity.getLastName()),
-            entity.getDateOfBirth()
+            entity.getDateOfBirth() != null ? new DateOfBirth(entity.getDateOfBirth()) : null
         );
     }
 }

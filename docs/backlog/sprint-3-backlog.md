@@ -1,6 +1,8 @@
-# Sprint 3 Backlog - Sign-up + Trips Core
+# Sprint 3 Backlog - Sign-up + Trips Core (ABGESCHLOSSEN)
 
 Sprint-Ziel: Vollstaendiger Sign-up-Flow (Reisegruppe + Admin), Login, Mitgliederverwaltung. Dann grundlegende Reiseplanung mit Trip-Erstellung, Einladungen und Teilnehmerverwaltung.
+
+**Status: DONE** — Alle Items abgeschlossen, Release v0.3.0.
 
 ---
 

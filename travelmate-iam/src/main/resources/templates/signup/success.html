@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<body>
+<div th:fragment="content">
+    <h1 th:text="#{signup.success.title}">Registrierung erfolgreich</h1>
+    <p th:text="#{signup.success.message}">Wir haben dir eine E-Mail geschickt. Bitte bestaetige deine E-Mail-Adresse, um dich anmelden zu koennen.</p>
+
+    <p><a href="/oauth2/authorization/keycloak" role="button" th:text="#{signup.success.login}">Zur Anmeldung</a></p>
+</div>
+</body>
+</html>

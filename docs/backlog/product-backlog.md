@@ -1,6 +1,6 @@
 # Product Backlog - Travelmate
 
-Stand: 2026-03-05
+Stand: 2026-03-06
 
 ## Subdomain-Klassifikation (Strategic DDD)
 
@@ -29,34 +29,34 @@ IAM ──(U)──→ D. Conformist ──→ Trips ──→ Partnership ─�
 - [x] US-1.3: Mitreisende Kinder hinzufuegen (Dependent)
 - [x] US-1.4: Events publizieren (AccountRegistered, DependentAddedToTenant)
 
-### Epic 1b: IAM - Sign-up & Login (Iteration 3, Voraussetzung fuer Trips)
-- [ ] US-1.5: Self-Service Sign-up: Reisegruppe anlegen + Admin-Account erstellen
+### Epic 1b: IAM - Sign-up & Login (Iteration 3 - DONE)
+- [x] US-1.5: Self-Service Sign-up: Reisegruppe anlegen + Admin-Account erstellen
   - Oeffentliche Sign-up-Seite (kein Login erforderlich)
   - Formular: Reisegruppen-Name, Vorname, Nachname, E-Mail, Passwort
   - Keycloak-User wird automatisch via Keycloak Admin API provisioniert
   - Tenant + Account werden in einem Vorgang erstellt
   - Admin erhaelt Organizer-Rolle automatisch
-- [ ] US-1.6: Login mit erstellter Reisegruppe
+- [x] US-1.6: Login mit erstellter Reisegruppe
   - Nach Sign-up automatisch eingeloggt (OIDC Session)
   - Bestehendes OIDC-Login via Gateway + Keycloak
   - Multi-Tenant: Benutzer ist einem Tenant zugeordnet, Tenant-Kontext wird aus JWT abgeleitet
-- [ ] US-1.7: Weitere Mitglieder einladen (E-Mail-Einladung)
+- [x] US-1.7: Weitere Mitglieder einladen (E-Mail-Einladung)
   - Organisator laedt neue Mitglieder per E-Mail ein
   - Eingeladener erhaelt Link, registriert sich mit Passwort
   - Keycloak-User wird bei Registrierung provisioniert
   - Account wird dem bestehenden Tenant zugeordnet
-- [ ] US-1.8: Mitglieder-Verwaltung im Tenant-Kontext
+- [x] US-1.8: Mitglieder-Verwaltung im Tenant-Kontext
   - Alle Mitglieder der Reisegruppe sehen und verwalten
   - Kinder/Dependents werden von ihren Eltern (Account-Inhabern) verwaltet
   - Nur Benutzer mit Account koennen sich einloggen
 
-### Epic 2: Trips Core - Reiseplanung (Iteration 3)
-- [ ] US-2.1: Reisegruppen-Projektion aus IAM-Events (TravelParty)
-- [ ] US-2.2: Reise erstellen (Trip) mit Name, Zeitraum, Beschreibung
-- [ ] US-2.3: Teilnehmer zu einer Reise einladen (Invitation)
-- [ ] US-2.4: Einladung annehmen / ablehnen
-- [ ] US-2.5: Aufenthaltsdauer pro Teilnehmer festlegen
-- [ ] US-2.6: Reise-Status-Lifecycle (PLANNING -> CONFIRMED -> IN_PROGRESS -> COMPLETED)
+### Epic 2: Trips Core - Reiseplanung (Iteration 3 - Core DONE, Extended offen)
+- [x] US-2.1: Reisegruppen-Projektion aus IAM-Events (TravelParty)
+- [x] US-2.2: Reise erstellen (Trip) mit Name, Zeitraum, Beschreibung
+- [x] US-2.3: Teilnehmer zu einer Reise einladen (Invitation)
+- [x] US-2.4: Einladung annehmen / ablehnen
+- [x] US-2.5: Aufenthaltsdauer pro Teilnehmer festlegen
+- [x] US-2.6: Reise-Status-Lifecycle (PLANNING -> CONFIRMED -> IN_PROGRESS -> COMPLETED)
 - [ ] US-2.7: Unterkunft / Location mit Details (Zimmeranzahl, Preis, Infos)
 - [ ] US-2.8: Location-Infos aus URL auslesen (Web Scraping / Metadaten)
 - [ ] US-2.9: Unterkunft-Abstimmung (LocationPoll)
@@ -100,10 +100,10 @@ IAM ──(U)──→ D. Conformist ──→ Trips ──→ Partnership ─�
 - [ ] US-4.6: Zahlungsaufforderung / Rueckzahlung
 
 ### Epic 5: Querschnittlich
-- [ ] US-5.1: i18n (Deutsch + Englisch), Sprachwechsel zur Laufzeit
+- [x] US-5.1: i18n (Deutsch + Englisch), Sprachwechsel zur Laufzeit
 - [ ] US-5.2: README mit Developer-Dokumentation
-- [ ] US-5.3: Arc42-Dokumentation aktualisieren
-- [ ] US-5.4: E2E-Tests fuer alle Use Cases
+- [x] US-5.3: Arc42-Dokumentation aktualisieren (Iteration 3)
+- [x] US-5.4: E2E-Tests fuer alle Use Cases (Iteration 3)
 
 ---
 
