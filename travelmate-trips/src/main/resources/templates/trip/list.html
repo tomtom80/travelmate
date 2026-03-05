@@ -15,7 +15,10 @@
         </thead>
         <tbody>
             <tr th:each="trip : ${trips}">
-                <td th:text="${trip.name()}"></td>
+                <td>
+                    <a th:href="@{/trips/{id}(id=${trip.tripId()},tenantId=${tenantId},currentMemberId=${trip.organizerId()})}"
+                       th:text="${trip.name()}"></a>
+                </td>
                 <td th:text="${trip.startDate()}"></td>
                 <td th:text="${trip.endDate()}"></td>
                 <td th:text="${trip.status()}"></td>

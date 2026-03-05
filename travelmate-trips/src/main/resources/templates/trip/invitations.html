@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<body>
+<div th:fragment="invitationList">
+    <table th:if="${!invitations.isEmpty()}">
+        <thead>
+            <tr>
+                <th th:text="#{invitation.member}">Mitglied</th>
+                <th th:text="#{trip.status}">Status</th>
+                <th th:text="#{invitation.actions}">Aktionen</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="inv : ${invitations}">
+                <td th:text="${inv.inviteeName()}"></td>
+                <td th:text="${inv.status()}"></td>
+                <td th:if="${inv.status() == 'PENDING' && inv.inviteeId() == currentMemberId}">
+                    <form style="display:inline"
+                          hx-post th:hx-post="@{/trips/{tid}/invitations/{iid}/accept(tid=${inv.tripId()},iid=${inv.invitationId()})}"
+                          hx-target="#invitations"
+                          hx-swap="innerHTML">
+                        <input type="hidden" name="tenantId" th:value="${tenantId}">
+                        <input type="hidden" name="currentMemberId" th:value="${currentMemberId}">
+                        <button type="submit" th:text="#{invitation.accept}">Annehmen</button>
+                    </form>
+                    <form style="display:inline"
+                          hx-post th:hx-post="@{/trips/{tid}/invitations/{iid}/decline(tid=${inv.tripId()},iid=${inv.invitationId()})}"
+                          hx-target="#invitations"
+                          hx-swap="innerHTML">
+                        <input type="hidden" name="tenantId" th:value="${tenantId}">
+                        <input type="hidden" name="currentMemberId" th:value="${currentMemberId}">
+                        <button type="submit" th:text="#{invitation.decline}">Ablehnen</button>
+                    </form>
+                </td>
+                <td th:if="${inv.status() != 'PENDING' || inv.inviteeId() != currentMemberId}"></td>
+            </tr>
+        </tbody>
+    </table>
+    <p th:if="${invitations.isEmpty()}" th:text="#{invitation.empty}">Noch keine Einladungen.</p>
+</div>
+</body>
+</html>
