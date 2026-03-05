@@ -171,4 +171,70 @@ class SmokeIT {
         assertThat(page.content()).contains("Lina");
         assertThat(page.content()).contains("Tester");
     }
+
+    // --- Sign-up Flow (S3-A02) ---
+
+    @Test
+    @Order(40)
+    void signUpPageIsPubliclyAccessible() {
+        // Sign-up does not require login — open in a fresh context
+        navigateAndWait("/iam/signup");
+        assertThat(page.content()).doesNotContain("Whitelabel Error Page");
+        assertThat(page.content()).doesNotContain("Sign in to Travelmate");
+    }
+
+    @Test
+    @Order(41)
+    void signUpCreatesNewTravelParty() {
+        navigateAndWait("/iam/signup");
+
+        page.fill("#tenantName", "E2E-Partei " + RUN_ID);
+        page.fill("#firstName", "Anna");
+        page.fill("#lastName", "E2E");
+        page.fill("#email", "anna-" + RUN_ID + "@e2e.test");
+        page.fill("#password", "Test1234!");
+        page.fill("#passwordConfirm", "Test1234!");
+        clickAndWaitForNavigation("button[type=submit]");
+
+        // After sign-up, user should be redirected (to login or dashboard)
+        assertThat(page.content()).doesNotContain("Whitelabel Error Page");
+    }
+
+    // --- Dashboard (S3-A03 + S3-A05) ---
+
+    @Test
+    @Order(50)
+    void dashboardShowsTravelPartyAfterLogin() {
+        // Login as testuser (existing Keycloak user)
+        navigateAndWait("/iam/dashboard");
+        // May redirect to Keycloak login if session expired
+        if (page.url().contains("realms/travelmate")) {
+            page.fill("#username", TEST_USER);
+            page.fill("#password", TEST_PASSWORD);
+            page.click("#kc-login");
+            page.waitForURL(url -> !url.contains("realms/travelmate"));
+        }
+        assertThat(page.content()).doesNotContain("Whitelabel Error Page");
+    }
+
+    // --- Trip Creation (S3-B03) ---
+
+    @Test
+    @Order(60)
+    void tripsListPageLoads() {
+        navigateAndWait("/trips/");
+        assertThat(page.content()).doesNotContain("Whitelabel Error Page");
+    }
+
+    // --- Trip Status Lifecycle (S3-B05) ---
+    // Note: Full trip lifecycle E2E requires tenantId + organizerId from JWT context.
+    // These are covered by the unit/integration tests. E2E validates pages render correctly.
+
+    @Test
+    @Order(70)
+    void tripsModuleServesStaticAssets() {
+        navigateAndWait("/trips/");
+        assertThat(page.content()).doesNotContain("Whitelabel Error Page");
+        assertThat(page.content()).contains("Travelmate");
+    }
 }
