@@ -12,4 +12,9 @@ public record Password(String value) {
         argumentIsTrue(value.length() >= MIN_LENGTH,
             "The password must be at least " + MIN_LENGTH + " characters long.");
     }
+
+    @Override
+    public String toString() {
+        return "Password[***]";
+    }
 }
