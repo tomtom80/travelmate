@@ -5,8 +5,8 @@
     <table th:if="${!dependents.isEmpty()}">
         <thead>
             <tr>
-                <th th:text="#{child.firstName}">Vorname</th>
-                <th th:text="#{child.lastName}">Nachname</th>
+                <th th:text="#{companion.firstName}">Vorname</th>
+                <th th:text="#{companion.lastName}">Nachname</th>
             </tr>
         </thead>
         <tbody>
@@ -16,21 +16,21 @@
             </tr>
         </tbody>
     </table>
-    <p th:if="${dependents.isEmpty()}" th:text="#{child.empty}">Noch keine Kinder eingetragen.</p>
+    <p th:if="${dependents.isEmpty()}" th:text="#{companion.empty}">Noch keine Mitreisenden eingetragen.</p>
 
-    <h3 th:text="#{child.add}">Kind hinzufuegen</h3>
+    <h3 th:text="#{companion.add}">Mitreisende(n) hinzufuegen</h3>
     <form hx-post th:hx-post="@{/tenants/{tid}/accounts/{aid}/dependents(tid=${tenantId},aid=${accountId})}"
           hx-target="#dependents"
           hx-swap="innerHTML">
         <div>
-            <label for="depFirstName" th:text="#{child.firstName}">Vorname</label>
+            <label for="depFirstName" th:text="#{companion.firstName}">Vorname</label>
             <input type="text" id="depFirstName" name="firstName" required>
         </div>
         <div>
-            <label for="depLastName" th:text="#{child.lastName}">Nachname</label>
+            <label for="depLastName" th:text="#{companion.lastName}">Nachname</label>
             <input type="text" id="depLastName" name="lastName" required>
         </div>
-        <button type="submit" th:text="#{child.submit}">Hinzufuegen</button>
+        <button type="submit" th:text="#{companion.submit}">Hinzufuegen</button>
     </form>
 </div>
 </body>

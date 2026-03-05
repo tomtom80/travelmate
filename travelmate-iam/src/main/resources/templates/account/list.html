@@ -23,7 +23,7 @@
         </tbody>
     </table>
     <p th:if="${accounts.isEmpty()}" th:text="#{member.empty}">Noch keine Mitglieder vorhanden.</p>
-    <p><a th:href="@{/tenants/{id}(id=${tenant.tenantId})}" th:text="#{member.backToGroup}">Zurueck zur Reisegruppe</a></p>
+    <p><a th:href="@{/tenants/{id}(id=${tenant.tenantId})}" th:text="#{member.backToParty}">Zurueck zur Reisepartei</a></p>
 </div>
 </body>
 </html>

@@ -5,9 +5,9 @@
     <h1 th:text="${tenant.name}"></h1>
     <p th:if="${tenant.description}" th:text="${tenant.description}"></p>
     <p>
-        <a th:href="@{/tenants/{id}/accounts(id=${tenant.tenantId})}" th:text="#{travelGroup.manageMembers}">Mitglieder verwalten</a>
+        <a th:href="@{/tenants/{id}/accounts(id=${tenant.tenantId})}" th:text="#{travelParty.manageMembers}">Mitglieder verwalten</a>
     </p>
-    <p><a th:href="@{/tenants}" th:text="#{travelGroup.backToList}">Zurueck zur Liste</a></p>
+    <p><a th:href="@{/tenants}" th:text="#{travelParty.backToList}">Zurueck zur Liste</a></p>
 </div>
 </body>
 </html>

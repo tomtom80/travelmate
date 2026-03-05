@@ -2,19 +2,19 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="content">
-    <h3 th:text="#{child.add}">Kind hinzufuegen</h3>
+    <h3 th:text="#{companion.add}">Mitreisende(n) hinzufuegen</h3>
     <form hx-post th:hx-post="@{/tenants/{tid}/accounts/{aid}/dependents(tid=${tenantId},aid=${accountId})}"
           hx-target="#dependents"
           hx-swap="innerHTML">
         <div>
-            <label for="firstName" th:text="#{child.firstName}">Vorname</label>
+            <label for="firstName" th:text="#{companion.firstName}">Vorname</label>
             <input type="text" id="firstName" name="firstName" required>
         </div>
         <div>
-            <label for="lastName" th:text="#{child.lastName}">Nachname</label>
+            <label for="lastName" th:text="#{companion.lastName}">Nachname</label>
             <input type="text" id="lastName" name="lastName" required>
         </div>
-        <button type="submit" th:text="#{child.submit}">Hinzufuegen</button>
+        <button type="submit" th:text="#{companion.submit}">Hinzufuegen</button>
     </form>
 </div>
 </body>
