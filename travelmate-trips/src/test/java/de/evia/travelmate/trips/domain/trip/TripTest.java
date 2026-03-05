@@ -1,0 +1,120 @@
+package de.evia.travelmate.trips.domain.trip;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+import java.time.LocalDate;
+import java.util.UUID;
+
+import org.junit.jupiter.api.Test;
+
+import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.common.events.trips.TripCreated;
+
+class TripTest {
+
+    private static final TenantId TENANT_ID = new TenantId(UUID.randomUUID());
+    private static final UUID ORGANIZER_ID = UUID.randomUUID();
+    private static final TripName NAME = new TripName("Skiurlaub 2026");
+    private static final DateRange DATE_RANGE = new DateRange(
+        LocalDate.of(2026, 3, 15), LocalDate.of(2026, 3, 22)
+    );
+
+    @Test
+    void planCreatesTripInPlanningStatus() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+
+        assertThat(trip.tripId()).isNotNull();
+        assertThat(trip.tenantId()).isEqualTo(TENANT_ID);
+        assertThat(trip.name()).isEqualTo(NAME);
+        assertThat(trip.dateRange()).isEqualTo(DATE_RANGE);
+        assertThat(trip.status()).isEqualTo(TripStatus.PLANNING);
+        assertThat(trip.organizerId()).isEqualTo(ORGANIZER_ID);
+        assertThat(trip.participants()).hasSize(1);
+    }
+
+    @Test
+    void planRegistersTripCreatedEvent() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+
+        assertThat(trip.domainEvents()).hasSize(1);
+        assertThat(trip.domainEvents().getFirst()).isInstanceOf(TripCreated.class);
+        final TripCreated event = (TripCreated) trip.domainEvents().getFirst();
+        assertThat(event.tripId()).isEqualTo(trip.tripId().value());
+        assertThat(event.tenantId()).isEqualTo(TENANT_ID.value());
+    }
+
+    @Test
+    void addParticipant() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+        final UUID participantId = UUID.randomUUID();
+
+        trip.addParticipant(participantId);
+
+        assertThat(trip.participants()).hasSize(2);
+    }
+
+    @Test
+    void rejectsDuplicateParticipant() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+
+        assertThatThrownBy(() -> trip.addParticipant(ORGANIZER_ID))
+            .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void confirmTransitionsFromPlanning() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+
+        trip.confirm();
+
+        assertThat(trip.status()).isEqualTo(TripStatus.CONFIRMED);
+    }
+
+    @Test
+    void startTransitionsFromConfirmed() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+        trip.confirm();
+
+        trip.start();
+
+        assertThat(trip.status()).isEqualTo(TripStatus.IN_PROGRESS);
+    }
+
+    @Test
+    void completeTransitionsFromInProgress() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+        trip.confirm();
+        trip.start();
+
+        trip.complete();
+
+        assertThat(trip.status()).isEqualTo(TripStatus.COMPLETED);
+    }
+
+    @Test
+    void cancelFromPlanning() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+
+        trip.cancel();
+
+        assertThat(trip.status()).isEqualTo(TripStatus.CANCELLED);
+    }
+
+    @Test
+    void cannotConfirmWhenNotPlanning() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+        trip.confirm();
+
+        assertThatThrownBy(trip::confirm)
+            .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void cannotStartWhenNotConfirmed() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+
+        assertThatThrownBy(trip::start)
+            .isInstanceOf(IllegalStateException.class);
+    }
+}

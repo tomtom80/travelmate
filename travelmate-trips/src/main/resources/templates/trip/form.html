@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<body>
+<div th:fragment="content">
+    <h1 th:text="#{trip.create}">Neue Reise planen</h1>
+
+    <form method="post" th:action="@{/trips}">
+        <input type="hidden" name="tenantId" th:value="${tenantId}">
+        <input type="hidden" name="organizerId" th:value="${organizerId}">
+        <div>
+            <label for="name" th:text="#{trip.name}">Name</label>
+            <input type="text" id="name" name="name" required>
+        </div>
+        <div>
+            <label for="description" th:text="#{trip.description}">Beschreibung</label>
+            <textarea id="description" name="description"></textarea>
+        </div>
+        <div>
+            <label for="startDate" th:text="#{trip.startDate}">Von</label>
+            <input type="date" id="startDate" name="startDate" required>
+        </div>
+        <div>
+            <label for="endDate" th:text="#{trip.endDate}">Bis</label>
+            <input type="date" id="endDate" name="endDate" required>
+        </div>
+        <button type="submit" th:text="#{trip.submit}">Reise anlegen</button>
+    </form>
+</div>
+</body>
+</html>
