@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<body>
+<div th:fragment="content">
+    <h1 th:text="${trip.name()}">Reisename</h1>
+    <p th:if="${trip.description()}" th:text="${trip.description()}"></p>
+    <p>
+        <span th:text="#{trip.startDate}">Von</span>: <span th:text="${trip.startDate()}"></span> —
+        <span th:text="#{trip.endDate}">Bis</span>: <span th:text="${trip.endDate()}"></span>
+    </p>
+    <p><span th:text="#{trip.status}">Status</span>: <span th:text="${trip.status()}"></span></p>
+
+    <h2 th:text="#{trip.participants}">Teilnehmer</h2>
+    <table th:if="${!participants.isEmpty()}">
+        <thead>
+            <tr>
+                <th th:text="#{invitation.member}">Mitglied</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr th:each="p : ${participants}">
+                <td th:text="${p.firstName() + ' ' + p.lastName()}"></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2 th:text="#{invitation.title}">Einladungen</h2>
+    <div id="invitations">
+        <div th:replace="~{trip/invitations :: invitationList}"></div>
+    </div>
+
+    <h3 th:text="#{invitation.invite}">Mitglied einladen</h3>
+    <form th:if="${!invitableMembers.isEmpty()}"
+          hx-post th:hx-post="@{/trips/{id}/invitations(id=${trip.tripId()})}"
+          hx-target="#invitations"
+          hx-swap="innerHTML">
+        <input type="hidden" name="tenantId" th:value="${trip.tenantId()}">
+        <input type="hidden" name="invitedBy" th:value="${currentMemberId}">
+        <div>
+            <label for="inviteeId" th:text="#{invitation.member}">Mitglied</label>
+            <select id="inviteeId" name="inviteeId" required>
+                <option th:each="m : ${invitableMembers}"
+                        th:value="${m.memberId()}"
+                        th:text="${m.firstName() + ' ' + m.lastName()}">
+                </option>
+            </select>
+        </div>
+        <button type="submit" th:text="#{invitation.send}">Einladung senden</button>
+    </form>
+    <p th:if="${invitableMembers.isEmpty()}" th:text="#{invitation.allInvited}">Alle Mitglieder bereits eingeladen.</p>
+
+    <a th:href="@{/trips(tenantId=${trip.tenantId()})}" th:text="#{common.back}">Zurueck</a>
+</div>
+</body>
+</html>
