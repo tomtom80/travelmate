@@ -42,6 +42,12 @@ public class AccountRepositoryAdapter implements AccountRepository {
     }
 
     @Override
+    public Optional<Account> findByKeycloakUserId(final KeycloakUserId keycloakUserId) {
+        return jpaRepository.findByKeycloakUserId(keycloakUserId.value())
+            .map(this::toDomain);
+    }
+
+    @Override
     public List<Account> findAllByTenantId(final TenantId tenantId) {
         return jpaRepository.findAllByTenantId(tenantId.value()).stream()
             .map(this::toDomain)

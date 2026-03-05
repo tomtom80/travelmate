@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<body>
+<div th:fragment="content">
+    <h1 th:text="#{dashboard.title}">Meine Reisegruppe</h1>
+
+    <section>
+        <h2 th:text="${tenant.name()}">Reisegruppenname</h2>
+        <p th:if="${tenant.description() != null and !tenant.description().isEmpty()}"
+           th:text="${tenant.description()}"></p>
+    </section>
+
+    <section>
+        <h3 th:text="#{dashboard.members}">Mitglieder</h3>
+        <table th:if="${!members.isEmpty()}">
+            <thead>
+                <tr>
+                    <th th:text="#{member.firstName}">Vorname</th>
+                    <th th:text="#{member.lastName}">Nachname</th>
+                    <th th:text="#{member.email}">E-Mail</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="m : ${members}">
+                    <td th:text="${m.firstName()}"></td>
+                    <td th:text="${m.lastName()}"></td>
+                    <td th:text="${m.email()}"></td>
+                </tr>
+            </tbody>
+        </table>
+        <p th:if="${members.isEmpty()}" th:text="#{member.empty}">Noch keine Mitglieder.</p>
+    </section>
+
+    <section>
+        <h3 th:text="#{dashboard.children}">Kinder</h3>
+        <table th:if="${!dependents.isEmpty()}">
+            <thead>
+                <tr>
+                    <th th:text="#{child.firstName}">Vorname</th>
+                    <th th:text="#{child.lastName}">Nachname</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="dep : ${dependents}">
+                    <td th:text="${dep.firstName()}"></td>
+                    <td th:text="${dep.lastName()}"></td>
+                </tr>
+            </tbody>
+        </table>
+        <p th:if="${dependents.isEmpty()}" th:text="#{child.empty}">Noch keine Kinder eingetragen.</p>
+    </section>
+</div>
+</body>
+</html>
