@@ -12,6 +12,31 @@ nav strong {
     font-size: 1.1rem;
 }
 
+/* Mobile nav — stack items vertically */
+@media (max-width: 576px) {
+    nav {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    nav > ul {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.25rem 0.75rem;
+        padding: 0;
+    }
+
+    nav > ul:first-child {
+        margin-bottom: 0;
+    }
+
+    nav > ul li form button,
+    nav > ul li a[role="button"] {
+        padding: 0.25rem 0.75rem;
+        font-size: 0.85rem;
+    }
+}
+
 /* Error messages */
 .error {
     color: #991b1b;

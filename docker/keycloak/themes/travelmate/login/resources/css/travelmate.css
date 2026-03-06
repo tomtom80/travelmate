@@ -1,5 +1,29 @@
 /* Travelmate Keycloak Login Theme — PicoCSS overrides */
 
+/* Mobile nav — stack items vertically */
+@media (max-width: 576px) {
+    nav {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+
+    nav > ul {
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 0.25rem 0.75rem;
+        padding: 0;
+    }
+
+    nav > ul:first-child {
+        margin-bottom: 0;
+    }
+
+    nav > ul li a[role="button"] {
+        padding: 0.25rem 0.75rem;
+        font-size: 0.85rem;
+    }
+}
+
 /* Card centered on page */
 .kc-card {
     max-width: 460px;
