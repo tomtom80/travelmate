@@ -1,15 +1,48 @@
-/* Travelmate — Custom overrides (PicoCSS provides the base) */
+/* Travelmate — Shared design system (PicoCSS overrides) */
+
 :root {
-    --pico-primary: #0d9488;
-    --pico-primary-hover: #0f766e;
-    --pico-primary-focus: rgba(13, 148, 136, 0.25);
-    --pico-primary-inverse: #fff;
+    --tm-danger: #dc2626;
+    --tm-danger-bg: #fef2f2;
+    --tm-danger-border: #fecaca;
 }
 
+/* Nav — brand emphasis */
+nav strong {
+    color: var(--pico-primary);
+    font-size: 1.1rem;
+}
+
+/* Error messages */
 .error {
-    color: var(--pico-del-color);
-    border: 1px solid var(--pico-del-color);
-    padding: 0.75rem;
+    color: #991b1b;
+    background: var(--tm-danger-bg);
+    border: 1px solid var(--tm-danger-border);
+    padding: 0.75rem 1rem;
     border-radius: var(--pico-border-radius);
     margin-bottom: 1rem;
+}
+
+/* Section spacing */
+section {
+    margin-bottom: 2rem;
+}
+
+section h2 {
+    border-bottom: 1px solid var(--pico-muted-border-color);
+    padding-bottom: 0.5rem;
+}
+
+/* Danger zone */
+section:last-child h2 {
+    color: var(--tm-danger);
+}
+
+/* Footer */
+body > footer {
+    text-align: center;
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--pico-muted-border-color);
+    margin-top: 2rem;
+    color: var(--pico-muted-color);
+    font-size: 0.875rem;
 }

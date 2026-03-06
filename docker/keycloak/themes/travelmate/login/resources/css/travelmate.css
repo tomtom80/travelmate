@@ -1,151 +1,150 @@
-/* Travelmate Keycloak Login Theme — matches PicoCSS teal/green palette */
+/* Travelmate Keycloak Login Theme — PicoCSS overrides */
 
-/* Color palette from landing.css */
-:root {
-    --tm-primary: #0d9488;
-    --tm-primary-hover: #0f766e;
-    --tm-primary-light: #ccfbf1;
-    --tm-bg: #f8fafc;
-    --tm-text: #1e293b;
-    --tm-text-muted: #64748b;
-    --tm-border: #e2e8f0;
-    --tm-radius: 0.375rem;
+/* Card centered on page */
+.kc-card {
+    max-width: 460px;
+    margin: 2rem auto;
 }
 
-/* Page background */
-#kc-login {
-    background: var(--tm-bg) !important;
+.kc-card header {
+    text-align: center;
 }
 
-.login-pf body {
-    background: var(--tm-bg) !important;
+.kc-card header h2 {
+    margin-bottom: 0;
 }
 
-/* Card styling */
-#kc-form-wrapper,
-#kc-content-wrapper {
-    max-width: 420px;
-    margin: 0 auto;
+/* Alert messages */
+.kc-alert {
+    padding: 0.75rem 1rem;
+    border-radius: var(--pico-border-radius);
+    margin-bottom: 1rem;
+    font-size: 0.9rem;
 }
 
-.card-pf {
-    border-radius: var(--tm-radius) !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
-    border: 1px solid var(--tm-border) !important;
+.kc-alert-error {
+    color: #991b1b;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
 }
 
-/* Header / Brand */
-#kc-header-wrapper {
-    font-family: system-ui, -apple-system, sans-serif !important;
-    color: var(--tm-primary) !important;
-    font-size: 1.5rem !important;
-    font-weight: 700 !important;
-    padding-bottom: 1rem !important;
+.kc-alert-success {
+    color: #065f46;
+    background: #ecfdf5;
+    border: 1px solid #a7f3d0;
 }
 
-#kc-page-title {
-    font-family: system-ui, -apple-system, sans-serif !important;
-    color: var(--tm-text) !important;
-    font-weight: 600 !important;
+.kc-alert-warning {
+    color: #92400e;
+    background: #fffbeb;
+    border: 1px solid #fde68a;
 }
 
-/* Form elements */
-.login-pf .form-control,
-#kc-form-login input[type="text"],
-#kc-form-login input[type="password"],
-#kc-form-login input[type="email"] {
-    font-family: system-ui, -apple-system, sans-serif !important;
-    border: 1px solid var(--tm-border) !important;
-    border-radius: var(--tm-radius) !important;
-    padding: 0.5rem 0.75rem !important;
-    font-size: 1rem !important;
-    color: var(--tm-text) !important;
-    background: #fff !important;
-    transition: border-color 0.2s !important;
+.kc-alert-info {
+    color: #1e40af;
+    background: #eff6ff;
+    border: 1px solid #bfdbfe;
 }
 
-.login-pf .form-control:focus,
-#kc-form-login input:focus {
-    border-color: var(--tm-primary) !important;
-    outline: none !important;
-    box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15) !important;
+/* Field validation errors */
+.kc-field-error {
+    color: #dc2626;
+    display: block;
+    margin-top: -0.5rem;
+    margin-bottom: 0.5rem;
 }
 
-/* Labels */
-.login-pf label,
-.login-pf .control-label {
-    font-family: system-ui, -apple-system, sans-serif !important;
-    color: var(--tm-text) !important;
-    font-weight: 500 !important;
+/* Form options row (remember me + forgot password) */
+.kc-form-options {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
 }
 
-/* Primary button (Login) */
-#kc-login,
-.btn-primary,
-input[type="submit"].btn-primary {
-    background-color: var(--tm-primary) !important;
-    border-color: var(--tm-primary) !important;
-    font-family: system-ui, -apple-system, sans-serif !important;
-    border-radius: var(--tm-radius) !important;
-    padding: 0.5rem 1rem !important;
-    font-size: 1rem !important;
-    font-weight: 500 !important;
-    transition: background-color 0.2s !important;
+.kc-remember-me {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0;
+    cursor: pointer;
 }
 
-#kc-login:hover,
-.btn-primary:hover,
-input[type="submit"].btn-primary:hover {
-    background-color: var(--tm-primary-hover) !important;
-    border-color: var(--tm-primary-hover) !important;
+.kc-remember-me input[type="checkbox"] {
+    margin: 0;
 }
 
-/* Links */
-.login-pf a,
-#kc-registration a,
-#kc-form-options a {
-    color: var(--tm-primary) !important;
-    text-decoration: none !important;
+.kc-forgot-password {
+    font-size: 0.9rem;
+    white-space: nowrap;
 }
 
-.login-pf a:hover,
-#kc-registration a:hover,
-#kc-form-options a:hover {
-    color: var(--tm-primary-hover) !important;
-    text-decoration: underline !important;
+/* Form action buttons */
+.kc-form-actions {
+    display: flex;
+    gap: 0.75rem;
+    margin-top: 1rem;
 }
 
-/* Alert / Error messages */
-.alert-error,
-.kc-feedback-text {
-    color: #dc2626 !important;
-    border-color: #fca5a5 !important;
-    background: #fef2f2 !important;
-    border-radius: var(--tm-radius) !important;
+.kc-form-actions button,
+.kc-form-actions a[role="button"] {
+    flex: 1;
+    width: auto;
+    text-align: center;
+    white-space: nowrap;
 }
 
-.alert-success {
-    color: var(--tm-primary) !important;
-    border-color: var(--tm-primary-light) !important;
-    background: var(--tm-primary-light) !important;
-    border-radius: var(--tm-radius) !important;
+/* Registration link */
+.kc-registration-link {
+    text-align: center;
+    margin-top: 1rem;
+    margin-bottom: 0;
 }
 
-/* Typography */
-.login-pf,
-.login-pf body {
-    font-family: system-ui, -apple-system, sans-serif !important;
-    color: var(--tm-text) !important;
+/* Info section */
+.kc-info {
+    margin-top: 1rem;
+    padding-top: 0.5rem;
 }
 
-/* "Remember me" checkbox */
-.login-pf .checkbox label {
-    font-weight: 400 !important;
-    color: var(--tm-text-muted) !important;
+.kc-info-text {
+    color: var(--pico-muted-color);
+    font-size: 0.9rem;
 }
 
-/* Footer / powered by */
-#kc-info-wrapper {
-    color: var(--tm-text-muted) !important;
-    font-size: 0.875rem !important;
+/* Attempted username display */
+.kc-attempted-username {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem 0;
+}
+
+.kc-attempted-username span {
+    font-weight: 600;
+}
+
+.kc-attempted-username a {
+    font-size: 0.875rem;
+}
+
+/* Language links in nav */
+.current-locale {
+    font-weight: 700;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 1.5rem 0;
+    border-top: 1px solid var(--pico-muted-border-color);
+    margin-top: 2rem;
+    color: var(--pico-muted-color);
+}
+
+/* Password wrapper */
+.kc-password-wrapper {
+    position: relative;
 }

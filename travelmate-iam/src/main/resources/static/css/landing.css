@@ -1,8 +1,9 @@
 /* Landing page — vacation-themed overrides for PicoCSS */
 
-:root {
-    --pico-primary: #0d9488;
-    --pico-primary-hover: #0f766e;
+/* Nav — brand emphasis */
+nav strong {
+    color: var(--pico-primary);
+    font-size: 1.1rem;
 }
 
 /* Hero section */
@@ -13,7 +14,7 @@
 
 .hero h1 {
     font-size: 2.8rem;
-    background: linear-gradient(135deg, #0d9488, #2563eb);
+    background: linear-gradient(135deg, var(--pico-primary), #2563eb);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -74,7 +75,7 @@
 /* CTA */
 .cta article {
     text-align: center;
-    background: linear-gradient(135deg, #f0fdfa, #e0f2fe);
+    background: linear-gradient(135deg, #eff6ff, #e0f2fe);
     border: none;
 }
 
@@ -86,7 +87,9 @@
 /* Footer */
 footer {
     text-align: center;
-    padding: 2rem 0;
+    padding: 1.5rem 0;
     border-top: 1px solid var(--pico-muted-border-color);
     margin-top: 3rem;
+    color: var(--pico-muted-color);
+    font-size: 0.875rem;
 }
