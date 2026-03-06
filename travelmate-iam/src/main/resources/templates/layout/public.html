@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}" data-theme="light">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -23,5 +23,8 @@
     </nav>
     <main class="container" th:insert="~{${view} :: content}">
     </main>
+    <footer class="container">
+        <small>Travelmate</small>
+    </footer>
 </body>
 </html>

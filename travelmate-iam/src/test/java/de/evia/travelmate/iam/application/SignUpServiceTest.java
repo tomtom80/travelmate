@@ -76,6 +76,7 @@ class SignUpServiceTest {
         verify(identityProviderService).createUser(any(), any(), any());
         verify(accountRepository).save(any(Account.class));
         verify(identityProviderService).assignRole(eq(KEYCLOAK_USER_ID), eq("organizer"));
+        verify(identityProviderService).sendVerificationEmail(eq(KEYCLOAK_USER_ID));
     }
 
     @Test

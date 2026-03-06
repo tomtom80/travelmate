@@ -69,6 +69,7 @@ public class SignUpService {
             );
             accountRepository.save(account);
             identityProviderService.assignRole(keycloakUserId, "organizer");
+            identityProviderService.sendVerificationEmail(keycloakUserId);
 
             for (final DomainEvent event : account.domainEvents()) {
                 eventPublisher.publishEvent(event);

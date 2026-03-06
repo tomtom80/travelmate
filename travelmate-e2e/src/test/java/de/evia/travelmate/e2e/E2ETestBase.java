@@ -114,8 +114,12 @@ abstract class E2ETestBase {
     }
 
     static void ensureLoggedOut() {
-        navigateAndWait("/logout");
-        page.waitForLoadState();
+        navigateAndWait("/iam/dashboard");
+        final var logoutButton = page.locator("form[action='/logout'] button[type=submit]");
+        if (logoutButton.isVisible()) {
+            logoutButton.click();
+            page.waitForLoadState();
+        }
     }
 
     /**

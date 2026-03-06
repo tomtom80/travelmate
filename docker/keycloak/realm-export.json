@@ -3,13 +3,18 @@
   "enabled": true,
   "displayName": "Travelmate",
   "loginTheme": "travelmate",
-  "registrationAllowed": true,
+  "emailTheme": "travelmate",
+  "registrationAllowed": false,
   "registrationEmailAsUsername": false,
   "loginWithEmailAllowed": true,
   "duplicateEmailsAllowed": false,
   "resetPasswordAllowed": true,
   "editUsernameAllowed": false,
   "sslRequired": "none",
+  "internationalizationEnabled": true,
+  "supportedLocales": ["de", "en"],
+  "defaultLocale": "de",
+  "rememberMe": true,
   "roles": {
     "realm": [
       {

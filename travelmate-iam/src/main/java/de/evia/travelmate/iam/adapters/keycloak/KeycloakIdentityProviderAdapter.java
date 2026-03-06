@@ -66,6 +66,17 @@ public class KeycloakIdentityProviderAdapter implements IdentityProviderService 
     }
 
     @Override
+    public void sendVerificationEmail(final KeycloakUserId userId) {
+        try {
+            realmResource().users().get(userId.value())
+                .executeActionsEmail(List.of("VERIFY_EMAIL"));
+        } catch (final Exception e) {
+            throw new IdentityProviderException(
+                "Failed to send verification email for user " + userId.value(), e);
+        }
+    }
+
+    @Override
     public void assignRole(final KeycloakUserId userId, final String roleName) {
         try {
             final RoleResource roleResource = realmResource().roles().get(roleName);

@@ -12,14 +12,14 @@ Travelmate is a multi-tenant travel management platform built as a **Maven multi
 |--------|------|------|-------------|-------------|
 | `travelmate-common` | Plain JAR (no Spring Boot) | — | — | Shared kernel: domain primitives, event contracts, RabbitMQ routing keys |
 | `travelmate-gateway` | Spring Cloud Gateway (reactive) | 8080 | `/` | OIDC entry point, routes requests to SCS backends via TokenRelay |
-| `travelmate-iam` | SCS (servlet) | 8081 | `/iam` | Identity & Access Management: tenants, accounts, dependents |
-| `travelmate-trips` | SCS (servlet) | 8082 | `/trips` | Trip management: travel parties, trips, invitations, polls |
+| `travelmate-iam` | SCS (servlet) | 8081 | `/iam` | Identity & Access Management: sign-up, tenants, accounts, dependents, Keycloak integration |
+| `travelmate-trips` | SCS (servlet) | 8082 | `/trips` | Trip management: travel parties, trips, invitations, stay periods |
 | `travelmate-expense` | SCS (servlet) | 8083 | `/expense` | Expense management: ledgers, receipts, weightings |
 | `travelmate-e2e` | Test module (profile `e2e`) | — | — | Playwright E2E tests against running infrastructure |
 
 ## Versioning
 
-Maven CI-Friendly Versions (`${revision}` property). Current version: `0.2.0-SNAPSHOT`.
+Maven CI-Friendly Versions (`${revision}` property). Current version: `0.4.0-SNAPSHOT`.
 
 Schema: `<major>.<iteration>.<patch>-SNAPSHOT`. The `<iteration>` tracks development iterations.
 
@@ -112,7 +112,7 @@ de.evia.travelmate.<context>/
 
 Contains domain primitives shared across all SCS:
 - `TenantId`, `DomainEvent`, `AggregateRoot`, `Assertion` (validation utility)
-- Event contracts in `events/iam/`: `AccountRegistered`, `MemberAddedToTenant`, `DependentAddedToTenant`, `RoleAssignedToUser`, `RoleUnassignedFromUser`
+- Event contracts in `events/iam/`: `AccountRegistered`, `MemberAddedToTenant`, `DependentAddedToTenant`, `DependentRemovedFromTenant`, `MemberRemovedFromTenant`, `TenantCreated`, `TenantDeleted`, `RoleAssignedToUser`, `RoleUnassignedFromUser`
 - Event contracts in `events/trips/`: `TripCreated`, `ParticipantJoinedTrip`, `TripCompleted`
 - `RoutingKeys` constants for RabbitMQ topic exchange (`travelmate.events`)
 
@@ -123,7 +123,7 @@ Domain events are registered in aggregate factory methods, then published after 
 ### Service Communication
 
 Asynchronous via RabbitMQ (topic exchange `travelmate.events`):
-- **IAM** publishes `AccountRegistered`, `MemberAddedToTenant`, `DependentAddedToTenant` events
+- **IAM** publishes `TenantCreated`, `AccountRegistered`, `MemberAddedToTenant`, `DependentAddedToTenant` (and removal counterparts) events
 - **Trips** consumes IAM events to maintain TravelParty projections; publishes `TripCreated`, `ParticipantJoinedTrip`, `TripCompleted`
 - **Expense** consumes Trips events
 
@@ -179,8 +179,31 @@ These are non-obvious differences from Spring Boot 3.x:
 - Continuation indent: 4 spaces (same as regular indent)
 - Member ordering: enums → static final fields (public→private) → static fields → static initializers → final fields → fields → instance initializers → constructors → static methods → methods → interfaces → static classes → classes
 
+## Ubiquitous Language (ADR-0011)
+
+The UI uses domain language (German/English via i18n), while code uses technical names:
+
+| UI (DE) | UI (EN) | Code | Context |
+|---------|---------|------|---------|
+| Reisepartei | Travel Party | Tenant | IAM — registration unit (person/family) |
+| Mitglied | Member | Account | IAM — person with login |
+| Mitreisende(r) | Companion | Dependent | IAM — person without login |
+| Reise | Trip | Trip | Trips — a concrete trip/event |
+| Einladung | Invitation | Invitation | Trips — invitation to a trip (NOT IAM) |
+
+Invitations belong to the Trips Core Domain, not IAM.
+
+## Sign-up & Authentication Flow
+
+1. Public sign-up page (`/iam/signup`) creates Tenant + Keycloak user + Account atomically via `SignUpService`
+2. After sign-up, user is redirected to Gateway OIDC login
+3. Gateway forwards JWT to SCS via TokenRelay filter
+4. IAM resolves tenant context from JWT `email` claim via `AccountService`
+5. Trips resolves `tenantId` + `memberId` from JWT `email` claim via `TravelParty` projection
+6. Member invitation: organizer invites via email → invitee registers with existing Tenant
+
 ## Documentation
 
-- 10 ADRs in `docs/adr/` (MADR format, German)
+- 11 ADRs in `docs/adr/` (MADR format, German)
 - Arc42 architecture docs in `docs/arc42/`
 - Design diagrams in `docs/design/`

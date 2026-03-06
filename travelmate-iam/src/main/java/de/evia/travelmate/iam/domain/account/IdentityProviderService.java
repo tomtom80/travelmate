@@ -8,6 +8,8 @@ public interface IdentityProviderService {
 
     void sendActionsEmail(KeycloakUserId userId);
 
+    void sendVerificationEmail(KeycloakUserId userId);
+
     void assignRole(KeycloakUserId userId, String roleName);
 
     void deleteUser(KeycloakUserId userId);

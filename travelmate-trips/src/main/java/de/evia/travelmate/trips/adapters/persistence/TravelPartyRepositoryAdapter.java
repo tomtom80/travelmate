@@ -39,7 +39,7 @@ public class TravelPartyRepositoryAdapter implements TravelPartyRepository {
 
     @Override
     public Optional<TravelParty> findByMemberEmail(final String email) {
-        return jpaRepository.findByMemberEmail(email).map(this::toDomain);
+        return jpaRepository.findAllByMemberEmail(email).stream().findFirst().map(this::toDomain);
     }
 
     @Override

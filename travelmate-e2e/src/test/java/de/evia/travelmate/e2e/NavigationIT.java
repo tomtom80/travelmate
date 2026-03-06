@@ -61,14 +61,14 @@ class NavigationIT extends E2ETestBase {
     void logoutButtonIsPresent() {
         navigateAndWait("/iam/dashboard");
 
-        assertThat(page.locator("a[href='/logout']").isVisible()).isTrue();
+        assertThat(page.locator("form[action='/logout'] button[type=submit]").isVisible()).isTrue();
     }
 
     @Test
     @Order(31)
     void logoutRedirectsAwayFromDashboard() {
         navigateAndWait("/iam/dashboard");
-        page.locator("a[href='/logout']").click();
+        page.locator("form[action='/logout'] button[type=submit]").click();
         page.waitForLoadState();
 
         final String url = page.url();

@@ -67,9 +67,10 @@ class TripLifecycleIT extends E2ETestBase {
         page.fill("#description", "Ein E2E-Testurlaub");
         page.fill("input[name=startDate]", "2026-07-01");
         page.fill("input[name=endDate]", "2026-07-14");
-        page.click("button[type=submit]");
-        page.waitForURL(url -> url.endsWith("/trips") || url.endsWith("/trips/"));
+        page.locator("main button[type=submit]").click();
+        page.waitForLoadState();
 
+        assertThat(page.url()).contains("/trips");
         assertThat(page.content()).contains(TRIP_NAME);
     }
 
@@ -163,8 +164,8 @@ class TripLifecycleIT extends E2ETestBase {
         page.fill("input[name=name]", cancelTripName);
         page.fill("input[name=startDate]", "2026-08-01");
         page.fill("input[name=endDate]", "2026-08-07");
-        page.click("button[type=submit]");
-        page.waitForURL(url -> url.endsWith("/trips") || url.endsWith("/trips/"));
+        page.locator("main button[type=submit]").click();
+        page.waitForLoadState();
 
         page.locator("a", new com.microsoft.playwright.Page.LocatorOptions().setHasText(cancelTripName)).click();
         page.waitForLoadState();
