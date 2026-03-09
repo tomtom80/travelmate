@@ -1,0 +1,8 @@
+# Local settings (not committed)
+settings.local.json
+
+# Hook logs (generated at runtime)
+hooks/logs/*.log
+
+# Agent memory local overrides
+agent-memory/**/*.local.md

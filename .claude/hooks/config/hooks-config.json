@@ -1,0 +1,43 @@
+{
+  "description": "Hook enable/disable configuration for Travelmate Claude Code agents",
+  "hooks": {
+    "security-check": {
+      "enabled": true,
+      "description": "Pre-tool-use security validation — blocks dangerous patterns"
+    },
+    "session-logging": {
+      "enabled": true,
+      "description": "Log all hook events to .claude/hooks/logs/"
+    },
+    "sensitive-file-warning": {
+      "enabled": true,
+      "description": "Warn when modifying security-sensitive files"
+    }
+  },
+  "agents": {
+    "architect-agent": {
+      "hooks_enabled": true,
+      "description": "DDD & Architecture Expert"
+    },
+    "security-expert-agent": {
+      "hooks_enabled": true,
+      "description": "Application Security Engineer"
+    },
+    "requirements-engineer-agent": {
+      "hooks_enabled": true,
+      "description": "Requirements Engineering"
+    },
+    "qs-engineer-agent": {
+      "hooks_enabled": true,
+      "description": "QA Engineering"
+    },
+    "ux-designer-agent": {
+      "hooks_enabled": true,
+      "description": "UX Design"
+    },
+    "devops-engineer-agent": {
+      "hooks_enabled": true,
+      "description": "DevOps Engineering"
+    }
+  }
+}
