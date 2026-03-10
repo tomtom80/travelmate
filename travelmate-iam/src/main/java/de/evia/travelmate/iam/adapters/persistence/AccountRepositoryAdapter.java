@@ -84,7 +84,7 @@ public class AccountRepositoryAdapter implements AccountRepository {
             account.email().value(),
             account.fullName().firstName(),
             account.fullName().lastName(),
-            account.dateOfBirth() != null ? account.dateOfBirth().value() : null
+            account.dateOfBirth().value()
         );
     }
 
@@ -96,7 +96,7 @@ public class AccountRepositoryAdapter implements AccountRepository {
             new Username(entity.getUsername()),
             new Email(entity.getEmail()),
             new FullName(entity.getFirstName(), entity.getLastName()),
-            entity.getDateOfBirth() != null ? new DateOfBirth(entity.getDateOfBirth()) : null
+            new DateOfBirth(entity.getDateOfBirth())
         );
     }
 }

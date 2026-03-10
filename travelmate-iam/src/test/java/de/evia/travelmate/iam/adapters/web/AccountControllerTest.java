@@ -9,6 +9,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
@@ -69,14 +70,15 @@ class AccountControllerTest {
     void registerRedirectsToDetail() throws Exception {
         when(accountService.registerAccount(any(RegisterAccountCommand.class)))
             .thenReturn(new AccountRepresentation(accountId, tenantId, "testuser",
-                "test@example.com", "Max", "Mustermann", null));
+                "test@example.com", "Max", "Mustermann", LocalDate.of(1990, 5, 15)));
 
         mockMvc.perform(post("/tenants/" + tenantId + "/accounts")
                 .param("keycloakUserId", "kc-123")
                 .param("username", "testuser")
                 .param("email", "test@example.com")
                 .param("firstName", "Max")
-                .param("lastName", "Mustermann"))
+                .param("lastName", "Mustermann")
+                .param("dateOfBirth", "1990-05-15"))
             .andExpect(status().is3xxRedirection())
             .andExpect(redirectedUrlPattern("/tenants/*/accounts/*"));
     }
@@ -87,7 +89,7 @@ class AccountControllerTest {
             .thenReturn(new TenantRepresentation(tenantId, "Test", null));
         when(accountService.findById(any(AccountId.class)))
             .thenReturn(new AccountRepresentation(accountId, tenantId, "testuser",
-                "test@example.com", "Max", "Mustermann", null));
+                "test@example.com", "Max", "Mustermann", LocalDate.of(1990, 5, 15)));
         when(accountService.findDependentsByGuardian(any(AccountId.class)))
             .thenReturn(List.of());
 

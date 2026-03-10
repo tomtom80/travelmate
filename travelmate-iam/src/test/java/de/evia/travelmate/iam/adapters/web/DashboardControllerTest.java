@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,9 +28,11 @@ import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.iam.application.AccountService;
 import de.evia.travelmate.iam.application.TenantService;
 import de.evia.travelmate.iam.application.command.AddDependentCommand;
+import de.evia.travelmate.iam.application.command.InviteMemberCommand;
 import de.evia.travelmate.iam.application.representation.AccountRepresentation;
 import de.evia.travelmate.iam.application.representation.DependentRepresentation;
 import de.evia.travelmate.iam.application.representation.TenantRepresentation;
+import de.evia.travelmate.iam.domain.IamTestFixtures;
 import de.evia.travelmate.iam.domain.account.Account;
 import de.evia.travelmate.iam.domain.account.AccountId;
 import de.evia.travelmate.iam.domain.account.AccountRepository;
@@ -46,6 +49,7 @@ class DashboardControllerTest {
     private static final UUID TENANT_UUID = UUID.randomUUID();
     private static final UUID ACCOUNT_UUID = UUID.randomUUID();
     private static final String KEYCLOAK_USER_ID = "kc-user-123";
+    private static final LocalDate DATE_OF_BIRTH = LocalDate.of(1990, 5, 15);
 
     @Autowired
     private MockMvc mockMvc;
@@ -68,7 +72,7 @@ class DashboardControllerTest {
             .thenReturn(new TenantRepresentation(TENANT_UUID, "Hüttenurlaub 2026", ""));
         when(accountService.findAllByTenantId(new TenantId(TENANT_UUID)))
             .thenReturn(List.of(new AccountRepresentation(ACCOUNT_UUID, TENANT_UUID,
-                "max@example.com", "max@example.com", "Max", "Mustermann", null)));
+                "max@example.com", "max@example.com", "Max", "Mustermann", DATE_OF_BIRTH)));
         when(accountService.findDependentsByTenantId(any(TenantId.class)))
             .thenReturn(List.of());
 
@@ -99,20 +103,77 @@ class DashboardControllerTest {
         when(accountRepository.findByKeycloakUserId(new KeycloakUserId(KEYCLOAK_USER_ID)))
             .thenReturn(Optional.of(account));
         when(accountService.addDependent(any(AddDependentCommand.class)))
-            .thenReturn(new DependentRepresentation(UUID.randomUUID(), TENANT_UUID, ACCOUNT_UUID, "Lina", "Mustermann", null));
+            .thenReturn(new DependentRepresentation(UUID.randomUUID(), TENANT_UUID, ACCOUNT_UUID,
+                "Lina", "Mustermann", DATE_OF_BIRTH));
         when(accountService.findDependentsByTenantId(new TenantId(TENANT_UUID)))
-            .thenReturn(List.of(new DependentRepresentation(UUID.randomUUID(), TENANT_UUID, ACCOUNT_UUID, "Lina", "Mustermann", null)));
+            .thenReturn(List.of(new DependentRepresentation(UUID.randomUUID(), TENANT_UUID, ACCOUNT_UUID,
+                "Lina", "Mustermann", DATE_OF_BIRTH)));
 
         mockMvc.perform(post("/dashboard/companions")
                 .with(jwt().jwt(j -> j.subject(KEYCLOAK_USER_ID)))
                 .param("firstName", "Lina")
-                .param("lastName", "Mustermann"))
+                .param("lastName", "Mustermann")
+                .param("dateOfBirth", "2020-03-15"))
             .andExpect(status().isOk())
             .andExpect(view().name("dashboard/companions :: companionList"))
             .andExpect(model().attributeExists("dependents"));
 
         verify(accountService).addDependent(
-            new AddDependentCommand(TENANT_UUID, ACCOUNT_UUID, "Lina", "Mustermann", null));
+            new AddDependentCommand(TENANT_UUID, ACCOUNT_UUID, "Lina", "Mustermann",
+                LocalDate.of(2020, 3, 15)));
+    }
+
+    @Test
+    void inviteMemberPostReturnsFragment() throws Exception {
+        final Account account = createAccount();
+        when(accountRepository.findByKeycloakUserId(new KeycloakUserId(KEYCLOAK_USER_ID)))
+            .thenReturn(Optional.of(account));
+        when(accountService.inviteMember(any(InviteMemberCommand.class)))
+            .thenReturn(new AccountRepresentation(UUID.randomUUID(), TENANT_UUID,
+                "anna@example.com", "anna@example.com", "Anna", "Schmidt", DATE_OF_BIRTH));
+        when(accountService.findAllByTenantId(new TenantId(TENANT_UUID)))
+            .thenReturn(List.of(
+                new AccountRepresentation(ACCOUNT_UUID, TENANT_UUID,
+                    "max@example.com", "max@example.com", "Max", "Mustermann", DATE_OF_BIRTH),
+                new AccountRepresentation(UUID.randomUUID(), TENANT_UUID,
+                    "anna@example.com", "anna@example.com", "Anna", "Schmidt", DATE_OF_BIRTH)
+            ));
+
+        mockMvc.perform(post("/dashboard/members")
+                .with(jwt().jwt(j -> j.subject(KEYCLOAK_USER_ID)))
+                .param("email", "anna@example.com")
+                .param("firstName", "Anna")
+                .param("lastName", "Schmidt")
+                .param("dateOfBirth", "1990-05-15"))
+            .andExpect(status().isOk())
+            .andExpect(view().name("dashboard/members :: memberList"))
+            .andExpect(model().attributeExists("members"));
+
+        verify(accountService).inviteMember(
+            new InviteMemberCommand(TENANT_UUID, "anna@example.com", "Anna", "Schmidt",
+                LocalDate.of(1990, 5, 15)));
+    }
+
+    @Test
+    void inviteMemberWithDuplicateEmailShowsError() throws Exception {
+        final Account account = createAccount();
+        when(accountRepository.findByKeycloakUserId(new KeycloakUserId(KEYCLOAK_USER_ID)))
+            .thenReturn(Optional.of(account));
+        when(accountService.inviteMember(any(InviteMemberCommand.class)))
+            .thenThrow(new IllegalArgumentException("member.error.alreadyExists"));
+        when(accountService.findAllByTenantId(new TenantId(TENANT_UUID)))
+            .thenReturn(List.of(new AccountRepresentation(ACCOUNT_UUID, TENANT_UUID,
+                "max@example.com", "max@example.com", "Max", "Mustermann", DATE_OF_BIRTH)));
+
+        mockMvc.perform(post("/dashboard/members")
+                .with(jwt().jwt(j -> j.subject(KEYCLOAK_USER_ID)))
+                .param("email", "max@example.com")
+                .param("firstName", "Max")
+                .param("lastName", "Mustermann")
+                .param("dateOfBirth", "1990-05-15"))
+            .andExpect(status().isOk())
+            .andExpect(view().name("dashboard/members :: memberList"))
+            .andExpect(model().attributeExists("memberError"));
     }
 
     private Account createAccount() {
@@ -123,7 +184,7 @@ class DashboardControllerTest {
             new Username("max@example.com"),
             new Email("max@example.com"),
             new FullName("Max", "Mustermann"),
-            null
+            IamTestFixtures.dateOfBirth()
         );
     }
 }

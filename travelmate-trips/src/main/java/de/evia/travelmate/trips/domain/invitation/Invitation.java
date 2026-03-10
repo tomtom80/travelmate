@@ -1,5 +1,6 @@
 package de.evia.travelmate.trips.domain.invitation;
 
+import static de.evia.travelmate.common.domain.Assertion.argumentIsNotBlank;
 import static de.evia.travelmate.common.domain.Assertion.argumentIsNotNull;
 
 import java.util.UUID;
@@ -13,8 +14,10 @@ public class Invitation extends AggregateRoot {
     private final InvitationId invitationId;
     private final TenantId tenantId;
     private final TripId tripId;
-    private final UUID inviteeId;
+    private UUID inviteeId;
     private final UUID invitedBy;
+    private final String inviteeEmail;
+    private final InvitationType invitationType;
     private InvitationStatus status;
 
     public Invitation(final InvitationId invitationId,
@@ -22,18 +25,22 @@ public class Invitation extends AggregateRoot {
                       final TripId tripId,
                       final UUID inviteeId,
                       final UUID invitedBy,
+                      final String inviteeEmail,
+                      final InvitationType invitationType,
                       final InvitationStatus status) {
         argumentIsNotNull(invitationId, "invitationId");
         argumentIsNotNull(tenantId, "tenantId");
         argumentIsNotNull(tripId, "tripId");
-        argumentIsNotNull(inviteeId, "inviteeId");
         argumentIsNotNull(invitedBy, "invitedBy");
+        argumentIsNotNull(invitationType, "invitationType");
         argumentIsNotNull(status, "status");
         this.invitationId = invitationId;
         this.tenantId = tenantId;
         this.tripId = tripId;
         this.inviteeId = inviteeId;
         this.invitedBy = invitedBy;
+        this.inviteeEmail = inviteeEmail;
+        this.invitationType = invitationType;
         this.status = status;
     }
 
@@ -41,15 +48,37 @@ public class Invitation extends AggregateRoot {
                                     final TripId tripId,
                                     final UUID inviteeId,
                                     final UUID invitedBy) {
-        argumentIsNotNull(tenantId, "tenantId");
-        argumentIsNotNull(tripId, "tripId");
         argumentIsNotNull(inviteeId, "inviteeId");
-        argumentIsNotNull(invitedBy, "invitedBy");
         return new Invitation(
             new InvitationId(UUID.randomUUID()),
             tenantId, tripId, inviteeId, invitedBy,
-            InvitationStatus.PENDING
+            null, InvitationType.MEMBER, InvitationStatus.PENDING
         );
+    }
+
+    public static Invitation inviteExternal(final TenantId tenantId,
+                                            final TripId tripId,
+                                            final String inviteeEmail,
+                                            final UUID invitedBy) {
+        argumentIsNotNull(tenantId, "tenantId");
+        argumentIsNotNull(tripId, "tripId");
+        argumentIsNotBlank(inviteeEmail, "inviteeEmail");
+        argumentIsNotNull(invitedBy, "invitedBy");
+        return new Invitation(
+            new InvitationId(UUID.randomUUID()),
+            tenantId, tripId, null, invitedBy,
+            inviteeEmail, InvitationType.EXTERNAL, InvitationStatus.AWAITING_REGISTRATION
+        );
+    }
+
+    public void linkToMember(final UUID memberId) {
+        argumentIsNotNull(memberId, "memberId");
+        if (this.status != InvitationStatus.AWAITING_REGISTRATION) {
+            throw new IllegalStateException(
+                "Cannot link member to invitation in status " + this.status);
+        }
+        this.inviteeId = memberId;
+        this.status = InvitationStatus.ACCEPTED;
     }
 
     public void accept() {
@@ -87,6 +116,14 @@ public class Invitation extends AggregateRoot {
 
     public UUID invitedBy() {
         return invitedBy;
+    }
+
+    public String inviteeEmail() {
+        return inviteeEmail;
+    }
+
+    public InvitationType invitationType() {
+        return invitationType;
     }
 
     public InvitationStatus status() {

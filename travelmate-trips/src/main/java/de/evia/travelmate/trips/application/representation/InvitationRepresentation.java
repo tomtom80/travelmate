@@ -10,6 +10,8 @@ public record InvitationRepresentation(
     UUID tripId,
     UUID inviteeId,
     UUID invitedBy,
+    String inviteeEmail,
+    String invitationType,
     String status
 ) {
 
@@ -20,6 +22,8 @@ public record InvitationRepresentation(
             invitation.tripId().value(),
             invitation.inviteeId(),
             invitation.invitedBy(),
+            invitation.inviteeEmail(),
+            invitation.invitationType().name(),
             invitation.status().name()
         );
     }

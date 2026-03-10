@@ -87,6 +87,57 @@ Browser        Gateway        Trips-SCS      PostgreSQL     RabbitMQ
 3. Bei Annahme: Invitation wird ACCEPTED, Participant wird zum Trip hinzugefuegt
 4. ParticipantJoinedTrip-Event wird via RabbitMQ publiziert
 
+## Szenario 3c: Trip-Einladungs-E-Mail (Iteration 4)
+
+```
+Browser        Gateway        Trips-SCS      PostgreSQL     SMTP (Mailpit)
+  │               │              │               │              │
+  │──POST invite──▶              │               │              │
+  │               │──Route───────▶               │              │
+  │               │              │──Invitation.create──────────▶│
+  │               │              │──InvitationCreated (enriched)│
+  │               │              │──────────────────────────────▶│ (after commit)
+  │◀──HTML Fragment (HTMX)──────│               │     E-Mail──▶│
+```
+
+1. Organisator laedt ein Mitglied zu einem Trip ein
+2. `InvitationService` enrichiert das `InvitationCreated`-Event mit Trip-Name, Zeitraum, Einlader-Name aus Trip- und TravelParty-Aggregaten
+3. Nach Transaction-Commit sendet `InvitationEmailListener` eine HTML-E-Mail via Spring Mail
+4. E-Mail enthaelt Trip-Details und einen Link zur Trip-Seite
+
+## Szenario 3d: Externe Einladung per E-Mail (Iteration 4)
+
+```
+Browser     Trips-SCS      RabbitMQ       IAM-SCS        Keycloak       SMTP
+  │             │              │              │               │            │
+  │──POST ──────▶              │              │               │            │
+  │  external   │              │              │               │            │
+  │             │──Invitation.inviteExternal()│               │            │
+  │             │  [AWAITING_REGISTRATION]    │               │            │
+  │             │──InvitationCreated──────────│──────────────────────────▶│ (E-Mail)
+  │             │──ExternalUserInvitedToTrip──▶              │            │
+  │◀──HTML──────│              │              │               │            │
+  │             │              │              │               │            │
+  │             │              │──consume─────▶               │            │
+  │             │              │              │──createUser───▶            │
+  │             │              │              │──Account.register()        │
+  │             │              │              │──AccountRegistered────────▶│
+  │             │              │              │               │            │
+  │             │◀─consume─────│              │               │            │
+  │             │──TravelParty.addMember()    │               │            │
+  │             │──invitation.linkToMember()  │               │            │
+  │             │──trip.addParticipant()      │               │            │
+  │             │  [Auto-Accept → ACCEPTED]   │               │            │
+```
+
+1. Organisator gibt E-Mail, Name, Geburtsdatum ein und laedt eine neue Person ein
+2. Trips erstellt Invitation im Status AWAITING_REGISTRATION
+3. `InvitationCreated` loest E-Mail-Versand aus (Einladung mit Registrierungshinweis)
+4. `ExternalUserInvitedToTrip` wird via RabbitMQ an IAM publiziert
+5. IAM `ExternalInvitationConsumer` erstellt Keycloak-User und Account, publiziert `AccountRegistered`
+6. Trips konsumiert `AccountRegistered`, aktualisiert TravelParty, findet wartende Einladung per E-Mail
+7. Auto-Accept: Invitation → ACCEPTED, Participant wird zum Trip hinzugefuegt
+
 ## Szenario 4: Abrechnung und Saldo
 
 ```

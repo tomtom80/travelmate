@@ -13,7 +13,10 @@
             </thead>
             <tbody>
                 <tr th:each="inv : ${invitations}">
-                    <td th:text="${inv.inviteeName()}"></td>
+                    <td>
+                        <span th:text="${inv.inviteeName()}"></span>
+                        <small th:if="${inv.invitationType() == 'EXTERNAL'}" th:text="#{invitation.statusExternal}"> (extern)</small>
+                    </td>
                     <td th:text="${inv.status()}"></td>
                     <td th:if="${inv.status() == 'PENDING' && inv.inviteeId() == currentMemberId}">
                         <div class="grid">

@@ -16,6 +16,7 @@ import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.iam.domain.account.Account;
 import de.evia.travelmate.iam.domain.account.AccountId;
 import de.evia.travelmate.iam.domain.account.AccountRepository;
+import de.evia.travelmate.iam.domain.IamTestFixtures;
 import de.evia.travelmate.iam.domain.account.Email;
 import de.evia.travelmate.iam.domain.account.FullName;
 import de.evia.travelmate.iam.domain.account.KeycloakUserId;
@@ -55,7 +56,7 @@ class DependentRepositoryAdapterTest {
             new Username("guardian-" + UUID.randomUUID()),
             new Email("guardian@example.com"),
             new FullName("Guardian", "User"),
-            null
+            IamTestFixtures.dateOfBirth()
         );
         accountRepository.save(guardian);
         guardianId = guardian.accountId();
@@ -65,7 +66,7 @@ class DependentRepositoryAdapterTest {
     void savesAndFindsById() {
         final Dependent dependent = new Dependent(
             new DependentId(UUID.randomUUID()), tenantId, guardianId,
-            new FullName("Child", "User"), null
+            new FullName("Child", "User"), IamTestFixtures.dateOfBirth()
         );
         dependentRepository.save(dependent);
 
@@ -80,11 +81,11 @@ class DependentRepositoryAdapterTest {
     void findsAllByGuardian() {
         final Dependent dep1 = new Dependent(
             new DependentId(UUID.randomUUID()), tenantId, guardianId,
-            new FullName("Child1", "User"), null
+            new FullName("Child1", "User"), IamTestFixtures.dateOfBirth()
         );
         final Dependent dep2 = new Dependent(
             new DependentId(UUID.randomUUID()), tenantId, guardianId,
-            new FullName("Child2", "User"), null
+            new FullName("Child2", "User"), IamTestFixtures.dateOfBirth()
         );
         dependentRepository.save(dep1);
         dependentRepository.save(dep2);
@@ -98,7 +99,7 @@ class DependentRepositoryAdapterTest {
     void findsAllByTenantId() {
         final Dependent dependent = new Dependent(
             new DependentId(UUID.randomUUID()), tenantId, guardianId,
-            new FullName("TenantChild", "User"), null
+            new FullName("TenantChild", "User"), IamTestFixtures.dateOfBirth()
         );
         dependentRepository.save(dependent);
 

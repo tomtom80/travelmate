@@ -14,9 +14,12 @@ import de.evia.travelmate.trips.domain.travelparty.TravelPartyRepository;
 public class TravelPartyService {
 
     private final TravelPartyRepository repository;
+    private final InvitationService invitationService;
 
-    public TravelPartyService(final TravelPartyRepository repository) {
+    public TravelPartyService(final TravelPartyRepository repository,
+                              final InvitationService invitationService) {
         this.repository = repository;
+        this.invitationService = invitationService;
     }
 
     @Transactional
@@ -39,6 +42,8 @@ public class TravelPartyService {
             party.addMember(event.accountId(), event.email(), event.firstName(), event.lastName());
         }
         repository.save(party);
+
+        invitationService.linkAwaitingInvitations(event.email(), event.accountId());
     }
 
     @Transactional

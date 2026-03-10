@@ -30,6 +30,7 @@ public class Dependent extends AggregateRoot {
         argumentIsNotNull(tenantId, "tenantId");
         argumentIsNotNull(guardianAccountId, "guardianAccountId");
         argumentIsNotNull(fullName, "fullName");
+        argumentIsNotNull(dateOfBirth, "dateOfBirth");
         this.dependentId = dependentId;
         this.tenantId = tenantId;
         this.guardianAccountId = guardianAccountId;
@@ -57,12 +58,6 @@ public class Dependent extends AggregateRoot {
             LocalDate.now()
         ));
         return dependent;
-    }
-
-    public static Dependent add(final TenantId tenantId,
-                                final AccountId guardianAccountId,
-                                final FullName fullName) {
-        return add(tenantId, guardianAccountId, fullName, null);
     }
 
     public void markForRemoval() {

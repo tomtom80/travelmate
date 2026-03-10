@@ -64,7 +64,7 @@ public class DashboardController {
     public String addCompanion(@AuthenticationPrincipal final Jwt jwt,
                                @RequestParam final String firstName,
                                @RequestParam final String lastName,
-                               @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate dateOfBirth,
+                               @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate dateOfBirth,
                                final Model model) {
         final Account account = resolveAccount(jwt);
         accountService.addDependent(new AddDependentCommand(
@@ -89,7 +89,7 @@ public class DashboardController {
                                @RequestParam final String email,
                                @RequestParam final String firstName,
                                @RequestParam final String lastName,
-                               @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate dateOfBirth,
+                               @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate dateOfBirth,
                                final Model model) {
         final Account account = resolveAccount(jwt);
         try {

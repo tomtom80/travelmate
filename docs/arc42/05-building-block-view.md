@@ -83,8 +83,15 @@ de.evia.travelmate.<service>/
 **Trips:**
 - TravelParty (Projektion der IAM-Daten, konsumiert IAM-Events)
 - Trip (Aggregate Root: TripId, Name, DateRange, Status, Organizer, Participants mit StayPeriod)
-- Invitation (Aggregate Root: Einladung eines Mitglieds zu einem Trip, Status: PENDING/ACCEPTED/DECLINED)
+- Invitation (Aggregate Root: Einladung zu einem Trip, Typen: MEMBER/EXTERNAL, Status: AWAITING_REGISTRATION/PENDING/ACCEPTED/DECLINED)
 - Zukuenftig: MealPlan, ShoppingList, Accommodation
+
+**Trips Adapter-Erweiterungen (Iteration 4):**
+- `adapters/mail/InvitationEmailListener` — Versendet Einladungs-E-Mails via Spring Mail + Thymeleaf nach `InvitationCreated`-Event
+- `adapters/messaging/DomainEventPublisher` — Leitet Domain Events (TripCreated, ParticipantJoinedTrip, ExternalUserInvitedToTrip) an RabbitMQ weiter
+
+**IAM Adapter-Erweiterungen (Iteration 4):**
+- `adapters/messaging/ExternalInvitationConsumer` — Konsumiert `ExternalUserInvitedToTrip` und erstellt Keycloak-User + Account
 
 **Expense:**
 - Expense (pro Trip)

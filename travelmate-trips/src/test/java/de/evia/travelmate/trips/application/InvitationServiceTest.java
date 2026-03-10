@@ -20,7 +20,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.common.events.trips.ExternalUserInvitedToTrip;
+import de.evia.travelmate.common.events.trips.InvitationCreated;
 import de.evia.travelmate.common.events.trips.ParticipantJoinedTrip;
+import de.evia.travelmate.trips.application.command.InviteExternalCommand;
 import de.evia.travelmate.trips.application.command.InviteParticipantCommand;
 import de.evia.travelmate.trips.application.representation.InvitationRepresentation;
 import de.evia.travelmate.trips.domain.invitation.Invitation;
@@ -76,6 +79,35 @@ class InvitationServiceTest {
         assertThat(result.status()).isEqualTo("PENDING");
         assertThat(result.inviteeId()).isEqualTo(INVITEE_ID);
         verify(invitationRepository).save(any(Invitation.class));
+    }
+
+    @Test
+    void invitePublishesInvitationCreatedEvent() {
+        final Trip trip = createTrip();
+        final TravelParty party = createPartyWithMembers(ORGANIZER_ID, INVITEE_ID);
+
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+        when(travelPartyRepository.findByTenantId(TENANT_ID)).thenReturn(Optional.of(party));
+        when(invitationRepository.existsByTripIdAndInviteeId(trip.tripId(), INVITEE_ID)).thenReturn(false);
+        when(invitationRepository.save(any(Invitation.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        invitationService.invite(
+            new InviteParticipantCommand(TENANT_UUID, trip.tripId().value(), INVITEE_ID, ORGANIZER_ID)
+        );
+
+        final ArgumentCaptor<InvitationCreated> eventCaptor =
+            ArgumentCaptor.forClass(InvitationCreated.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        final InvitationCreated event = eventCaptor.getValue();
+        assertThat(event.tenantId()).isEqualTo(TENANT_UUID);
+        assertThat(event.tripId()).isEqualTo(trip.tripId().value());
+        assertThat(event.tripName()).isEqualTo("Skiurlaub");
+        assertThat(event.inviteeEmail()).isEqualTo(INVITEE_ID + "@test.de");
+        assertThat(event.inviteeFirstName()).isEqualTo("Test");
+        assertThat(event.inviterFirstName()).isEqualTo("Test");
+        assertThat(event.inviterLastName()).isEqualTo("User");
+        assertThat(event.tripStartDate()).isEqualTo(LocalDate.of(2026, 3, 15));
+        assertThat(event.tripEndDate()).isEqualTo(LocalDate.of(2026, 3, 22));
     }
 
     @Test
@@ -141,6 +173,80 @@ class InvitationServiceTest {
 
         assertThat(invitation.status()).isEqualTo(InvitationStatus.DECLINED);
         verify(invitationRepository).save(invitation);
+    }
+
+    @Test
+    void inviteExternalCreatesAwaitingRegistrationInvitation() {
+        final Trip trip = createTrip();
+        final TravelParty party = createPartyWithMembers(ORGANIZER_ID);
+
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+        when(travelPartyRepository.findByTenantId(TENANT_ID)).thenReturn(Optional.of(party));
+        when(invitationRepository.existsByTripIdAndInviteeEmail(trip.tripId(), "new@test.de")).thenReturn(false);
+        when(invitationRepository.save(any(Invitation.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        final InvitationRepresentation result = invitationService.inviteExternal(
+            new InviteExternalCommand(TENANT_UUID, trip.tripId().value(), "new@test.de",
+                "New", "User", LocalDate.of(1990, 1, 1), ORGANIZER_ID)
+        );
+
+        assertThat(result.status()).isEqualTo("AWAITING_REGISTRATION");
+        assertThat(result.inviteeEmail()).isEqualTo("new@test.de");
+        assertThat(result.invitationType()).isEqualTo("EXTERNAL");
+    }
+
+    @Test
+    void inviteExternalPublishesBothEvents() {
+        final Trip trip = createTrip();
+        final TravelParty party = createPartyWithMembers(ORGANIZER_ID);
+
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+        when(travelPartyRepository.findByTenantId(TENANT_ID)).thenReturn(Optional.of(party));
+        when(invitationRepository.existsByTripIdAndInviteeEmail(trip.tripId(), "new@test.de")).thenReturn(false);
+        when(invitationRepository.save(any(Invitation.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        invitationService.inviteExternal(
+            new InviteExternalCommand(TENANT_UUID, trip.tripId().value(), "new@test.de",
+                "New", "User", LocalDate.of(1990, 1, 1), ORGANIZER_ID)
+        );
+
+        final ArgumentCaptor<Object> eventCaptor = ArgumentCaptor.forClass(Object.class);
+        verify(eventPublisher, org.mockito.Mockito.times(2)).publishEvent(eventCaptor.capture());
+        final List<Object> events = eventCaptor.getAllValues();
+        assertThat(events.get(0)).isInstanceOf(InvitationCreated.class);
+        assertThat(events.get(1)).isInstanceOf(ExternalUserInvitedToTrip.class);
+    }
+
+    @Test
+    void inviteExternalRejectsDuplicateEmail() {
+        final Trip trip = createTrip();
+
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+        when(invitationRepository.existsByTripIdAndInviteeEmail(trip.tripId(), "dup@test.de")).thenReturn(true);
+
+        assertThatThrownBy(() -> invitationService.inviteExternal(
+            new InviteExternalCommand(TENANT_UUID, trip.tripId().value(), "dup@test.de",
+                "Dup", "User", LocalDate.of(1990, 1, 1), ORGANIZER_ID)
+        )).isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void linkAwaitingInvitationsAutoAcceptsAndAddsParticipant() {
+        final Trip trip = createTrip();
+        final Invitation invitation = Invitation.inviteExternal(TENANT_ID, trip.tripId(), "new@test.de", ORGANIZER_ID);
+        final UUID newMemberId = UUID.randomUUID();
+
+        when(invitationRepository.findByInviteeEmailAndStatus("new@test.de", InvitationStatus.AWAITING_REGISTRATION))
+            .thenReturn(List.of(invitation));
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+
+        invitationService.linkAwaitingInvitations("new@test.de", newMemberId);
+
+        assertThat(invitation.status()).isEqualTo(InvitationStatus.ACCEPTED);
+        assertThat(invitation.inviteeId()).isEqualTo(newMemberId);
+        assertThat(trip.hasParticipant(newMemberId)).isTrue();
+        verify(invitationRepository).save(invitation);
+        verify(tripRepository).save(trip);
     }
 
     private Trip createTrip() {

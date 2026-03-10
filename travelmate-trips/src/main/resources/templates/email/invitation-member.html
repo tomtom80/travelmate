@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <h2>Einladung zur Reise</h2>
+
+    <p>Hallo <span th:text="${inviteeFirstName}">Max</span>,</p>
+
+    <p>
+        <strong th:text="${inviterFirstName + ' ' + inviterLastName}">Lisa Mustermann</strong>
+        hat dich zur Reise
+        <strong th:text="${tripName}">Skiurlaub 2026</strong>
+        eingeladen.
+    </p>
+
+    <table>
+        <tr>
+            <td><strong>Reise:</strong></td>
+            <td th:text="${tripName}">Skiurlaub 2026</td>
+        </tr>
+        <tr>
+            <td><strong>Von:</strong></td>
+            <td th:text="${tripStartDate}">15.03.2026</td>
+        </tr>
+        <tr>
+            <td><strong>Bis:</strong></td>
+            <td th:text="${tripEndDate}">22.03.2026</td>
+        </tr>
+    </table>
+
+    <p>
+        Melde dich bei Travelmate an, um die Einladung anzunehmen oder abzulehnen.
+    </p>
+
+    <p>Viele Gruesse,<br>Dein Travelmate-Team</p>
+</body>
+</html>

@@ -2,6 +2,35 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="content">
+    <section th:if="${!pendingInvitations.isEmpty()}">
+        <h2 th:text="#{invitation.pending.title}">Offene Einladungen</h2>
+        <div class="grid" th:each="inv : ${pendingInvitations}">
+            <article>
+                <header>
+                    <strong th:text="${inv.tripName()}">Skiurlaub 2026</strong>
+                </header>
+                <p>
+                    <span th:text="#{invitation.pending.invitedBy}">Eingeladen von</span>
+                    <strong th:text="${inv.inviterName()}">Max Mustermann</strong>
+                </p>
+                <p>
+                    <span th:text="${inv.tripStartDate()}">15.03.2026</span> –
+                    <span th:text="${inv.tripEndDate()}">22.03.2026</span>
+                </p>
+                <footer>
+                    <div class="grid">
+                        <form th:action="@{/{tripId}/invitations/{invId}/accept(tripId=${inv.tripId()},invId=${inv.invitationId()})}" method="post">
+                            <button type="submit" th:text="#{invitation.accept}">Annehmen</button>
+                        </form>
+                        <form th:action="@{/{tripId}/invitations/{invId}/decline(tripId=${inv.tripId()},invId=${inv.invitationId()})}" method="post">
+                            <button type="submit" class="secondary" th:text="#{invitation.decline}">Ablehnen</button>
+                        </form>
+                    </div>
+                </footer>
+            </article>
+        </div>
+    </section>
+
     <h1 th:text="#{trip.title}">Reisen</h1>
 
     <figure>

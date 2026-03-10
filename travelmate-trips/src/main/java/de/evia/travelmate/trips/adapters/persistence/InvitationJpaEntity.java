@@ -21,11 +21,17 @@ public class InvitationJpaEntity {
     @Column(name = "trip_id", nullable = false)
     private UUID tripId;
 
-    @Column(name = "invitee_id", nullable = false)
+    @Column(name = "invitee_id")
     private UUID inviteeId;
 
     @Column(name = "invited_by", nullable = false)
     private UUID invitedBy;
+
+    @Column(name = "invitee_email")
+    private String inviteeEmail;
+
+    @Column(name = "invitation_type", nullable = false)
+    private String invitationType;
 
     @Column(name = "status", nullable = false)
     private String status;
@@ -34,12 +40,15 @@ public class InvitationJpaEntity {
     }
 
     public InvitationJpaEntity(final UUID invitationId, final UUID tenantId, final UUID tripId,
-                               final UUID inviteeId, final UUID invitedBy, final String status) {
+                               final UUID inviteeId, final UUID invitedBy, final String inviteeEmail,
+                               final String invitationType, final String status) {
         this.invitationId = invitationId;
         this.tenantId = tenantId;
         this.tripId = tripId;
         this.inviteeId = inviteeId;
         this.invitedBy = invitedBy;
+        this.inviteeEmail = inviteeEmail;
+        this.invitationType = invitationType;
         this.status = status;
     }
 
@@ -47,7 +56,10 @@ public class InvitationJpaEntity {
     public UUID getTenantId() { return tenantId; }
     public UUID getTripId() { return tripId; }
     public UUID getInviteeId() { return inviteeId; }
+    public void setInviteeId(final UUID inviteeId) { this.inviteeId = inviteeId; }
     public UUID getInvitedBy() { return invitedBy; }
+    public String getInviteeEmail() { return inviteeEmail; }
+    public String getInvitationType() { return invitationType; }
     public String getStatus() { return status; }
     public void setStatus(final String status) { this.status = status; }
 }

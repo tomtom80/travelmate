@@ -92,6 +92,35 @@
             </form>
         </details>
         <p th:if="${invitableMembers.isEmpty()}" th:text="#{invitation.allInvited}">Alle Mitglieder bereits eingeladen.</p>
+
+        <details th:if="${isOrganizer}">
+            <summary th:text="#{invitation.inviteByEmail}">Per E-Mail einladen</summary>
+            <form hx-post th:hx-post="@{/{id}/invitations/external(id=${trip.tripId()})}"
+                  hx-target="#invitations"
+                  hx-swap="innerHTML">
+                <div class="grid">
+                    <label>
+                        <span th:text="#{invitation.email}">E-Mail</span>
+                        <input type="email" name="email" required>
+                    </label>
+                    <label>
+                        <span th:text="#{invitation.firstName}">Vorname</span>
+                        <input type="text" name="firstName" required>
+                    </label>
+                </div>
+                <div class="grid">
+                    <label>
+                        <span th:text="#{invitation.lastName}">Nachname</span>
+                        <input type="text" name="lastName" required>
+                    </label>
+                    <label>
+                        <span th:text="#{common.dateOfBirth}">Geburtsdatum</span>
+                        <input type="date" name="dateOfBirth" required>
+                    </label>
+                </div>
+                <button type="submit" th:text="#{invitation.sendEmailInvite}">Per E-Mail einladen</button>
+            </form>
+        </details>
     </section>
 
     <a th:href="@{/}" th:text="#{common.back}">Zurueck</a>

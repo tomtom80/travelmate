@@ -33,6 +33,7 @@ public class Account extends AggregateRoot {
         argumentIsNotNull(username, "username");
         argumentIsNotNull(email, "email");
         argumentIsNotNull(fullName, "fullName");
+        argumentIsNotNull(dateOfBirth, "dateOfBirth");
         this.accountId = accountId;
         this.tenantId = tenantId;
         this.keycloakUserId = keycloakUserId;
@@ -67,14 +68,6 @@ public class Account extends AggregateRoot {
             LocalDate.now()
         ));
         return account;
-    }
-
-    public static Account register(final TenantId tenantId,
-                                   final KeycloakUserId keycloakUserId,
-                                   final Username username,
-                                   final Email email,
-                                   final FullName fullName) {
-        return register(tenantId, keycloakUserId, username, email, fullName, null);
     }
 
     public void markForRemoval() {

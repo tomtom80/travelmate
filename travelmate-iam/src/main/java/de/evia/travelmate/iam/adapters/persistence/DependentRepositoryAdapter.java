@@ -65,7 +65,7 @@ public class DependentRepositoryAdapter implements DependentRepository {
             dependent.guardianAccountId().value(),
             dependent.fullName().firstName(),
             dependent.fullName().lastName(),
-            dependent.dateOfBirth() != null ? dependent.dateOfBirth().value() : null
+            dependent.dateOfBirth().value()
         );
     }
 
@@ -75,7 +75,7 @@ public class DependentRepositoryAdapter implements DependentRepository {
             new TenantId(entity.getTenantId()),
             new AccountId(entity.getGuardianAccountId()),
             new FullName(entity.getFirstName(), entity.getLastName()),
-            entity.getDateOfBirth() != null ? new DateOfBirth(entity.getDateOfBirth()) : null
+            new DateOfBirth(entity.getDateOfBirth())
         );
     }
 }

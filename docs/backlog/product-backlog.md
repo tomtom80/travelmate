@@ -1,6 +1,6 @@
 # Product Backlog — Travelmate
 
-Stand: 2026-03-09
+Stand: 2026-03-10
 
 ---
 
@@ -1727,7 +1727,19 @@ Items from `docs/arc42/11-risks-and-technical-debt.md`:
 
 ## Iteration Planning (Suggested)
 
-### Iteration 4 (v0.4.0 — Current, Architecture Fitness + Expense Foundation)
+### Iteration 4 (v0.4.0 — Current, Invitation Flow + Email + Birthday)
+
+| Story | Epic | Priority | Size | Description |
+|-------|------|----------|------|-------------|
+| US-IAM-070 | E-IAM-01 | Must | M | Birthday Required for All Users |
+| US-TRIPS-070 | E-TRIPS-02 | Must | M | Trip Invitation Email Notification |
+| US-TRIPS-071 | E-TRIPS-02 | Must | S | Pending Invitations on Trip List Page |
+| US-TRIPS-072 | E-TRIPS-02 | Must | L | External Trip Invitation (Invite by Email) |
+| US-TRIPS-073 | E-TRIPS-02 | Must | M | Auto-Join Trip on Registration via Invitation |
+| US-IAM-071 | E-IAM-06 | Should | S | Improve Keycloak Invitation Email |
+| US-INFRA-060 | E-INFRA-06 | Should | M | Close Existing Test Coverage Gaps |
+
+### Iteration 5 (v0.5.0 — Architecture Fitness + Expense Foundation)
 
 | Story | Epic | Priority | Size |
 |-------|------|----------|------|
@@ -1735,12 +1747,6 @@ Items from `docs/arc42/11-risks-and-technical-debt.md`:
 | US-INFRA-021 | E-INFRA-03 | Should | S |
 | US-INFRA-022 | E-INFRA-03 | Must | M |
 | US-INFRA-030 | E-INFRA-04 | Must | M |
-| US-INFRA-053 | E-INFRA-06 | Should | M |
-
-### Iteration 5 (v0.5.0 — Expense Core + Receipt Management)
-
-| Story | Epic | Priority | Size |
-|-------|------|----------|------|
 | US-EXP-001 | E-EXP-01 | Must | M |
 | US-EXP-002 | E-EXP-01 | Must | XL |
 | US-EXP-003 | E-EXP-01 | Must | S |

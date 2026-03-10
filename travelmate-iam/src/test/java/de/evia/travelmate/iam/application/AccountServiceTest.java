@@ -7,6 +7,7 @@ import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -24,6 +25,7 @@ import de.evia.travelmate.common.events.iam.DependentAddedToTenant;
 import de.evia.travelmate.common.events.iam.DependentRemovedFromTenant;
 import de.evia.travelmate.common.events.iam.MemberRemovedFromTenant;
 import de.evia.travelmate.iam.application.command.AddDependentCommand;
+import de.evia.travelmate.iam.application.command.InviteMemberCommand;
 import de.evia.travelmate.iam.application.command.RegisterAccountCommand;
 import de.evia.travelmate.iam.application.representation.AccountRepresentation;
 import de.evia.travelmate.iam.application.representation.DependentRepresentation;
@@ -31,7 +33,10 @@ import de.evia.travelmate.iam.domain.IamTestFixtures;
 import de.evia.travelmate.iam.domain.account.Account;
 import de.evia.travelmate.iam.domain.account.AccountId;
 import de.evia.travelmate.iam.domain.account.AccountRepository;
+import de.evia.travelmate.iam.domain.account.Email;
+import de.evia.travelmate.iam.domain.account.FullName;
 import de.evia.travelmate.iam.domain.account.IdentityProviderService;
+import de.evia.travelmate.iam.domain.account.KeycloakUserId;
 import de.evia.travelmate.iam.domain.account.Username;
 import de.evia.travelmate.iam.domain.dependent.Dependent;
 import de.evia.travelmate.iam.domain.dependent.DependentId;
@@ -55,11 +60,13 @@ class AccountServiceTest {
     @InjectMocks
     private AccountService accountService;
 
+    private static final LocalDate DATE_OF_BIRTH = LocalDate.of(1990, 5, 15);
+
     @Test
     void registersAccount() {
         final RegisterAccountCommand command = new RegisterAccountCommand(
             IamTestFixtures.TENANT_ID.value(), "kc-123", "testuser",
-            "test@example.com", "Max", "Mustermann"
+            "test@example.com", "Max", "Mustermann", DATE_OF_BIRTH
         );
         when(accountRepository.existsByUsername(any(TenantId.class), any(Username.class))).thenReturn(false);
         when(accountRepository.save(any(Account.class))).thenAnswer(invocation -> invocation.getArgument(0));
@@ -77,7 +84,7 @@ class AccountServiceTest {
     void rejectsDuplicateUsername() {
         final RegisterAccountCommand command = new RegisterAccountCommand(
             IamTestFixtures.TENANT_ID.value(), "kc-123", "testuser",
-            "test@example.com", "Max", "Mustermann"
+            "test@example.com", "Max", "Mustermann", DATE_OF_BIRTH
         );
         when(accountRepository.existsByUsername(any(TenantId.class), any(Username.class))).thenReturn(true);
 
@@ -90,7 +97,7 @@ class AccountServiceTest {
     void addsDependentToAccount() {
         final AddDependentCommand command = new AddDependentCommand(
             IamTestFixtures.TENANT_ID.value(), IamTestFixtures.ACCOUNT_ID.value(),
-            "Lena", "Mustermann", null
+            "Lena", "Mustermann", DATE_OF_BIRTH
         );
         when(accountRepository.findById(any(AccountId.class)))
             .thenReturn(Optional.of(IamTestFixtures.account()));
@@ -110,7 +117,7 @@ class AccountServiceTest {
     void rejectsAddDependentWithUnknownGuardian() {
         final AddDependentCommand command = new AddDependentCommand(
             IamTestFixtures.TENANT_ID.value(), UUID.randomUUID(),
-            "Lena", "Mustermann", null
+            "Lena", "Mustermann", DATE_OF_BIRTH
         );
         when(accountRepository.findById(any(AccountId.class))).thenReturn(Optional.empty());
 
@@ -151,6 +158,74 @@ class AccountServiceTest {
         assertThatIllegalArgumentException()
             .isThrownBy(() -> accountService.deleteMember(IamTestFixtures.ACCOUNT_ID, IamTestFixtures.TENANT_ID))
             .withMessageContaining("lastMember");
+    }
+
+    @Test
+    void inviteMemberCreatesKeycloakUserAndAccount() {
+        final InviteMemberCommand command = new InviteMemberCommand(
+            IamTestFixtures.TENANT_ID.value(), "invited@example.com",
+            "Anna", "Schmidt", DATE_OF_BIRTH
+        );
+        final KeycloakUserId kcId = new KeycloakUserId("kc-invited-123");
+        when(accountRepository.existsByUsername(any(TenantId.class), any(Username.class))).thenReturn(false);
+        when(identityProviderService.createInvitedUser(any(Email.class), any(FullName.class))).thenReturn(kcId);
+        when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        final AccountRepresentation result = accountService.inviteMember(command);
+
+        assertThat(result.email()).isEqualTo("invited@example.com");
+        assertThat(result.firstName()).isEqualTo("Anna");
+        assertThat(result.lastName()).isEqualTo("Schmidt");
+        verify(identityProviderService).createInvitedUser(any(Email.class), any(FullName.class));
+        verify(identityProviderService).assignRole(kcId, "organizer");
+        verify(identityProviderService).sendActionsEmail(kcId);
+        verify(accountRepository).save(any(Account.class));
+    }
+
+    @Test
+    void inviteMemberRejectsDuplicateEmail() {
+        final InviteMemberCommand command = new InviteMemberCommand(
+            IamTestFixtures.TENANT_ID.value(), "existing@example.com",
+            "Existing", "User", DATE_OF_BIRTH
+        );
+        when(accountRepository.existsByUsername(any(TenantId.class), any(Username.class))).thenReturn(true);
+
+        assertThatIllegalArgumentException()
+            .isThrownBy(() -> accountService.inviteMember(command))
+            .withMessageContaining("alreadyExists");
+    }
+
+    @Test
+    void inviteMemberRollsBackOnKeycloakUserOnFailure() {
+        final InviteMemberCommand command = new InviteMemberCommand(
+            IamTestFixtures.TENANT_ID.value(), "fail@example.com",
+            "Fail", "User", DATE_OF_BIRTH
+        );
+        final KeycloakUserId kcId = new KeycloakUserId("kc-fail-123");
+        when(accountRepository.existsByUsername(any(TenantId.class), any(Username.class))).thenReturn(false);
+        when(identityProviderService.createInvitedUser(any(Email.class), any(FullName.class))).thenReturn(kcId);
+        when(accountRepository.save(any(Account.class))).thenThrow(new RuntimeException("DB error"));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> accountService.inviteMember(command))
+            .isInstanceOf(RuntimeException.class);
+
+        verify(identityProviderService).deleteUser(kcId);
+    }
+
+    @Test
+    void inviteMemberPublishesAccountRegisteredEvent() {
+        final InviteMemberCommand command = new InviteMemberCommand(
+            IamTestFixtures.TENANT_ID.value(), "event@example.com",
+            "Event", "Test", DATE_OF_BIRTH
+        );
+        final KeycloakUserId kcId = new KeycloakUserId("kc-event-123");
+        when(accountRepository.existsByUsername(any(TenantId.class), any(Username.class))).thenReturn(false);
+        when(identityProviderService.createInvitedUser(any(Email.class), any(FullName.class))).thenReturn(kcId);
+        when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        accountService.inviteMember(command);
+
+        verify(eventPublisher).publishEvent(any(AccountRegistered.class));
     }
 
     @Test

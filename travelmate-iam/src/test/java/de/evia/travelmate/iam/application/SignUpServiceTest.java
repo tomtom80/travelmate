@@ -39,6 +39,7 @@ class SignUpServiceTest {
     private static final String LAST_NAME = "Mustermann";
     private static final String EMAIL = "max@example.com";
     private static final String PASSWORD = "secureP4ss!";
+    private static final java.time.LocalDate DATE_OF_BIRTH = java.time.LocalDate.of(1990, 5, 15);
     private static final KeycloakUserId KEYCLOAK_USER_ID = new KeycloakUserId("kc-user-123");
 
     @Mock
@@ -59,7 +60,7 @@ class SignUpServiceTest {
     @Test
     void signUpCreatesTenantAndAccount() {
         final SignUpCommand command = new SignUpCommand(
-            TENANT_NAME, FIRST_NAME, LAST_NAME, EMAIL, PASSWORD
+            TENANT_NAME, FIRST_NAME, LAST_NAME, EMAIL, PASSWORD, DATE_OF_BIRTH
         );
         when(tenantRepository.existsByName(new TenantName(TENANT_NAME))).thenReturn(false);
         when(identityProviderService.createUser(
@@ -82,7 +83,7 @@ class SignUpServiceTest {
     @Test
     void signUpPublishesTenantCreatedAndAccountRegisteredEvents() {
         final SignUpCommand command = new SignUpCommand(
-            TENANT_NAME, FIRST_NAME, LAST_NAME, EMAIL, PASSWORD
+            TENANT_NAME, FIRST_NAME, LAST_NAME, EMAIL, PASSWORD, DATE_OF_BIRTH
         );
         when(tenantRepository.existsByName(new TenantName(TENANT_NAME))).thenReturn(false);
         when(identityProviderService.createUser(any(), any(), any())).thenReturn(KEYCLOAK_USER_ID);
@@ -101,9 +102,26 @@ class SignUpServiceTest {
     }
 
     @Test
+    void signUpPassesDateOfBirthToAccount() {
+        final SignUpCommand command = new SignUpCommand(
+            TENANT_NAME, FIRST_NAME, LAST_NAME, EMAIL, PASSWORD, DATE_OF_BIRTH
+        );
+        when(tenantRepository.existsByName(new TenantName(TENANT_NAME))).thenReturn(false);
+        when(identityProviderService.createUser(any(), any(), any())).thenReturn(KEYCLOAK_USER_ID);
+        when(tenantRepository.save(any(Tenant.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        signUpService.signUp(command);
+
+        final var accountCaptor = ArgumentCaptor.forClass(Account.class);
+        verify(accountRepository).save(accountCaptor.capture());
+        assertThat(accountCaptor.getValue().dateOfBirth().value()).isEqualTo(DATE_OF_BIRTH);
+    }
+
+    @Test
     void signUpRejectsDuplicateTenantName() {
         final SignUpCommand command = new SignUpCommand(
-            TENANT_NAME, FIRST_NAME, LAST_NAME, EMAIL, PASSWORD
+            TENANT_NAME, FIRST_NAME, LAST_NAME, EMAIL, PASSWORD, DATE_OF_BIRTH
         );
         when(tenantRepository.existsByName(new TenantName(TENANT_NAME))).thenReturn(true);
 
@@ -117,7 +135,7 @@ class SignUpServiceTest {
     @Test
     void signUpDeletesKeycloakUserOnAccountSaveFailure() {
         final SignUpCommand command = new SignUpCommand(
-            TENANT_NAME, FIRST_NAME, LAST_NAME, EMAIL, PASSWORD
+            TENANT_NAME, FIRST_NAME, LAST_NAME, EMAIL, PASSWORD, DATE_OF_BIRTH
         );
         when(tenantRepository.existsByName(new TenantName(TENANT_NAME))).thenReturn(false);
         when(identityProviderService.createUser(any(), any(), any())).thenReturn(KEYCLOAK_USER_ID);

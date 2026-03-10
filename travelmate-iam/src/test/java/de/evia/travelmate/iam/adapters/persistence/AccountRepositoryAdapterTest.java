@@ -16,6 +16,7 @@ import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.iam.domain.account.Account;
 import de.evia.travelmate.iam.domain.account.AccountId;
 import de.evia.travelmate.iam.domain.account.AccountRepository;
+import de.evia.travelmate.iam.domain.IamTestFixtures;
 import de.evia.travelmate.iam.domain.account.Email;
 import de.evia.travelmate.iam.domain.account.FullName;
 import de.evia.travelmate.iam.domain.account.KeycloakUserId;
@@ -98,7 +99,7 @@ class AccountRepositoryAdapterTest {
             new Username(username),
             new Email(username + "@example.com"),
             new FullName("Test", "User"),
-            null
+            IamTestFixtures.dateOfBirth()
         );
     }
 }

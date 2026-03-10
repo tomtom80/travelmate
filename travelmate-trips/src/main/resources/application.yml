@@ -28,6 +28,10 @@ spring:
     username: guest
     password: guest
 
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+
   security:
     oauth2:
       resourceserver:
@@ -65,6 +69,9 @@ spring:
       resourceserver:
         jwt:
           issuer-uri: http://localhost:7082/realms/travelmate
+  mail:
+    host: localhost
+    port: 0
   rabbitmq:
     host: localhost
     port: 0

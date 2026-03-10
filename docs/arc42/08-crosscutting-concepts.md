@@ -45,6 +45,8 @@ Die asynchrone Kommunikation zwischen SCS basiert auf Domain Events ueber Rabbit
 | `TripCreated` | `trips.trip-created` | Trip wurde erstellt |
 | `ParticipantJoinedTrip` | `trips.participant-confirmed` | Teilnehmer bestaetigt |
 | `TripCompleted` | `trips.trip-completed` | Trip abgeschlossen |
+| `InvitationCreated` | `trips.invitation-created` | Einladung erstellt (loest E-Mail aus) |
+| `ExternalUserInvitedToTrip` | `trips.external-user-invited` | Externe Einladung (IAM erstellt User) |
 
 ### Event-Flow
 
@@ -55,6 +57,15 @@ IAM                         RabbitMQ             Trips / Expense
  │──DependentAddedToTenant──────▶│──────────────────────▶│  → Dependent in Party
  │──RoleAssignedToUser──────────▶│──────────────────────▶│  → Rolle aktivieren
 ```
+
+## E-Mail-Kommunikation (ADR-0012)
+
+Die E-Mail-Kommunikation folgt dem Prinzip der SCS-Eigenstaendigkeit:
+
+- **Keycloak-E-Mails:** Verifizierung, Passwort-Reset und Account-Einrichtung werden direkt von Keycloak ueber angepasste Theme-Templates versendet (Realm `travelmate`, Theme `travelmate`).
+- **Trip-Einladungs-E-Mails:** Das Trips SCS versendet Einladungs-E-Mails eigenstaendig via Spring Mail + Thymeleaf-Templates. Ein `InvitationEmailListener` (`@TransactionalEventListener(AFTER_COMMIT)`) reagiert auf `InvitationCreated`-Events.
+- **SMTP-Server:** Mailpit als Development-SMTP-Server (Port 1025, Web UI Port 8025). In Tests deaktiviert (Port 0).
+- **Enriched Events:** `InvitationCreated` wird im Application Service mit Trip-Name, Zeitraum und Einlader-Name angereichert, damit der E-Mail-Adapter alle Informationen hat.
 
 ## Validierung (Assertion-Utility)
 

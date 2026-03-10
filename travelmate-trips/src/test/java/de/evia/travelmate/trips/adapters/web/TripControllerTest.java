@@ -80,12 +80,15 @@ class TripControllerTest {
             .andExpect(status().isOk())
             .andExpect(view().name("layout/default"))
             .andExpect(model().attribute("view", "trip/list"))
-            .andExpect(model().attributeExists("trips"));
+            .andExpect(model().attributeExists("trips"))
+            .andExpect(model().attributeExists("pendingInvitations"));
     }
 
     @Test
     void listShowsTrips() throws Exception {
         when(tripService.findAllByTenantId(new TenantId(TENANT_UUID)))
+            .thenReturn(List.of());
+        when(invitationService.findPendingByInviteeId(ORGANIZER_UUID))
             .thenReturn(List.of());
 
         mockMvc.perform(get("/")
@@ -93,7 +96,33 @@ class TripControllerTest {
             .andExpect(status().isOk())
             .andExpect(view().name("layout/default"))
             .andExpect(model().attribute("view", "trip/list"))
-            .andExpect(model().attributeExists("trips"));
+            .andExpect(model().attributeExists("trips"))
+            .andExpect(model().attributeExists("pendingInvitations"));
+    }
+
+    @Test
+    void listShowsPendingInvitations() throws Exception {
+        final InvitationRepresentation pendingInv = new InvitationRepresentation(
+            UUID.randomUUID(), TENANT_UUID, TRIP_UUID, INVITEE_UUID, ORGANIZER_UUID,
+            null, "MEMBER", "PENDING"
+        );
+        final TripRepresentation trip = new TripRepresentation(
+            TRIP_UUID, TENANT_UUID, "Skiurlaub", null,
+            LocalDate.of(2026, 3, 15), LocalDate.of(2026, 3, 22),
+            "PLANNING", ORGANIZER_UUID, List.of(ORGANIZER_UUID)
+        );
+
+        when(tripService.findAllByTenantId(new TenantId(TENANT_UUID)))
+            .thenReturn(List.of(trip));
+        when(invitationService.findPendingByInviteeId(INVITEE_UUID))
+            .thenReturn(List.of(pendingInv));
+        when(tripService.findById(new TripId(TRIP_UUID)))
+            .thenReturn(trip);
+
+        mockMvc.perform(get("/")
+                .with(jwt().jwt(j -> j.claim("email", INVITEE_EMAIL))))
+            .andExpect(status().isOk())
+            .andExpect(model().attributeExists("pendingInvitations"));
     }
 
     @Test
@@ -121,7 +150,8 @@ class TripControllerTest {
     @Test
     void inviteCreatesInvitationAndReturnsFragment() throws Exception {
         final InvitationRepresentation inv = new InvitationRepresentation(
-            UUID.randomUUID(), TENANT_UUID, TRIP_UUID, INVITEE_UUID, ORGANIZER_UUID, "PENDING"
+            UUID.randomUUID(), TENANT_UUID, TRIP_UUID, INVITEE_UUID, ORGANIZER_UUID,
+            null, "MEMBER", "PENDING"
         );
 
         when(invitationService.invite(any(InviteParticipantCommand.class))).thenReturn(inv);

@@ -16,6 +16,8 @@ public final class RoutingKeys {
     public static final String TENANT_DELETED = "iam.tenant-deleted";
 
     public static final String TRIP_CREATED = "trips.trip-created";
+    public static final String INVITATION_CREATED = "trips.invitation-created";
+    public static final String EXTERNAL_USER_INVITED = "trips.external-user-invited";
     public static final String PARTICIPANT_CONFIRMED = "trips.participant-confirmed";
     public static final String TRIP_COMPLETED = "trips.trip-completed";
 }

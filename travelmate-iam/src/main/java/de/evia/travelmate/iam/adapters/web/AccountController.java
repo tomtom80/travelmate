@@ -1,7 +1,9 @@
 package de.evia.travelmate.iam.adapters.web;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -53,9 +55,10 @@ public class AccountController {
                            @RequestParam final String username,
                            @RequestParam final String email,
                            @RequestParam final String firstName,
-                           @RequestParam final String lastName) {
+                           @RequestParam final String lastName,
+                           @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate dateOfBirth) {
         final AccountRepresentation account = accountService.registerAccount(
-            new RegisterAccountCommand(tenantId, keycloakUserId, username, email, firstName, lastName));
+            new RegisterAccountCommand(tenantId, keycloakUserId, username, email, firstName, lastName, dateOfBirth));
         return "redirect:/tenants/" + tenantId + "/accounts/" + account.accountId();
     }
 

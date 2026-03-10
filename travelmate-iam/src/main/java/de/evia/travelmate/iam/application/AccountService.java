@@ -57,7 +57,8 @@ public class AccountService {
             new KeycloakUserId(command.keycloakUserId()),
             username,
             new Email(command.email()),
-            new FullName(command.firstName(), command.lastName())
+            new FullName(command.firstName(), command.lastName()),
+            new DateOfBirth(command.dateOfBirth())
         );
         final Account saved = accountRepository.save(account);
         publishEvents(saved);
@@ -76,15 +77,13 @@ public class AccountService {
         final KeycloakUserId keycloakUserId = identityProviderService.createInvitedUser(email, fullName);
 
         try {
-            final DateOfBirth dateOfBirth = command.dateOfBirth() != null
-                ? new DateOfBirth(command.dateOfBirth()) : null;
             final Account account = Account.register(
                 tenantId,
                 keycloakUserId,
                 new Username(email.value()),
                 email,
                 fullName,
-                dateOfBirth
+                new DateOfBirth(command.dateOfBirth())
             );
             final Account saved = accountRepository.save(account);
             identityProviderService.assignRole(keycloakUserId, "organizer");
@@ -103,13 +102,11 @@ public class AccountService {
         accountRepository.findById(guardianId)
             .orElseThrow(() -> new IllegalArgumentException(
                 "Guardian account not found: " + command.guardianAccountId()));
-        final DateOfBirth dateOfBirth = command.dateOfBirth() != null
-            ? new DateOfBirth(command.dateOfBirth()) : null;
         final Dependent dependent = Dependent.add(
             tenantId,
             guardianId,
             new FullName(command.firstName(), command.lastName()),
-            dateOfBirth
+            new DateOfBirth(command.dateOfBirth())
         );
         final Dependent saved = dependentRepository.save(dependent);
         publishEvents(saved);

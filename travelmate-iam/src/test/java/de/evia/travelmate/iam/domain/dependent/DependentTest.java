@@ -65,7 +65,26 @@ class DependentTest {
     void throwsForNullGuardianAccountId() {
         assertThatIllegalArgumentException()
             .isThrownBy(() -> new Dependent(new DependentId(java.util.UUID.randomUUID()),
-                IamTestFixtures.TENANT_ID, null, new FullName("Lena", "Mustermann"), null))
+                IamTestFixtures.TENANT_ID, null, new FullName("Lena", "Mustermann"),
+                IamTestFixtures.dateOfBirth()))
             .withMessageContaining("guardianAccountId");
+    }
+
+    @Test
+    void addRequiresDateOfBirth() {
+        assertThatIllegalArgumentException()
+            .isThrownBy(() -> Dependent.add(
+                IamTestFixtures.TENANT_ID, IamTestFixtures.ACCOUNT_ID,
+                new FullName("Lena", "Mustermann"), null))
+            .withMessageContaining("dateOfBirth");
+    }
+
+    @Test
+    void throwsForNullDateOfBirth() {
+        assertThatIllegalArgumentException()
+            .isThrownBy(() -> new Dependent(new DependentId(java.util.UUID.randomUUID()),
+                IamTestFixtures.TENANT_ID, IamTestFixtures.ACCOUNT_ID,
+                new FullName("Lena", "Mustermann"), null))
+            .withMessageContaining("dateOfBirth");
     }
 }

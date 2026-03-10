@@ -76,7 +76,26 @@ class AccountTest {
         assertThatIllegalArgumentException()
             .isThrownBy(() -> new Account(IamTestFixtures.ACCOUNT_ID, IamTestFixtures.TENANT_ID,
                 IamTestFixtures.keycloakUserId(), null,
-                IamTestFixtures.email(), IamTestFixtures.fullName(), null))
+                IamTestFixtures.email(), IamTestFixtures.fullName(), IamTestFixtures.dateOfBirth()))
             .withMessageContaining("username");
+    }
+
+    @Test
+    void registerRequiresDateOfBirth() {
+        assertThatIllegalArgumentException()
+            .isThrownBy(() -> Account.register(
+                IamTestFixtures.TENANT_ID, IamTestFixtures.keycloakUserId(),
+                IamTestFixtures.username(), IamTestFixtures.email(),
+                IamTestFixtures.fullName(), null))
+            .withMessageContaining("dateOfBirth");
+    }
+
+    @Test
+    void throwsForNullDateOfBirth() {
+        assertThatIllegalArgumentException()
+            .isThrownBy(() -> new Account(IamTestFixtures.ACCOUNT_ID, IamTestFixtures.TENANT_ID,
+                IamTestFixtures.keycloakUserId(), IamTestFixtures.username(),
+                IamTestFixtures.email(), IamTestFixtures.fullName(), null))
+            .withMessageContaining("dateOfBirth");
     }
 }

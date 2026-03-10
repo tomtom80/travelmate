@@ -8,6 +8,7 @@ import de.evia.travelmate.common.domain.DomainEvent;
 import de.evia.travelmate.iam.application.command.SignUpCommand;
 import de.evia.travelmate.iam.domain.account.Account;
 import de.evia.travelmate.iam.domain.account.AccountRepository;
+import de.evia.travelmate.iam.domain.account.DateOfBirth;
 import de.evia.travelmate.iam.domain.account.Email;
 import de.evia.travelmate.iam.domain.account.FullName;
 import de.evia.travelmate.iam.domain.account.IdentityProviderService;
@@ -65,7 +66,8 @@ public class SignUpService {
                 keycloakUserId,
                 new Username(email.value()),
                 email,
-                fullName
+                fullName,
+                new DateOfBirth(command.dateOfBirth())
             );
             accountRepository.save(account);
             identityProviderService.assignRole(keycloakUserId, "organizer");

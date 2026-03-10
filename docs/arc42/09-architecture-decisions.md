@@ -18,5 +18,7 @@ Die Architekturentscheidungen werden als Architecture Decision Records (ADRs) do
 | **Maven Monorepo** | Gemeinsame Build-Konfiguration, einfaches Dependency-Management für `travelmate-common` |
 | **PWA** | Mobile-First-Zugang ohne App-Store-Abhängigkeit, Offline-Fähigkeit |
 | **Spring Cloud Gateway** | Zentrales Routing mit Spring-Ökosystem-Integration |
+| **Trip-Einladungs-E-Mail im Trips SCS** (ADR-0012) | SCS-Eigenstaendigkeit durch lokalen Mail-Versand; kein separates Notification SCS noetig |
+| **Externe Einladung via Event-Choreografie** (ADR-0012) | Lose Kopplung zwischen Trips und IAM; Auto-Join bei Registrierung vereinfacht Onboarding |
 
 Detaillierte Begründungen, Alternativen und Konsequenzen sind in den einzelnen ADRs beschrieben.

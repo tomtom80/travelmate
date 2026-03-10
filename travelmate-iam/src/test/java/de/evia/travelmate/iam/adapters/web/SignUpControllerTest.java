@@ -2,6 +2,7 @@ package de.evia.travelmate.iam.adapters.web;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -45,6 +46,7 @@ class SignUpControllerTest {
                 .param("tenantName", "Hüttenurlaub 2026")
                 .param("firstName", "Max")
                 .param("lastName", "Mustermann")
+                .param("dateOfBirth", "1990-05-15")
                 .param("email", "max@example.com")
                 .param("password", "secureP4ss!")
                 .param("passwordConfirm", "secureP4ss!"))
@@ -61,6 +63,7 @@ class SignUpControllerTest {
                 .param("tenantName", "Hüttenurlaub 2026")
                 .param("firstName", "Max")
                 .param("lastName", "Mustermann")
+                .param("dateOfBirth", "1990-05-15")
                 .param("email", "max@example.com")
                 .param("password", "secureP4ss!")
                 .param("passwordConfirm", "differentPassword"))
@@ -79,6 +82,7 @@ class SignUpControllerTest {
                 .param("tenantName", "Existing")
                 .param("firstName", "Max")
                 .param("lastName", "Mustermann")
+                .param("dateOfBirth", "1990-05-15")
                 .param("email", "max@example.com")
                 .param("password", "secureP4ss!")
                 .param("passwordConfirm", "secureP4ss!"))
@@ -86,5 +90,19 @@ class SignUpControllerTest {
             .andExpect(view().name("layout/public"))
             .andExpect(model().attribute("view", "signup/form"))
             .andExpect(model().attribute("error", "signup.error.tenantExists"));
+    }
+
+    @Test
+    void signUpWithoutDateOfBirthFails() throws Exception {
+        mockMvc.perform(post("/signup")
+                .param("tenantName", "Hüttenurlaub 2026")
+                .param("firstName", "Max")
+                .param("lastName", "Mustermann")
+                .param("email", "max@example.com")
+                .param("password", "secureP4ss!")
+                .param("passwordConfirm", "secureP4ss!"))
+            .andExpect(status().isBadRequest());
+
+        verify(signUpService, never()).signUp(any(SignUpCommand.class));
     }
 }

@@ -1,5 +1,6 @@
 package de.evia.travelmate.iam.application.command;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 public record RegisterAccountCommand(
@@ -8,6 +9,7 @@ public record RegisterAccountCommand(
     String username,
     String email,
     String firstName,
-    String lastName
+    String lastName,
+    LocalDate dateOfBirth
 ) {
 }

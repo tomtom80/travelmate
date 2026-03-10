@@ -16,14 +16,18 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import de.evia.travelmate.common.domain.TenantId;
+import org.springframework.format.annotation.DateTimeFormat;
+
 import de.evia.travelmate.trips.application.InvitationService;
 import de.evia.travelmate.trips.application.TripService;
 import de.evia.travelmate.trips.application.command.CreateTripCommand;
+import de.evia.travelmate.trips.application.command.InviteExternalCommand;
 import de.evia.travelmate.trips.application.command.InviteParticipantCommand;
 import de.evia.travelmate.trips.application.command.SetStayPeriodCommand;
 import de.evia.travelmate.trips.application.representation.InvitationRepresentation;
 import de.evia.travelmate.trips.application.representation.InvitationView;
 import de.evia.travelmate.trips.application.representation.ParticipantView;
+import de.evia.travelmate.trips.application.representation.PendingInvitationView;
 import de.evia.travelmate.trips.application.representation.TripRepresentation;
 import de.evia.travelmate.trips.domain.invitation.InvitationId;
 import de.evia.travelmate.trips.domain.travelparty.Member;
@@ -52,6 +56,9 @@ public class TripController {
         model.addAttribute("view", "trip/list");
         model.addAttribute("trips", maybeIdentity
             .map(id -> tripService.findAllByTenantId(id.tenantId()))
+            .orElse(List.of()));
+        model.addAttribute("pendingInvitations", maybeIdentity
+            .map(id -> toPendingInvitationViews(id))
             .orElse(List.of()));
         return "layout/default";
     }
@@ -120,6 +127,20 @@ public class TripController {
         final ResolvedIdentity identity = requireIdentity(jwt);
         invitationService.invite(new InviteParticipantCommand(
             identity.tenantId().value(), tripId, inviteeId, identity.memberId()));
+        return populateInvitationFragment(tripId, identity, model);
+    }
+
+    @PostMapping("/{tripId}/invitations/external")
+    public String inviteExternal(@AuthenticationPrincipal final Jwt jwt,
+                                 @PathVariable final UUID tripId,
+                                 @RequestParam final String email,
+                                 @RequestParam final String firstName,
+                                 @RequestParam final String lastName,
+                                 @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate dateOfBirth,
+                                 final Model model) {
+        final ResolvedIdentity identity = requireIdentity(jwt);
+        invitationService.inviteExternal(new InviteExternalCommand(
+            identity.tenantId().value(), tripId, email, firstName, lastName, dateOfBirth, identity.memberId()));
         return populateInvitationFragment(tripId, identity, model);
     }
 
@@ -239,12 +260,37 @@ public class TripController {
                                                    final TravelParty party) {
         return invitations.stream()
             .map(inv -> {
-                final String name = party.members().stream()
-                    .filter(m -> m.memberId().equals(inv.inviteeId()))
+                final String name;
+                if ("EXTERNAL".equals(inv.invitationType())) {
+                    name = inv.inviteeEmail() != null ? inv.inviteeEmail() : "Unknown";
+                } else {
+                    name = party.members().stream()
+                        .filter(m -> m.memberId().equals(inv.inviteeId()))
+                        .findFirst()
+                        .map(m -> m.firstName() + " " + m.lastName())
+                        .orElse("Unknown");
+                }
+                return new InvitationView(inv.invitationId(), inv.tripId(), inv.inviteeId(),
+                    name, inv.invitationType(), inv.status());
+            })
+            .toList();
+    }
+
+    private List<PendingInvitationView> toPendingInvitationViews(final ResolvedIdentity identity) {
+        final List<InvitationRepresentation> pending = invitationService.findPendingByInviteeId(identity.memberId());
+        return pending.stream()
+            .map(inv -> {
+                final TripRepresentation trip = tripService.findById(new TripId(inv.tripId()));
+                final String inviterName = identity.party().members().stream()
+                    .filter(m -> m.memberId().equals(inv.invitedBy()))
                     .findFirst()
                     .map(m -> m.firstName() + " " + m.lastName())
                     .orElse("Unknown");
-                return new InvitationView(inv.invitationId(), inv.tripId(), inv.inviteeId(), name, inv.status());
+                return new PendingInvitationView(
+                    inv.invitationId(), inv.tripId(),
+                    trip.name(), trip.startDate(), trip.endDate(),
+                    inviterName
+                );
             })
             .toList();
     }

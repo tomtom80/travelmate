@@ -11,6 +11,7 @@ import de.evia.travelmate.trips.domain.invitation.Invitation;
 import de.evia.travelmate.trips.domain.invitation.InvitationId;
 import de.evia.travelmate.trips.domain.invitation.InvitationRepository;
 import de.evia.travelmate.trips.domain.invitation.InvitationStatus;
+import de.evia.travelmate.trips.domain.invitation.InvitationType;
 import de.evia.travelmate.trips.domain.trip.TripId;
 
 @Repository
@@ -31,9 +32,12 @@ public class InvitationRepositoryAdapter implements InvitationRepository {
                 invitation.tripId().value(),
                 invitation.inviteeId(),
                 invitation.invitedBy(),
+                invitation.inviteeEmail(),
+                invitation.invitationType().name(),
                 invitation.status().name()
             ));
         entity.setStatus(invitation.status().name());
+        entity.setInviteeId(invitation.inviteeId());
         jpaRepository.save(entity);
         return invitation;
     }
@@ -51,8 +55,27 @@ public class InvitationRepositoryAdapter implements InvitationRepository {
     }
 
     @Override
+    public List<Invitation> findByInviteeIdAndStatus(final UUID inviteeId, final InvitationStatus status) {
+        return jpaRepository.findByInviteeIdAndStatus(inviteeId, status.name()).stream()
+            .map(this::toDomain)
+            .toList();
+    }
+
+    @Override
+    public List<Invitation> findByInviteeEmailAndStatus(final String inviteeEmail, final InvitationStatus status) {
+        return jpaRepository.findByInviteeEmailAndStatus(inviteeEmail, status.name()).stream()
+            .map(this::toDomain)
+            .toList();
+    }
+
+    @Override
     public boolean existsByTripIdAndInviteeId(final TripId tripId, final UUID inviteeId) {
         return jpaRepository.existsByTripIdAndInviteeId(tripId.value(), inviteeId);
+    }
+
+    @Override
+    public boolean existsByTripIdAndInviteeEmail(final TripId tripId, final String inviteeEmail) {
+        return jpaRepository.existsByTripIdAndInviteeEmail(tripId.value(), inviteeEmail);
     }
 
     private Invitation toDomain(final InvitationJpaEntity entity) {
@@ -62,6 +85,8 @@ public class InvitationRepositoryAdapter implements InvitationRepository {
             new TripId(entity.getTripId()),
             entity.getInviteeId(),
             entity.getInvitedBy(),
+            entity.getInviteeEmail(),
+            InvitationType.valueOf(entity.getInvitationType()),
             InvitationStatus.valueOf(entity.getStatus())
         );
     }

@@ -24,6 +24,11 @@
             </label>
         </div>
 
+        <label>
+            <span th:text="#{common.dateOfBirth}">Geburtsdatum</span>
+            <input type="date" id="dateOfBirth" name="dateOfBirth" th:value="${dateOfBirth}" required>
+        </label>
+
         <label for="email" th:text="#{signup.email}">E-Mail-Adresse</label>
         <input type="email" id="email" name="email" th:value="${email}" required>
 

@@ -29,6 +29,9 @@ class TravelPartyServiceTest {
     @Mock
     private TravelPartyRepository repository;
 
+    @Mock
+    private InvitationService invitationService;
+
     @InjectMocks
     private TravelPartyService service;
 
@@ -103,6 +106,24 @@ class TravelPartyServiceTest {
         assertThat(savedParty.tenantId()).isEqualTo(new TenantId(tenantId));
         assertThat(savedParty.members()).hasSize(1);
         assertThat(savedParty.members().getFirst().memberId()).isEqualTo(accountId);
+    }
+
+    @Test
+    void onAccountRegisteredLinksAwaitingInvitations() {
+        final UUID tenantId = UUID.randomUUID();
+        final UUID accountId = UUID.randomUUID();
+        final TravelParty party = TravelParty.create(new TenantId(tenantId), "Hüttenurlaub 2026");
+        when(repository.findByTenantId(new TenantId(tenantId))).thenReturn(Optional.of(party));
+        when(repository.save(any(TravelParty.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        final AccountRegistered event = new AccountRegistered(
+            tenantId, accountId, "invited@example.com", "Invited", "User",
+            "invited@example.com", LocalDate.now()
+        );
+
+        service.onAccountRegistered(event);
+
+        verify(invitationService).linkAwaitingInvitations("invited@example.com", accountId);
     }
 
     @Test

@@ -1,10 +1,12 @@
 package de.evia.travelmate.iam.domain;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.iam.domain.account.Account;
 import de.evia.travelmate.iam.domain.account.AccountId;
+import de.evia.travelmate.iam.domain.account.DateOfBirth;
 import de.evia.travelmate.iam.domain.account.Email;
 import de.evia.travelmate.iam.domain.account.FullName;
 import de.evia.travelmate.iam.domain.account.KeycloakUserId;
@@ -50,15 +52,19 @@ public final class IamTestFixtures {
         return new FullName("Max", "Mustermann");
     }
 
+    public static DateOfBirth dateOfBirth() {
+        return new DateOfBirth(LocalDate.of(1990, 5, 15));
+    }
+
     public static Account account() {
-        return new Account(ACCOUNT_ID, TENANT_ID, keycloakUserId(), username(), email(), fullName(), null);
+        return new Account(ACCOUNT_ID, TENANT_ID, keycloakUserId(), username(), email(), fullName(), dateOfBirth());
     }
 
     public static Account registeredAccount() {
-        return Account.register(TENANT_ID, keycloakUserId(), username(), email(), fullName());
+        return Account.register(TENANT_ID, keycloakUserId(), username(), email(), fullName(), dateOfBirth());
     }
 
     public static Dependent dependent() {
-        return Dependent.add(TENANT_ID, ACCOUNT_ID, new FullName("Lena", "Mustermann"));
+        return Dependent.add(TENANT_ID, ACCOUNT_ID, new FullName("Lena", "Mustermann"), dateOfBirth());
     }
 }
