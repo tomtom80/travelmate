@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{error.generic.title} + ' — Travelmate'">Fehler — Travelmate</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+</head>
+<body>
+    <main class="container">
+        <article>
+            <header>
+                <h1 th:text="#{error.generic.title}">Fehler</h1>
+            </header>
+            <p th:text="${message}">Ein Fehler ist aufgetreten.</p>
+            <a href="/" role="button" th:text="#{error.backToDashboard}">Zurueck zum Dashboard</a>
+        </article>
+    </main>
+</body>
+</html>

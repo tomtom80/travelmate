@@ -55,7 +55,7 @@
                         <td th:text="${p.firstName() + ' ' + p.lastName()}"></td>
                         <td th:text="${p.arrivalDate()}"></td>
                         <td th:text="${p.departureDate()}"></td>
-                        <td th:if="${p.participantId() == currentMemberId}">
+                        <td th:if="${p.participantId() == currentMemberId || isOrganizer}">
                             <form method="post"
                                   th:action="@{/{tid}/participants/{pid}/stay-period(tid=${trip.tripId()},pid=${p.participantId()})}"
                                   style="margin-bottom:0;">
@@ -75,7 +75,7 @@
                                 </div>
                             </form>
                         </td>
-                        <td th:if="${p.participantId() != currentMemberId}"></td>
+                        <td th:if="${p.participantId() != currentMemberId && !isOrganizer}"></td>
                     </tr>
                 </tbody>
             </table>
@@ -113,6 +113,7 @@
             <form hx-post th:hx-post="@{/{id}/invitations(id=${trip.tripId()})}"
                   hx-target="#invitations"
                   hx-swap="innerHTML"
+                  hx-disabled-elt="find [type=submit]"
                   hx-on::after-request="if(event.detail.successful) { this.reset(); document.getElementById('invite-member-dialog').close(); }">
                 <label for="inviteeId" th:text="#{invitation.member}">Mitglied</label>
                 <select id="inviteeId" name="inviteeId" required>
@@ -144,6 +145,7 @@
             <form hx-post th:hx-post="@{/{id}/invitations/external(id=${trip.tripId()})}"
                   hx-target="#invitations"
                   hx-swap="innerHTML"
+                  hx-disabled-elt="find [type=submit]"
                   hx-on::after-request="if(event.detail.successful) { this.reset(); document.getElementById('invite-external-dialog').close(); }">
                 <div class="grid">
                     <label>

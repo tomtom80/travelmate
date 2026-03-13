@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<body>
+<div th:fragment="weightingList">
+    <figure th:if="${!expense.weightings().isEmpty()}">
+        <table>
+            <thead>
+                <tr>
+                    <th th:text="#{expense.weighting.participant}">Teilnehmer</th>
+                    <th th:text="#{expense.weighting.weight}">Gewichtung</th>
+                    <th th:if="${expense.status().name() == 'OPEN'}" th:text="#{common.edit}">Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="weighting : ${expense.weightings()}">
+                    <td th:text="${participantNames[weighting.participantId()] != null ? participantNames[weighting.participantId()] : weighting.participantId()}"></td>
+                    <td th:if="${expense.status().name() == 'OPEN'}">
+                        <form th:hx-post="@{/{tid}/weightings(tid=${tripId})}"
+                              hx-target="#weightings"
+                              hx-swap="innerHTML"
+                              hx-disabled-elt="find [type=submit]"
+                              style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0;">
+                            <input type="hidden" name="participantId" th:value="${weighting.participantId()}">
+                            <input type="number" name="weight" step="0.1" min="0"
+                                   th:value="${weighting.weight()}"
+                                   style="width:6rem; margin-bottom:0;" required>
+                            <button type="submit" th:text="#{expense.weighting.update}"
+                                    style="margin-bottom:0; white-space:nowrap; width:auto;">Aktualisieren</button>
+                        </form>
+                    </td>
+                    <td th:if="${expense.status().name() != 'OPEN'}"
+                        th:text="${#numbers.formatDecimal(weighting.weight(), 1, 1)}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </figure>
+</div>
+</body>
+</html>

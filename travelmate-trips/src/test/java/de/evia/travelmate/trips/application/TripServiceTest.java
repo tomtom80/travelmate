@@ -3,8 +3,11 @@ package de.evia.travelmate.trips.application;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+
+import java.util.List;
 
 import java.time.LocalDate;
 import java.util.Optional;
@@ -20,6 +23,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.mockito.ArgumentCaptor;
 
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.common.events.trips.ParticipantJoinedTrip;
 import de.evia.travelmate.common.events.trips.TripCompleted;
 import de.evia.travelmate.trips.application.command.CreateTripCommand;
 import de.evia.travelmate.trips.application.command.SetStayPeriodCommand;
@@ -98,6 +102,35 @@ class TripServiceTest {
         assertThat(savedTrip.hasParticipant(ORGANIZER_ID)).isTrue();
         assertThat(savedTrip.hasParticipant(member2Id)).isTrue();
         assertThat(savedTrip.hasParticipant(dependentId)).isTrue();
+    }
+
+    @Test
+    void createTripPublishesParticipantJoinedEventsForAllMembers() {
+        final UUID member2Id = UUID.randomUUID();
+        final TravelParty party = TravelParty.create(new TenantId(TENANT_UUID), "Test");
+        party.addMember(ORGANIZER_ID, "max@example.com", "Max", "Mustermann");
+        party.addMember(member2Id, "lisa@example.com", "Lisa", "Mustermann");
+        when(travelPartyRepository.findByTenantId(new TenantId(TENANT_UUID)))
+            .thenReturn(Optional.of(party));
+        when(tripRepository.save(any(Trip.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        final CreateTripCommand command = new CreateTripCommand(
+            TENANT_UUID, "Wanderung", null,
+            LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 7),
+            ORGANIZER_ID
+        );
+
+        tripService.createTrip(command);
+
+        final ArgumentCaptor<Object> eventCaptor = ArgumentCaptor.forClass(Object.class);
+        verify(eventPublisher, atLeastOnce()).publishEvent(eventCaptor.capture());
+        final List<ParticipantJoinedTrip> joinedEvents = eventCaptor.getAllValues().stream()
+            .filter(ParticipantJoinedTrip.class::isInstance)
+            .map(ParticipantJoinedTrip.class::cast)
+            .toList();
+        assertThat(joinedEvents).hasSize(2);
+        assertThat(joinedEvents).extracting(ParticipantJoinedTrip::participantId)
+            .containsExactlyInAnyOrder(ORGANIZER_ID, member2Id);
     }
 
     @Test

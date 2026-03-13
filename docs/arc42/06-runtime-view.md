@@ -138,25 +138,62 @@ Browser     Trips-SCS      RabbitMQ       IAM-SCS        Keycloak       SMTP
 6. Trips konsumiert `AccountRegistered`, aktualisiert TravelParty, findet wartende Einladung per E-Mail
 7. Auto-Accept: Invitation → ACCEPTED, Participant wird zum Trip hinzugefuegt
 
-## Szenario 4: Abrechnung und Saldo
+## Szenario 4: Expense-Erstellung via Event-Choreografie (Iteration 5)
 
 ```
-Browser        Expense-SCS     PostgreSQL
-  │               │               │
-  │──POST Receipt─▶               │
-  │               │──INSERT───────▶
-  │               │               │
-  │──GET Settlement▶              │
-  │               │──Calculate────│
-  │               │  (Weightings) │
-  │◀──Settlement──│               │
+Trips-SCS      RabbitMQ       Expense-SCS      PostgreSQL
+  │               │               │               │
+  │──TripCreated──▶               │               │
+  │               │──consume──────▶               │
+  │               │               │──TripProjection.create()
+  │               │               │──save──────────▶
+  │               │               │               │
+  │──ParticipantJoinedTrip──────▶│               │
+  │               │──consume──────▶               │
+  │               │               │──projection.addParticipant()
+  │               │               │──save──────────▶
+  │               │               │               │
+  │──TripCompleted──────────────▶│               │
+  │               │──consume──────▶               │
+  │               │               │──Expense.create(weightings=1.0)
+  │               │               │──save──────────▶
+  │               │               │──ExpenseCreated (Event)
 ```
 
-1. Teilnehmer erfasst einen Beleg (Receipt) mit Foto und Betrag
-2. Expense-SCS speichert den Beleg
-3. Bei Abfrage der Abrechnung werden alle Belege eines Trips aggregiert
-4. Gewichtungen (Erwachsener=1.0, Teilzeit=0.5, Kind<3=0.0) bestimmen die Aufteilung
-5. Pro Familie wird ein Saldo (Settlement) berechnet
+1. Trips publiziert `TripCreated` — Expense erstellt eine lokale `TripProjection` mit Trip-Name und TenantId
+2. Bei jedem `ParticipantJoinedTrip` wird der Teilnehmer zur TripProjection hinzugefuegt
+3. `TripCompleted` loest die automatische Erstellung eines `Expense`-Aggregats aus
+4. Alle Teilnehmer erhalten eine Standard-Gewichtung von 1.0
+5. Das `ExpenseCreated`-Event wird nach Commit publiziert
+
+## Szenario 4b: Beleg-Erfassung und Abrechnung
+
+```
+Browser        Gateway        Expense-SCS      PostgreSQL
+  │               │               │               │
+  │──GET /{tripId}▶              │               │
+  │               │──Route────────▶               │
+  │               │               │──find Expense─▶
+  │◀──HTML (Expense-Detail)──────│               │
+  │               │               │               │
+  │──POST receipt─▶              │               │
+  │               │──Route────────▶               │
+  │               │               │──addReceipt()──▶
+  │◀──HTML Fragment (HTMX)──────│               │
+  │               │               │               │
+  │──POST settle──▶              │               │
+  │               │──Route────────▶               │
+  │               │               │──expense.settle()
+  │               │               │──save──────────▶
+  │               │               │──ExpenseSettled (Event)
+  │◀──Redirect────│               │               │
+```
+
+1. Organisator oeffnet die Abrechnungsseite fuer einen abgeschlossenen Trip
+2. Belege werden mit Beschreibung, Betrag, Bezahlt-von und Datum erfasst (HTMX-Partials)
+3. Gewichtungen koennen pro Teilnehmer angepasst werden (Erwachsener=1.0, Teilzeit=0.5, Kind<3=0.0)
+4. Saldo-Berechnung: Fuer jeden Teilnehmer wird berechnet, was er bezahlt hat minus seinen gewichteten Anteil
+5. Abschluss (settle): Status wechselt zu SETTLED, `ExpenseSettled`-Event wird publiziert
 
 ## Szenario 5: Account-Registrierung
 

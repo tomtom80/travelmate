@@ -48,6 +48,13 @@ Die asynchrone Kommunikation zwischen SCS basiert auf Domain Events ueber Rabbit
 | `InvitationCreated` | `trips.invitation-created` | Einladung erstellt (loest E-Mail aus) |
 | `ExternalUserInvitedToTrip` | `trips.external-user-invited` | Externe Einladung (IAM erstellt User) |
 
+### Expense Events
+
+| Event | Routing Key | Beschreibung |
+|-------|------------|--------------|
+| `ExpenseCreated` | `expense.expense-created` | Abrechnung fuer abgeschlossenen Trip erstellt |
+| `ExpenseSettled` | `expense.expense-settled` | Abrechnung abgeschlossen |
+
 ### Event-Flow
 
 ```
@@ -56,6 +63,14 @@ IAM                         RabbitMQ             Trips / Expense
  │──AccountRegistered───────────▶│──────────────────────▶│  → TravelParty anlegen
  │──DependentAddedToTenant──────▶│──────────────────────▶│  → Dependent in Party
  │──RoleAssignedToUser──────────▶│──────────────────────▶│  → Rolle aktivieren
+```
+
+```
+Trips                       RabbitMQ             Expense
+ │                               │                   │
+ │──TripCreated─────────────────▶│──────────────────▶│  → TripProjection anlegen
+ │──ParticipantJoinedTrip───────▶│──────────────────▶│  → Teilnehmer in Projektion
+ │──TripCompleted───────────────▶│──────────────────▶│  → Expense erstellen (Gewichtungen 1.0)
 ```
 
 ## E-Mail-Kommunikation (ADR-0012)

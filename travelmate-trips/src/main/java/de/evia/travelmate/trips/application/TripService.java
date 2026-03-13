@@ -1,5 +1,6 @@
 package de.evia.travelmate.trips.application;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -11,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import de.evia.travelmate.common.domain.DomainEvent;
 import de.evia.travelmate.common.domain.EntityNotFoundException;
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.common.events.trips.ParticipantJoinedTrip;
 import de.evia.travelmate.trips.application.command.CreateTripCommand;
 import de.evia.travelmate.trips.application.command.SetStayPeriodCommand;
 import de.evia.travelmate.trips.application.representation.TripRepresentation;
@@ -64,6 +66,7 @@ public class TripService {
 
         tripRepository.save(trip);
         publishEvents(trip);
+        publishParticipantJoinedEvents(trip);
         return new TripRepresentation(trip);
     }
 
@@ -139,5 +142,20 @@ public class TripService {
             eventPublisher.publishEvent(event);
         }
         trip.clearDomainEvents();
+    }
+
+    private void publishParticipantJoinedEvents(final Trip trip) {
+        for (final Participant participant : trip.participants()) {
+            final String name = participant.firstName() != null
+                ? participant.firstName() + " " + participant.lastName()
+                : participant.participantId().toString();
+            eventPublisher.publishEvent(new ParticipantJoinedTrip(
+                trip.tenantId().value(),
+                trip.tripId().value(),
+                participant.participantId(),
+                name,
+                LocalDate.now()
+            ));
+        }
     }
 }

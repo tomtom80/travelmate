@@ -23,6 +23,7 @@ UI verwendet Fachsprache, Code verwendet technische Namen. Siehe ADR-0011 fuer d
 | **Receipt** | Beleg / Bon | Ein einzelner Kassenbeleg mit Betrag und optionalem Foto. |
 | **Weighting** | Gewichtung | Faktor für die Kostenaufteilung pro Person: 1.0 = Erwachsener, 0.5 = Teilzeit-Teilnehmer, 0.0 = Kind unter 3 Jahren. |
 | **Settlement** | Abrechnung / Saldo | Der berechnete Saldo pro Familie nach Verrechnung aller Belege und Gewichtungen. |
+| **TripProjection (Expense)** | Trip-Projektion | Lokales Read-Model im Expense SCS, projiziert aus Trips-Events (TripCreated, ParticipantJoinedTrip). Enthaelt Trip-Name, TenantId und Teilnehmerliste. |
 | **Accommodation** | Unterkunft / Hütte | Die gebuchte Unterkunft für den Trip. |
 | **LocationPoll** | Standort-Abstimmung | Eine Abstimmung unter den Teilnehmern zur Auswahl der Unterkunft. |
 | **DownPayment** | Anzahlung | Eine Vorauszahlung für den Trip (z.B. Hütten-Buchung). |
@@ -39,6 +40,8 @@ UI verwendet Fachsprache, Code verwendet technische Namen. Siehe ADR-0011 fuer d
 | **Bounded Context** | Eine fachliche Grenze innerhalb derer ein einheitliches Domänenmodell gilt (DDD-Konzept). |
 | **Hexagonale Architektur** | Architekturmuster mit Ports (Schnittstellen) und Adapters (Implementierungen), das die Domain von der Infrastruktur trennt. |
 | **Domain Event** | Ein fachliches Ereignis, das eine Zustandsänderung in einem Bounded Context signalisiert und asynchron an andere Kontexte weitergegeben wird. |
+| **ExpenseCreated** | Domain Event: Abrechnung wurde fuer einen abgeschlossenen Trip automatisch erstellt. |
+| **ExpenseSettled** | Domain Event: Abrechnung wurde abgeschlossen, alle Salden sind berechnet. |
 | **TenantId** | Technischer Schlüssel zur Mandantentrennung, der in jedem Aggregat enthalten ist. |
 | **OIDC** | OpenID Connect — Authentifizierungsprotokoll auf Basis von OAuth 2.0, implementiert über Keycloak. |
 | **RabbitMQ** | Message Broker fuer asynchrone Kommunikation zwischen SCS via AMQP (Topic Exchange `travelmate.events`). |

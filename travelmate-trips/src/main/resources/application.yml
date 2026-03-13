@@ -27,6 +27,14 @@ spring:
     port: ${RABBITMQ_PORT:5672}
     username: guest
     password: guest
+    listener:
+      simple:
+        retry:
+          enabled: true
+          max-attempts: 3
+          initial-interval: 1000
+          multiplier: 2.0
+          max-interval: 10000
 
   mail:
     host: ${MAIL_HOST:localhost}

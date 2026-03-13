@@ -128,7 +128,7 @@ abstract class E2ETestBase {
      */
     static void clickAndWaitForHtmx(final String selector) {
         page.waitForResponse(
-            response -> response.url().contains("/iam/") || response.url().contains("/trips/"),
+            response -> response.url().contains("/iam/") || response.url().contains("/trips/") || response.url().contains("/expense/"),
             () -> page.click(selector)
         );
         page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
@@ -139,7 +139,7 @@ abstract class E2ETestBase {
      */
     static void submitHtmxForm(final String formSelector) {
         page.waitForResponse(
-            response -> response.url().contains("/iam/") || response.url().contains("/trips/"),
+            response -> response.url().contains("/iam/") || response.url().contains("/trips/") || response.url().contains("/expense/"),
             () -> page.click(formSelector + " button[type=submit]")
         );
         page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);

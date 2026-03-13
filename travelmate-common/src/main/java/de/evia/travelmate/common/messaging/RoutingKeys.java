@@ -6,6 +6,7 @@ public final class RoutingKeys {
     }
 
     public static final String EXCHANGE = "travelmate.events";
+    public static final String DLX_EXCHANGE = "travelmate.events.dlx";
 
     public static final String TENANT_CREATED = "iam.tenant-created";
     public static final String ACCOUNT_REGISTERED = "iam.account-registered";

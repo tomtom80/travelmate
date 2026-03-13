@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<body>
+<div th:fragment="receiptList">
+    <figure th:if="${!expense.receipts().isEmpty()}">
+        <table>
+            <thead>
+                <tr>
+                    <th th:text="#{expense.receipt.description}">Beschreibung</th>
+                    <th th:text="#{expense.receipt.amount}">Betrag</th>
+                    <th th:text="#{expense.receipt.paidBy}">Bezahlt von</th>
+                    <th th:text="#{expense.receipt.date}">Datum</th>
+                    <th th:if="${expense.status().name() == 'OPEN'}" th:text="#{common.edit}">Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="receipt : ${expense.receipts()}">
+                    <td th:text="${receipt.description()}"></td>
+                    <td th:text="${#numbers.formatDecimal(receipt.amount(), 1, 2)}"></td>
+                    <td th:text="${participantNames[receipt.paidBy()] != null ? participantNames[receipt.paidBy()] : receipt.paidBy()}"></td>
+                    <td th:text="${receipt.date()}"></td>
+                    <td th:if="${expense.status().name() == 'OPEN'}">
+                        <button class="outline secondary"
+                                th:hx-delete="@{/{tid}/receipts/{rid}(tid=${tripId},rid=${receipt.receiptId()})}"
+                                hx-target="#receipts"
+                                hx-swap="innerHTML"
+                                hx-confirm="true"
+                                th:text="#{expense.receipt.remove}">Entfernen</button>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </figure>
+    <p th:if="${expense.receipts().isEmpty()}" th:text="#{expense.receipt.empty}">Noch keine Belege vorhanden.</p>
+</div>
+</body>
+</html>

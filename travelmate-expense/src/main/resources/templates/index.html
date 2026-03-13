@@ -2,8 +2,9 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="de">
 <body>
 <div th:fragment="content">
-    <h1>Abrechnung — Expense Management</h1>
-    <p>Belege einreichen, Abrechnungsstand einsehen, Zahlungen verwalten.</p>
+    <h1 th:text="#{expense.title}">Abrechnung</h1>
+    <p th:text="#{expense.home.info}">Waehlen Sie eine Reise aus, um die Abrechnung einzusehen.</p>
+    <a href="/trips/" th:text="#{nav.trips}">Reisen</a>
 </div>
 </body>
 </html>

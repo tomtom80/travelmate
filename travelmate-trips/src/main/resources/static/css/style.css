@@ -136,6 +136,22 @@ section:last-child h2 {
     border: 0;
 }
 
+/* HTMX loading states */
+.htmx-request [type=submit],
+.htmx-request button[hx-delete],
+.htmx-request button[hx-post],
+.htmx-request button[hx-put] {
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.htmx-indicator {
+    display: none;
+}
+.htmx-request .htmx-indicator {
+    display: inline;
+}
+
 /* Footer */
 body > footer {
     text-align: center;

@@ -34,6 +34,13 @@
         <small>Travelmate</small>
     </footer>
     <script>
+    document.addEventListener('submit', function(e) {
+        var btn = e.target.querySelector('button[type=submit]');
+        if (btn && !e.target.hasAttribute('hx-post') && !e.target.hasAttribute('hx-delete')) {
+            btn.setAttribute('aria-busy', 'true');
+            btn.disabled = true;
+        }
+    });
     document.addEventListener('showToast', function(e) {
         var d = e.detail, level = d.level || 'info', msg = d.message || '';
         var toast = document.createElement('div');

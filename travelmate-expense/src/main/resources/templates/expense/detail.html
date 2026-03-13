@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<body>
+<div th:fragment="content">
+    <hgroup>
+        <h1 th:text="${tripName}">Reisename</h1>
+        <p>
+            <span th:text="#{expense.title}">Abrechnung</span> —
+            <mark th:text="#{${'expense.status.' + expense.status()}}">Offen</mark>
+        </p>
+    </hgroup>
+
+    <!-- Total Amount -->
+    <article>
+        <p>
+            <strong th:text="#{expense.totalAmount}">Gesamtbetrag</strong>:
+            <span th:text="${#numbers.formatDecimal(expense.totalAmount(), 1, 2)}">0.00</span> EUR
+        </p>
+    </article>
+
+    <!-- Receipts Section -->
+    <article>
+        <h2 th:text="#{expense.receipts}">Belege</h2>
+        <div id="receipts">
+            <div th:replace="~{expense/receipts :: receiptList}"></div>
+        </div>
+
+        <div th:if="${expense.status().name() == 'OPEN'}" style="margin-top:1rem;">
+            <button onclick="document.getElementById('add-receipt-dialog').showModal()"
+                    th:text="#{expense.receipt.add}">Beleg hinzufuegen</button>
+        </div>
+    </article>
+
+    <!-- Weightings Section -->
+    <article>
+        <h2 th:text="#{expense.weightings}">Gewichtung</h2>
+        <div id="weightings">
+            <div th:replace="~{expense/weightings :: weightingList}"></div>
+        </div>
+    </article>
+
+    <!-- Balances Section -->
+    <article>
+        <h2 th:text="#{expense.balances}">Saldo</h2>
+        <figure th:if="${!expense.balances().isEmpty()}">
+            <table>
+                <thead>
+                    <tr>
+                        <th th:text="#{expense.balance.participant}">Teilnehmer</th>
+                        <th th:text="#{expense.balance.amount}">Betrag</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="entry : ${expense.balances()}">
+                        <td th:text="${participantNames[entry.key] != null ? participantNames[entry.key] : entry.key}"></td>
+                        <td>
+                            <span th:if="${entry.value.signum() > 0}" style="color:green;">
+                                +<span th:text="${#numbers.formatDecimal(entry.value, 1, 2)}"></span>
+                                (<span th:text="#{expense.balance.positive}">erhaelt</span>)
+                            </span>
+                            <span th:if="${entry.value.signum() < 0}" style="color:red;">
+                                <span th:text="${#numbers.formatDecimal(entry.value, 1, 2)}"></span>
+                                (<span th:text="#{expense.balance.negative}">schuldet</span>)
+                            </span>
+                            <span th:if="${entry.value.signum() == 0}">
+                                <span th:text="${#numbers.formatDecimal(entry.value, 1, 2)}"></span>
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </figure>
+    </article>
+
+    <!-- Settle Button -->
+    <div th:if="${expense.status().name() == 'OPEN' && !expense.receipts().isEmpty()}">
+        <form method="post" th:action="@{/{id}/settle(id=${tripId})}">
+            <button type="submit" class="contrast" th:text="#{expense.settle}">Abrechnung abschliessen</button>
+        </form>
+    </div>
+
+    <!-- Dialog: Add Receipt -->
+    <dialog id="add-receipt-dialog" th:if="${expense.status().name() == 'OPEN'}">
+        <article>
+            <header>
+                <button aria-label="Close" rel="prev"
+                        onclick="document.getElementById('add-receipt-dialog').close()"></button>
+                <h3 th:text="#{expense.receipt.add}">Beleg hinzufuegen</h3>
+            </header>
+            <form hx-post th:hx-post="@{/{id}/receipts(id=${tripId})}"
+                  hx-target="#receipts"
+                  hx-swap="innerHTML"
+                  hx-disabled-elt="find [type=submit]"
+                  hx-on::after-request="if(event.detail.successful) { this.reset(); document.getElementById('add-receipt-dialog').close(); }">
+                <label>
+                    <span th:text="#{expense.receipt.description}">Beschreibung</span>
+                    <input type="text" name="description" required>
+                </label>
+                <div class="grid">
+                    <label>
+                        <span th:text="#{expense.receipt.amount}">Betrag</span>
+                        <input type="number" name="amount" step="0.01" min="0.01" required>
+                    </label>
+                    <label>
+                        <span th:text="#{expense.receipt.date}">Datum</span>
+                        <input type="date" name="date" required>
+                    </label>
+                </div>
+                <label>
+                    <span th:text="#{expense.receipt.paidBy}">Bezahlt von</span>
+                    <select name="paidBy" required>
+                        <option th:each="entry : ${participantNames}"
+                                th:value="${entry.key}"
+                                th:text="${entry.value}">
+                        </option>
+                    </select>
+                </label>
+                <footer>
+                    <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+                        <button type="button" class="secondary"
+                                onclick="document.getElementById('add-receipt-dialog').close()"
+                                th:text="#{common.cancel}">Abbrechen</button>
+                        <button type="submit" th:text="#{expense.receipt.add}">Beleg hinzufuegen</button>
+                    </div>
+                </footer>
+            </form>
+        </article>
+    </dialog>
+
+    <a href="/trips/" th:text="#{common.back}">Zurueck</a>
+</div>
+</body>
+</html>
