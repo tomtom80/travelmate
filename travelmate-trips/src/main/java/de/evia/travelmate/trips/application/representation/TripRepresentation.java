@@ -19,7 +19,8 @@ public record TripRepresentation(
     List<ParticipantDetail> participantDetails
 ) {
 
-    public record ParticipantDetail(UUID participantId, LocalDate arrivalDate, LocalDate departureDate) {
+    public record ParticipantDetail(UUID participantId, String firstName, String lastName,
+                                     LocalDate arrivalDate, LocalDate departureDate) {
     }
 
     public TripRepresentation(final Trip trip) {
@@ -35,6 +36,8 @@ public record TripRepresentation(
             trip.participants().stream().map(p -> p.participantId()).toList(),
             trip.participants().stream().map(p -> new ParticipantDetail(
                 p.participantId(),
+                p.firstName(),
+                p.lastName(),
                 p.stayPeriod() != null ? p.stayPeriod().arrivalDate() : null,
                 p.stayPeriod() != null ? p.stayPeriod().departureDate() : null
             )).toList()
@@ -45,6 +48,6 @@ public record TripRepresentation(
                               final String description, final LocalDate startDate, final LocalDate endDate,
                               final String status, final UUID organizerId, final List<UUID> participantIds) {
         this(tripId, tenantId, name, description, startDate, endDate, status, organizerId,
-            participantIds, participantIds.stream().map(id -> new ParticipantDetail(id, null, null)).toList());
+            participantIds, participantIds.stream().map(id -> new ParticipantDetail(id, null, null, null, null)).toList());
     }
 }

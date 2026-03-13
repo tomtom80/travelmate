@@ -76,8 +76,11 @@
     <section>
         <h2 th:text="#{dashboard.dangerZone}">Gefahrenzone</h2>
         <p th:text="#{dashboard.deleteTenantHint}">Das Loeschen der Reisepartei entfernt alle Mitglieder und Mitreisenden.</p>
+        <div id="delete-error"></div>
         <button hx-delete th:hx-delete="@{/dashboard/tenant}"
                 hx-confirm th:hx-confirm="#{dashboard.deleteTenantConfirm}"
+                hx-target="#delete-error"
+                hx-swap="innerHTML"
                 class="outline secondary"
                 th:text="#{dashboard.deleteTenant}">Reisepartei loeschen</button>
     </section>

@@ -11,6 +11,9 @@ until /opt/keycloak/bin/kcadm.sh config credentials \
   sleep 2
 done
 
+# Disable SSL requirement on master realm so admin API works over HTTP in Docker
+/opt/keycloak/bin/kcadm.sh update realms/master -s sslRequired=NONE
+
 /opt/keycloak/bin/kcadm.sh update realms/travelmate \
   -s "smtpServer.host=mailpit" \
   -s "smtpServer.port=1025" \

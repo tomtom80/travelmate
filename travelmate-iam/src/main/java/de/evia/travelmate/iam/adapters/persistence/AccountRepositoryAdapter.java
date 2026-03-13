@@ -61,6 +61,11 @@ public class AccountRepositoryAdapter implements AccountRepository {
     }
 
     @Override
+    public boolean existsByUsernameAcrossTenants(final Username username) {
+        return jpaRepository.existsByUsername(username.value());
+    }
+
+    @Override
     public void deleteById(final AccountId accountId) {
         jpaRepository.deleteById(accountId.value());
     }

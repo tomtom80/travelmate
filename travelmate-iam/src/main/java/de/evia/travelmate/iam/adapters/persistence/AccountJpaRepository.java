@@ -16,6 +16,8 @@ public interface AccountJpaRepository extends JpaRepository<AccountJpaEntity, UU
 
     boolean existsByTenantIdAndUsername(UUID tenantId, String username);
 
+    boolean existsByUsername(String username);
+
     void deleteAllByTenantId(UUID tenantId);
 
     long countByTenantId(UUID tenantId);

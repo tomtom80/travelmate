@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+</head>
+<body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+    <h2>Willkommen bei Travelmate!</h2>
+    <p>Hallo <span th:text="${firstName}">Max</span>,</p>
+    <p>Du wurdest zu Travelmate eingeladen. Klicke auf den folgenden Link, um dein Konto zu aktivieren und dein Passwort festzulegen:</p>
+    <p style="margin: 30px 0;">
+        <a th:href="${registrationLink}"
+           style="background-color: #1095c1; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; font-weight: bold;">
+            Konto aktivieren
+        </a>
+    </p>
+    <p>Dieser Link ist 72 Stunden gueltig.</p>
+    <p>Falls du diese Einladung nicht erwartet hast, kannst du diese E-Mail ignorieren.</p>
+    <p style="color: #666; margin-top: 40px; font-size: 14px;">— Dein Travelmate Team</p>
+</body>
+</html>

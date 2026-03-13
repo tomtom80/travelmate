@@ -83,6 +83,7 @@ abstract class E2ETestBase {
         page.fill("#tenantName", tenantName);
         page.fill("#firstName", firstName);
         page.fill("#lastName", lastName);
+        page.fill("#dateOfBirth", "1990-01-15");
         page.fill("#email", email);
         page.fill("#password", password);
         page.fill("#passwordConfirm", password);
@@ -95,22 +96,7 @@ abstract class E2ETestBase {
         page.fill("#username", email);
         page.fill("#password", password);
         page.click("#kc-login");
-        page.waitForLoadState();
-
-        if (page.url().contains("login-actions") || page.content().contains("Verify")) {
-            final String verificationLink = getVerificationLinkFromMailpit(email);
-            if (verificationLink != null) {
-                page.navigate(verificationLink);
-                page.waitForLoadState();
-            }
-        }
-
-        if (page.url().contains("realms/travelmate") && !page.url().contains("login-actions")) {
-            page.fill("#username", email);
-            page.fill("#password", password);
-            page.click("#kc-login");
-            page.waitForURL(url -> !url.contains("realms/travelmate"));
-        }
+        page.waitForURL(url -> !url.contains("realms/travelmate"));
     }
 
     static void ensureLoggedOut() {

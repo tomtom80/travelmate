@@ -31,6 +31,7 @@ import de.evia.travelmate.iam.application.command.AddDependentCommand;
 import de.evia.travelmate.iam.application.command.InviteMemberCommand;
 import de.evia.travelmate.iam.application.representation.AccountRepresentation;
 import de.evia.travelmate.iam.application.representation.DependentRepresentation;
+import de.evia.travelmate.iam.application.representation.InviteMemberResult;
 import de.evia.travelmate.iam.application.representation.TenantRepresentation;
 import de.evia.travelmate.iam.domain.IamTestFixtures;
 import de.evia.travelmate.iam.domain.account.Account;
@@ -129,8 +130,10 @@ class DashboardControllerTest {
         when(accountRepository.findByKeycloakUserId(new KeycloakUserId(KEYCLOAK_USER_ID)))
             .thenReturn(Optional.of(account));
         when(accountService.inviteMember(any(InviteMemberCommand.class)))
-            .thenReturn(new AccountRepresentation(UUID.randomUUID(), TENANT_UUID,
-                "anna@example.com", "anna@example.com", "Anna", "Schmidt", DATE_OF_BIRTH));
+            .thenReturn(new InviteMemberResult(
+                new AccountRepresentation(UUID.randomUUID(), TENANT_UUID,
+                    "anna@example.com", "anna@example.com", "Anna", "Schmidt", DATE_OF_BIRTH),
+                "test-token-value"));
         when(accountService.findAllByTenantId(new TenantId(TENANT_UUID)))
             .thenReturn(List.of(
                 new AccountRepresentation(ACCOUNT_UUID, TENANT_UUID,
@@ -160,7 +163,7 @@ class DashboardControllerTest {
         when(accountRepository.findByKeycloakUserId(new KeycloakUserId(KEYCLOAK_USER_ID)))
             .thenReturn(Optional.of(account));
         when(accountService.inviteMember(any(InviteMemberCommand.class)))
-            .thenThrow(new IllegalArgumentException("member.error.alreadyExists"));
+            .thenThrow(new de.evia.travelmate.common.domain.DuplicateEntityException("member.error.alreadyExists"));
         when(accountService.findAllByTenantId(new TenantId(TENANT_UUID)))
             .thenReturn(List.of(new AccountRepresentation(ACCOUNT_UUID, TENANT_UUID,
                 "max@example.com", "max@example.com", "Max", "Mustermann", DATE_OF_BIRTH)));

@@ -1,9 +1,11 @@
 package de.evia.travelmate.iam.adapters.web;
 
 import java.time.LocalDate;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.context.MessageSource;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
@@ -17,11 +19,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
+import jakarta.servlet.http.HttpServletResponse;
+
+import de.evia.travelmate.common.domain.BusinessRuleViolationException;
+import de.evia.travelmate.common.domain.DuplicateEntityException;
+import de.evia.travelmate.common.domain.EntityNotFoundException;
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.iam.adapters.mail.RegistrationEmailService;
 import de.evia.travelmate.iam.application.AccountService;
 import de.evia.travelmate.iam.application.TenantService;
 import de.evia.travelmate.iam.application.command.AddDependentCommand;
 import de.evia.travelmate.iam.application.command.InviteMemberCommand;
+import de.evia.travelmate.iam.application.representation.InviteMemberResult;
 import de.evia.travelmate.iam.domain.account.Account;
 import de.evia.travelmate.iam.domain.account.AccountId;
 import de.evia.travelmate.iam.domain.account.AccountRepository;
@@ -34,13 +43,19 @@ public class DashboardController {
     private final AccountRepository accountRepository;
     private final AccountService accountService;
     private final TenantService tenantService;
+    private final RegistrationEmailService registrationEmailService;
+    private final MessageSource messageSource;
 
     public DashboardController(final AccountRepository accountRepository,
                                final AccountService accountService,
-                               final TenantService tenantService) {
+                               final TenantService tenantService,
+                               final Optional<RegistrationEmailService> registrationEmailService,
+                               final MessageSource messageSource) {
         this.accountRepository = accountRepository;
         this.accountService = accountService;
         this.tenantService = tenantService;
+        this.registrationEmailService = registrationEmailService.orElse(null);
+        this.messageSource = messageSource;
     }
 
     @GetMapping
@@ -65,11 +80,14 @@ public class DashboardController {
                                @RequestParam final String firstName,
                                @RequestParam final String lastName,
                                @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate dateOfBirth,
+                               final HttpServletResponse response,
+                               final Locale locale,
                                final Model model) {
         final Account account = resolveAccount(jwt);
         accountService.addDependent(new AddDependentCommand(
             account.tenantId().value(), account.accountId().value(), firstName, lastName, dateOfBirth
         ));
+        triggerSuccessToast(response, messageSource.getMessage("companion.added", null, locale));
         model.addAttribute("dependents", accountService.findDependentsByTenantId(account.tenantId()));
         return "dashboard/companions :: companionList";
     }
@@ -77,9 +95,12 @@ public class DashboardController {
     @DeleteMapping("/companions/{id}")
     public String deleteCompanion(@AuthenticationPrincipal final Jwt jwt,
                                   @PathVariable final UUID id,
+                                  final HttpServletResponse response,
+                                  final Locale locale,
                                   final Model model) {
         final Account account = resolveAccount(jwt);
         accountService.deleteDependent(id);
+        triggerSuccessToast(response, messageSource.getMessage("companion.deleted", null, locale));
         model.addAttribute("dependents", accountService.findDependentsByTenantId(account.tenantId()));
         return "dashboard/companions :: companionList";
     }
@@ -90,13 +111,24 @@ public class DashboardController {
                                @RequestParam final String firstName,
                                @RequestParam final String lastName,
                                @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate dateOfBirth,
+                               final jakarta.servlet.http.HttpServletRequest request,
+                               final HttpServletResponse response,
+                               final Locale locale,
                                final Model model) {
         final Account account = resolveAccount(jwt);
         try {
-            accountService.inviteMember(new InviteMemberCommand(
+            final InviteMemberResult result = accountService.inviteMember(new InviteMemberCommand(
                 account.tenantId().value(), email, firstName, lastName, dateOfBirth
             ));
-        } catch (final IllegalArgumentException e) {
+            if (registrationEmailService != null) {
+                final String baseUrl = request.getScheme() + "://" + request.getServerName()
+                    + (request.getServerPort() != 80 && request.getServerPort() != 443
+                    ? ":" + request.getServerPort() : "");
+                final String registrationLink = baseUrl + "/iam/register?token=" + result.tokenValue();
+                registrationEmailService.sendRegistrationEmail(email, firstName, registrationLink);
+            }
+            triggerSuccessToast(response, messageSource.getMessage("member.invited", null, locale));
+        } catch (final DuplicateEntityException e) {
             model.addAttribute("memberError", e.getMessage());
         }
         model.addAttribute("members", accountService.findAllByTenantId(account.tenantId()));
@@ -107,11 +139,14 @@ public class DashboardController {
     @DeleteMapping("/members/{id}")
     public String deleteMember(@AuthenticationPrincipal final Jwt jwt,
                                @PathVariable final UUID id,
+                               final HttpServletResponse response,
+                               final Locale locale,
                                final Model model) {
         final Account account = resolveAccount(jwt);
         try {
             accountService.deleteMember(new AccountId(id), account.tenantId());
-        } catch (final IllegalArgumentException e) {
+            triggerSuccessToast(response, messageSource.getMessage("member.deleted", null, locale));
+        } catch (final BusinessRuleViolationException e) {
             model.addAttribute("memberError", e.getMessage());
         }
         model.addAttribute("members", accountService.findAllByTenantId(account.tenantId()));
@@ -120,10 +155,12 @@ public class DashboardController {
     }
 
     @DeleteMapping("/tenant")
-    public String deleteTenant(@AuthenticationPrincipal final Jwt jwt) {
+    public String deleteTenant(@AuthenticationPrincipal final Jwt jwt,
+                               final HttpServletResponse response) {
         final Account account = resolveAccount(jwt);
         tenantService.deleteTenant(account.tenantId());
-        return "redirect:/logout";
+        response.setHeader("HX-Redirect", "/logout");
+        return "fragments/empty :: empty";
     }
 
     private Optional<Account> findAccount(final Jwt jwt) {
@@ -135,5 +172,10 @@ public class DashboardController {
         return findAccount(jwt)
             .orElseThrow(() -> new ResponseStatusException(
                 org.springframework.http.HttpStatus.NOT_FOUND, "Account not found"));
+    }
+
+    private void triggerSuccessToast(final HttpServletResponse response, final String message) {
+        response.setHeader("HX-Trigger",
+            "{\"showToast\":{\"level\":\"success\",\"message\":\"" + message.replace("\"", "\\\"") + "\"}}");
     }
 }

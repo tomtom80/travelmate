@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{register.success.title}">Registrierung abgeschlossen</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+</head>
+<body>
+    <main class="container" style="max-width: 500px; margin-top: 40px;">
+        <article style="text-align: center;">
+            <h1 th:text="#{register.success.title}">Registrierung abgeschlossen</h1>
+            <p th:text="#{register.success.message}">Dein Konto wurde erfolgreich aktiviert. Du kannst dich jetzt einloggen.</p>
+            <a href="/oauth2/authorization/keycloak" role="button" th:text="#{register.success.login}">Jetzt einloggen</a>
+        </article>
+    </main>
+</body>
+</html>

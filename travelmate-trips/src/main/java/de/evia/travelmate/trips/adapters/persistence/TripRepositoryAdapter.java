@@ -2,6 +2,7 @@ package de.evia.travelmate.trips.adapters.persistence;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.stereotype.Repository;
 
@@ -51,12 +52,21 @@ public class TripRepositoryAdapter implements TripRepository {
             .toList();
     }
 
+    @Override
+    public List<Trip> findAllByParticipantId(final UUID participantId) {
+        return jpaRepository.findAllByParticipantId(participantId).stream()
+            .map(this::toDomain)
+            .toList();
+    }
+
     private void syncParticipants(final TripJpaEntity entity, final Trip trip) {
         for (final Participant participant : trip.participants()) {
             final Optional<ParticipantJpaEntity> existing = entity.getParticipants().stream()
                 .filter(p -> p.getParticipantId().equals(participant.participantId()))
                 .findFirst();
             if (existing.isPresent()) {
+                existing.get().setFirstName(participant.firstName());
+                existing.get().setLastName(participant.lastName());
                 existing.get().setArrivalDate(
                     participant.stayPeriod() != null ? participant.stayPeriod().arrivalDate() : null);
                 existing.get().setDepartureDate(
@@ -64,6 +74,7 @@ public class TripRepositoryAdapter implements TripRepository {
             } else {
                 entity.getParticipants().add(new ParticipantJpaEntity(
                     participant.participantId(), entity,
+                    participant.firstName(), participant.lastName(),
                     participant.stayPeriod() != null ? participant.stayPeriod().arrivalDate() : null,
                     participant.stayPeriod() != null ? participant.stayPeriod().departureDate() : null
                 ));
@@ -74,11 +85,9 @@ public class TripRepositoryAdapter implements TripRepository {
     private Trip toDomain(final TripJpaEntity entity) {
         final var participants = entity.getParticipants().stream()
             .map(p -> {
-                if (p.getArrivalDate() != null && p.getDepartureDate() != null) {
-                    return new Participant(p.getParticipantId(),
-                        new StayPeriod(p.getArrivalDate(), p.getDepartureDate()));
-                }
-                return new Participant(p.getParticipantId());
+                final StayPeriod stayPeriod = (p.getArrivalDate() != null && p.getDepartureDate() != null)
+                    ? new StayPeriod(p.getArrivalDate(), p.getDepartureDate()) : null;
+                return new Participant(p.getParticipantId(), p.getFirstName(), p.getLastName(), stayPeriod);
             })
             .toList();
         return new Trip(

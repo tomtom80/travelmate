@@ -77,9 +77,8 @@ services:
     container_name: travelmate-keycloak
     entrypoint: /bin/bash
     command: >-
-      -c "/opt/keycloak/bin/kc.sh import --file /opt/keycloak/data/import/realm-export.json --override=true &&
-      /opt/keycloak/data/import/init-smtp.sh &
-      /opt/keycloak/bin/kc.sh start-dev --spi-theme-static-max-age=-1 --spi-theme-cache-themes=false"
+      -c "/opt/keycloak/data/import/init-smtp.sh &
+      /opt/keycloak/bin/kc.sh start-dev --import-realm --spi-theme-static-max-age=-1 --spi-theme-cache-themes=false"
     environment:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres-keycloak:5432/keycloak
@@ -175,12 +174,16 @@ services:
       RABBITMQ_PORT: 5672
       KEYCLOAK_JWK_URI: http://keycloak:8080/realms/travelmate/protocol/openid-connect/certs
       KEYCLOAK_URL: http://keycloak:8080
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
     depends_on:
       postgres-iam:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
       keycloak:
+        condition: service_healthy
+      mailpit:
         condition: service_healthy
 
   trips:
@@ -200,12 +203,16 @@ services:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       KEYCLOAK_JWK_URI: http://keycloak:8080/realms/travelmate/protocol/openid-connect/certs
+      MAIL_HOST: mailpit
+      MAIL_PORT: 1025
     depends_on:
       postgres-trips:
         condition: service_healthy
       rabbitmq:
         condition: service_healthy
       keycloak:
+        condition: service_healthy
+      mailpit:
         condition: service_healthy
 
   expense:

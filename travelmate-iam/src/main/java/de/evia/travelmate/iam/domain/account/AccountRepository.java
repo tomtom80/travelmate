@@ -19,6 +19,8 @@ public interface AccountRepository {
 
     boolean existsByUsername(TenantId tenantId, Username username);
 
+    boolean existsByUsernameAcrossTenants(Username username);
+
     void deleteById(AccountId accountId);
 
     void deleteAllByTenantId(TenantId tenantId);

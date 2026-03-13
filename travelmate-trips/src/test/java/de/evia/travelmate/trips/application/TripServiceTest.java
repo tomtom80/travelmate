@@ -17,6 +17,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
+import org.mockito.ArgumentCaptor;
+
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.common.events.trips.TripCompleted;
 import de.evia.travelmate.trips.application.command.CreateTripCommand;
@@ -67,6 +69,35 @@ class TripServiceTest {
         assertThat(result.status()).isEqualTo("PLANNING");
         assertThat(result.organizerId()).isEqualTo(ORGANIZER_ID);
         verify(tripRepository).save(any(Trip.class));
+    }
+
+    @Test
+    void createTripAddsAllTravelPartyMembers() {
+        final UUID member2Id = UUID.randomUUID();
+        final UUID dependentId = UUID.randomUUID();
+        final TravelParty party = TravelParty.create(new TenantId(TENANT_UUID), "Familie Test");
+        party.addMember(ORGANIZER_ID, "max@example.com", "Max", "Mustermann");
+        party.addMember(member2Id, "lisa@example.com", "Lisa", "Mustermann");
+        party.addDependent(dependentId, ORGANIZER_ID, "Tim", "Mustermann");
+        when(travelPartyRepository.findByTenantId(new TenantId(TENANT_UUID)))
+            .thenReturn(Optional.of(party));
+        when(tripRepository.save(any(Trip.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        final CreateTripCommand command = new CreateTripCommand(
+            TENANT_UUID, "Sommerurlaub", null,
+            LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 14),
+            ORGANIZER_ID
+        );
+
+        final TripRepresentation result = tripService.createTrip(command);
+
+        final ArgumentCaptor<Trip> tripCaptor = ArgumentCaptor.forClass(Trip.class);
+        verify(tripRepository).save(tripCaptor.capture());
+        final Trip savedTrip = tripCaptor.getValue();
+        assertThat(savedTrip.participants()).hasSize(3);
+        assertThat(savedTrip.hasParticipant(ORGANIZER_ID)).isTrue();
+        assertThat(savedTrip.hasParticipant(member2Id)).isTrue();
+        assertThat(savedTrip.hasParticipant(dependentId)).isTrue();
     }
 
     @Test

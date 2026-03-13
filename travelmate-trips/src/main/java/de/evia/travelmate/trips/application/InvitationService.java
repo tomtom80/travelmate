@@ -8,6 +8,8 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import de.evia.travelmate.common.domain.DuplicateEntityException;
+import de.evia.travelmate.common.domain.EntityNotFoundException;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.common.events.trips.ExternalUserInvitedToTrip;
 import de.evia.travelmate.common.events.trips.InvitationCreated;
@@ -50,19 +52,17 @@ public class InvitationService {
         final TenantId tenantId = new TenantId(command.tenantId());
 
         final Trip trip = tripRepository.findById(tripId)
-            .orElseThrow(() -> new IllegalArgumentException("Trip not found: " + command.tripId()));
+            .orElseThrow(() -> new EntityNotFoundException("Trip", command.tripId().toString()));
 
         final TravelParty party = travelPartyRepository.findByTenantId(tenantId)
-            .orElseThrow(() -> new IllegalStateException("TravelParty not found for tenant " + command.tenantId()));
+            .orElseThrow(() -> new EntityNotFoundException("TravelParty", command.tenantId().toString()));
 
         if (!party.hasMember(command.inviteeId())) {
-            throw new IllegalArgumentException(
-                "Invitee " + command.inviteeId() + " is not a member of the travel party.");
+            throw new EntityNotFoundException("Member", command.inviteeId().toString());
         }
 
         if (invitationRepository.existsByTripIdAndInviteeId(tripId, command.inviteeId())) {
-            throw new IllegalArgumentException(
-                "Invitation already exists for trip " + command.tripId() + " and invitee " + command.inviteeId());
+            throw new DuplicateEntityException("invitation.error.alreadyExists");
         }
 
         final Invitation invitation = Invitation.create(tenantId, tripId, command.inviteeId(), command.invitedBy());
@@ -97,22 +97,22 @@ public class InvitationService {
 
     public void accept(final InvitationId invitationId) {
         final Invitation invitation = invitationRepository.findById(invitationId)
-            .orElseThrow(() -> new IllegalArgumentException("Invitation not found: " + invitationId.value()));
+            .orElseThrow(() -> new EntityNotFoundException("Invitation", invitationId.value().toString()));
 
         invitation.accept();
 
         final Trip trip = tripRepository.findById(invitation.tripId())
-            .orElseThrow(() -> new IllegalStateException("Trip not found: " + invitation.tripId().value()));
+            .orElseThrow(() -> new EntityNotFoundException("Trip", invitation.tripId().value().toString()));
 
         final TravelParty party = travelPartyRepository.findByTenantId(invitation.tenantId())
-            .orElseThrow(() -> new IllegalStateException("TravelParty not found"));
+            .orElseThrow(() -> new EntityNotFoundException("TravelParty", invitation.tenantId().value().toString()));
 
         final Member member = party.members().stream()
             .filter(m -> m.memberId().equals(invitation.inviteeId()))
             .findFirst()
             .orElseThrow(() -> new IllegalStateException("Member not found: " + invitation.inviteeId()));
 
-        trip.addParticipant(invitation.inviteeId());
+        trip.addParticipant(invitation.inviteeId(), member.firstName(), member.lastName());
         tripRepository.save(trip);
         invitationRepository.save(invitation);
 
@@ -127,7 +127,7 @@ public class InvitationService {
 
     public void decline(final InvitationId invitationId) {
         final Invitation invitation = invitationRepository.findById(invitationId)
-            .orElseThrow(() -> new IllegalArgumentException("Invitation not found: " + invitationId.value()));
+            .orElseThrow(() -> new EntityNotFoundException("Invitation", invitationId.value().toString()));
 
         invitation.decline();
         invitationRepository.save(invitation);
@@ -145,15 +145,14 @@ public class InvitationService {
         final TenantId tenantId = new TenantId(command.tenantId());
 
         final Trip trip = tripRepository.findById(tripId)
-            .orElseThrow(() -> new IllegalArgumentException("Trip not found: " + command.tripId()));
+            .orElseThrow(() -> new EntityNotFoundException("Trip", command.tripId().toString()));
 
         if (invitationRepository.existsByTripIdAndInviteeEmail(tripId, command.email())) {
-            throw new IllegalArgumentException(
-                "Invitation already exists for trip " + command.tripId() + " and email " + command.email());
+            throw new DuplicateEntityException("invitation.error.alreadyExists");
         }
 
         final TravelParty party = travelPartyRepository.findByTenantId(tenantId)
-            .orElseThrow(() -> new IllegalStateException("TravelParty not found for tenant " + command.tenantId()));
+            .orElseThrow(() -> new EntityNotFoundException("TravelParty", command.tenantId().toString()));
 
         final Invitation invitation = Invitation.inviteExternal(tenantId, tripId, command.email(), command.invitedBy());
         invitationRepository.save(invitation);
@@ -191,7 +190,8 @@ public class InvitationService {
         return new InvitationRepresentation(invitation);
     }
 
-    public void linkAwaitingInvitations(final String email, final UUID memberId) {
+    public void linkAwaitingInvitations(final String email, final UUID memberId,
+                                        final String firstName, final String lastName) {
         final List<Invitation> awaiting = invitationRepository.findByInviteeEmailAndStatus(
             email, InvitationStatus.AWAITING_REGISTRATION);
 
@@ -201,7 +201,7 @@ public class InvitationService {
             final Trip trip = tripRepository.findById(invitation.tripId())
                 .orElseThrow(() -> new IllegalStateException("Trip not found: " + invitation.tripId().value()));
 
-            trip.addParticipant(memberId);
+            trip.addParticipant(memberId, firstName, lastName);
             tripRepository.save(trip);
             invitationRepository.save(invitation);
 

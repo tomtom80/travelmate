@@ -49,6 +49,7 @@
                     </#list>
                 </li>
             </#if>
+            <li><a href="http://localhost:8080/oauth2/authorization/keycloak" role="button">${msg("doLogIn")}</a></li>
             <li><a href="http://localhost:8080/iam/signup" role="button" class="outline">${msg("doRegister")}</a></li>
         </ul>
     </nav>

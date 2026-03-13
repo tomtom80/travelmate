@@ -75,7 +75,7 @@ class SignUpControllerTest {
 
     @Test
     void signUpShowsErrorOnDuplicateTenantName() throws Exception {
-        doThrow(new IllegalArgumentException("A travel group with the name 'Existing' already exists."))
+        doThrow(new de.evia.travelmate.common.domain.DuplicateEntityException("signup.error.tenantExists"))
             .when(signUpService).signUp(any(SignUpCommand.class));
 
         mockMvc.perform(post("/signup")

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{register.title}">Registrierung abschliessen</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+</head>
+<body>
+    <main class="container" style="max-width: 500px; margin-top: 40px;">
+        <hgroup>
+            <h1 th:text="#{register.title}">Registrierung abschliessen</h1>
+            <p th:text="#{register.subtitle}">Lege dein Passwort fest, um dein Konto zu aktivieren.</p>
+        </hgroup>
+
+        <div th:if="${error}" class="error" role="alert">
+            <p th:text="#{${error}}">Fehler</p>
+        </div>
+
+        <article>
+            <p>
+                <strong th:text="${firstName} + ' ' + ${lastName}">Max Mustermann</strong><br>
+                <small th:text="${email}">max@example.com</small>
+            </p>
+
+            <form method="post" th:action="@{/register}">
+                <input type="hidden" name="token" th:value="${token}">
+
+                <label for="password" th:text="#{register.password}">Passwort</label>
+                <input type="password" id="password" name="password" required minlength="8"
+                       th:placeholder="#{register.passwordPlaceholder}">
+
+                <label for="passwordConfirm" th:text="#{register.passwordConfirm}">Passwort wiederholen</label>
+                <input type="password" id="passwordConfirm" name="passwordConfirm" required minlength="8">
+
+                <button type="submit" th:text="#{register.submit}">Konto aktivieren</button>
+            </form>
+        </article>
+
+        <p style="text-align: center;">
+            <a href="/oauth2/authorization/keycloak" th:text="#{register.alreadyRegistered}">Bereits registriert? Einloggen</a>
+        </p>
+    </main>
+</body>
+</html>

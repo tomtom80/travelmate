@@ -21,6 +21,7 @@ class SignUpIT extends E2ETestBase {
         assertThat(page.locator("#tenantName").isVisible()).isTrue();
         assertThat(page.locator("#firstName").isVisible()).isTrue();
         assertThat(page.locator("#lastName").isVisible()).isTrue();
+        assertThat(page.locator("#dateOfBirth").isVisible()).isTrue();
         assertThat(page.locator("#email").isVisible()).isTrue();
         assertThat(page.locator("#password").isVisible()).isTrue();
         assertThat(page.locator("#passwordConfirm").isVisible()).isTrue();
@@ -35,6 +36,7 @@ class SignUpIT extends E2ETestBase {
         page.fill("#tenantName", "E2E-SignUp " + RUN_ID);
         page.fill("#firstName", "Anna");
         page.fill("#lastName", "SignUp");
+        page.fill("#dateOfBirth", "1990-05-20");
         page.fill("#email", SIGNUP_EMAIL);
         page.fill("#password", SIGNUP_PASSWORD);
         page.fill("#passwordConfirm", SIGNUP_PASSWORD);
@@ -42,7 +44,7 @@ class SignUpIT extends E2ETestBase {
 
         page.waitForLoadState();
         assertThat(page.content()).contains("Registrierung erfolgreich");
-        assertThat(page.content()).contains("E-Mail");
+        assertThat(page.content()).contains("Reisepartei wurde erstellt");
         assertThat(page.locator("main a[href='/oauth2/authorization/keycloak']").isVisible()).isTrue();
     }
 

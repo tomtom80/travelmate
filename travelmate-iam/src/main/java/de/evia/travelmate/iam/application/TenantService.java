@@ -7,6 +7,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import de.evia.travelmate.common.domain.DomainEvent;
+import de.evia.travelmate.common.domain.DuplicateEntityException;
+import de.evia.travelmate.common.domain.EntityNotFoundException;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.iam.application.command.CreateTenantCommand;
 import de.evia.travelmate.iam.application.representation.TenantRepresentation;
@@ -44,7 +46,7 @@ public class TenantService {
     public TenantRepresentation createTenant(final CreateTenantCommand command) {
         final TenantName name = new TenantName(command.name());
         if (tenantRepository.existsByName(name)) {
-            throw new IllegalArgumentException("A tenant with name '" + command.name() + "' already exists.");
+            throw new DuplicateEntityException("signup.error.tenantExists");
         }
         final Description description = command.description() != null
             ? new Description(command.description())
@@ -57,7 +59,7 @@ public class TenantService {
     @Transactional(readOnly = true)
     public TenantRepresentation findById(final TenantId tenantId) {
         final Tenant tenant = tenantRepository.findById(tenantId)
-            .orElseThrow(() -> new IllegalArgumentException("Tenant not found: " + tenantId.value()));
+            .orElseThrow(() -> new EntityNotFoundException("Tenant", tenantId.value().toString()));
         return new TenantRepresentation(tenant);
     }
 
@@ -70,7 +72,7 @@ public class TenantService {
 
     public void deleteTenant(final TenantId tenantId) {
         final Tenant tenant = tenantRepository.findById(tenantId)
-            .orElseThrow(() -> new IllegalArgumentException("Tenant not found: " + tenantId.value()));
+            .orElseThrow(() -> new EntityNotFoundException("Tenant", tenantId.value().toString()));
         tenant.markForDeletion();
 
         final List<Account> accounts = accountRepository.findAllByTenantId(tenantId);

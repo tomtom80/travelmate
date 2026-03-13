@@ -43,7 +43,8 @@ public class TravelPartyService {
         }
         repository.save(party);
 
-        invitationService.linkAwaitingInvitations(event.email(), event.accountId());
+        invitationService.linkAwaitingInvitations(event.email(), event.accountId(),
+            event.firstName(), event.lastName());
     }
 
     @Transactional

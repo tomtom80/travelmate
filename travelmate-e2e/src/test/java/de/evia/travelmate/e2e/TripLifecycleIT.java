@@ -83,7 +83,7 @@ class TripLifecycleIT extends E2ETestBase {
         assertThat(content).contains(TRIP_NAME);
         assertThat(content).contains("2026-07-01");
         assertThat(content).contains("2026-07-14");
-        assertThat(content).contains("PLANNING");
+        assertThat(content).contains("In Planung");
     }
 
     @Test
@@ -98,7 +98,7 @@ class TripLifecycleIT extends E2ETestBase {
         assertThat(content).contains("Ein E2E-Testurlaub");
         assertThat(content).contains("2026-07-01");
         assertThat(content).contains("2026-07-14");
-        assertThat(content).contains("PLANNING");
+        assertThat(content).contains("In Planung");
     }
 
     @Test
@@ -125,7 +125,7 @@ class TripLifecycleIT extends E2ETestBase {
         page.locator("form[action$='/confirm'] button[type=submit]").click();
         page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
 
-        assertThat(page.content()).contains("CONFIRMED");
+        assertThat(page.content()).contains("Bestaetigt");
     }
 
     @Test
@@ -134,7 +134,7 @@ class TripLifecycleIT extends E2ETestBase {
         page.locator("form[action$='/start'] button[type=submit]").click();
         page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
 
-        assertThat(page.content()).contains("IN_PROGRESS");
+        assertThat(page.content()).contains("Laeuft");
     }
 
     @Test
@@ -143,7 +143,7 @@ class TripLifecycleIT extends E2ETestBase {
         page.locator("form[action$='/complete'] button[type=submit]").click();
         page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
 
-        assertThat(page.content()).contains("COMPLETED");
+        assertThat(page.content()).contains("Abgeschlossen");
     }
 
     @Test
@@ -169,12 +169,12 @@ class TripLifecycleIT extends E2ETestBase {
 
         page.locator("a", new com.microsoft.playwright.Page.LocatorOptions().setHasText(cancelTripName)).click();
         page.waitForLoadState();
-        assertThat(page.content()).contains("PLANNING");
+        assertThat(page.content()).contains("In Planung");
 
         page.locator("form[action$='/cancel'] button[type=submit]").click();
         page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
 
-        assertThat(page.content()).contains("CANCELLED");
+        assertThat(page.content()).contains("Abgesagt");
     }
 
     @Test

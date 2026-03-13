@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
+import de.evia.travelmate.common.domain.DuplicateEntityException;
 import de.evia.travelmate.iam.application.SignUpService;
 import de.evia.travelmate.iam.application.command.SignUpCommand;
 
@@ -53,7 +54,7 @@ public class SignUpController {
             signUpService.signUp(new SignUpCommand(tenantName, firstName, lastName, email, password, dateOfBirth));
             model.addAttribute("view", "signup/success");
             return "layout/public";
-        } catch (final IllegalArgumentException e) {
+        } catch (final DuplicateEntityException e) {
             model.addAttribute("view", "signup/form");
             model.addAttribute("error", "signup.error.tenantExists");
             model.addAttribute("tenantName", tenantName);

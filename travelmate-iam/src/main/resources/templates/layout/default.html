@@ -29,8 +29,33 @@
     </nav>
     <main class="container" th:insert="~{${view} :: content}">
     </main>
+    <div id="toast-container" aria-live="polite"></div>
     <footer class="container">
         <small>Travelmate</small>
     </footer>
+    <script>
+    document.addEventListener('showToast', function(e) {
+        var d = e.detail, level = d.level || 'info', msg = d.message || '';
+        var toast = document.createElement('div');
+        toast.className = 'toast toast-' + level;
+        toast.setAttribute('role', level === 'error' ? 'alert' : 'status');
+        var text = document.createElement('span');
+        text.textContent = msg;
+        toast.appendChild(text);
+        var btn = document.createElement('button');
+        btn.className = 'toast-close';
+        btn.setAttribute('aria-label', 'Close');
+        btn.textContent = '\u00d7';
+        btn.onclick = function() { toast.remove(); };
+        toast.appendChild(btn);
+        document.getElementById('toast-container').appendChild(toast);
+        if (level !== 'error') {
+            setTimeout(function() {
+                toast.style.animation = 'toastOut 0.3s ease-in forwards';
+                setTimeout(function() { toast.remove(); }, 300);
+            }, 4000);
+        }
+    });
+    </script>
 </body>
 </html>

@@ -17,9 +17,13 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
 import de.evia.travelmate.common.domain.DomainEvent;
+import de.evia.travelmate.common.domain.DuplicateEntityException;
 import de.evia.travelmate.common.events.iam.AccountRegistered;
 import de.evia.travelmate.common.events.iam.TenantCreated;
+import de.evia.travelmate.iam.application.command.RegisterExternalUserCommand;
 import de.evia.travelmate.iam.application.command.SignUpCommand;
+import de.evia.travelmate.iam.application.representation.InviteMemberResult;
+import de.evia.travelmate.iam.domain.account.AccountId;
 import de.evia.travelmate.iam.domain.account.Account;
 import de.evia.travelmate.iam.domain.account.AccountRepository;
 import de.evia.travelmate.iam.domain.account.Email;
@@ -27,6 +31,7 @@ import de.evia.travelmate.iam.domain.account.FullName;
 import de.evia.travelmate.iam.domain.account.IdentityProviderService;
 import de.evia.travelmate.iam.domain.account.KeycloakUserId;
 import de.evia.travelmate.iam.domain.account.Password;
+import de.evia.travelmate.iam.domain.registration.InvitationToken;
 import de.evia.travelmate.iam.domain.tenant.Tenant;
 import de.evia.travelmate.iam.domain.tenant.TenantName;
 import de.evia.travelmate.iam.domain.tenant.TenantRepository;
@@ -50,6 +55,9 @@ class SignUpServiceTest {
 
     @Mock
     private IdentityProviderService identityProviderService;
+
+    @Mock
+    private RegistrationService registrationService;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -77,7 +85,6 @@ class SignUpServiceTest {
         verify(identityProviderService).createUser(any(), any(), any());
         verify(accountRepository).save(any(Account.class));
         verify(identityProviderService).assignRole(eq(KEYCLOAK_USER_ID), eq("organizer"));
-        verify(identityProviderService).sendVerificationEmail(eq(KEYCLOAK_USER_ID));
     }
 
     @Test
@@ -126,8 +133,8 @@ class SignUpServiceTest {
         when(tenantRepository.existsByName(new TenantName(TENANT_NAME))).thenReturn(true);
 
         assertThatThrownBy(() -> signUpService.signUp(command))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining(TENANT_NAME);
+            .isInstanceOf(DuplicateEntityException.class)
+            .hasMessageContaining("tenantExists");
 
         verify(identityProviderService, never()).createUser(any(), any(), any());
     }
@@ -143,6 +150,87 @@ class SignUpServiceTest {
         when(accountRepository.save(any(Account.class))).thenThrow(new RuntimeException("DB error"));
 
         assertThatThrownBy(() -> signUpService.signUp(command))
+            .isInstanceOf(RuntimeException.class);
+
+        verify(identityProviderService).deleteUser(KEYCLOAK_USER_ID);
+    }
+
+    @Test
+    void registerExternalUserCreatesNewTenantAndAccount() {
+        final RegisterExternalUserCommand command = new RegisterExternalUserCommand(
+            "lisa@example.com", "Lisa", "Müller", DATE_OF_BIRTH
+        );
+        when(identityProviderService.createInvitedUser(any(Email.class), any(FullName.class)))
+            .thenReturn(KEYCLOAK_USER_ID);
+        when(tenantRepository.save(any(Tenant.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(registrationService.generateToken(any(AccountId.class)))
+            .thenReturn(InvitationToken.generate(new AccountId(java.util.UUID.randomUUID())));
+
+        final InviteMemberResult result = signUpService.registerExternalUser(command);
+
+        assertThat(result.account().email()).isEqualTo("lisa@example.com");
+        assertThat(result.account().firstName()).isEqualTo("Lisa");
+        assertThat(result.tokenValue()).isNotBlank();
+        verify(tenantRepository).save(any(Tenant.class));
+        verify(accountRepository).save(any(Account.class));
+        verify(identityProviderService).createInvitedUser(any(Email.class), any(FullName.class));
+        verify(identityProviderService).assignRole(eq(KEYCLOAK_USER_ID), eq("organizer"));
+        verify(registrationService).generateToken(any(AccountId.class));
+    }
+
+    @Test
+    void registerExternalUserPublishesTenantAndAccountEvents() {
+        final RegisterExternalUserCommand command = new RegisterExternalUserCommand(
+            "lisa@example.com", "Lisa", "Müller", DATE_OF_BIRTH
+        );
+        when(identityProviderService.createInvitedUser(any(Email.class), any(FullName.class)))
+            .thenReturn(KEYCLOAK_USER_ID);
+        when(tenantRepository.save(any(Tenant.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(registrationService.generateToken(any(AccountId.class)))
+            .thenReturn(InvitationToken.generate(new AccountId(java.util.UUID.randomUUID())));
+
+        signUpService.registerExternalUser(command);
+
+        final var eventCaptor = ArgumentCaptor.forClass(DomainEvent.class);
+        verify(eventPublisher, org.mockito.Mockito.atLeast(2)).publishEvent(eventCaptor.capture());
+
+        final var events = eventCaptor.getAllValues();
+        assertThat(events).hasAtLeastOneElementOfType(TenantCreated.class);
+        assertThat(events).hasAtLeastOneElementOfType(AccountRegistered.class);
+    }
+
+    @Test
+    void registerExternalUserCreatesTenantWithCorrectName() {
+        final RegisterExternalUserCommand command = new RegisterExternalUserCommand(
+            "lisa@example.com", "Lisa", "Müller", DATE_OF_BIRTH
+        );
+        when(identityProviderService.createInvitedUser(any(Email.class), any(FullName.class)))
+            .thenReturn(KEYCLOAK_USER_ID);
+        when(tenantRepository.save(any(Tenant.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(registrationService.generateToken(any(AccountId.class)))
+            .thenReturn(InvitationToken.generate(new AccountId(java.util.UUID.randomUUID())));
+
+        signUpService.registerExternalUser(command);
+
+        final var tenantCaptor = ArgumentCaptor.forClass(Tenant.class);
+        verify(tenantRepository).save(tenantCaptor.capture());
+        assertThat(tenantCaptor.getValue().name().value()).isEqualTo("Reisepartei Lisa Müller");
+    }
+
+    @Test
+    void registerExternalUserRollsBackOnFailure() {
+        final RegisterExternalUserCommand command = new RegisterExternalUserCommand(
+            "lisa@example.com", "Lisa", "Müller", DATE_OF_BIRTH
+        );
+        when(identityProviderService.createInvitedUser(any(Email.class), any(FullName.class)))
+            .thenReturn(KEYCLOAK_USER_ID);
+        when(tenantRepository.save(any(Tenant.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(accountRepository.save(any(Account.class))).thenThrow(new RuntimeException("DB error"));
+
+        assertThatThrownBy(() -> signUpService.registerExternalUser(command))
             .isInstanceOf(RuntimeException.class);
 
         verify(identityProviderService).deleteUser(KEYCLOAK_USER_ID);

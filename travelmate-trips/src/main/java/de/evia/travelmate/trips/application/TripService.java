@@ -1,12 +1,15 @@
 package de.evia.travelmate.trips.application;
 
+import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import de.evia.travelmate.common.domain.DomainEvent;
+import de.evia.travelmate.common.domain.EntityNotFoundException;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.trips.application.command.CreateTripCommand;
 import de.evia.travelmate.trips.application.command.SetStayPeriodCommand;
@@ -14,6 +17,7 @@ import de.evia.travelmate.trips.application.representation.TripRepresentation;
 import de.evia.travelmate.trips.domain.travelparty.TravelParty;
 import de.evia.travelmate.trips.domain.travelparty.TravelPartyRepository;
 import de.evia.travelmate.trips.domain.trip.DateRange;
+import de.evia.travelmate.trips.domain.trip.Participant;
 import de.evia.travelmate.trips.domain.trip.StayPeriod;
 import de.evia.travelmate.trips.domain.trip.Trip;
 import de.evia.travelmate.trips.domain.trip.TripId;
@@ -47,17 +51,29 @@ public class TripService {
                 "Organizer " + command.organizerId() + " is not a member of the travel party.");
         }
 
-        final Trip trip = Trip.plan(
+        final List<Participant> participants = collectAllParticipants(party);
+
+        final Trip trip = Trip.planWithParticipants(
             tenantId,
             new TripName(command.name()),
             command.description(),
             new DateRange(command.startDate(), command.endDate()),
-            command.organizerId()
+            command.organizerId(),
+            participants
         );
 
         tripRepository.save(trip);
         publishEvents(trip);
         return new TripRepresentation(trip);
+    }
+
+    private List<Participant> collectAllParticipants(final TravelParty party) {
+        final List<Participant> participants = new ArrayList<>();
+        party.members().forEach(m -> participants.add(
+            new Participant(m.memberId(), m.firstName(), m.lastName())));
+        party.dependents().forEach(d -> participants.add(
+            new Participant(d.dependentId(), d.firstName(), d.lastName())));
+        return participants;
     }
 
     @Transactional(readOnly = true)
@@ -68,6 +84,13 @@ public class TripService {
     @Transactional(readOnly = true)
     public List<TripRepresentation> findAllByTenantId(final TenantId tenantId) {
         return tripRepository.findAllByTenantId(tenantId).stream()
+            .map(TripRepresentation::new)
+            .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<TripRepresentation> findAllByParticipantId(final UUID participantId) {
+        return tripRepository.findAllByParticipantId(participantId).stream()
             .map(TripRepresentation::new)
             .toList();
     }
@@ -108,7 +131,7 @@ public class TripService {
 
     private Trip findTrip(final TripId tripId) {
         return tripRepository.findById(tripId)
-            .orElseThrow(() -> new IllegalArgumentException("Trip not found: " + tripId.value()));
+            .orElseThrow(() -> new EntityNotFoundException("Trip", tripId.value().toString()));
     }
 
     private void publishEvents(final Trip trip) {

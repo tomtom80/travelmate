@@ -1,6 +1,5 @@
 package de.evia.travelmate.trips.adapters.mail;
 
-import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 
 import org.slf4j.Logger;
@@ -52,7 +51,7 @@ public class InvitationEmailListener {
             helper.setText(body, true);
             mailSender.send(message);
             LOG.info("Invitation email sent to {} for trip {}", event.inviteeEmail(), event.tripName());
-        } catch (final MessagingException e) {
+        } catch (final Exception e) {
             LOG.error("Failed to send invitation email to {} for trip {}",
                 event.inviteeEmail(), event.tripName(), e);
         }

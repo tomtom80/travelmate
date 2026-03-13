@@ -7,15 +7,16 @@
         <p th:if="${trip.description()}" th:text="${trip.description()}"></p>
     </hgroup>
 
+    <!-- Trip Info Card -->
     <article>
         <p>
             <span th:text="#{trip.startDate}">Von</span>: <strong th:text="${trip.startDate()}"></strong> —
             <span th:text="#{trip.endDate}">Bis</span>: <strong th:text="${trip.endDate()}"></strong>
         </p>
-        <p><span th:text="#{trip.status}">Status</span>: <mark th:text="${trip.status()}"></mark></p>
+        <p><span th:text="#{trip.status}">Status</span>: <mark th:text="#{${'trip.status.' + trip.status()}}"></mark></p>
 
         <div th:if="${isOrganizer}">
-            <div class="grid">
+            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
                 <form th:if="${trip.status() == 'PLANNING'}" method="post"
                       th:action="@{/{id}/confirm(id=${trip.tripId()})}">
                     <button type="submit" th:text="#{trip.confirm}">Bestaetigen</button>
@@ -36,10 +37,11 @@
         </div>
     </article>
 
-    <section>
+    <!-- Participants Card -->
+    <article>
         <h2 th:text="#{trip.participants}">Teilnehmer</h2>
-        <figure>
-            <table th:if="${!participants.isEmpty()}">
+        <figure th:if="${!participants.isEmpty()}">
+            <table>
                 <thead>
                     <tr>
                         <th th:text="#{invitation.member}">Mitglied</th>
@@ -55,11 +57,21 @@
                         <td th:text="${p.departureDate()}"></td>
                         <td th:if="${p.participantId() == currentMemberId}">
                             <form method="post"
-                                  th:action="@{/{tid}/participants/{pid}/stay-period(tid=${trip.tripId()},pid=${p.participantId()})}">
-                                <div class="grid">
-                                    <input type="date" name="arrivalDate" th:value="${p.arrivalDate()}" required>
-                                    <input type="date" name="departureDate" th:value="${p.departureDate()}" required>
-                                    <button type="submit" th:text="#{common.save}">Speichern</button>
+                                  th:action="@{/{tid}/participants/{pid}/stay-period(tid=${trip.tripId()},pid=${p.participantId()})}"
+                                  style="margin-bottom:0;">
+                                <div style="display:flex; gap:0.5rem; align-items:center;">
+                                    <label style="margin-bottom:0;">
+                                        <span class="sr-only" th:text="#{trip.arrivalDate}">Anreise</span>
+                                        <input type="date" name="arrivalDate" th:value="${p.arrivalDate()}"
+                                               th:aria-label="#{trip.arrivalDate}" required style="margin-bottom:0;">
+                                    </label>
+                                    <label style="margin-bottom:0;">
+                                        <span class="sr-only" th:text="#{trip.departureDate}">Abreise</span>
+                                        <input type="date" name="departureDate" th:value="${p.departureDate()}"
+                                               th:aria-label="#{trip.departureDate}" required style="margin-bottom:0;">
+                                    </label>
+                                    <button type="submit" th:text="#{common.save}"
+                                            style="margin-bottom:0; white-space:nowrap; width:auto;">Speichern</button>
                                 </div>
                             </form>
                         </td>
@@ -68,19 +80,40 @@
                 </tbody>
             </table>
         </figure>
-    </section>
+        <p th:if="${participants.isEmpty()}" th:text="#{trip.participants.empty}">Noch keine Teilnehmer.</p>
+    </article>
 
-    <section>
+    <!-- Invitations Card -->
+    <article>
         <h2 th:text="#{invitation.title}">Einladungen</h2>
         <div id="invitations">
             <div th:replace="~{trip/invitations :: invitationList}"></div>
         </div>
 
-        <details open th:if="${!invitableMembers.isEmpty()}">
-            <summary th:text="#{invitation.invite}">Mitglied einladen</summary>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1rem;">
+            <button th:if="${!invitableMembers.isEmpty()}"
+                    onclick="document.getElementById('invite-member-dialog').showModal()"
+                    th:text="#{invitation.invite}">Mitglied einladen</button>
+            <button th:if="${isOrganizer}"
+                    class="outline"
+                    onclick="document.getElementById('invite-external-dialog').showModal()"
+                    th:text="#{invitation.inviteByEmail}">Per E-Mail einladen</button>
+        </div>
+        <p th:if="${invitableMembers.isEmpty() && !isOrganizer}" th:text="#{invitation.allInvited}">Alle Mitglieder bereits eingeladen.</p>
+    </article>
+
+    <!-- Dialog: Invite Member -->
+    <dialog id="invite-member-dialog" th:if="${!invitableMembers.isEmpty()}">
+        <article>
+            <header>
+                <button aria-label="Close" rel="prev"
+                        onclick="document.getElementById('invite-member-dialog').close()"></button>
+                <h3 th:text="#{invitation.invite}">Mitglied einladen</h3>
+            </header>
             <form hx-post th:hx-post="@{/{id}/invitations(id=${trip.tripId()})}"
                   hx-target="#invitations"
-                  hx-swap="innerHTML">
+                  hx-swap="innerHTML"
+                  hx-on::after-request="if(event.detail.successful) { this.reset(); document.getElementById('invite-member-dialog').close(); }">
                 <label for="inviteeId" th:text="#{invitation.member}">Mitglied</label>
                 <select id="inviteeId" name="inviteeId" required>
                     <option th:each="m : ${invitableMembers}"
@@ -88,40 +121,61 @@
                             th:text="${m.firstName() + ' ' + m.lastName()}">
                     </option>
                 </select>
-                <button type="submit" th:text="#{invitation.send}">Einladung senden</button>
+                <footer>
+                    <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+                        <button type="button" class="secondary"
+                                onclick="document.getElementById('invite-member-dialog').close()"
+                                th:text="#{common.cancel}">Abbrechen</button>
+                        <button type="submit" th:text="#{invitation.send}">Einladung senden</button>
+                    </div>
+                </footer>
             </form>
-        </details>
-        <p th:if="${invitableMembers.isEmpty()}" th:text="#{invitation.allInvited}">Alle Mitglieder bereits eingeladen.</p>
+        </article>
+    </dialog>
 
-        <details th:if="${isOrganizer}">
-            <summary th:text="#{invitation.inviteByEmail}">Per E-Mail einladen</summary>
+    <!-- Dialog: Invite by Email -->
+    <dialog id="invite-external-dialog" th:if="${isOrganizer}">
+        <article>
+            <header>
+                <button aria-label="Close" rel="prev"
+                        onclick="document.getElementById('invite-external-dialog').close()"></button>
+                <h3 th:text="#{invitation.inviteByEmail}">Per E-Mail einladen</h3>
+            </header>
             <form hx-post th:hx-post="@{/{id}/invitations/external(id=${trip.tripId()})}"
                   hx-target="#invitations"
-                  hx-swap="innerHTML">
+                  hx-swap="innerHTML"
+                  hx-on::after-request="if(event.detail.successful) { this.reset(); document.getElementById('invite-external-dialog').close(); }">
+                <div class="grid">
+                    <label>
+                        <span th:text="#{invitation.firstName}">Vorname</span>
+                        <input type="text" name="firstName" required>
+                    </label>
+                    <label>
+                        <span th:text="#{invitation.lastName}">Nachname</span>
+                        <input type="text" name="lastName" required>
+                    </label>
+                </div>
                 <div class="grid">
                     <label>
                         <span th:text="#{invitation.email}">E-Mail</span>
                         <input type="email" name="email" required>
                     </label>
                     <label>
-                        <span th:text="#{invitation.firstName}">Vorname</span>
-                        <input type="text" name="firstName" required>
-                    </label>
-                </div>
-                <div class="grid">
-                    <label>
-                        <span th:text="#{invitation.lastName}">Nachname</span>
-                        <input type="text" name="lastName" required>
-                    </label>
-                    <label>
                         <span th:text="#{common.dateOfBirth}">Geburtsdatum</span>
                         <input type="date" name="dateOfBirth" required>
                     </label>
                 </div>
-                <button type="submit" th:text="#{invitation.sendEmailInvite}">Per E-Mail einladen</button>
+                <footer>
+                    <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+                        <button type="button" class="secondary"
+                                onclick="document.getElementById('invite-external-dialog').close()"
+                                th:text="#{common.cancel}">Abbrechen</button>
+                        <button type="submit" th:text="#{invitation.sendEmailInvite}">Per E-Mail einladen</button>
+                    </div>
+                </footer>
             </form>
-        </details>
-    </section>
+        </article>
+    </dialog>
 
     <a th:href="@{/}" th:text="#{common.back}">Zurueck</a>
 </div>

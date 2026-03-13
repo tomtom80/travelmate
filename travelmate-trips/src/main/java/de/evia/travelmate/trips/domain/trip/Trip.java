@@ -53,11 +53,32 @@ public class Trip extends AggregateRoot {
                             final String description,
                             final DateRange dateRange,
                             final UUID organizerId) {
+        return plan(tenantId, name, description, dateRange, organizerId, List.of(organizerId));
+    }
+
+    public static Trip plan(final TenantId tenantId,
+                            final TripName name,
+                            final String description,
+                            final DateRange dateRange,
+                            final UUID organizerId,
+                            final List<UUID> participantIds) {
+        final List<Participant> participants = participantIds.stream()
+            .map(id -> new Participant(id))
+            .toList();
+        return planWithParticipants(tenantId, name, description, dateRange, organizerId, participants);
+    }
+
+    public static Trip planWithParticipants(final TenantId tenantId,
+                                            final TripName name,
+                                            final String description,
+                                            final DateRange dateRange,
+                                            final UUID organizerId,
+                                            final List<Participant> participants) {
         final Trip trip = new Trip(
             new TripId(UUID.randomUUID()),
             tenantId, name, description, dateRange,
             organizerId, TripStatus.PLANNING,
-            List.of(new Participant(organizerId))
+            participants
         );
         trip.registerEvent(new TripCreated(
             tenantId.value(),
@@ -71,11 +92,15 @@ public class Trip extends AggregateRoot {
     }
 
     public void addParticipant(final UUID participantId) {
+        addParticipant(participantId, null, null);
+    }
+
+    public void addParticipant(final UUID participantId, final String firstName, final String lastName) {
         if (hasParticipant(participantId)) {
             throw new IllegalArgumentException(
                 "Participant " + participantId + " already joined this trip.");
         }
-        participants.add(new Participant(participantId));
+        participants.add(new Participant(participantId, firstName, lastName));
     }
 
     public void setParticipantStayPeriod(final UUID participantId, final StayPeriod stayPeriod) {

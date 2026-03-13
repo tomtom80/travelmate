@@ -17,8 +17,10 @@
                 <a th:href="@{''(lang='de')}" th:text="#{common.german}">DE</a> /
                 <a th:href="@{''(lang='en')}" th:text="#{common.english}">EN</a>
             </li>
-            <li><a th:href="@{/signup}" role="button" class="outline" th:text="#{landing.register}">Registrieren</a></li>
-            <li><a href="/oauth2/authorization/keycloak" role="button" th:text="#{landing.login}">Anmelden</a></li>
+            <li th:if="${!isAuthenticated}"><a th:href="@{/signup}" role="button" class="outline" th:text="#{landing.register}">Registrieren</a></li>
+            <li th:if="${!isAuthenticated}"><a href="/oauth2/authorization/keycloak" role="button" th:text="#{landing.login}">Anmelden</a></li>
+            <li th:if="${isAuthenticated}"><a th:href="@{/dashboard}" role="button" th:text="#{landing.dashboard}">Dashboard</a></li>
+            <li th:if="${isAuthenticated}"><a href="/iam/logout" role="button" class="outline" th:text="#{nav.logout}">Abmelden</a></li>
         </ul>
     </nav>
 

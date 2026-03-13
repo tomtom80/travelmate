@@ -123,7 +123,8 @@ class TravelPartyServiceTest {
 
         service.onAccountRegistered(event);
 
-        verify(invitationService).linkAwaitingInvitations("invited@example.com", accountId);
+        verify(invitationService).linkAwaitingInvitations("invited@example.com", accountId,
+            "Invited", "User");
     }
 
     @Test

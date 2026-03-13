@@ -34,6 +34,13 @@ spring:
         jwt:
           jwk-set-uri: ${KEYCLOAK_JWK_URI:http://localhost:7082/realms/travelmate/protocol/openid-connect/certs}
 
+  mail:
+    host: ${MAIL_HOST:localhost}
+    port: ${MAIL_PORT:1025}
+    properties:
+      mail.smtp.auth: false
+      mail.smtp.starttls.enable: false
+
   thymeleaf:
     cache: false
 

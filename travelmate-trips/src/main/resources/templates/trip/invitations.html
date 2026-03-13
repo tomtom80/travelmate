@@ -17,7 +17,7 @@
                         <span th:text="${inv.inviteeName()}"></span>
                         <small th:if="${inv.invitationType() == 'EXTERNAL'}" th:text="#{invitation.statusExternal}"> (extern)</small>
                     </td>
-                    <td th:text="${inv.status()}"></td>
+                    <td><mark th:text="#{${'invitation.status.' + inv.status()}}"></mark></td>
                     <td th:if="${inv.status() == 'PENDING' && inv.inviteeId() == currentMemberId}">
                         <div class="grid">
                             <form hx-post th:hx-post="@{/{tid}/invitations/{iid}/accept(tid=${inv.tripId()},iid=${inv.invitationId()})}"

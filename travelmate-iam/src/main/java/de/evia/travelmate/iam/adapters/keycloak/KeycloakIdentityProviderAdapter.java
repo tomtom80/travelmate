@@ -36,7 +36,8 @@ public class KeycloakIdentityProviderAdapter implements IdentityProviderService 
     @Override
     public KeycloakUserId createUser(final Email email, final FullName fullName, final Password password) {
         final UserRepresentation user = buildUserRepresentation(email, fullName);
-        user.setRequiredActions(List.of("VERIFY_EMAIL"));
+        user.setEmailVerified(true);
+        user.setRequiredActions(List.of());
 
         final CredentialRepresentation credential = new CredentialRepresentation();
         credential.setType(CredentialRepresentation.PASSWORD);
@@ -50,18 +51,40 @@ public class KeycloakIdentityProviderAdapter implements IdentityProviderService 
     @Override
     public KeycloakUserId createInvitedUser(final Email email, final FullName fullName) {
         final UserRepresentation user = buildUserRepresentation(email, fullName);
-        user.setRequiredActions(List.of("UPDATE_PASSWORD", "VERIFY_EMAIL"));
+        user.setRequiredActions(List.of());
+
+        final CredentialRepresentation tempCredential = new CredentialRepresentation();
+        tempCredential.setType(CredentialRepresentation.PASSWORD);
+        tempCredential.setValue(java.util.UUID.randomUUID().toString());
+        tempCredential.setTemporary(true);
+        user.setCredentials(List.of(tempCredential));
+
         return createKeycloakUser(user, email);
     }
 
     @Override
-    public void sendActionsEmail(final KeycloakUserId userId) {
+    public void setPassword(final KeycloakUserId userId, final Password password) {
         try {
-            realmResource().users().get(userId.value())
-                .executeActionsEmail(List.of("UPDATE_PASSWORD", "VERIFY_EMAIL"));
+            final CredentialRepresentation credential = new CredentialRepresentation();
+            credential.setType(CredentialRepresentation.PASSWORD);
+            credential.setValue(password.value());
+            credential.setTemporary(false);
+            realmResource().users().get(userId.value()).resetPassword(credential);
         } catch (final Exception e) {
             throw new IdentityProviderException(
-                "Failed to send actions email for user " + userId.value(), e);
+                "Failed to set password for user " + userId.value(), e);
+        }
+    }
+
+    @Override
+    public void setEmailVerified(final KeycloakUserId userId, final boolean verified) {
+        try {
+            final UserRepresentation user = realmResource().users().get(userId.value()).toRepresentation();
+            user.setEmailVerified(verified);
+            realmResource().users().get(userId.value()).update(user);
+        } catch (final Exception e) {
+            throw new IdentityProviderException(
+                "Failed to set email verified for user " + userId.value(), e);
         }
     }
 

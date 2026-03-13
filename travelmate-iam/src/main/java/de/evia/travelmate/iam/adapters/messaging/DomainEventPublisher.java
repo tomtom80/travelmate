@@ -1,5 +1,7 @@
 package de.evia.travelmate.iam.adapters.messaging;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -19,6 +21,8 @@ import de.evia.travelmate.common.messaging.RoutingKeys;
 @Profile("!test")
 public class DomainEventPublisher {
 
+    private static final Logger LOG = LoggerFactory.getLogger(DomainEventPublisher.class);
+
     private final RabbitTemplate rabbitTemplate;
 
     public DomainEventPublisher(final RabbitTemplate rabbitTemplate) {
@@ -27,36 +31,45 @@ public class DomainEventPublisher {
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onTenantCreated(final TenantCreated event) {
-        rabbitTemplate.convertAndSend(RoutingKeys.EXCHANGE, RoutingKeys.TENANT_CREATED, event);
+        publishSafely(RoutingKeys.TENANT_CREATED, event);
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onAccountRegistered(final AccountRegistered event) {
-        rabbitTemplate.convertAndSend(RoutingKeys.EXCHANGE, RoutingKeys.ACCOUNT_REGISTERED, event);
+        publishSafely(RoutingKeys.ACCOUNT_REGISTERED, event);
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onMemberAddedToTenant(final MemberAddedToTenant event) {
-        rabbitTemplate.convertAndSend(RoutingKeys.EXCHANGE, RoutingKeys.MEMBER_ADDED, event);
+        publishSafely(RoutingKeys.MEMBER_ADDED, event);
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onDependentAddedToTenant(final DependentAddedToTenant event) {
-        rabbitTemplate.convertAndSend(RoutingKeys.EXCHANGE, RoutingKeys.DEPENDENT_ADDED, event);
+        publishSafely(RoutingKeys.DEPENDENT_ADDED, event);
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onMemberRemovedFromTenant(final MemberRemovedFromTenant event) {
-        rabbitTemplate.convertAndSend(RoutingKeys.EXCHANGE, RoutingKeys.MEMBER_REMOVED, event);
+        publishSafely(RoutingKeys.MEMBER_REMOVED, event);
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onDependentRemovedFromTenant(final DependentRemovedFromTenant event) {
-        rabbitTemplate.convertAndSend(RoutingKeys.EXCHANGE, RoutingKeys.DEPENDENT_REMOVED, event);
+        publishSafely(RoutingKeys.DEPENDENT_REMOVED, event);
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onTenantDeleted(final TenantDeleted event) {
-        rabbitTemplate.convertAndSend(RoutingKeys.EXCHANGE, RoutingKeys.TENANT_DELETED, event);
+        publishSafely(RoutingKeys.TENANT_DELETED, event);
+    }
+
+    private void publishSafely(final String routingKey, final Object event) {
+        try {
+            rabbitTemplate.convertAndSend(RoutingKeys.EXCHANGE, routingKey, event);
+        } catch (final Exception ex) {
+            LOG.error("Failed to publish {} with routing key {}: {}",
+                event.getClass().getSimpleName(), routingKey, ex.getMessage(), ex);
+        }
     }
 }

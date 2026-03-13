@@ -1,7 +1,7 @@
 package de.evia.travelmate.iam.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.verify;
@@ -19,6 +19,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
+import de.evia.travelmate.common.domain.BusinessRuleViolationException;
+import de.evia.travelmate.common.domain.DuplicateEntityException;
+import de.evia.travelmate.common.domain.EntityNotFoundException;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.common.events.iam.AccountRegistered;
 import de.evia.travelmate.common.events.iam.DependentAddedToTenant;
@@ -29,6 +32,7 @@ import de.evia.travelmate.iam.application.command.InviteMemberCommand;
 import de.evia.travelmate.iam.application.command.RegisterAccountCommand;
 import de.evia.travelmate.iam.application.representation.AccountRepresentation;
 import de.evia.travelmate.iam.application.representation.DependentRepresentation;
+import de.evia.travelmate.iam.application.representation.InviteMemberResult;
 import de.evia.travelmate.iam.domain.IamTestFixtures;
 import de.evia.travelmate.iam.domain.account.Account;
 import de.evia.travelmate.iam.domain.account.AccountId;
@@ -41,6 +45,7 @@ import de.evia.travelmate.iam.domain.account.Username;
 import de.evia.travelmate.iam.domain.dependent.Dependent;
 import de.evia.travelmate.iam.domain.dependent.DependentId;
 import de.evia.travelmate.iam.domain.dependent.DependentRepository;
+import de.evia.travelmate.iam.domain.registration.InvitationToken;
 
 @ExtendWith(MockitoExtension.class)
 class AccountServiceTest {
@@ -53,6 +58,9 @@ class AccountServiceTest {
 
     @Mock
     private IdentityProviderService identityProviderService;
+
+    @Mock
+    private RegistrationService registrationService;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -88,9 +96,9 @@ class AccountServiceTest {
         );
         when(accountRepository.existsByUsername(any(TenantId.class), any(Username.class))).thenReturn(true);
 
-        assertThatIllegalArgumentException()
-            .isThrownBy(() -> accountService.registerAccount(command))
-            .withMessageContaining("already taken");
+        assertThatThrownBy(() -> accountService.registerAccount(command))
+            .isInstanceOf(DuplicateEntityException.class)
+            .hasMessageContaining("alreadyExists");
     }
 
     @Test
@@ -121,9 +129,9 @@ class AccountServiceTest {
         );
         when(accountRepository.findById(any(AccountId.class))).thenReturn(Optional.empty());
 
-        assertThatIllegalArgumentException()
-            .isThrownBy(() -> accountService.addDependent(command))
-            .withMessageContaining("Guardian account not found");
+        assertThatThrownBy(() -> accountService.addDependent(command))
+            .isInstanceOf(EntityNotFoundException.class)
+            .hasMessageContaining("Account not found");
     }
 
     @Test
@@ -155,9 +163,9 @@ class AccountServiceTest {
     void deleteMemberRejectsLastMember() {
         when(accountRepository.countByTenantId(IamTestFixtures.TENANT_ID)).thenReturn(1L);
 
-        assertThatIllegalArgumentException()
-            .isThrownBy(() -> accountService.deleteMember(IamTestFixtures.ACCOUNT_ID, IamTestFixtures.TENANT_ID))
-            .withMessageContaining("lastMember");
+        assertThatThrownBy(() -> accountService.deleteMember(IamTestFixtures.ACCOUNT_ID, IamTestFixtures.TENANT_ID))
+            .isInstanceOf(BusinessRuleViolationException.class)
+            .hasMessageContaining("lastMember");
     }
 
     @Test
@@ -170,15 +178,18 @@ class AccountServiceTest {
         when(accountRepository.existsByUsername(any(TenantId.class), any(Username.class))).thenReturn(false);
         when(identityProviderService.createInvitedUser(any(Email.class), any(FullName.class))).thenReturn(kcId);
         when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(registrationService.generateToken(any(AccountId.class)))
+            .thenReturn(InvitationToken.generate(IamTestFixtures.ACCOUNT_ID));
 
-        final AccountRepresentation result = accountService.inviteMember(command);
+        final InviteMemberResult result = accountService.inviteMember(command);
 
-        assertThat(result.email()).isEqualTo("invited@example.com");
-        assertThat(result.firstName()).isEqualTo("Anna");
-        assertThat(result.lastName()).isEqualTo("Schmidt");
+        assertThat(result.account().email()).isEqualTo("invited@example.com");
+        assertThat(result.account().firstName()).isEqualTo("Anna");
+        assertThat(result.account().lastName()).isEqualTo("Schmidt");
+        assertThat(result.tokenValue()).isNotBlank();
         verify(identityProviderService).createInvitedUser(any(Email.class), any(FullName.class));
         verify(identityProviderService).assignRole(kcId, "organizer");
-        verify(identityProviderService).sendActionsEmail(kcId);
+        verify(registrationService).generateToken(any(AccountId.class));
         verify(accountRepository).save(any(Account.class));
     }
 
@@ -190,9 +201,9 @@ class AccountServiceTest {
         );
         when(accountRepository.existsByUsername(any(TenantId.class), any(Username.class))).thenReturn(true);
 
-        assertThatIllegalArgumentException()
-            .isThrownBy(() -> accountService.inviteMember(command))
-            .withMessageContaining("alreadyExists");
+        assertThatThrownBy(() -> accountService.inviteMember(command))
+            .isInstanceOf(DuplicateEntityException.class)
+            .hasMessageContaining("alreadyExists");
     }
 
     @Test
@@ -222,6 +233,8 @@ class AccountServiceTest {
         when(accountRepository.existsByUsername(any(TenantId.class), any(Username.class))).thenReturn(false);
         when(identityProviderService.createInvitedUser(any(Email.class), any(FullName.class))).thenReturn(kcId);
         when(accountRepository.save(any(Account.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(registrationService.generateToken(any(AccountId.class)))
+            .thenReturn(InvitationToken.generate(IamTestFixtures.ACCOUNT_ID));
 
         accountService.inviteMember(command);
 

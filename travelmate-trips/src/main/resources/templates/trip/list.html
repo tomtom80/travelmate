@@ -51,7 +51,7 @@
                     </td>
                     <td th:text="${trip.startDate()}"></td>
                     <td th:text="${trip.endDate()}"></td>
-                    <td th:text="${trip.status()}"></td>
+                    <td><mark th:text="#{${'trip.status.' + trip.status()}}"></mark></td>
                 </tr>
             </tbody>
         </table>

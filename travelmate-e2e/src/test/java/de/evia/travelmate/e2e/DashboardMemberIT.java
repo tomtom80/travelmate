@@ -64,6 +64,7 @@ class DashboardMemberIT extends E2ETestBase {
         page.fill("form[hx-post$='/dashboard/members'] input[name=firstName]", "Lisa");
         page.fill("form[hx-post$='/dashboard/members'] input[name=lastName]", "Eingeladen");
         page.fill("form[hx-post$='/dashboard/members'] input[name=email]", memberEmail);
+        page.fill("form[hx-post$='/dashboard/members'] input[name=dateOfBirth]", "1985-03-20");
         submitHtmxForm("form[hx-post$='/dashboard/members']");
 
         final String members = page.locator("#members").innerHTML();
@@ -97,6 +98,7 @@ class DashboardMemberIT extends E2ETestBase {
 
         page.fill("form[hx-post$='/dashboard/companions'] input[name=firstName]", "Lina");
         page.fill("form[hx-post$='/dashboard/companions'] input[name=lastName]", "Kind");
+        page.fill("form[hx-post$='/dashboard/companions'] input[name=dateOfBirth]", "2018-06-15");
         submitHtmxForm("form[hx-post$='/dashboard/companions']");
 
         final String companions = page.locator("#companions").innerHTML();
@@ -128,7 +130,7 @@ class DashboardMemberIT extends E2ETestBase {
         assertThat(page.locator("#companions").innerHTML()).contains("Lina");
 
         page.onceDialog(dialog -> dialog.accept());
-        clickAndWaitForHtmx("#companions button.outline.secondary");
+        clickAndWaitForHtmx("#companions tr:has-text('Lina') button.outline.secondary");
 
         assertThat(page.locator("#companions").innerHTML()).doesNotContain("Lina");
     }
@@ -141,7 +143,11 @@ class DashboardMemberIT extends E2ETestBase {
         assertThat(page.locator("#members").innerHTML()).contains("Lisa");
 
         page.onceDialog(dialog -> dialog.accept());
-        clickAndWaitForHtmx("#members button.outline.secondary");
+        page.waitForResponse(
+            response -> response.url().contains("/iam/dashboard/members/"),
+            () -> page.locator("#members tr:has-text('Lisa') button.outline.secondary").click()
+        );
+        page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
 
         assertThat(page.locator("#members").innerHTML()).doesNotContain("Lisa");
     }

@@ -2,9 +2,12 @@ package de.evia.travelmate.trips.adapters.web;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.context.MessageSource;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Controller;
@@ -15,8 +18,9 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 import de.evia.travelmate.common.domain.TenantId;
-import org.springframework.format.annotation.DateTimeFormat;
 
 import de.evia.travelmate.trips.application.InvitationService;
 import de.evia.travelmate.trips.application.TripService;
@@ -32,6 +36,7 @@ import de.evia.travelmate.trips.application.representation.TripRepresentation;
 import de.evia.travelmate.trips.domain.invitation.InvitationId;
 import de.evia.travelmate.trips.domain.travelparty.Member;
 import de.evia.travelmate.trips.domain.travelparty.TravelParty;
+import de.evia.travelmate.trips.domain.travelparty.TravelPartyDependent;
 import de.evia.travelmate.trips.domain.travelparty.TravelPartyRepository;
 import de.evia.travelmate.trips.domain.trip.TripId;
 
@@ -41,13 +46,16 @@ public class TripController {
     private final TripService tripService;
     private final InvitationService invitationService;
     private final TravelPartyRepository travelPartyRepository;
+    private final MessageSource messageSource;
 
     public TripController(final TripService tripService,
                           final InvitationService invitationService,
-                          final TravelPartyRepository travelPartyRepository) {
+                          final TravelPartyRepository travelPartyRepository,
+                          final MessageSource messageSource) {
         this.tripService = tripService;
         this.invitationService = invitationService;
         this.travelPartyRepository = travelPartyRepository;
+        this.messageSource = messageSource;
     }
 
     @GetMapping
@@ -55,7 +63,7 @@ public class TripController {
         final Optional<ResolvedIdentity> maybeIdentity = resolveIdentity(jwt);
         model.addAttribute("view", "trip/list");
         model.addAttribute("trips", maybeIdentity
-            .map(id -> tripService.findAllByTenantId(id.tenantId()))
+            .map(this::mergeTrips)
             .orElse(List.of()));
         model.addAttribute("pendingInvitations", maybeIdentity
             .map(id -> toPendingInvitationViews(id))
@@ -69,7 +77,7 @@ public class TripController {
                          final Model model) {
         final ResolvedIdentity identity = requireIdentity(jwt);
         final TripRepresentation trip = tripService.findById(new TripId(tripId));
-        validateTenantAccess(trip.tenantId(), identity.tenantId());
+        validateTripAccess(trip, identity);
 
         final TravelParty party = identity.party();
 
@@ -123,10 +131,13 @@ public class TripController {
     public String invite(@AuthenticationPrincipal final Jwt jwt,
                          @PathVariable final UUID tripId,
                          @RequestParam final UUID inviteeId,
+                         final HttpServletResponse response,
+                         final Locale locale,
                          final Model model) {
         final ResolvedIdentity identity = requireIdentity(jwt);
         invitationService.invite(new InviteParticipantCommand(
             identity.tenantId().value(), tripId, inviteeId, identity.memberId()));
+        triggerSuccessToast(response, messageSource.getMessage("invitation.memberInvited", null, locale));
         return populateInvitationFragment(tripId, identity, model);
     }
 
@@ -137,10 +148,13 @@ public class TripController {
                                  @RequestParam final String firstName,
                                  @RequestParam final String lastName,
                                  @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate dateOfBirth,
+                                 final HttpServletResponse response,
+                                 final Locale locale,
                                  final Model model) {
         final ResolvedIdentity identity = requireIdentity(jwt);
         invitationService.inviteExternal(new InviteExternalCommand(
             identity.tenantId().value(), tripId, email, firstName, lastName, dateOfBirth, identity.memberId()));
+        triggerSuccessToast(response, messageSource.getMessage("invitation.externalInvited", null, locale));
         return populateInvitationFragment(tripId, identity, model);
     }
 
@@ -148,9 +162,12 @@ public class TripController {
     public String accept(@AuthenticationPrincipal final Jwt jwt,
                          @PathVariable final UUID tripId,
                          @PathVariable final UUID invitationId,
+                         final HttpServletResponse response,
+                         final Locale locale,
                          final Model model) {
         final ResolvedIdentity identity = requireIdentity(jwt);
         invitationService.accept(new InvitationId(invitationId));
+        triggerSuccessToast(response, messageSource.getMessage("invitation.accept", null, locale));
         return populateInvitationFragment(tripId, identity, model);
     }
 
@@ -158,9 +175,12 @@ public class TripController {
     public String decline(@AuthenticationPrincipal final Jwt jwt,
                           @PathVariable final UUID tripId,
                           @PathVariable final UUID invitationId,
+                          final HttpServletResponse response,
+                          final Locale locale,
                           final Model model) {
         final ResolvedIdentity identity = requireIdentity(jwt);
         invitationService.decline(new InvitationId(invitationId));
+        triggerSuccessToast(response, messageSource.getMessage("invitation.decline", null, locale));
         return populateInvitationFragment(tripId, identity, model);
     }
 
@@ -225,11 +245,27 @@ public class TripController {
                 org.springframework.http.HttpStatus.FORBIDDEN, "No travel party found for user"));
     }
 
-    private void validateTenantAccess(final UUID tripTenantId, final TenantId userTenantId) {
-        if (!tripTenantId.equals(userTenantId.value())) {
+    private void validateTripAccess(final TripRepresentation trip, final ResolvedIdentity identity) {
+        final boolean isTenantMember = trip.tenantId().equals(identity.tenantId().value());
+        final boolean isParticipant = trip.participantIds().contains(identity.memberId());
+        if (!isTenantMember && !isParticipant) {
             throw new ResponseStatusException(
                 org.springframework.http.HttpStatus.FORBIDDEN, "Access denied");
         }
+    }
+
+    private List<TripRepresentation> mergeTrips(final ResolvedIdentity identity) {
+        final List<TripRepresentation> tenantTrips = tripService.findAllByTenantId(identity.tenantId());
+        final List<TripRepresentation> participantTrips = tripService.findAllByParticipantId(identity.memberId());
+        final java.util.Set<UUID> seen = new java.util.LinkedHashSet<>();
+        final List<TripRepresentation> merged = new java.util.ArrayList<>(tenantTrips);
+        tenantTrips.forEach(t -> seen.add(t.tripId()));
+        for (final TripRepresentation t : participantTrips) {
+            if (seen.add(t.tripId())) {
+                merged.add(t);
+            }
+        }
+        return merged;
     }
 
     private String populateInvitationFragment(final UUID tripId, final ResolvedIdentity identity,
@@ -244,12 +280,24 @@ public class TripController {
                                                     final TravelParty party) {
         return trip.participantDetails().stream()
             .map(pd -> {
+                if (pd.firstName() != null) {
+                    return new ParticipantView(pd.participantId(), pd.firstName(), pd.lastName(),
+                        pd.arrivalDate(), pd.departureDate());
+                }
                 final Member member = party.members().stream()
                     .filter(m -> m.memberId().equals(pd.participantId()))
                     .findFirst()
                     .orElse(null);
-                final String firstName = member != null ? member.firstName() : "Unknown";
-                final String lastName = member != null ? member.lastName() : "";
+                if (member != null) {
+                    return new ParticipantView(pd.participantId(), member.firstName(), member.lastName(),
+                        pd.arrivalDate(), pd.departureDate());
+                }
+                final TravelPartyDependent dependent = party.dependents().stream()
+                    .filter(d -> d.dependentId().equals(pd.participantId()))
+                    .findFirst()
+                    .orElse(null);
+                final String firstName = dependent != null ? dependent.firstName() : "Unknown";
+                final String lastName = dependent != null ? dependent.lastName() : "";
                 return new ParticipantView(pd.participantId(), firstName, lastName,
                     pd.arrivalDate(), pd.departureDate());
             })
@@ -293,6 +341,11 @@ public class TripController {
                 );
             })
             .toList();
+    }
+
+    private void triggerSuccessToast(final HttpServletResponse response, final String message) {
+        response.setHeader("HX-Trigger",
+            "{\"showToast\":{\"level\":\"success\",\"message\":\"" + message.replace("\"", "\\\"") + "\"}}");
     }
 
     private record ResolvedIdentity(TenantId tenantId, UUID memberId, TravelParty party) {

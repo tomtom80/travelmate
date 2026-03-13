@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -43,6 +44,22 @@ class TripTest {
         final TripCreated event = (TripCreated) trip.domainEvents().getFirst();
         assertThat(event.tripId()).isEqualTo(trip.tripId().value());
         assertThat(event.tenantId()).isEqualTo(TENANT_ID.value());
+    }
+
+    @Test
+    void planAddsAllProvidedParticipants() {
+        final UUID member2 = UUID.randomUUID();
+        final UUID dependent1 = UUID.randomUUID();
+
+        final Trip trip = Trip.plan(
+            TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID,
+            List.of(ORGANIZER_ID, member2, dependent1)
+        );
+
+        assertThat(trip.participants()).hasSize(3);
+        assertThat(trip.hasParticipant(ORGANIZER_ID)).isTrue();
+        assertThat(trip.hasParticipant(member2)).isTrue();
+        assertThat(trip.hasParticipant(dependent1)).isTrue();
     }
 
     @Test

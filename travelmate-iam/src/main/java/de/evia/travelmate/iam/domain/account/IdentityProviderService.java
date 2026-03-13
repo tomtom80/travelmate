@@ -6,7 +6,9 @@ public interface IdentityProviderService {
 
     KeycloakUserId createInvitedUser(Email email, FullName fullName);
 
-    void sendActionsEmail(KeycloakUserId userId);
+    void setPassword(KeycloakUserId userId, Password password);
+
+    void setEmailVerified(KeycloakUserId userId, boolean verified);
 
     void sendVerificationEmail(KeycloakUserId userId);
 

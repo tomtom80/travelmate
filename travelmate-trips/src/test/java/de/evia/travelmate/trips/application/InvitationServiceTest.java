@@ -121,7 +121,7 @@ class InvitationServiceTest {
 
         assertThatThrownBy(() -> invitationService.invite(
             new InviteParticipantCommand(TENANT_UUID, trip.tripId().value(), INVITEE_ID, ORGANIZER_ID)
-        )).isInstanceOf(IllegalArgumentException.class);
+        )).isInstanceOf(de.evia.travelmate.common.domain.DuplicateEntityException.class);
     }
 
     @Test
@@ -135,7 +135,7 @@ class InvitationServiceTest {
 
         assertThatThrownBy(() -> invitationService.invite(
             new InviteParticipantCommand(TENANT_UUID, trip.tripId().value(), nonMemberId, ORGANIZER_ID)
-        )).isInstanceOf(IllegalArgumentException.class);
+        )).isInstanceOf(de.evia.travelmate.common.domain.EntityNotFoundException.class);
     }
 
     @Test
@@ -227,7 +227,7 @@ class InvitationServiceTest {
         assertThatThrownBy(() -> invitationService.inviteExternal(
             new InviteExternalCommand(TENANT_UUID, trip.tripId().value(), "dup@test.de",
                 "Dup", "User", LocalDate.of(1990, 1, 1), ORGANIZER_ID)
-        )).isInstanceOf(IllegalArgumentException.class);
+        )).isInstanceOf(de.evia.travelmate.common.domain.DuplicateEntityException.class);
     }
 
     @Test
@@ -240,7 +240,7 @@ class InvitationServiceTest {
             .thenReturn(List.of(invitation));
         when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
 
-        invitationService.linkAwaitingInvitations("new@test.de", newMemberId);
+        invitationService.linkAwaitingInvitations("new@test.de", newMemberId, "New", "User");
 
         assertThat(invitation.status()).isEqualTo(InvitationStatus.ACCEPTED);
         assertThat(invitation.inviteeId()).isEqualTo(newMemberId);

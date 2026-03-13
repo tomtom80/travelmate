@@ -1,7 +1,7 @@
 package de.evia.travelmate.iam.application;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatIllegalArgumentException;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -17,6 +17,8 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
+import de.evia.travelmate.common.domain.DuplicateEntityException;
+import de.evia.travelmate.common.domain.EntityNotFoundException;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.common.events.iam.TenantDeleted;
 import de.evia.travelmate.iam.application.command.CreateTenantCommand;
@@ -69,9 +71,9 @@ class TenantServiceTest {
         final CreateTenantCommand command = new CreateTenantCommand("Reisegruppe Alpen", null);
         when(tenantRepository.existsByName(any(TenantName.class))).thenReturn(true);
 
-        assertThatIllegalArgumentException()
-            .isThrownBy(() -> tenantService.createTenant(command))
-            .withMessageContaining("already exists");
+        assertThatThrownBy(() -> tenantService.createTenant(command))
+            .isInstanceOf(DuplicateEntityException.class)
+            .hasMessageContaining("tenantExists");
     }
 
     @Test
@@ -90,9 +92,9 @@ class TenantServiceTest {
         final TenantId tenantId = new TenantId(UUID.randomUUID());
         when(tenantRepository.findById(tenantId)).thenReturn(Optional.empty());
 
-        assertThatIllegalArgumentException()
-            .isThrownBy(() -> tenantService.findById(tenantId))
-            .withMessageContaining("Tenant not found");
+        assertThatThrownBy(() -> tenantService.findById(tenantId))
+            .isInstanceOf(EntityNotFoundException.class)
+            .hasMessageContaining("Tenant not found");
     }
 
     @Test

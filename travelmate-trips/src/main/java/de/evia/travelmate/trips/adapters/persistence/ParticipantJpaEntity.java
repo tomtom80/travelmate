@@ -28,6 +28,12 @@ public class ParticipantJpaEntity {
     @JoinColumn(name = "trip_id")
     private TripJpaEntity trip;
 
+    @Column(name = "first_name")
+    private String firstName;
+
+    @Column(name = "last_name")
+    private String lastName;
+
     @Column(name = "arrival_date")
     private LocalDate arrivalDate;
 
@@ -38,14 +44,21 @@ public class ParticipantJpaEntity {
     }
 
     public ParticipantJpaEntity(final UUID participantId, final TripJpaEntity trip,
+                                final String firstName, final String lastName,
                                 final LocalDate arrivalDate, final LocalDate departureDate) {
         this.participantId = participantId;
         this.trip = trip;
+        this.firstName = firstName;
+        this.lastName = lastName;
         this.arrivalDate = arrivalDate;
         this.departureDate = departureDate;
     }
 
     public UUID getParticipantId() { return participantId; }
+    public String getFirstName() { return firstName; }
+    public void setFirstName(final String firstName) { this.firstName = firstName; }
+    public String getLastName() { return lastName; }
+    public void setLastName(final String lastName) { this.lastName = lastName; }
     public LocalDate getArrivalDate() { return arrivalDate; }
     public void setArrivalDate(final LocalDate arrivalDate) { this.arrivalDate = arrivalDate; }
     public LocalDate getDepartureDate() { return departureDate; }

@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{register.error.title}">Registrierungsfehler</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+</head>
+<body>
+    <main class="container" style="max-width: 500px; margin-top: 40px;">
+        <article style="text-align: center;">
+            <h1 th:text="#{register.error.title}">Registrierungsfehler</h1>
+            <p th:text="#{${error}}">Ein Fehler ist aufgetreten.</p>
+            <a href="/oauth2/authorization/keycloak" role="button" class="outline"
+               th:text="#{register.error.loginInstead}">Stattdessen einloggen</a>
+        </article>
+    </main>
+</body>
+</html>
