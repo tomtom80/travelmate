@@ -41,6 +41,7 @@
                     <th th:text="#{trip.startDate}">Von</th>
                     <th th:text="#{trip.endDate}">Bis</th>
                     <th th:text="#{trip.status}">Status</th>
+                    <th></th>
                 </tr>
             </thead>
             <tbody>
@@ -52,6 +53,11 @@
                     <td th:text="${trip.startDate()}"></td>
                     <td th:text="${trip.endDate()}"></td>
                     <td><mark th:text="#{${'trip.status.' + trip.status()}}"></mark></td>
+                    <td>
+                        <a th:if="${trip.status() == 'COMPLETED'}"
+                           th:href="|/expense/${trip.tripId()}|"
+                           th:text="#{trip.expense.action}">Abrechnung</a>
+                    </td>
                 </tr>
             </tbody>
         </table>

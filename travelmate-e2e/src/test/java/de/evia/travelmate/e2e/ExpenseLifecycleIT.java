@@ -55,17 +55,43 @@ class ExpenseLifecycleIT extends E2ETestBase {
     }
 
     @Test
+    @Order(5)
+    void tripDetailShowsExpenseLinkForCompletedTrip() {
+        navigateAndWait(tripDetailUrl.replace(BASE_URL, ""));
+        page.waitForLoadState();
+
+        final String content = page.content();
+        assertThat(content).contains("Abgeschlossen");
+        assertThat(page.locator("a[href*='/expense/']").count()).isPositive();
+    }
+
+    @Test
+    @Order(6)
+    void tripListShowsExpenseLinkForCompletedTrip() {
+        navigateAndWait("/trips/");
+
+        final var row = page.locator("tr", new com.microsoft.playwright.Page.LocatorOptions()
+            .setHasText(TRIP_NAME));
+        assertThat(row.locator("a[href*='/expense/']").count()).isPositive();
+    }
+
+    @Test
     @Order(10)
-    void expensePageLoadsForCompletedTrip() {
-        final String tripId = extractTripId();
+    void expensePageLoadsViaNavigationLink() {
+        navigateAndWait(tripDetailUrl.replace(BASE_URL, ""));
 
         for (int i = 0; i < 15; i++) {
-            navigateAndWait("/expense/" + tripId);
-            final String content = page.content();
-            if (content.contains("Abrechnung") && !content.contains("404") && !content.contains("Not Found")) {
-                break;
+            final var expenseLink = page.locator("a[href*='/expense/']");
+            if (expenseLink.count() > 0) {
+                expenseLink.first().click();
+                page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
+                final String content = page.content();
+                if (content.contains("Abrechnung") && !content.contains("404") && !content.contains("Not Found")) {
+                    break;
+                }
             }
             page.waitForTimeout(1000);
+            navigateAndWait(tripDetailUrl.replace(BASE_URL, ""));
         }
 
         final String content = page.content();
@@ -134,6 +160,19 @@ class ExpenseLifecycleIT extends E2ETestBase {
         navigateAndWait("/expense/" + tripId);
 
         assertThat(page.locator("dialog#add-receipt-dialog").count()).isZero();
+    }
+
+    @Test
+    @Order(60)
+    void expenseBackLinkNavigatesToTripDetail() {
+        final String tripId = extractTripId();
+        navigateAndWait("/expense/" + tripId);
+
+        page.locator("main a[href*='/trips/" + tripId + "']").click();
+        page.waitForLoadState();
+
+        assertThat(page.url()).contains("/trips/" + tripId);
+        assertThat(page.content()).contains(TRIP_NAME);
     }
 
     private String extractTripId() {

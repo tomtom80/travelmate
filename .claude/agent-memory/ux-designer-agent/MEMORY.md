@@ -38,5 +38,17 @@ See [project memory on UX issues](../../../.claude/projects/-Users-t-klingler-re
 ## Design Documents Produced
 - `/docs/design/journeys/trip-planning-organizer.md` — organiser journey map
 - `/docs/design/journeys/invitation-flow.md` — participant invitation flow
+- `/docs/design/journeys/expense-discovery-flow.md` — expense discoverability analysis + phase journey map
 - `/docs/design/components/feedback-system.md` — inline feedback pattern + toast evaluation
 - `/docs/design/components/trip-detail-page.md` — full page redesign spec including dialog-based invite
+- `/docs/design/components/expense-integration.md` — full spec for making expenses discoverable from trips UI
+
+## Expense SCS Integration (v0.5.0 design decision)
+- Expense SCS at /expense/{tripId} is fully built but unreachable — no navigation links anywhere
+- nav.expense key exists in all three SCS message files but is never rendered in <nav>
+- IAM dashboard is NOT the right place for expense links — wrong SCS context
+- Primary fix: expense card on trip detail (COMPLETED only) + expense column on trip list
+- Balance section uses hardcoded inline style="color:green/red" — needs CSS class replacement
+- Settle button has no confirmation despite being irreversible — needs confirm pattern
+- New i18n keys needed in trips SCS: trip.expense.title, trip.expense.hint, trip.expense.action
+- New i18n keys needed in expense SCS: expense.settle.confirm

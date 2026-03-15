@@ -23,3 +23,14 @@
 - Root cause: tests cover building blocks in isolation, not user-visible behavior at integration boundaries
 - Missing: E2E for email verification flow, password reset flow, tenant delete action, external invite feedback, mail delivery assertion, error feedback assertions
 - BDD scenarios written in docs/test-cases/bdd/
+
+## Expense Navigation Gap (2026-03-15)
+- Expense SCS has NO navigation entry point from IAM Dashboard or global nav bar
+- Global nav: only "Reisepartei" (/iam/dashboard) and "Reisen" (/trips/) — no "Abrechnung"
+- Trip list (/trips/): no expense column or link in the table rows
+- Trip detail (/trips/{id}): no expense link — template ends with <a href="/">Zurueck</a>
+- Only reachable by typing /expense/{tripId} directly — this is the tested path in ExpenseLifecycleIT
+- ExpenseLifecycleIT uses hardcoded direct navigation (not a UI click from trip detail) — false confidence
+- Critical security concern: ExpenseController resolves tenantId from TripProjection, NOT from JWT — no cross-tenant validation against caller's identity
+- BDD scenarios at: docs/test-cases/bdd/expense-navigation-and-lifecycle.feature
+- Acceptance criteria AC-01..AC-08 defined in that file
