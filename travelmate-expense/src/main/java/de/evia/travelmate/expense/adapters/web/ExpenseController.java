@@ -23,7 +23,10 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.expense.application.ExpenseService;
+import de.evia.travelmate.expense.domain.expense.ExpenseCategory;
 import de.evia.travelmate.expense.application.command.AddReceiptCommand;
+import de.evia.travelmate.expense.application.command.ApproveReceiptCommand;
+import de.evia.travelmate.expense.application.command.RejectReceiptCommand;
 import de.evia.travelmate.expense.application.command.UpdateWeightingCommand;
 import de.evia.travelmate.expense.application.representation.ExpenseRepresentation;
 import de.evia.travelmate.expense.domain.trip.TripParticipant;
@@ -78,6 +81,7 @@ public class ExpenseController {
                              @RequestParam final BigDecimal amount,
                              @RequestParam final UUID paidBy,
                              @RequestParam final LocalDate date,
+                             @RequestParam(required = false) final ExpenseCategory category,
                              final HttpServletResponse response,
                              final Locale locale,
                              final Model model) {
@@ -86,9 +90,48 @@ public class ExpenseController {
         final TenantId tenantId = projection.tenantId();
 
         final ExpenseRepresentation expense = expenseService.addReceipt(
-            tenantId, new AddReceiptCommand(tripId, description, amount, paidBy, date));
+            tenantId, new AddReceiptCommand(tripId, description, amount, paidBy, paidBy, date, category));
 
         triggerSuccessToast(response, messageSource.getMessage("expense.receiptAdded", null, locale));
+        return populateReceiptFragment(expense, projection, model);
+    }
+
+    @PostMapping("/{tripId}/receipts/{receiptId}/approve")
+    public String approveReceipt(@AuthenticationPrincipal final Jwt jwt,
+                                 @PathVariable final UUID tripId,
+                                 @PathVariable final UUID receiptId,
+                                 final HttpServletResponse response,
+                                 final Locale locale,
+                                 final Model model) {
+        requireAuthentication(jwt);
+        final TripProjection projection = findProjection(tripId);
+        final TenantId tenantId = projection.tenantId();
+        final UUID reviewerId = resolveParticipantId(jwt, projection);
+
+        final ExpenseRepresentation expense = expenseService.approveReceipt(
+            tenantId, new ApproveReceiptCommand(tripId, receiptId, reviewerId));
+
+        triggerSuccessToast(response, messageSource.getMessage("expense.receiptApproved", null, locale));
+        return populateReceiptFragment(expense, projection, model);
+    }
+
+    @PostMapping("/{tripId}/receipts/{receiptId}/reject")
+    public String rejectReceipt(@AuthenticationPrincipal final Jwt jwt,
+                                @PathVariable final UUID tripId,
+                                @PathVariable final UUID receiptId,
+                                @RequestParam final String reason,
+                                final HttpServletResponse response,
+                                final Locale locale,
+                                final Model model) {
+        requireAuthentication(jwt);
+        final TripProjection projection = findProjection(tripId);
+        final TenantId tenantId = projection.tenantId();
+        final UUID reviewerId = resolveParticipantId(jwt, projection);
+
+        final ExpenseRepresentation expense = expenseService.rejectReceipt(
+            tenantId, new RejectReceiptCommand(tripId, receiptId, reviewerId, reason));
+
+        triggerSuccessToast(response, messageSource.getMessage("expense.receiptRejected", null, locale));
         return populateReceiptFragment(expense, projection, model);
     }
 
@@ -150,6 +193,15 @@ public class ExpenseController {
         return tripProjectionRepository.findByTripId(tripId)
             .orElseThrow(() -> new ResponseStatusException(
                 org.springframework.http.HttpStatus.NOT_FOUND, "Trip not found"));
+    }
+
+    private UUID resolveParticipantId(final Jwt jwt, final TripProjection projection) {
+        final String email = jwt.getClaimAsString("email");
+        return projection.participants().stream()
+            .filter(p -> p.name().equalsIgnoreCase(email))
+            .map(TripParticipant::participantId)
+            .findFirst()
+            .orElse(projection.participants().getFirst().participantId());
     }
 
     private Map<UUID, String> buildParticipantNames(final TripProjection projection) {

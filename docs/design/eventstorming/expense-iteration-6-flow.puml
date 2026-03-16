@@ -1,0 +1,90 @@
+@startuml expense-iteration-6-receipt-lifecycle
+!theme plain
+
+title Receipt Review Workflow (Four-Eyes) -- Expense SCS Iteration 6
+
+|#LightYellow| Participant (Submitter) |
+|#LightGreen| Participant (Reviewer) |
+|#LightBlue| Expense Aggregate |
+
+|Participant (Submitter)|
+start
+:SubmitReceipt\n(description, amount, paidBy,\ndate, category, submittedBy);
+note right
+  **Command (Blue)**
+  submittedBy = current user
+  paidBy can differ from submittedBy
+end note
+
+|Expense Aggregate|
+:Validate:\n- Expense is OPEN\n- paidBy is participant;
+:Create Receipt\nreviewStatus = SUBMITTED;
+:**ReceiptSubmitted**;
+note right #Orange
+  Domain Event
+end note
+
+if (Status was READY_FOR_SETTLEMENT?) then (yes)
+  :Status -> OPEN;
+  note right #MediumOrchid
+    **Policy P2**: New receipt\nresets readiness
+  end note
+else (no)
+endif
+
+|Participant (Reviewer)|
+if (Review decision?) then (approve)
+  :ApproveReceipt\n(receiptId, reviewerId);
+  note right
+    **Invariant INV-2**
+    reviewerId != submittedBy
+  end note
+
+  |Expense Aggregate|
+  :Receipt.reviewStatus = APPROVED\nReceipt.reviewerId = reviewerId;
+  :**ReceiptApproved**;
+  note right #Orange
+    Domain Event
+  end note
+
+  if (ALL receipts APPROVED?) then (yes)
+    :Status -> READY_FOR_SETTLEMENT;
+    :**ExpenseReadyForSettlement**;
+    note right #MediumOrchid
+      **Policy P1**: Auto-transition
+    end note
+  else (no)
+  endif
+
+else (reject)
+  |Participant (Reviewer)|
+  :RejectReceipt\n(receiptId, reviewerId, reason);
+
+  |Expense Aggregate|
+  :Receipt.reviewStatus = REJECTED\nReceipt.reviewerId = reviewerId\nReceipt.rejectionReason = reason;
+  :**ReceiptRejected**;
+  note right #Orange
+    Domain Event
+  end note
+
+  |Participant (Submitter)|
+  if (Fix and resubmit?) then (yes)
+    :ResubmitReceipt\n(receiptId, updated data);
+
+    |Expense Aggregate|
+    :Update Receipt fields\nreviewStatus = SUBMITTED\nclear reviewerId, reason;
+    :**ReceiptResubmitted**;
+    note right #Orange
+      Domain Event
+    end note
+    ' loop back to review
+  else (remove)
+    :RemoveReceipt(receiptId);
+
+    |Expense Aggregate|
+    :Remove receipt from list;
+  endif
+endif
+
+stop
+@enduml

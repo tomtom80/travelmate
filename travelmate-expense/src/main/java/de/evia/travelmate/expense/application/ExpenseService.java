@@ -14,9 +14,13 @@ import de.evia.travelmate.common.domain.DomainEvent;
 import de.evia.travelmate.common.domain.EntityNotFoundException;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.common.events.trips.ParticipantJoinedTrip;
+import de.evia.travelmate.common.events.trips.StayPeriodUpdated;
 import de.evia.travelmate.common.events.trips.TripCompleted;
 import de.evia.travelmate.common.events.trips.TripCreated;
 import de.evia.travelmate.expense.application.command.AddReceiptCommand;
+import de.evia.travelmate.expense.application.command.ApproveReceiptCommand;
+import de.evia.travelmate.expense.application.command.RejectReceiptCommand;
+import de.evia.travelmate.expense.application.command.ResubmitReceiptCommand;
 import de.evia.travelmate.expense.application.command.UpdateWeightingCommand;
 import de.evia.travelmate.expense.application.representation.ExpenseRepresentation;
 import de.evia.travelmate.expense.domain.expense.Amount;
@@ -52,7 +56,8 @@ public class ExpenseService {
             return;
         }
         final TripProjection projection = TripProjection.create(
-            event.tripId(), new TenantId(event.tenantId()), event.tripName()
+            event.tripId(), new TenantId(event.tenantId()), event.tripName(),
+            event.startDate(), event.endDate()
         );
         tripProjectionRepository.save(projection);
     }
@@ -65,6 +70,16 @@ public class ExpenseService {
             });
         projection.addParticipant(new TripParticipant(event.participantId(), event.username()));
         tripProjectionRepository.save(projection);
+    }
+
+    public void onStayPeriodUpdated(final StayPeriodUpdated event) {
+        final TripProjection projection = tripProjectionRepository.findByTripId(event.tripId())
+            .orElseThrow(() -> new EntityNotFoundException("TripProjection", event.tripId().toString()));
+        projection.updateParticipantStayPeriod(
+            event.participantId(), event.arrivalDate(), event.departureDate()
+        );
+        tripProjectionRepository.save(projection);
+        LOG.info("Updated stay period for participant {} in trip {}", event.participantId(), event.tripId());
     }
 
     public void onTripCompleted(final TripCompleted event) {
@@ -89,7 +104,33 @@ public class ExpenseService {
 
     public ExpenseRepresentation addReceipt(final TenantId tenantId, final AddReceiptCommand command) {
         final Expense expense = findByTripId(tenantId, command.tripId());
-        expense.addReceipt(command.description(), new Amount(command.amount()), command.paidBy(), command.date());
+        expense.addReceipt(command.description(), new Amount(command.amount()), command.paidBy(), command.submittedBy(), command.date(), command.category());
+        expenseRepository.save(expense);
+        return ExpenseRepresentation.from(expense);
+    }
+
+    public ExpenseRepresentation approveReceipt(final TenantId tenantId,
+                                                final ApproveReceiptCommand command) {
+        final Expense expense = findByTripId(tenantId, command.tripId());
+        expense.approveReceipt(new ReceiptId(command.receiptId()), command.reviewerId());
+        expenseRepository.save(expense);
+        return ExpenseRepresentation.from(expense);
+    }
+
+    public ExpenseRepresentation rejectReceipt(final TenantId tenantId,
+                                               final RejectReceiptCommand command) {
+        final Expense expense = findByTripId(tenantId, command.tripId());
+        expense.rejectReceipt(new ReceiptId(command.receiptId()), command.reviewerId(),
+            command.reason());
+        expenseRepository.save(expense);
+        return ExpenseRepresentation.from(expense);
+    }
+
+    public ExpenseRepresentation resubmitReceipt(final TenantId tenantId,
+                                                 final ResubmitReceiptCommand command) {
+        final Expense expense = findByTripId(tenantId, command.tripId());
+        expense.resubmitReceipt(new ReceiptId(command.receiptId()), command.description(),
+            new Amount(command.amount()), command.date(), command.category());
         expenseRepository.save(expense);
         return ExpenseRepresentation.from(expense);
     }
@@ -120,6 +161,10 @@ public class ExpenseService {
     public ExpenseRepresentation findByTripId(final TenantId tenantId, final UUID tripId,
                                                final boolean representationOnly) {
         final Expense expense = findByTripId(tenantId, tripId);
+        final TripProjection projection = tripProjectionRepository.findByTripId(tripId).orElse(null);
+        if (projection != null && projection.startDate() != null) {
+            return ExpenseRepresentation.from(expense, projection.startDate(), projection.endDate());
+        }
         return ExpenseRepresentation.from(expense);
     }
 

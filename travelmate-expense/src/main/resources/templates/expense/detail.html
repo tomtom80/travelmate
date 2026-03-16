@@ -18,6 +18,52 @@
         </p>
     </article>
 
+    <!-- Category Breakdown -->
+    <article th:if="${!expense.categoryBreakdown().isEmpty()}">
+        <h2 th:text="#{expense.categoryBreakdown}">Ausgaben nach Kategorie</h2>
+        <figure>
+            <table>
+                <thead>
+                    <tr>
+                        <th th:text="#{expense.receipt.category}">Kategorie</th>
+                        <th th:text="#{expense.receipt.amount}">Betrag</th>
+                        <th th:text="#{expense.categoryBreakdown.receiptCount}">Belege</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="cat : ${expense.categoryBreakdown()}">
+                        <td th:text="#{${'expense.category.' + cat.category()}}">Kategorie</td>
+                        <td th:text="${#numbers.formatDecimal(cat.total(), 1, 2) + ' EUR'}"></td>
+                        <td th:text="${cat.receiptCount()}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </figure>
+    </article>
+
+    <!-- Daily Costs -->
+    <article th:if="${!expense.dailyCosts().isEmpty()}">
+        <h2 th:text="#{expense.dailyCosts}">Tageskosten</h2>
+        <figure>
+            <table>
+                <thead>
+                    <tr>
+                        <th th:text="#{expense.dailyCosts.date}">Datum</th>
+                        <th th:text="#{expense.dailyCosts.total}">Betrag</th>
+                        <th th:text="#{expense.dailyCosts.receiptCount}">Belege</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="day : ${expense.dailyCosts()}">
+                        <td th:text="${#temporals.format(day.date(), 'dd.MM.yyyy')}"></td>
+                        <td th:text="${#numbers.formatDecimal(day.total(), 1, 2) + ' EUR'}"></td>
+                        <td th:text="${day.receiptCount()}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </figure>
+    </article>
+
     <!-- Receipts Section -->
     <article>
         <h2 th:text="#{expense.receipts}">Belege</h2>
@@ -25,7 +71,7 @@
             <div th:replace="~{expense/receipts :: receiptList}"></div>
         </div>
 
-        <div th:if="${expense.status().name() == 'OPEN'}" style="margin-top:1rem;">
+        <div th:if="${expense.status().name() != 'SETTLED'}" style="margin-top:1rem;">
             <button onclick="document.getElementById('add-receipt-dialog').showModal()"
                     th:text="#{expense.receipt.add}">Beleg hinzufuegen</button>
         </div>
@@ -39,31 +85,33 @@
         </div>
     </article>
 
-    <!-- Balances Section -->
-    <article>
-        <h2 th:text="#{expense.balances}">Saldo</h2>
-        <figure th:if="${!expense.balances().isEmpty()}">
+    <!-- Participant Summary -->
+    <article th:if="${!expense.participantSummaries().isEmpty()}">
+        <h2 th:text="#{expense.participantSummary}">Teilnehmeruebersicht</h2>
+        <figure>
             <table>
                 <thead>
                     <tr>
                         <th th:text="#{expense.balance.participant}">Teilnehmer</th>
-                        <th th:text="#{expense.balance.amount}">Betrag</th>
+                        <th th:text="#{expense.participantSummary.totalPaid}">Bezahlt</th>
+                        <th th:text="#{expense.participantSummary.fairShare}">Anteil</th>
+                        <th th:text="#{expense.participantSummary.balance}">Saldo</th>
                     </tr>
                 </thead>
                 <tbody>
-                    <tr th:each="entry : ${expense.balances()}">
-                        <td th:text="${participantNames[entry.key] != null ? participantNames[entry.key] : entry.key}"></td>
+                    <tr th:each="ps : ${expense.participantSummaries()}">
+                        <td th:text="${participantNames[ps.participantId()] != null ? participantNames[ps.participantId()] : ps.participantId()}"></td>
+                        <td th:text="${#numbers.formatDecimal(ps.totalPaid(), 1, 2) + ' EUR'}"></td>
+                        <td th:text="${#numbers.formatDecimal(ps.fairShare(), 1, 2) + ' EUR'}"></td>
                         <td>
-                            <span th:if="${entry.value.signum() > 0}" style="color:green;">
-                                +<span th:text="${#numbers.formatDecimal(entry.value, 1, 2)}"></span>
-                                (<span th:text="#{expense.balance.positive}">erhaelt</span>)
+                            <span th:if="${ps.balance().signum() > 0}" style="color:green;">
+                                +<span th:text="${#numbers.formatDecimal(ps.balance(), 1, 2)}"></span> EUR
                             </span>
-                            <span th:if="${entry.value.signum() < 0}" style="color:red;">
-                                <span th:text="${#numbers.formatDecimal(entry.value, 1, 2)}"></span>
-                                (<span th:text="#{expense.balance.negative}">schuldet</span>)
+                            <span th:if="${ps.balance().signum() < 0}" style="color:red;">
+                                <span th:text="${#numbers.formatDecimal(ps.balance(), 1, 2)}"></span> EUR
                             </span>
-                            <span th:if="${entry.value.signum() == 0}">
-                                <span th:text="${#numbers.formatDecimal(entry.value, 1, 2)}"></span>
+                            <span th:if="${ps.balance().signum() == 0}">
+                                <span th:text="${#numbers.formatDecimal(ps.balance(), 1, 2)}"></span> EUR
                             </span>
                         </td>
                     </tr>
@@ -72,15 +120,40 @@
         </figure>
     </article>
 
+    <!-- Settlement Plan -->
+    <article th:if="${!expense.transfers().isEmpty()}">
+        <h2 th:text="#{expense.settlementPlan}">Ausgleichszahlungen</h2>
+        <figure>
+            <table>
+                <thead>
+                    <tr>
+                        <th th:text="#{expense.transfer.from}">Von</th>
+                        <th></th>
+                        <th th:text="#{expense.transfer.to}">An</th>
+                        <th th:text="#{expense.transfer.amount}">Betrag</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="transfer : ${expense.transfers()}">
+                        <td th:text="${participantNames[transfer.from()] != null ? participantNames[transfer.from()] : transfer.from()}"></td>
+                        <td th:text="#{expense.transfer.pays}">zahlt</td>
+                        <td th:text="${participantNames[transfer.to()] != null ? participantNames[transfer.to()] : transfer.to()}"></td>
+                        <td th:text="${#numbers.formatDecimal(transfer.amount(), 1, 2) + ' EUR'}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </figure>
+    </article>
+
     <!-- Settle Button -->
-    <div th:if="${expense.status().name() == 'OPEN' && !expense.receipts().isEmpty()}">
+    <div th:if="${expense.status().name() != 'SETTLED' && !expense.receipts().isEmpty()}">
         <form method="post" th:action="@{/{id}/settle(id=${tripId})}">
             <button type="submit" class="contrast" th:text="#{expense.settle}">Abrechnung abschliessen</button>
         </form>
     </div>
 
     <!-- Dialog: Add Receipt -->
-    <dialog id="add-receipt-dialog" th:if="${expense.status().name() == 'OPEN'}">
+    <dialog id="add-receipt-dialog" th:if="${expense.status().name() != 'SETTLED'}">
         <article>
             <header>
                 <button aria-label="Close" rel="prev"
@@ -106,15 +179,30 @@
                         <input type="date" name="date" required>
                     </label>
                 </div>
-                <label>
-                    <span th:text="#{expense.receipt.paidBy}">Bezahlt von</span>
-                    <select name="paidBy" required>
-                        <option th:each="entry : ${participantNames}"
-                                th:value="${entry.key}"
-                                th:text="${entry.value}">
-                        </option>
-                    </select>
-                </label>
+                <div class="grid">
+                    <label>
+                        <span th:text="#{expense.receipt.paidBy}">Bezahlt von</span>
+                        <select name="paidBy" required>
+                            <option th:each="entry : ${participantNames}"
+                                    th:value="${entry.key}"
+                                    th:text="${entry.value}">
+                            </option>
+                        </select>
+                    </label>
+                    <label>
+                        <span th:text="#{expense.receipt.category}">Kategorie</span>
+                        <select name="category">
+                            <option value="ACCOMMODATION" th:text="#{expense.category.ACCOMMODATION}">Unterkunft</option>
+                            <option value="GROCERIES" th:text="#{expense.category.GROCERIES}">Lebensmittel</option>
+                            <option value="RESTAURANT" th:text="#{expense.category.RESTAURANT}">Restaurant</option>
+                            <option value="ACTIVITY" th:text="#{expense.category.ACTIVITY}">Aktivitaet</option>
+                            <option value="TRANSPORT" th:text="#{expense.category.TRANSPORT}">Transport</option>
+                            <option value="FUEL" th:text="#{expense.category.FUEL}">Treibstoff</option>
+                            <option value="HEALTH" th:text="#{expense.category.HEALTH}">Gesundheit</option>
+                            <option value="OTHER" th:text="#{expense.category.OTHER}" selected>Sonstiges</option>
+                        </select>
+                    </label>
+                </div>
                 <footer>
                     <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
                         <button type="button" class="secondary"

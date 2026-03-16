@@ -10,7 +10,9 @@
                     <th th:text="#{expense.receipt.amount}">Betrag</th>
                     <th th:text="#{expense.receipt.paidBy}">Bezahlt von</th>
                     <th th:text="#{expense.receipt.date}">Datum</th>
-                    <th th:if="${expense.status().name() == 'OPEN'}" th:text="#{common.edit}">Aktionen</th>
+                    <th th:text="#{expense.receipt.category}">Kategorie</th>
+                    <th th:if="${expense.reviewRequired()}" th:text="#{expense.receipt.reviewStatus}">Pruefstatus</th>
+                    <th th:if="${expense.status().name() != 'SETTLED'}" th:text="#{common.edit}">Aktionen</th>
                 </tr>
             </thead>
             <tbody>
@@ -19,13 +21,55 @@
                     <td th:text="${#numbers.formatDecimal(receipt.amount(), 1, 2)}"></td>
                     <td th:text="${participantNames[receipt.paidBy()] != null ? participantNames[receipt.paidBy()] : receipt.paidBy()}"></td>
                     <td th:text="${receipt.date()}"></td>
-                    <td th:if="${expense.status().name() == 'OPEN'}">
-                        <button class="outline secondary"
-                                th:hx-delete="@{/{tid}/receipts/{rid}(tid=${tripId},rid=${receipt.receiptId()})}"
-                                hx-target="#receipts"
-                                hx-swap="innerHTML"
-                                hx-confirm="true"
-                                th:text="#{expense.receipt.remove}">Entfernen</button>
+                    <td th:text="#{${'expense.category.' + receipt.category()}}">Sonstiges</td>
+                    <td th:if="${expense.reviewRequired()}">
+                        <mark th:text="#{${'expense.reviewStatus.' + receipt.reviewStatus()}}">Status</mark>
+                        <small th:if="${receipt.rejectionReason() != null}"
+                               th:text="${receipt.rejectionReason()}" style="display:block; color:red;"></small>
+                    </td>
+                    <td th:if="${expense.status().name() != 'SETTLED'}">
+                        <div style="display:flex; gap:0.25rem; flex-wrap:wrap;">
+                            <!-- Approve/Reject for SUBMITTED receipts in review mode -->
+                            <button th:if="${expense.reviewRequired() && receipt.reviewStatus().name() == 'SUBMITTED'}"
+                                    class="outline"
+                                    th:hx-post="@{/{tid}/receipts/{rid}/approve(tid=${tripId},rid=${receipt.receiptId()})}"
+                                    hx-target="#receipts"
+                                    hx-swap="innerHTML"
+                                    th:text="#{expense.receipt.approve}">Genehmigen</button>
+                            <button th:if="${expense.reviewRequired() && receipt.reviewStatus().name() == 'SUBMITTED'}"
+                                    class="outline secondary"
+                                    onclick="this.closest('td').querySelector('dialog').showModal()"
+                                    th:text="#{expense.receipt.reject}">Ablehnen</button>
+                            <!-- Reject dialog -->
+                            <dialog th:if="${expense.reviewRequired() && receipt.reviewStatus().name() == 'SUBMITTED'}">
+                                <article>
+                                    <header>
+                                        <button aria-label="Close" rel="prev"
+                                                onclick="this.closest('dialog').close()"></button>
+                                        <h3 th:text="#{expense.receipt.reject}">Ablehnen</h3>
+                                    </header>
+                                    <form th:hx-post="@{/{tid}/receipts/{rid}/reject(tid=${tripId},rid=${receipt.receiptId()})}"
+                                          hx-target="#receipts" hx-swap="innerHTML"
+                                          hx-on::after-request="if(event.detail.successful) this.closest('dialog').close()">
+                                        <label>
+                                            <span th:text="#{expense.receipt.rejectionReason}">Grund</span>
+                                            <input type="text" name="reason" required>
+                                        </label>
+                                        <footer>
+                                            <button type="submit" class="secondary" th:text="#{expense.receipt.reject}">Ablehnen</button>
+                                        </footer>
+                                    </form>
+                                </article>
+                            </dialog>
+                            <!-- Remove button for non-settled receipts -->
+                            <button th:if="${receipt.reviewStatus().name() != 'APPROVED'}"
+                                    class="outline secondary"
+                                    th:hx-delete="@{/{tid}/receipts/{rid}(tid=${tripId},rid=${receipt.receiptId()})}"
+                                    hx-target="#receipts"
+                                    hx-swap="innerHTML"
+                                    hx-confirm="true"
+                                    th:text="#{expense.receipt.remove}">Entfernen</button>
+                        </div>
                     </td>
                 </tr>
             </tbody>

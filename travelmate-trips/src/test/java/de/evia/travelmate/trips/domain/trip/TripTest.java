@@ -10,6 +10,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.common.events.trips.StayPeriodUpdated;
 import de.evia.travelmate.common.events.trips.TripCompleted;
 import de.evia.travelmate.common.events.trips.TripCreated;
 
@@ -152,6 +153,7 @@ class TripTest {
     @Test
     void setParticipantStayPeriodWithinDateRange() {
         final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+        trip.clearDomainEvents();
         final StayPeriod stayPeriod = new StayPeriod(
             LocalDate.of(2026, 3, 16), LocalDate.of(2026, 3, 20)
         );
@@ -159,6 +161,12 @@ class TripTest {
         trip.setParticipantStayPeriod(ORGANIZER_ID, stayPeriod);
 
         assertThat(trip.participants().getFirst().stayPeriod()).isEqualTo(stayPeriod);
+        assertThat(trip.domainEvents()).hasSize(1);
+        assertThat(trip.domainEvents().getFirst()).isInstanceOf(StayPeriodUpdated.class);
+        final StayPeriodUpdated event = (StayPeriodUpdated) trip.domainEvents().getFirst();
+        assertThat(event.participantId()).isEqualTo(ORGANIZER_ID);
+        assertThat(event.arrivalDate()).isEqualTo(LocalDate.of(2026, 3, 16));
+        assertThat(event.departureDate()).isEqualTo(LocalDate.of(2026, 3, 20));
     }
 
     @Test

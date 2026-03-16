@@ -1,0 +1,82 @@
+@startuml expense-iteration-6-accommodation
+!theme plain
+
+title Accommodation Cost Entry -- Cross-SCS Event Flow
+
+|#Pink| Trips SCS |
+|#LightBlue| Expense SCS |
+|#LightGreen| TripProjection |
+|#LightYellow| Expense Aggregate |
+
+|Trips SCS|
+start
+:Organizer sets StayPeriod\nfor participant on Trip;
+note right
+  Trip.setStayPeriod(participantId,
+    arrivalDate, departureDate)
+end note
+
+:**StayPeriodUpdated**;
+note right #Orange
+  New event contract
+  routing: trips.stay-period-updated
+  {tenantId, tripId, participantId,
+   arrivalDate, departureDate}
+end note
+
+|Expense SCS|
+:Consumer receives\nStayPeriodUpdated;
+
+|TripProjection|
+:Update participant:\narrivalDate, departureDate;
+note right
+  TripProjection now knows
+  each participant's stay dates
+end note
+
+|Trips SCS|
+:...\nTrip reaches COMPLETED status;
+:**TripCompleted**;
+
+|Expense SCS|
+:Create Expense\n(existing flow);
+
+|Expense Aggregate|
+:Participant submits\nAccommodation Receipt;
+
+partition "Night Allocation Calculation" {
+  :Read TripProjection\nfor participant StayPeriods;
+
+  :Calculate nights per participant:;
+  note right
+    **Example**: Ferienhaus 700 EUR, 7 nights
+    A: arrival Day1, departure Day8 = 7 nights
+    B: arrival Day1, departure Day6 = 5 nights
+    C: arrival Day3, departure Day6 = 3 nights
+  end note
+
+  :Create NightAllocation:\n{A: 7, B: 5, C: 3};
+
+  :Total person-nights = 15;
+
+  note right
+    A share: 7/15 * 700 = 326.67
+    B share: 5/15 * 700 = 233.33
+    C share: 3/15 * 700 = 140.00
+  end note
+}
+
+:Create Receipt with:\nsplitStrategy = BY_NIGHTS\nnightAllocation = frozen snapshot;
+note right #Red
+  **Hot Spot HS-4**:
+  NightAllocation is frozen
+  at receipt creation time.
+  Later StayPeriod changes
+  do NOT affect this receipt.
+end note
+
+:**ReceiptSubmitted**;
+note right #Orange: reviewStatus = SUBMITTED
+
+stop
+@enduml

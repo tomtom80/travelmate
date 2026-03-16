@@ -27,9 +27,13 @@ import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.common.events.expense.ExpenseCreated;
 import de.evia.travelmate.common.events.expense.ExpenseSettled;
 import de.evia.travelmate.common.events.trips.ParticipantJoinedTrip;
+import de.evia.travelmate.common.events.trips.StayPeriodUpdated;
 import de.evia.travelmate.common.events.trips.TripCompleted;
 import de.evia.travelmate.common.events.trips.TripCreated;
 import de.evia.travelmate.expense.application.command.AddReceiptCommand;
+import de.evia.travelmate.expense.application.command.ApproveReceiptCommand;
+import de.evia.travelmate.expense.application.command.RejectReceiptCommand;
+import de.evia.travelmate.expense.application.command.ResubmitReceiptCommand;
 import de.evia.travelmate.expense.application.command.UpdateWeightingCommand;
 import de.evia.travelmate.expense.application.representation.ExpenseRepresentation;
 import de.evia.travelmate.expense.domain.expense.Expense;
@@ -133,6 +137,43 @@ class ExpenseServiceTest {
         assertThat(saved.participants()).hasSize(1);
     }
 
+    // --- onStayPeriodUpdated ---
+
+    @Test
+    void onStayPeriodUpdatedSetsParticipantDates() {
+        final TripProjection projection = projectionWithParticipants();
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.of(projection));
+        when(tripProjectionRepository.save(any(TripProjection.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+        final StayPeriodUpdated event = new StayPeriodUpdated(
+            TENANT_UUID, TRIP_ID, ALICE,
+            LocalDate.of(2026, 7, 2), LocalDate.of(2026, 7, 10), LocalDate.now()
+        );
+
+        expenseService.onStayPeriodUpdated(event);
+
+        final ArgumentCaptor<TripProjection> captor = ArgumentCaptor.forClass(TripProjection.class);
+        verify(tripProjectionRepository).save(captor.capture());
+        final TripParticipant updated = captor.getValue().participants().stream()
+            .filter(p -> p.participantId().equals(ALICE))
+            .findFirst().orElseThrow();
+        assertThat(updated.arrivalDate()).isEqualTo(LocalDate.of(2026, 7, 2));
+        assertThat(updated.departureDate()).isEqualTo(LocalDate.of(2026, 7, 10));
+        assertThat(updated.nights()).isEqualTo(8);
+    }
+
+    @Test
+    void onStayPeriodUpdatedThrowsIfProjectionMissing() {
+        final StayPeriodUpdated event = new StayPeriodUpdated(
+            TENANT_UUID, TRIP_ID, ALICE,
+            LocalDate.of(2026, 7, 2), LocalDate.of(2026, 7, 10), LocalDate.now()
+        );
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> expenseService.onStayPeriodUpdated(event))
+            .isInstanceOf(EntityNotFoundException.class);
+    }
+
     // --- onTripCompleted ---
 
     @Test
@@ -186,7 +227,7 @@ class ExpenseServiceTest {
         when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.of(expense));
         when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
         final AddReceiptCommand command = new AddReceiptCommand(
-            TRIP_ID, "Groceries", new BigDecimal("50.00"), ALICE, LocalDate.of(2026, 7, 2)
+            TRIP_ID, "Groceries", new BigDecimal("50.00"), ALICE, ALICE, LocalDate.of(2026, 7, 2), null
         );
 
         final ExpenseRepresentation result = expenseService.addReceipt(TENANT_ID, command);
@@ -202,7 +243,7 @@ class ExpenseServiceTest {
     void removeReceiptReturnsRepresentationWithoutReceipt() {
         final Expense expense = createOpenExpense();
         expense.addReceipt("Groceries", new de.evia.travelmate.expense.domain.expense.Amount(new BigDecimal("50.00")),
-            ALICE, LocalDate.of(2026, 7, 2));
+            ALICE, ALICE, LocalDate.of(2026, 7, 2), null);
         final UUID receiptId = expense.receipts().getFirst().receiptId().value();
         when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.of(expense));
         when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -237,7 +278,7 @@ class ExpenseServiceTest {
     void settleChangesStatusToSettled() {
         final Expense expense = createOpenExpense();
         expense.addReceipt("Groceries", new de.evia.travelmate.expense.domain.expense.Amount(new BigDecimal("50.00")),
-            ALICE, LocalDate.of(2026, 7, 2));
+            ALICE, ALICE, LocalDate.of(2026, 7, 2), null);
         when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.of(expense));
         when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
 
@@ -270,6 +311,65 @@ class ExpenseServiceTest {
             .isInstanceOf(EntityNotFoundException.class);
     }
 
+    // --- approveReceipt ---
+
+    @Test
+    void approveReceiptReturnsRepresentationWithApprovedStatus() {
+        final Expense expense = createReviewExpense();
+        expense.addReceipt("Groceries", new de.evia.travelmate.expense.domain.expense.Amount(new BigDecimal("50.00")),
+            ALICE, ALICE, LocalDate.of(2026, 7, 2), null);
+        final UUID receiptId = expense.receipts().getFirst().receiptId().value();
+        when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.of(expense));
+        when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        final ExpenseRepresentation result = expenseService.approveReceipt(
+            TENANT_ID, new ApproveReceiptCommand(TRIP_ID, receiptId, BOB));
+
+        assertThat(result.receipts().getFirst().reviewStatus())
+            .isEqualTo(de.evia.travelmate.expense.domain.expense.ReviewStatus.APPROVED);
+    }
+
+    // --- rejectReceipt ---
+
+    @Test
+    void rejectReceiptReturnsRepresentationWithRejectedStatus() {
+        final Expense expense = createReviewExpense();
+        expense.addReceipt("Groceries", new de.evia.travelmate.expense.domain.expense.Amount(new BigDecimal("50.00")),
+            ALICE, ALICE, LocalDate.of(2026, 7, 2), null);
+        final UUID receiptId = expense.receipts().getFirst().receiptId().value();
+        when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.of(expense));
+        when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        final ExpenseRepresentation result = expenseService.rejectReceipt(
+            TENANT_ID, new RejectReceiptCommand(TRIP_ID, receiptId, BOB, "Wrong amount"));
+
+        assertThat(result.receipts().getFirst().reviewStatus())
+            .isEqualTo(de.evia.travelmate.expense.domain.expense.ReviewStatus.REJECTED);
+        assertThat(result.receipts().getFirst().rejectionReason()).isEqualTo("Wrong amount");
+    }
+
+    // --- resubmitReceipt ---
+
+    @Test
+    void resubmitReceiptResetsToSubmitted() {
+        final Expense expense = createReviewExpense();
+        expense.addReceipt("Groceries", new de.evia.travelmate.expense.domain.expense.Amount(new BigDecimal("50.00")),
+            ALICE, ALICE, LocalDate.of(2026, 7, 2), null);
+        final UUID receiptId = expense.receipts().getFirst().receiptId().value();
+        expense.rejectReceipt(new de.evia.travelmate.expense.domain.expense.ReceiptId(receiptId), BOB, "Wrong amount");
+        when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.of(expense));
+        when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        final ExpenseRepresentation result = expenseService.resubmitReceipt(
+            TENANT_ID, new ResubmitReceiptCommand(TRIP_ID, receiptId, "Groceries corrected",
+                new BigDecimal("45.00"), LocalDate.of(2026, 7, 2), null));
+
+        assertThat(result.receipts().getFirst().reviewStatus())
+            .isEqualTo(de.evia.travelmate.expense.domain.expense.ReviewStatus.SUBMITTED);
+        assertThat(result.receipts().getFirst().description()).isEqualTo("Groceries corrected");
+        assertThat(result.receipts().getFirst().amount()).isEqualByComparingTo(new BigDecimal("45.00"));
+    }
+
     // --- helpers ---
 
     private TripProjection projectionWithParticipants() {
@@ -277,6 +377,19 @@ class ExpenseServiceTest {
         projection.addParticipant(new TripParticipant(ALICE, "Alice"));
         projection.addParticipant(new TripParticipant(BOB, "Bob"));
         return projection;
+    }
+
+    private Expense createReviewExpense() {
+        final Expense expense = Expense.create(
+            TENANT_ID, TRIP_ID,
+            List.of(
+                new ParticipantWeighting(ALICE, BigDecimal.ONE),
+                new ParticipantWeighting(BOB, BigDecimal.ONE)
+            ),
+            true
+        );
+        expense.clearDomainEvents();
+        return expense;
     }
 
     private Expense createOpenExpense() {

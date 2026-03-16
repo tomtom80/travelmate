@@ -1,5 +1,8 @@
 package de.evia.travelmate.trips.adapters.messaging;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -21,24 +24,33 @@ public class IamEventConsumer {
     private static final long RETRY_DELAY_MS = 100;
 
     private final TravelPartyService travelPartyService;
+    private final Timer tenantCreatedTimer;
+    private final Timer accountRegisteredTimer;
+    private final Timer dependentAddedTimer;
 
-    public IamEventConsumer(final TravelPartyService travelPartyService) {
+    public IamEventConsumer(final TravelPartyService travelPartyService, final MeterRegistry meterRegistry) {
         this.travelPartyService = travelPartyService;
+        this.tenantCreatedTimer = eventTimer(meterRegistry, "TenantCreated");
+        this.accountRegisteredTimer = eventTimer(meterRegistry, "AccountRegistered");
+        this.dependentAddedTimer = eventTimer(meterRegistry, "DependentAddedToTenant");
     }
 
     @RabbitListener(queues = RabbitMqConfig.QUEUE_TENANT_CREATED)
     public void onTenantCreated(final TenantCreated event) {
-        executeWithRetry(() -> travelPartyService.onTenantCreated(event), "TenantCreated", event.tenantId().toString());
+        tenantCreatedTimer.record(() ->
+            executeWithRetry(() -> travelPartyService.onTenantCreated(event), "TenantCreated", event.tenantId().toString()));
     }
 
     @RabbitListener(queues = RabbitMqConfig.QUEUE_ACCOUNT_REGISTERED)
     public void onAccountRegistered(final AccountRegistered event) {
-        executeWithRetry(() -> travelPartyService.onAccountRegistered(event), "AccountRegistered", event.tenantId().toString());
+        accountRegisteredTimer.record(() ->
+            executeWithRetry(() -> travelPartyService.onAccountRegistered(event), "AccountRegistered", event.tenantId().toString()));
     }
 
     @RabbitListener(queues = RabbitMqConfig.QUEUE_DEPENDENT_ADDED)
     public void onDependentAdded(final DependentAddedToTenant event) {
-        executeWithRetry(() -> travelPartyService.onDependentAdded(event), "DependentAdded", event.tenantId().toString());
+        dependentAddedTimer.record(() ->
+            executeWithRetry(() -> travelPartyService.onDependentAdded(event), "DependentAdded", event.tenantId().toString()));
     }
 
     private void executeWithRetry(final Runnable action, final String eventType, final String tenantId) {
@@ -60,5 +72,13 @@ public class IamEventConsumer {
                 }
             }
         }
+    }
+
+    private static Timer eventTimer(final MeterRegistry registry, final String eventType) {
+        return Timer.builder("travelmate.event.processing")
+            .tag("scs", "trips")
+            .tag("event", eventType)
+            .description("Time spent processing domain events")
+            .register(registry);
     }
 }

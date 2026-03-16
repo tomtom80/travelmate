@@ -1,5 +1,6 @@
 package de.evia.travelmate.expense.adapters.persistence;
 
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -26,6 +27,12 @@ public class TripProjectionJpaEntity {
     @Column(name = "trip_name", nullable = false)
     private String tripName;
 
+    @Column(name = "start_date")
+    private LocalDate startDate;
+
+    @Column(name = "end_date")
+    private LocalDate endDate;
+
     @OneToMany(mappedBy = "tripProjection", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<TripParticipantJpaEntity> participants = new ArrayList<>();
 
@@ -42,5 +49,9 @@ public class TripProjectionJpaEntity {
     public UUID getTenantId() { return tenantId; }
     public String getTripName() { return tripName; }
     public void setTripName(final String tripName) { this.tripName = tripName; }
+    public LocalDate getStartDate() { return startDate; }
+    public void setStartDate(final LocalDate startDate) { this.startDate = startDate; }
+    public LocalDate getEndDate() { return endDate; }
+    public void setEndDate(final LocalDate endDate) { this.endDate = endDate; }
     public List<TripParticipantJpaEntity> getParticipants() { return participants; }
 }

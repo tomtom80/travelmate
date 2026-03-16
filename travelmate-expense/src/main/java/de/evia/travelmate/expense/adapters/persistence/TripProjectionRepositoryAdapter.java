@@ -30,6 +30,8 @@ public class TripProjectionRepositoryAdapter implements TripProjectionRepository
                 projection.tripName()
             ));
         entity.setTripName(projection.tripName());
+        entity.setStartDate(projection.startDate());
+        entity.setEndDate(projection.endDate());
         syncParticipants(entity, projection);
         jpaRepository.save(entity);
         return projection;
@@ -57,22 +59,30 @@ public class TripProjectionRepositoryAdapter implements TripProjectionRepository
                 .findFirst();
             if (existing.isPresent()) {
                 existing.get().setName(participant.name());
+                existing.get().setArrivalDate(participant.arrivalDate());
+                existing.get().setDepartureDate(participant.departureDate());
             } else {
-                entity.getParticipants().add(new TripParticipantJpaEntity(
+                final TripParticipantJpaEntity newEntity = new TripParticipantJpaEntity(
                     entity, participant.participantId(), participant.name()
-                ));
+                );
+                newEntity.setArrivalDate(participant.arrivalDate());
+                newEntity.setDepartureDate(participant.departureDate());
+                entity.getParticipants().add(newEntity);
             }
         }
     }
 
     private TripProjection toDomain(final TripProjectionJpaEntity entity) {
         final var participants = entity.getParticipants().stream()
-            .map(p -> new TripParticipant(p.getParticipantId(), p.getName()))
+            .map(p -> new TripParticipant(p.getParticipantId(), p.getName(),
+                p.getArrivalDate(), p.getDepartureDate()))
             .toList();
         return new TripProjection(
             entity.getTripId(),
             new TenantId(entity.getTenantId()),
             entity.getTripName(),
+            entity.getStartDate(),
+            entity.getEndDate(),
             participants
         );
     }

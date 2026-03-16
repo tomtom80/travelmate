@@ -33,11 +33,18 @@ import org.springframework.test.web.servlet.MockMvc;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.expense.application.ExpenseService;
 import de.evia.travelmate.expense.application.command.AddReceiptCommand;
+import de.evia.travelmate.expense.application.command.ApproveReceiptCommand;
+import de.evia.travelmate.expense.application.command.RejectReceiptCommand;
 import de.evia.travelmate.expense.application.command.UpdateWeightingCommand;
 import de.evia.travelmate.expense.application.representation.ExpenseRepresentation;
 import de.evia.travelmate.expense.application.representation.ReceiptRepresentation;
+import de.evia.travelmate.expense.application.representation.CategoryBreakdownRepresentation;
+import de.evia.travelmate.expense.application.representation.DailyCostRepresentation;
+import de.evia.travelmate.expense.application.representation.ParticipantSummaryRepresentation;
+import de.evia.travelmate.expense.application.representation.TransferRepresentation;
 import de.evia.travelmate.expense.application.representation.WeightingRepresentation;
 import de.evia.travelmate.expense.domain.expense.ExpenseStatus;
+import de.evia.travelmate.expense.domain.expense.ReviewStatus;
 import de.evia.travelmate.expense.domain.trip.TripParticipant;
 import de.evia.travelmate.expense.domain.trip.TripProjection;
 import de.evia.travelmate.expense.domain.trip.TripProjectionRepository;
@@ -84,14 +91,23 @@ class ExpenseControllerTest {
             EXPENSE_UUID,
             TRIP_UUID,
             ExpenseStatus.OPEN,
+            false,
             List.of(new ReceiptRepresentation(
-                RECEIPT_UUID, "Supermarkt", new BigDecimal("42.50"), PARTICIPANT_A, LocalDate.of(2026, 3, 10)
+                RECEIPT_UUID, "Supermarkt", new BigDecimal("42.50"), PARTICIPANT_A, PARTICIPANT_A,
+                LocalDate.of(2026, 3, 10), null, ReviewStatus.APPROVED, null, null
             )),
             List.of(
                 new WeightingRepresentation(PARTICIPANT_A, BigDecimal.ONE),
                 new WeightingRepresentation(PARTICIPANT_B, BigDecimal.ONE)
             ),
             Map.of(PARTICIPANT_A, new BigDecimal("21.25"), PARTICIPANT_B, new BigDecimal("-21.25")),
+            List.of(new TransferRepresentation(PARTICIPANT_B, PARTICIPANT_A, new BigDecimal("21.25"))),
+            List.of(new CategoryBreakdownRepresentation(null, new BigDecimal("42.50"), 1)),
+            List.of(
+                new ParticipantSummaryRepresentation(PARTICIPANT_A, new BigDecimal("42.50"), new BigDecimal("21.25"), new BigDecimal("21.25")),
+                new ParticipantSummaryRepresentation(PARTICIPANT_B, BigDecimal.ZERO, new BigDecimal("21.25"), new BigDecimal("-21.25"))
+            ),
+            List.of(new DailyCostRepresentation(LocalDate.of(2026, 3, 10), new BigDecimal("42.50"), 1)),
             new BigDecimal("42.50")
         );
     }
@@ -132,7 +148,8 @@ class ExpenseControllerTest {
                 .param("description", "Supermarkt")
                 .param("amount", "42.50")
                 .param("paidBy", PARTICIPANT_A.toString())
-                .param("date", "2026-03-10"))
+                .param("date", "2026-03-10")
+                .param("category", "GROCERIES"))
             .andExpect(status().isOk())
             .andExpect(view().name("expense/receipts :: receiptList"))
             .andExpect(model().attributeExists("expense"))
@@ -186,6 +203,39 @@ class ExpenseControllerTest {
             .andExpect(redirectedUrl("/" + TRIP_UUID));
 
         verify(expenseService).settle(new TenantId(TENANT_UUID), TRIP_UUID);
+    }
+
+    @Test
+    void approveReceiptReturnsReceiptFragment() throws Exception {
+        when(expenseService.approveReceipt(eq(new TenantId(TENANT_UUID)), any(ApproveReceiptCommand.class)))
+            .thenReturn(expense);
+
+        mockMvc.perform(post("/" + TRIP_UUID + "/receipts/" + RECEIPT_UUID + "/approve")
+                .with(jwt().jwt(j -> j.claim("email", "Max Mustermann"))))
+            .andExpect(status().isOk())
+            .andExpect(view().name("expense/receipts :: receiptList"))
+            .andExpect(model().attributeExists("expense"))
+            .andExpect(model().attributeExists("participantNames"))
+            .andExpect(header().exists("HX-Trigger"));
+
+        verify(expenseService).approveReceipt(eq(new TenantId(TENANT_UUID)), any(ApproveReceiptCommand.class));
+    }
+
+    @Test
+    void rejectReceiptReturnsReceiptFragment() throws Exception {
+        when(expenseService.rejectReceipt(eq(new TenantId(TENANT_UUID)), any(RejectReceiptCommand.class)))
+            .thenReturn(expense);
+
+        mockMvc.perform(post("/" + TRIP_UUID + "/receipts/" + RECEIPT_UUID + "/reject")
+                .with(jwt().jwt(j -> j.claim("email", "Max Mustermann")))
+                .param("reason", "Wrong amount"))
+            .andExpect(status().isOk())
+            .andExpect(view().name("expense/receipts :: receiptList"))
+            .andExpect(model().attributeExists("expense"))
+            .andExpect(model().attributeExists("participantNames"))
+            .andExpect(header().exists("HX-Trigger"));
+
+        verify(expenseService).rejectReceipt(eq(new TenantId(TENANT_UUID)), any(RejectReceiptCommand.class));
     }
 
     @Test

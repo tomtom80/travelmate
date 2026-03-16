@@ -39,9 +39,12 @@ See [project memory on UX issues](../../../.claude/projects/-Users-t-klingler-re
 - `/docs/design/journeys/trip-planning-organizer.md` — organiser journey map
 - `/docs/design/journeys/invitation-flow.md` — participant invitation flow
 - `/docs/design/journeys/expense-discovery-flow.md` — expense discoverability analysis + phase journey map
+- `/docs/design/journeys/expense-iteration6-flows.md` — Iteration 6: four-eyes review, settlement summary, categories, accommodation journey maps
 - `/docs/design/components/feedback-system.md` — inline feedback pattern + toast evaluation
 - `/docs/design/components/trip-detail-page.md` — full page redesign spec including dialog-based invite
 - `/docs/design/components/expense-integration.md` — full spec for making expenses discoverable from trips UI
+- `/docs/design/components/expense-iteration6.md` — Iteration 6: receipt status badges, review flow, add-dialog with category/accommodation, settlement summary, HTMX map, i18n keys
+- `/docs/design/wireframes/expense-detail-iteration6.md` — full page wireframes for OPEN (review queue), SETTLED, mobile card layout
 
 ## Expense SCS Integration (v0.5.0 design decision)
 - Expense SCS at /expense/{tripId} is fully built but unreachable — no navigation links anywhere

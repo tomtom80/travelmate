@@ -44,7 +44,7 @@ class TenantIsolationTest {
             List.of(new ParticipantWeighting(participantId, BigDecimal.ONE))
         );
         expense.addReceipt("Groceries", new Amount(new BigDecimal("50.00")),
-            participantId, LocalDate.of(2026, 7, 1));
+            participantId, participantId, LocalDate.of(2026, 7, 1), null);
         expenseRepository.save(expense);
 
         final Optional<Expense> foundByTenantA = expenseRepository.findByTripId(TENANT_A, tripId);

@@ -19,6 +19,8 @@ import de.evia.travelmate.expense.domain.expense.Expense;
 import de.evia.travelmate.expense.domain.expense.ExpenseRepository;
 import de.evia.travelmate.expense.domain.expense.ExpenseStatus;
 import de.evia.travelmate.expense.domain.expense.ParticipantWeighting;
+import de.evia.travelmate.expense.domain.expense.ReceiptId;
+import de.evia.travelmate.expense.domain.expense.ReviewStatus;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -74,9 +76,9 @@ class ExpenseRepositoryAdapterTest {
             List.of(new ParticipantWeighting(participantId, BigDecimal.ONE))
         );
         expense.addReceipt("Groceries", new Amount(new BigDecimal("42.50")),
-            participantId, LocalDate.of(2025, 7, 15));
+            participantId, participantId, LocalDate.of(2025, 7, 15), null);
         expense.addReceipt("Gas", new Amount(new BigDecimal("65.00")),
-            participantId, LocalDate.of(2025, 7, 16));
+            participantId, participantId, LocalDate.of(2025, 7, 16), null);
 
         expenseRepository.save(expense);
 
@@ -135,6 +137,69 @@ class ExpenseRepositoryAdapterTest {
     }
 
     @Test
+    void persistsReviewFields() {
+        final TenantId tenantId = new TenantId(UUID.randomUUID());
+        final UUID tripId = UUID.randomUUID();
+        final UUID alice = UUID.randomUUID();
+        final UUID bob = UUID.randomUUID();
+        final Expense expense = Expense.create(
+            tenantId, tripId,
+            List.of(
+                new ParticipantWeighting(alice, BigDecimal.ONE),
+                new ParticipantWeighting(bob, BigDecimal.ONE)
+            ),
+            true
+        );
+        expense.addReceipt("Groceries", new Amount(new BigDecimal("42.50")),
+            alice, alice, LocalDate.of(2025, 7, 15), null);
+        final ReceiptId receiptId = expense.receipts().getFirst().receiptId();
+
+        expenseRepository.save(expense);
+
+        // Verify initial SUBMITTED status persisted
+        final Expense afterAdd = expenseRepository.findByTripId(tenantId, tripId).orElseThrow();
+        assertThat(afterAdd.reviewRequired()).isTrue();
+        assertThat(afterAdd.receipts().getFirst().reviewStatus()).isEqualTo(ReviewStatus.SUBMITTED);
+        assertThat(afterAdd.receipts().getFirst().submittedBy()).isEqualTo(alice);
+
+        // Approve and verify round-trip
+        afterAdd.approveReceipt(receiptId, bob);
+        expenseRepository.save(afterAdd);
+
+        final Expense afterApprove = expenseRepository.findByTripId(tenantId, tripId).orElseThrow();
+        assertThat(afterApprove.receipts().getFirst().reviewStatus()).isEqualTo(ReviewStatus.APPROVED);
+        assertThat(afterApprove.receipts().getFirst().reviewerId()).isEqualTo(bob);
+        assertThat(afterApprove.status()).isEqualTo(ExpenseStatus.READY_FOR_SETTLEMENT);
+    }
+
+    @Test
+    void persistsRejectionFields() {
+        final TenantId tenantId = new TenantId(UUID.randomUUID());
+        final UUID tripId = UUID.randomUUID();
+        final UUID alice = UUID.randomUUID();
+        final UUID bob = UUID.randomUUID();
+        final Expense expense = Expense.create(
+            tenantId, tripId,
+            List.of(
+                new ParticipantWeighting(alice, BigDecimal.ONE),
+                new ParticipantWeighting(bob, BigDecimal.ONE)
+            ),
+            true
+        );
+        expense.addReceipt("Groceries", new Amount(new BigDecimal("42.50")),
+            alice, alice, LocalDate.of(2025, 7, 15), null);
+        final ReceiptId receiptId = expense.receipts().getFirst().receiptId();
+
+        expense.rejectReceipt(receiptId, bob, "Wrong amount");
+        expenseRepository.save(expense);
+
+        final Expense found = expenseRepository.findByTripId(tenantId, tripId).orElseThrow();
+        assertThat(found.receipts().getFirst().reviewStatus()).isEqualTo(ReviewStatus.REJECTED);
+        assertThat(found.receipts().getFirst().reviewerId()).isEqualTo(bob);
+        assertThat(found.receipts().getFirst().rejectionReason()).isEqualTo("Wrong amount");
+    }
+
+    @Test
     void updatesStatusOnSave() {
         final TenantId tenantId = new TenantId(UUID.randomUUID());
         final UUID tripId = UUID.randomUUID();
@@ -144,7 +209,7 @@ class ExpenseRepositoryAdapterTest {
             List.of(new ParticipantWeighting(participantId, BigDecimal.ONE))
         );
         expense.addReceipt("Dinner", new Amount(new BigDecimal("80.00")),
-            participantId, LocalDate.of(2025, 7, 15));
+            participantId, participantId, LocalDate.of(2025, 7, 15), null);
 
         expenseRepository.save(expense);
         expense.settle();

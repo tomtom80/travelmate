@@ -130,6 +130,7 @@ public class TripService {
             new StayPeriod(command.arrivalDate(), command.departureDate())
         );
         tripRepository.save(trip);
+        publishEvents(trip);
     }
 
     private Trip findTrip(final TripId tripId) {

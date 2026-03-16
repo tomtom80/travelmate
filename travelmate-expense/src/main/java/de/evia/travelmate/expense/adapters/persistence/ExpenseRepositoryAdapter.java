@@ -32,7 +32,8 @@ public class ExpenseRepositoryAdapter implements ExpenseRepository {
                 expense.expenseId().value(),
                 expense.tenantId().value(),
                 expense.tripId(),
-                expense.status()
+                expense.status(),
+                expense.reviewRequired()
             ));
         entity.setStatus(expense.status());
         syncReceipts(entity, expense);
@@ -63,16 +64,31 @@ public class ExpenseRepositoryAdapter implements ExpenseRepository {
                 .noneMatch(dr -> dr.receiptId().value().equals(r.getReceiptId())));
 
         for (final Receipt receipt : expense.receipts()) {
-            final boolean exists = entity.getReceipts().stream()
-                .anyMatch(r -> r.getReceiptId().equals(receipt.receiptId().value()));
-            if (!exists) {
+            final var existing = entity.getReceipts().stream()
+                .filter(r -> r.getReceiptId().equals(receipt.receiptId().value()))
+                .findFirst();
+            if (existing.isPresent()) {
+                final ReceiptJpaEntity r = existing.get();
+                r.setDescription(receipt.description());
+                r.setAmount(receipt.amount().value());
+                r.setDate(receipt.date());
+                r.setCategory(receipt.category());
+                r.setReviewStatus(receipt.reviewStatus());
+                r.setReviewerId(receipt.reviewerId());
+                r.setRejectionReason(receipt.rejectionReason());
+            } else {
                 entity.getReceipts().add(new ReceiptJpaEntity(
                     receipt.receiptId().value(),
                     entity,
                     receipt.description(),
                     receipt.amount().value(),
                     receipt.paidBy(),
-                    receipt.date()
+                    receipt.submittedBy(),
+                    receipt.date(),
+                    receipt.category(),
+                    receipt.reviewStatus(),
+                    receipt.reviewerId(),
+                    receipt.rejectionReason()
                 ));
             }
         }
@@ -96,7 +112,12 @@ public class ExpenseRepositoryAdapter implements ExpenseRepository {
                 r.getDescription(),
                 new Amount(r.getAmount()),
                 r.getPaidBy(),
-                r.getDate()
+                r.getSubmittedBy(),
+                r.getDate(),
+                r.getCategory(),
+                r.getReviewStatus(),
+                r.getReviewerId(),
+                r.getRejectionReason()
             ))
             .toList();
 
@@ -110,7 +131,8 @@ public class ExpenseRepositoryAdapter implements ExpenseRepository {
             entity.getTripId(),
             entity.getStatus(),
             receipts,
-            weightings
+            weightings,
+            entity.isReviewRequired()
         );
     }
 }

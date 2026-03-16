@@ -1,6 +1,7 @@
 package de.evia.travelmate.expense.adapters.persistence;
 
 import java.io.Serializable;
+import java.time.LocalDate;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -30,6 +31,12 @@ public class TripParticipantJpaEntity {
     @Column(name = "name", nullable = false)
     private String name;
 
+    @Column(name = "arrival_date")
+    private LocalDate arrivalDate;
+
+    @Column(name = "departure_date")
+    private LocalDate departureDate;
+
     protected TripParticipantJpaEntity() {
     }
 
@@ -44,6 +51,10 @@ public class TripParticipantJpaEntity {
     public UUID getParticipantId() { return participantId; }
     public String getName() { return name; }
     public void setName(final String name) { this.name = name; }
+    public LocalDate getArrivalDate() { return arrivalDate; }
+    public void setArrivalDate(final LocalDate arrivalDate) { this.arrivalDate = arrivalDate; }
+    public LocalDate getDepartureDate() { return departureDate; }
+    public void setDepartureDate(final LocalDate departureDate) { this.departureDate = departureDate; }
 
     public static class TripParticipantId implements Serializable {
         private UUID tripProjection;

@@ -1,5 +1,8 @@
 package de.evia.travelmate.iam.adapters.messaging;
 
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Timer;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -25,17 +28,28 @@ public class ExternalInvitationConsumer {
     private final SignUpService signUpService;
     private final AccountRepository accountRepository;
     private final RegistrationEmailService registrationEmailService;
+    private final Timer externalUserInvitedTimer;
 
     public ExternalInvitationConsumer(final SignUpService signUpService,
                                      final AccountRepository accountRepository,
-                                     final RegistrationEmailService registrationEmailService) {
+                                     final RegistrationEmailService registrationEmailService,
+                                     final MeterRegistry meterRegistry) {
         this.signUpService = signUpService;
         this.accountRepository = accountRepository;
         this.registrationEmailService = registrationEmailService;
+        this.externalUserInvitedTimer = Timer.builder("travelmate.event.processing")
+            .tag("scs", "iam")
+            .tag("event", "ExternalUserInvitedToTrip")
+            .description("Time spent processing domain events")
+            .register(meterRegistry);
     }
 
     @RabbitListener(queues = RabbitMqConfig.QUEUE_EXTERNAL_USER_INVITED)
     public void onExternalUserInvited(final ExternalUserInvitedToTrip event) {
+        externalUserInvitedTimer.record(() -> processExternalUserInvited(event));
+    }
+
+    private void processExternalUserInvited(final ExternalUserInvitedToTrip event) {
         if (accountRepository.existsByUsernameAcrossTenants(new Username(event.email()))) {
             LOG.info("Account already exists for email {}, skipping creation", event.email());
             return;

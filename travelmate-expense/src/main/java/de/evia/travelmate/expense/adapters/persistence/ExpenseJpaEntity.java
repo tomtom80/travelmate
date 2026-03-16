@@ -34,6 +34,9 @@ public class ExpenseJpaEntity {
     @Column(name = "status", nullable = false)
     private ExpenseStatus status;
 
+    @Column(name = "review_required", nullable = false)
+    private boolean reviewRequired;
+
     @OneToMany(mappedBy = "expense", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<ReceiptJpaEntity> receipts = new ArrayList<>();
 
@@ -44,11 +47,13 @@ public class ExpenseJpaEntity {
     }
 
     public ExpenseJpaEntity(final UUID expenseId, final UUID tenantId,
-                            final UUID tripId, final ExpenseStatus status) {
+                            final UUID tripId, final ExpenseStatus status,
+                            final boolean reviewRequired) {
         this.expenseId = expenseId;
         this.tenantId = tenantId;
         this.tripId = tripId;
         this.status = status;
+        this.reviewRequired = reviewRequired;
     }
 
     public UUID getExpenseId() { return expenseId; }
@@ -56,6 +61,7 @@ public class ExpenseJpaEntity {
     public UUID getTripId() { return tripId; }
     public ExpenseStatus getStatus() { return status; }
     public void setStatus(final ExpenseStatus status) { this.status = status; }
+    public boolean isReviewRequired() { return reviewRequired; }
     public List<ReceiptJpaEntity> getReceipts() { return receipts; }
     public List<WeightingJpaEntity> getWeightings() { return weightings; }
 }

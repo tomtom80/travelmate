@@ -25,10 +25,12 @@ public class RabbitMqConfig {
     public static final String QUEUE_TRIP_CREATED = "expense.trip-created";
     public static final String QUEUE_PARTICIPANT_JOINED = "expense.participant-joined";
     public static final String QUEUE_TRIP_COMPLETED = "expense.trip-completed";
+    public static final String QUEUE_STAY_PERIOD_UPDATED = "expense.stay-period-updated";
 
     public static final String QUEUE_TRIP_CREATED_DLQ = QUEUE_TRIP_CREATED + ".dlq";
     public static final String QUEUE_PARTICIPANT_JOINED_DLQ = QUEUE_PARTICIPANT_JOINED + ".dlq";
     public static final String QUEUE_TRIP_COMPLETED_DLQ = QUEUE_TRIP_COMPLETED + ".dlq";
+    public static final String QUEUE_STAY_PERIOD_UPDATED_DLQ = QUEUE_STAY_PERIOD_UPDATED + ".dlq";
 
     @Bean
     public TopicExchange topicExchange() {
@@ -74,6 +76,14 @@ public class RabbitMqConfig {
             .build();
     }
 
+    @Bean
+    public Queue stayPeriodUpdatedQueue() {
+        return QueueBuilder.durable(QUEUE_STAY_PERIOD_UPDATED)
+            .withArgument("x-dead-letter-exchange", RoutingKeys.DLX_EXCHANGE)
+            .withArgument("x-dead-letter-routing-key", QUEUE_STAY_PERIOD_UPDATED_DLQ)
+            .build();
+    }
+
     // --- Main queue bindings ---
 
     @Bean
@@ -89,6 +99,13 @@ public class RabbitMqConfig {
     @Bean
     public Binding tripCompletedBinding(final Queue tripCompletedQueue, final TopicExchange topicExchange) {
         return BindingBuilder.bind(tripCompletedQueue).to(topicExchange).with(RoutingKeys.TRIP_COMPLETED);
+    }
+
+    @Bean
+    public Binding stayPeriodUpdatedBinding(final Queue stayPeriodUpdatedQueue,
+                                             final TopicExchange topicExchange) {
+        return BindingBuilder.bind(stayPeriodUpdatedQueue).to(topicExchange)
+            .with(RoutingKeys.STAY_PERIOD_UPDATED);
     }
 
     // --- Dead letter queues ---
@@ -108,6 +125,11 @@ public class RabbitMqConfig {
         return QueueBuilder.durable(QUEUE_TRIP_COMPLETED_DLQ).build();
     }
 
+    @Bean
+    public Queue stayPeriodUpdatedDlq() {
+        return QueueBuilder.durable(QUEUE_STAY_PERIOD_UPDATED_DLQ).build();
+    }
+
     // --- Dead letter queue bindings ---
 
     @Bean
@@ -125,5 +147,12 @@ public class RabbitMqConfig {
     public Binding tripCompletedDlqBinding(final Queue tripCompletedDlq,
                                             final DirectExchange deadLetterExchange) {
         return BindingBuilder.bind(tripCompletedDlq).to(deadLetterExchange).with(QUEUE_TRIP_COMPLETED_DLQ);
+    }
+
+    @Bean
+    public Binding stayPeriodUpdatedDlqBinding(final Queue stayPeriodUpdatedDlq,
+                                                final DirectExchange deadLetterExchange) {
+        return BindingBuilder.bind(stayPeriodUpdatedDlq).to(deadLetterExchange)
+            .with(QUEUE_STAY_PERIOD_UPDATED_DLQ);
     }
 }

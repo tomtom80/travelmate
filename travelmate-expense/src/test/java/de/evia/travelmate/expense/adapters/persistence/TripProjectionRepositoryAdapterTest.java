@@ -2,6 +2,7 @@ package de.evia.travelmate.expense.adapters.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -71,6 +72,28 @@ class TripProjectionRepositoryAdapterTest {
     @Test
     void existsByTripIdReturnsFalse() {
         assertThat(tripProjectionRepository.existsByTripId(UUID.randomUUID())).isFalse();
+    }
+
+    @Test
+    void persistsStayPeriodDates() {
+        final UUID tripId = UUID.randomUUID();
+        final TenantId tenantId = new TenantId(UUID.randomUUID());
+        final UUID participantId = UUID.randomUUID();
+        final TripProjection projection = TripProjection.create(tripId, tenantId, "Ski Trip");
+        projection.addParticipant(new TripParticipant(participantId, "Alice"));
+        tripProjectionRepository.save(projection);
+
+        final TripProjection loaded = tripProjectionRepository.findByTripId(tripId).orElseThrow();
+        loaded.updateParticipantStayPeriod(participantId,
+            LocalDate.of(2026, 3, 15), LocalDate.of(2026, 3, 22));
+        tripProjectionRepository.save(loaded);
+
+        final TripProjection reloaded = tripProjectionRepository.findByTripId(tripId).orElseThrow();
+        final TripParticipant participant = reloaded.participants().getFirst();
+        assertThat(participant.arrivalDate()).isEqualTo(LocalDate.of(2026, 3, 15));
+        assertThat(participant.departureDate()).isEqualTo(LocalDate.of(2026, 3, 22));
+        assertThat(participant.hasStayPeriod()).isTrue();
+        assertThat(participant.nights()).isEqualTo(7);
     }
 
     @Test

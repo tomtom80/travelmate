@@ -10,6 +10,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 import de.evia.travelmate.common.events.trips.ExternalUserInvitedToTrip;
 import de.evia.travelmate.common.events.trips.ParticipantJoinedTrip;
+import de.evia.travelmate.common.events.trips.StayPeriodUpdated;
 import de.evia.travelmate.common.events.trips.TripCompleted;
 import de.evia.travelmate.common.events.trips.TripCreated;
 import de.evia.travelmate.common.messaging.RoutingKeys;
@@ -39,6 +40,11 @@ public class DomainEventPublisher {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onTripCompleted(final TripCompleted event) {
         publishSafely(RoutingKeys.TRIP_COMPLETED, event);
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onStayPeriodUpdated(final StayPeriodUpdated event) {
+        publishSafely(RoutingKeys.STAY_PERIOD_UPDATED, event);
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)

@@ -1,0 +1,68 @@
+@startuml expense-iteration-6-settlement
+!theme plain
+
+title Settlement Calculation Flow -- Expense SCS Iteration 6
+
+|#LightYellow| Organizer |
+|#LightBlue| Expense Aggregate |
+
+|Organizer|
+start
+:SettleExpense(tripId, settledBy);
+note right
+  **Command (Blue)**
+  Only available when status
+  = READY_FOR_SETTLEMENT
+end note
+
+|Expense Aggregate|
+:Validate:\n- Status == READY_FOR_SETTLEMENT\n- All receipts APPROVED\n- At least 1 receipt;
+
+partition "Balance Calculation" {
+  :For each Receipt:;
+
+  if (receipt.splitStrategy?) then (WEIGHTED)
+    :share(p) = amount * (p.weight / totalWeight);
+    note right
+      Standard proportional split
+      using ParticipantWeighting
+    end note
+  else (BY_NIGHTS)
+    :share(p) = amount * (p.nights / totalNights);
+    note right
+      Accommodation split using
+      NightAllocation from TripProjection
+    end note
+  endif
+
+  :balance(p) = sum(paid) - sum(shares);
+}
+
+partition "Debt Simplification" {
+  :Separate creditors (balance > 0)\nand debtors (balance < 0);
+  :Sort creditors descending,\ndebtors ascending;
+
+  while (unresolved balances?) is (yes)
+    :Match largest creditor\nwith largest debtor;
+    :Create Transfer(from=debtor,\nto=creditor, amount=min);
+    :Reduce both balances;
+  endwhile (all zero)
+
+  :Create SettlementPlan(transfers, today);
+}
+
+:status = SETTLED;
+:**SettlementCalculated**;
+note right #Orange: Domain Event (internal)
+:**ExpenseSettled**;
+note right #Orange
+  Domain Event (published to RabbitMQ)
+  Contains: tenantId, tripId,
+  expenseId, occurredOn
+end note
+
+|Organizer|
+:View SettlementSummary\n"Wer zahlt wem wie viel";
+
+stop
+@enduml
