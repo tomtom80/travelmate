@@ -195,6 +195,42 @@ Browser        Gateway        Expense-SCS      PostgreSQL
 4. Saldo-Berechnung: Fuer jeden Teilnehmer wird berechnet, was er bezahlt hat minus seinen gewichteten Anteil
 5. Abschluss (settle): Status wechselt zu SETTLED, `ExpenseSettled`-Event wird publiziert
 
+## Szenario 4c: Essensplan generieren und verwalten (Iteration 7)
+
+```
+Browser        Gateway        Trips-SCS      PostgreSQL
+  │               │              │               │
+  │──POST generate▶              │               │
+  │  /{tripId}/   │──Route───────▶               │
+  │  mealplan/    │              │──find Trip─────▶
+  │  generate     │              │◀──Trip─────────│
+  │               │              │──MealPlan.generate(dateRange)
+  │               │              │  (3 Slots/Tag: B/L/D)
+  │               │              │──save MealPlan─▶
+  │◀──Redirect to mealplan──────│               │
+  │               │              │               │
+  │──POST status──▶              │               │
+  │  /{tripId}/   │──Route───────▶               │
+  │  mealplan/    │              │──find MealPlan─▶
+  │  slots/{id}/  │              │──markSlot(SKIP|EATING_OUT)
+  │  status       │              │──save──────────▶
+  │◀──Redirect to mealplan──────│               │
+  │               │              │               │
+  │──POST recipe──▶              │               │
+  │  /{tripId}/   │──Route───────▶               │
+  │  mealplan/    │              │──find MealPlan─▶
+  │  slots/{id}/  │              │──assignRecipe(recipeId)
+  │  recipe       │              │──save──────────▶
+  │◀──Redirect to mealplan──────│               │
+```
+
+1. Organisator klickt "Essensplan erstellen" auf der Trip-Detailseite
+2. `MealPlanService` laedt den Trip, ruft `MealPlan.generate(tenantId, tripId, dateRange)` auf
+3. Factory-Methode erzeugt 3 MealSlots pro Reisetag (BREAKFAST, LUNCH, DINNER), alle im Status PLANNED
+4. Essensplan-Uebersicht zeigt ein Tagesraster (Zeilen = Tage, Spalten = Mahlzeiten)
+5. Jeder Slot hat ein Status-Dropdown (PLANNED → SKIP oder EATING_OUT) und eine Rezeptauswahl
+6. Statusaenderung oder Rezeptzuweisung per Formular-POST, Redirect zurueck zur Uebersicht
+
 ## Szenario 5: Account-Registrierung
 
 ```

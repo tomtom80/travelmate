@@ -7,6 +7,8 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 
+import org.springframework.web.server.ResponseStatusException;
+
 import de.evia.travelmate.common.domain.BusinessRuleViolationException;
 import de.evia.travelmate.common.domain.DuplicateEntityException;
 import de.evia.travelmate.common.domain.EntityNotFoundException;
@@ -62,6 +64,21 @@ public class GlobalExceptionHandler {
             return "fragments/empty :: empty";
         }
         model.addAttribute("message", ex.getMessage());
+        return "error/error";
+    }
+
+    @ExceptionHandler(ResponseStatusException.class)
+    public String handleResponseStatusException(final ResponseStatusException ex,
+                                                 final HttpServletRequest request,
+                                                 final HttpServletResponse response,
+                                                 final Model model) {
+        LOG.info("Response status exception: {} {}", ex.getStatusCode(), ex.getReason());
+        response.setStatus(ex.getStatusCode().value());
+        if (isHtmxRequest(request)) {
+            triggerErrorToast(response, ex.getReason() != null ? ex.getReason() : GENERIC_ERROR_MESSAGE);
+            return "fragments/empty :: empty";
+        }
+        model.addAttribute("message", ex.getReason() != null ? ex.getReason() : GENERIC_ERROR_MESSAGE);
         return "error/error";
     }
 

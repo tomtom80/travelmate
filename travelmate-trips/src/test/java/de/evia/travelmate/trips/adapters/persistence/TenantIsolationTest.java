@@ -11,7 +11,16 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.math.BigDecimal;
+
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.trips.domain.mealplan.MealPlan;
+import de.evia.travelmate.trips.domain.mealplan.MealPlanRepository;
+import de.evia.travelmate.trips.domain.recipe.Ingredient;
+import de.evia.travelmate.trips.domain.recipe.Recipe;
+import de.evia.travelmate.trips.domain.recipe.RecipeName;
+import de.evia.travelmate.trips.domain.recipe.RecipeRepository;
+import de.evia.travelmate.trips.domain.recipe.Servings;
 import de.evia.travelmate.trips.domain.trip.DateRange;
 import de.evia.travelmate.trips.domain.trip.Trip;
 import de.evia.travelmate.trips.domain.trip.TripName;
@@ -26,6 +35,12 @@ class TenantIsolationTest {
 
     @Autowired
     private TripRepository tripRepository;
+
+    @Autowired
+    private RecipeRepository recipeRepository;
+
+    @Autowired
+    private MealPlanRepository mealPlanRepository;
 
     @Test
     void tripsFromTenantANotVisibleToTenantB() {
@@ -108,5 +123,49 @@ class TenantIsolationTest {
             .containsExactly(tripA.tripId().value());
         assertThat(participantBTrips).extracting(t -> t.tripId().value())
             .containsExactly(tripB.tripId().value());
+    }
+
+    @Test
+    void recipesFromTenantANotVisibleToTenantB() {
+        final Recipe recipeA = Recipe.create(
+            TENANT_A, new RecipeName("Pasta A"), new Servings(4),
+            List.of(new Ingredient("Nudeln", new BigDecimal("500"), "g"))
+        );
+        recipeRepository.save(recipeA);
+
+        final List<Recipe> tenantARecipes = recipeRepository.findAllByTenantId(TENANT_A);
+        final List<Recipe> tenantBRecipes = recipeRepository.findAllByTenantId(TENANT_B);
+
+        assertThat(tenantARecipes).extracting(r -> r.recipeId().value())
+            .contains(recipeA.recipeId().value());
+        assertThat(tenantBRecipes).extracting(r -> r.recipeId().value())
+            .doesNotContain(recipeA.recipeId().value());
+    }
+
+    @Test
+    void mealPlanFromTenantATripNotAccessibleViaTenantBTrip() {
+        final Trip tripA = Trip.plan(
+            TENANT_A,
+            new TripName("MealPlan Trip A"),
+            null,
+            new DateRange(LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 3)),
+            UUID.randomUUID()
+        );
+        tripRepository.save(tripA);
+
+        final Trip tripB = Trip.plan(
+            TENANT_B,
+            new TripName("MealPlan Trip B"),
+            null,
+            new DateRange(LocalDate.of(2026, 11, 1), LocalDate.of(2026, 11, 3)),
+            UUID.randomUUID()
+        );
+        tripRepository.save(tripB);
+
+        final MealPlan mealPlanA = MealPlan.generate(TENANT_A, tripA.tripId(), tripA.dateRange());
+        mealPlanRepository.save(mealPlanA);
+
+        assertThat(mealPlanRepository.findByTripId(tripA.tripId())).isPresent();
+        assertThat(mealPlanRepository.findByTripId(tripB.tripId())).isEmpty();
     }
 }

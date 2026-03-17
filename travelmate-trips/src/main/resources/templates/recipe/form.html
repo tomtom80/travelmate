@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<body>
+<div th:fragment="content">
+    <h1 th:if="${recipe != null}" th:text="#{recipe.edit}">Rezept bearbeiten</h1>
+    <h1 th:if="${recipe == null}" th:text="#{recipe.create}">Rezept erstellen</h1>
+
+    <form method="post" th:action="@{${formAction}}">
+        <label for="name" th:text="#{recipe.name}">Name</label>
+        <input type="text" id="name" name="name" required
+               th:value="${recipe != null} ? ${recipe.name()} : ''">
+
+        <label for="servings" th:text="#{recipe.servings}">Portionen</label>
+        <input type="number" id="servings" name="servings" min="1" required
+               th:value="${recipe != null} ? ${recipe.servings()} : '4'">
+
+        <h3 th:text="#{recipe.ingredients}">Zutaten</h3>
+        <div id="ingredient-list">
+            <!-- Existing ingredients (edit mode) -->
+            <th:block th:if="${recipe != null}">
+                <div th:each="ing : ${recipe.ingredients()}" class="grid ingredient-row">
+                    <input type="text" name="ingredientName" th:value="${ing.name()}"
+                           th:placeholder="#{recipe.ingredient.name}" required>
+                    <input type="number" name="ingredientQuantity" step="0.001" min="0.001"
+                           th:value="${ing.quantity()}" th:placeholder="#{recipe.ingredient.quantity}" required>
+                    <input type="text" name="ingredientUnit" th:value="${ing.unit()}"
+                           th:placeholder="#{recipe.ingredient.unit}" required>
+                    <button type="button" class="outline secondary" onclick="this.closest('.ingredient-row').remove()"
+                            th:text="#{common.remove}">Entfernen</button>
+                </div>
+            </th:block>
+            <!-- Default empty row (create mode) -->
+            <div th:if="${recipe == null}" class="grid ingredient-row">
+                <input type="text" name="ingredientName"
+                       th:placeholder="#{recipe.ingredient.name}" required>
+                <input type="number" name="ingredientQuantity" step="0.001" min="0.001"
+                       th:placeholder="#{recipe.ingredient.quantity}" required>
+                <input type="text" name="ingredientUnit"
+                       th:placeholder="#{recipe.ingredient.unit}" required>
+                <button type="button" class="outline secondary" onclick="this.closest('.ingredient-row').remove()"
+                        th:text="#{common.remove}">Entfernen</button>
+            </div>
+        </div>
+        <button type="button" class="outline" id="add-ingredient-btn"
+                th:text="#{recipe.ingredient.add}">Zutat hinzufuegen</button>
+
+        <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+            <button type="submit" th:text="#{common.save}">Speichern</button>
+            <a th:href="@{/recipes}" role="button" class="secondary" th:text="#{common.cancel}">Abbrechen</a>
+        </div>
+    </form>
+
+    <template id="ingredient-template">
+        <div class="grid ingredient-row">
+            <input type="text" name="ingredientName"
+                   th:placeholder="#{recipe.ingredient.name}" required>
+            <input type="number" name="ingredientQuantity" step="0.001" min="0.001"
+                   th:placeholder="#{recipe.ingredient.quantity}" required>
+            <input type="text" name="ingredientUnit"
+                   th:placeholder="#{recipe.ingredient.unit}" required>
+            <button type="button" class="outline secondary" onclick="this.closest('.ingredient-row').remove()"
+                    th:text="#{common.remove}">Entfernen</button>
+        </div>
+    </template>
+
+    <script>
+    document.getElementById('add-ingredient-btn').addEventListener('click', function() {
+        var template = document.getElementById('ingredient-template');
+        var clone = template.content.cloneNode(true);
+        document.getElementById('ingredient-list').appendChild(clone);
+    });
+    </script>
+</div>
+</body>
+</html>

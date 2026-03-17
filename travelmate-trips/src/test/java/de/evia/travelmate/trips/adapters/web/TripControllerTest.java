@@ -27,6 +27,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.trips.application.InvitationService;
+import de.evia.travelmate.trips.application.MealPlanService;
 import de.evia.travelmate.trips.application.TripService;
 import de.evia.travelmate.trips.application.command.InviteParticipantCommand;
 import de.evia.travelmate.trips.application.command.SetStayPeriodCommand;
@@ -57,6 +58,9 @@ class TripControllerTest {
 
     @MockitoBean
     private InvitationService invitationService;
+
+    @MockitoBean
+    private MealPlanService mealPlanService;
 
     @MockitoBean
     private TravelPartyRepository travelPartyRepository;

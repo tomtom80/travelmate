@@ -179,6 +179,20 @@
         </article>
     </dialog>
 
+    <!-- Meal Plan Link -->
+    <article th:if="${trip.startDate() != null && trip.endDate() != null}">
+        <h2 th:text="#{mealplan.title}">Essensplan</h2>
+        <div th:if="${hasMealPlan}">
+            <a th:href="@{/{id}/mealplan(id=${trip.tripId()})}" role="button"
+               th:text="#{mealplan.view}">Essensplan anzeigen</a>
+        </div>
+        <div th:if="${!hasMealPlan}">
+            <form method="post" th:action="@{/{id}/mealplan/generate(id=${trip.tripId()})}">
+                <button type="submit" th:text="#{mealplan.generate}">Essensplan erstellen</button>
+            </form>
+        </div>
+    </article>
+
     <!-- Expense Link (COMPLETED trips only) -->
     <article th:if="${trip.status() == 'COMPLETED'}">
         <h2 th:text="#{trip.expense.title}">Abrechnung</h2>

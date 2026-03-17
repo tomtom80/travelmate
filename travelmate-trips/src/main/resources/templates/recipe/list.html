@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<body>
+<div th:fragment="content">
+    <hgroup>
+        <h1 th:text="#{recipe.title}">Rezepte</h1>
+        <p th:text="#{recipe.subtitle}">Deine Rezeptsammlung fuer die Reiseplanung.</p>
+    </hgroup>
+
+    <a th:href="@{/recipes/new}" role="button" th:text="#{recipe.create}">Neues Rezept</a>
+
+    <figure th:if="${!recipes.isEmpty()}">
+        <table>
+            <thead>
+                <tr>
+                    <th th:text="#{recipe.name}">Name</th>
+                    <th th:text="#{recipe.servings}">Portionen</th>
+                    <th th:text="#{recipe.ingredients}">Zutaten</th>
+                    <th th:text="#{invitation.actions}">Aktionen</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="r : ${recipes}">
+                    <td th:text="${r.name()}"></td>
+                    <td th:text="${r.servings()}"></td>
+                    <td th:text="${r.ingredients().size()}"></td>
+                    <td>
+                        <div style="display:flex; gap:0.5rem;">
+                            <a th:href="@{/recipes/{id}/edit(id=${r.recipeId()})}"
+                               role="button" class="outline" th:text="#{common.edit}">Bearbeiten</a>
+                            <form method="post" th:action="@{/recipes/{id}/delete(id=${r.recipeId()})}"
+                                  onsubmit="return confirm(this.dataset.confirmMsg);"
+                                  th:data-confirm-msg="#{recipe.delete.confirm}">
+                                <button type="submit" class="outline secondary"
+                                        th:text="#{common.delete}">Loeschen</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </figure>
+    <p th:if="${recipes.isEmpty()}" th:text="#{recipe.empty}">Noch keine Rezepte vorhanden.</p>
+
+    <a th:href="@{/}" th:text="#{common.back}">Zurueck</a>
+</div>
+</body>
+</html>

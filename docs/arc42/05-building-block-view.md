@@ -34,7 +34,7 @@ Das System besteht aus folgenden Bausteinen:
 |----------|--------------|
 | **Spring Cloud Gateway** | Zentrales Routing, Authentifizierungsprüfung |
 | **travelmate-iam** | Reisepartei-Verwaltung (Tenants), Mitglieder (Accounts), Mitreisende (Dependents), Sign-up via Keycloak Admin API |
-| **travelmate-trips** | Trip-Planung, Einladungen, Teilnehmer, Aufenthaltsdauer, Trip-Status-Lifecycle |
+| **travelmate-trips** | Trip-Planung, Einladungen, Teilnehmer, Aufenthaltsdauer, Trip-Status-Lifecycle, Rezeptverwaltung, Essensplan |
 | **travelmate-expense** | Abrechnung abgeschlossener Trips: Belege (Receipts), gewichtete Kostenaufteilung (Weightings), Saldo-Berechnung (Settlement). Konsumiert Trip-Events fuer lokale TripProjection. Port 8083, Context-Path `/expense`, Datenbank `travelmate_expense` (Port 5434) |
 | **RabbitMQ (AMQP)** | Asynchroner Nachrichtenaustausch zwischen den SCS (Topic Exchange `travelmate.events`) |
 | **Keycloak** | Zentraler Identity Provider (OIDC) |
@@ -84,7 +84,9 @@ de.evia.travelmate.<service>/
 - TravelParty (Projektion der IAM-Daten, konsumiert IAM-Events)
 - Trip (Aggregate Root: TripId, Name, DateRange, Status, Organizer, Participants mit StayPeriod)
 - Invitation (Aggregate Root: Einladung zu einem Trip, Typen: MEMBER/EXTERNAL, Status: AWAITING_REGISTRATION/PENDING/ACCEPTED/DECLINED)
-- Zukuenftig: MealPlan, ShoppingList, Accommodation
+- Recipe (Aggregate Root: RecipeId, TenantId, RecipeName, Servings, Ingredients — pro-Tenant Rezeptbibliothek)
+- MealPlan (Aggregate Root: MealPlanId, TenantId, TripId, MealSlots — Essensplan-Raster pro Trip, 3 Mahlzeiten/Tag)
+- Zukuenftig: ShoppingList, Accommodation
 
 **Trips Adapter-Erweiterungen (Iteration 4):**
 - `adapters/mail/InvitationEmailListener` — Versendet Einladungs-E-Mails via Spring Mail + Thymeleaf nach `InvitationCreated`-Event

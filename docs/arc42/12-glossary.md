@@ -15,9 +15,11 @@ UI verwendet Fachsprache, Code verwendet technische Namen. Siehe ADR-0011 fuer d
 | **Organisator** | Organizer | — | Trips | Mitglied das eine Reise erstellt und verwaltet |
 | **Teilnehmer** | Participant | Participant | Trips | Reisepartei die an einer Reise teilnimmt |
 | **Aufenthaltsdauer** | Stay Period | StayPeriod | Trips | Individueller An-/Abreisezeitraum eines Teilnehmers innerhalb des Trip-Zeitraums |
-| **MealPlan** | Essensplan | Der Gesamtplan für alle Mahlzeiten eines Trips (7 Frühstück + 7 Abendessen). |
-| **Meal** | Mahlzeit | Eine einzelne Mahlzeit, entweder Frühstück oder Abendessen. |
-| **Ingredient** | Zutat | Eine Zutat für ein Gericht innerhalb einer Mahlzeit. |
+| **Essensplan** | Meal Plan | MealPlan | Trips | Tagesraster aller Mahlzeiten eines Trips. Pro Tag 3 Slots: Fruehstueck, Mittagessen, Abendessen. Wird aus dem Trip-Zeitraum generiert. |
+| **Mahlzeit-Slot** | Meal Slot | MealSlot | Trips | Ein einzelner Slot im Essensplan (Tag + Mahlzeittyp). Status: PLANNED, SKIP, EATING_OUT. Optional mit Rezept verknuepft. |
+| **Mahlzeittyp** | Meal Type | MealType | Trips | Enum: BREAKFAST (Fruehstueck), LUNCH (Mittagessen), DINNER (Abendessen). |
+| **Rezept** | Recipe | Recipe | Trips | Ein Rezept in der Rezeptbibliothek der Reisepartei. Enthaelt Name, Portionen und Zutatenliste. |
+| **Zutat** | Ingredient | Ingredient | Trips | Eine Zutat eines Rezepts mit Name, Menge und Einheit. |
 | **ShoppingList** | Einkaufsliste | Automatisch generierte Liste aller benötigten Zutaten für den Trip. |
 | **Expense** | Abrechnung | Die Gesamtabrechnung aller Kosten eines Trips. |
 | **Receipt** | Beleg / Bon | Ein einzelner Kassenbeleg mit Betrag und optionalem Foto. |
