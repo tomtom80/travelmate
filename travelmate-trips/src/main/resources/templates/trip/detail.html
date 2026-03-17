@@ -193,6 +193,14 @@
         </div>
     </article>
 
+    <!-- Shopping List Link -->
+    <article th:if="${trip.startDate() != null && trip.endDate() != null}">
+        <h2 th:text="#{shoppinglist.title}">Einkaufsliste</h2>
+        <p th:text="#{shoppinglist.hint}">Zutaten aus dem Essensplan und eigene Eintraege.</p>
+        <a th:href="@{/{id}/shoppinglist(id=${trip.tripId()})}" role="button"
+           th:text="#{shoppinglist.view}">Einkaufsliste anzeigen</a>
+    </article>
+
     <!-- Expense Link (COMPLETED trips only) -->
     <article th:if="${trip.status() == 'COMPLETED'}">
         <h2 th:text="#{trip.expense.title}">Abrechnung</h2>

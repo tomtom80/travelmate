@@ -1,0 +1,160 @@
+@startuml trips-iteration-8-shopping-flow
+!theme plain
+title Shopping List -- Command Flow (Design-Level EventStorming)
+
+skinparam backgroundColor #FEFEFE
+skinparam activityBorderColor #333333
+skinparam activityBackgroundColor #FFD700
+skinparam noteBorderColor #333333
+
+|#LightBlue| Organizer
+|#LightGreen| ShoppingListService
+|#Gold| ShoppingList Aggregate
+|#LightCoral| Persistence
+
+== Generierung ==
+
+|Organizer|
+:GenerateShoppingListCommand
+(tenantId, tripId);
+
+|ShoppingListService|
+:Lade MealPlan fuer Trip;
+:Filtere Slots:
+status==PLANNED && recipeId!=null;
+:Lade Recipes per RecipeIds;
+:Lade Trip (participantCount);
+
+note right
+  **Skalierung**:
+  scaleFactor = participantCount / recipe.servings
+  scaledQty = ingredient.qty * scaleFactor
+end note
+
+:Aggregiere Ingredients:
+(name+unit) case-insensitive -> Mengen summieren;
+:Erstelle List<ScaledIngredient>;
+
+|ShoppingList Aggregate|
+:ShoppingList.generate(
+  tenantId, tripId,
+  participantCount,
+  recipeItems);
+
+note right #Orange
+  **ShoppingListGenerated**
+  (Domain Event)
+end note
+
+|Persistence|
+:repository.save(shoppingList);
+
+== Manuelle Items ==
+
+|#LightSkyBlue| Participant
+:AddManualItemCommand
+(tripId, name, qty, unit);
+
+|ShoppingListService|
+:Lade ShoppingList fuer Trip;
+
+|ShoppingList Aggregate|
+:shoppingList.addManualItem(
+  name, qty, unit);
+:Neues ShoppingItem(
+  source=MANUAL,
+  status=OPEN);
+
+note right #Orange
+  **ManualItemAdded**
+end note
+
+|Persistence|
+:repository.save(shoppingList);
+
+== Assignment ==
+
+|Participant|
+:AssignShoppingItemCommand
+(tripId, itemId, memberId);
+
+|ShoppingListService|
+:Lade ShoppingList fuer Trip;
+
+|ShoppingList Aggregate|
+:shoppingList.assignItem(
+  itemId, memberId);
+
+note left
+  **Invariante INV-5**:
+  Item.status muss OPEN sein
+end note
+
+:Item.status = ASSIGNED
+Item.assignedTo = memberId;
+
+note right #Orange
+  **ShoppingItemAssigned**
+end note
+
+|Persistence|
+:repository.save(shoppingList);
+
+== Einkauf ==
+
+|Participant|
+:MarkItemPurchasedCommand
+(tripId, itemId, memberId);
+
+|ShoppingListService|
+:Lade ShoppingList fuer Trip;
+
+|ShoppingList Aggregate|
+:shoppingList.markPurchased(
+  itemId, memberId);
+
+note left
+  **Invariante INV-7**:
+  Item.status==ASSIGNED
+  Item.assignedTo==memberId
+end note
+
+:Item.status = PURCHASED;
+
+note right #Orange
+  **ShoppingItemPurchased**
+end note
+
+|Persistence|
+:repository.save(shoppingList);
+
+== Regenerierung ==
+
+|Organizer|
+:RegenerateShoppingListCommand
+(tenantId, tripId);
+
+|ShoppingListService|
+:Lade aktuelle ShoppingList;
+:Berechne neue RECIPE-Items
+(gleicher Algorithmus wie Generierung);
+
+|ShoppingList Aggregate|
+:shoppingList.regenerate(
+  newRecipeItems);
+
+note right
+  **Regel**:
+  RECIPE-Items loeschen + neu erzeugen
+  MANUAL-Items bleiben erhalten
+  (inkl. ASSIGNED/PURCHASED Status)
+end note
+
+note right #Orange
+  **ShoppingListRegenerated**
+end note
+
+|Persistence|
+:repository.save(shoppingList);
+
+@enduml

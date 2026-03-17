@@ -4,6 +4,7 @@ import jakarta.mail.internet.MimeMessage;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Profile;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -23,15 +24,20 @@ public class InvitationEmailListener {
 
     private final JavaMailSender mailSender;
     private final TemplateEngine templateEngine;
+    private final String baseUrl;
 
     public InvitationEmailListener(final JavaMailSender mailSender,
-                                   final TemplateEngine templateEngine) {
+                                   final TemplateEngine templateEngine,
+                                   @Value("${travelmate.base-url}") final String baseUrl) {
         this.mailSender = mailSender;
         this.templateEngine = templateEngine;
+        this.baseUrl = baseUrl;
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onInvitationCreated(final InvitationCreated event) {
+        final String invitationLink = baseUrl + "/trips/invitations/" + event.invitationId();
+
         final Context context = new Context();
         context.setVariable("inviteeFirstName", event.inviteeFirstName());
         context.setVariable("tripName", event.tripName());
@@ -39,6 +45,7 @@ public class InvitationEmailListener {
         context.setVariable("tripEndDate", event.tripEndDate());
         context.setVariable("inviterFirstName", event.inviterFirstName());
         context.setVariable("inviterLastName", event.inviterLastName());
+        context.setVariable("invitationLink", invitationLink);
 
         final String body = templateEngine.process("email/invitation-member", context);
 

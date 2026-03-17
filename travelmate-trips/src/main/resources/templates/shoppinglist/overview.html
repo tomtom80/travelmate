@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<body>
+<div th:fragment="content">
+    <hgroup>
+        <h1 th:text="#{shoppinglist.title}">Einkaufsliste</h1>
+        <p><a th:href="@{/{id}(id=${trip.tripId()})}" th:text="${trip.name()}">Reise</a></p>
+    </hgroup>
+
+    <!-- No shopping list exists yet -->
+    <div th:if="${!hasShoppingList}">
+        <article>
+            <p th:text="#{shoppinglist.hint}">Zutaten aus dem Essensplan und eigene Eintraege.</p>
+            <form method="post"
+                  th:action="@{/{tid}/shoppinglist/generate(tid=${trip.tripId()})}">
+                <button type="submit" th:text="#{shoppinglist.generate}">Einkaufsliste erstellen</button>
+            </form>
+        </article>
+    </div>
+
+    <!-- Shopping list exists -->
+    <div th:if="${hasShoppingList}">
+        <p th:if="${shoppingList.participantCount() > 0}"
+           th:text="#{shoppinglist.scalingInfo(${shoppingList.participantCount()})}">
+            Mengen skaliert auf X Personen.
+        </p>
+
+        <!-- Filter nav -->
+        <nav>
+            <ul>
+                <li><a th:href="@{/{tid}/shoppinglist(tid=${trip.tripId()})}"
+                       th:classappend="${filter == 'all'} ? 'contrast'"
+                       th:text="#{shoppinglist.filter.all}">Alle</a></li>
+                <li><a th:href="@{/{tid}/shoppinglist(tid=${trip.tripId()}, filter='open')}"
+                       th:classappend="${filter == 'open'} ? 'contrast'"
+                       th:text="#{shoppinglist.filter.open}">Ausstehend</a></li>
+                <li><a th:href="@{/{tid}/shoppinglist(tid=${trip.tripId()}, filter='assigned')}"
+                       th:classappend="${filter == 'assigned'} ? 'contrast'"
+                       th:text="#{shoppinglist.filter.assigned}">Uebernommen</a></li>
+                <li><a th:href="@{/{tid}/shoppinglist(tid=${trip.tripId()}, filter='purchased')}"
+                       th:classappend="${filter == 'purchased'} ? 'contrast'"
+                       th:text="#{shoppinglist.filter.purchased}">Erledigt</a></li>
+            </ul>
+        </nav>
+
+        <!-- Polling container -->
+        <div id="shopping-list-content"
+             th:hx-get="@{/{tid}/shoppinglist/items(tid=${trip.tripId()}, filter=${filter})}"
+             th:if="${trip.status() != 'COMPLETED' && trip.status() != 'CANCELLED'}"
+             hx-trigger="every 5s"
+             hx-target="#shopping-list-content"
+             hx-swap="innerHTML">
+            <div th:replace="~{shoppinglist/overview :: itemLists}"></div>
+        </div>
+
+        <!-- Static container for completed/cancelled trips (no polling) -->
+        <div id="shopping-list-content"
+             th:if="${trip.status() == 'COMPLETED' || trip.status() == 'CANCELLED'}">
+            <div th:replace="~{shoppinglist/overview :: itemLists}"></div>
+        </div>
+    </div>
+
+    <a th:href="@{/{id}(id=${trip.tripId()})}" role="button" class="outline" th:text="#{common.back}">Zurueck</a>
+</div>
+
+<!-- Fragment: itemLists (used for polling and initial render) -->
+<div th:fragment="itemLists">
+    <!-- Recipe items section -->
+    <article>
+        <header>
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+                <h2 style="margin-bottom:0;" th:text="#{shoppinglist.section.fromRecipes}">Aus dem Essensplan</h2>
+                <form method="post"
+                      th:action="@{/{tid}/shoppinglist/regenerate(tid=${trip.tripId()})}"
+                      style="margin:0;">
+                    <button type="submit" class="outline" style="margin-bottom:0; padding:0.25rem 0.75rem; font-size:0.85rem;"
+                            th:text="#{shoppinglist.regenerate}">Aktualisieren</button>
+                </form>
+            </div>
+        </header>
+        <figure th:if="${!recipeItems.isEmpty()}">
+            <table>
+                <thead>
+                    <tr>
+                        <th th:text="#{shoppinglist.item.name}">Name</th>
+                        <th th:text="#{shoppinglist.item.quantity}">Menge</th>
+                        <th th:text="#{shoppinglist.item.unit}">Einheit</th>
+                        <th>Assignee</th>
+                        <th th:text="#{trip.status}">Status</th>
+                        <th th:text="#{invitation.actions}">Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="item : ${recipeItems}"
+                        th:id="'item-row-' + ${item.itemId()}"
+                        th:classappend="${item.status().name() == 'PURCHASED'} ? 'item-purchased'">
+                        <td th:text="${item.name()}"></td>
+                        <td th:text="${item.quantity()}"></td>
+                        <td th:text="${item.unit()}"></td>
+                        <td>
+                            <span th:if="${item.assigneeName() != null && item.assignedToCurrentUser()}"
+                                  th:text="#{shoppinglist.item.you}">Du</span>
+                            <span th:if="${item.assigneeName() != null && !item.assignedToCurrentUser()}"
+                                  th:text="${item.assigneeName()}"></span>
+                            <span th:if="${item.assigneeName() == null}">&mdash;</span>
+                        </td>
+                        <td>
+                            <span th:class="'status-' + ${item.status().name().toLowerCase()}"
+                                  th:text="#{${'shoppinglist.item.status.' + item.status().name()}}"></span>
+                        </td>
+                        <td>
+                            <div th:replace="~{shoppinglist/overview :: itemActions(${item})}"></div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </figure>
+        <p th:if="${recipeItems.isEmpty()}" th:text="#{shoppinglist.empty}">Keine Eintraege vorhanden.</p>
+    </article>
+
+    <!-- Manual items section -->
+    <article>
+        <header>
+            <h2 style="margin-bottom:0;" th:text="#{shoppinglist.section.manual}">Manuelle Eintraege</h2>
+        </header>
+        <figure>
+            <table>
+                <thead>
+                    <tr>
+                        <th th:text="#{shoppinglist.item.name}">Name</th>
+                        <th th:text="#{shoppinglist.item.quantity}">Menge</th>
+                        <th th:text="#{shoppinglist.item.unit}">Einheit</th>
+                        <th>Assignee</th>
+                        <th th:text="#{trip.status}">Status</th>
+                        <th th:text="#{invitation.actions}">Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody id="manual-items-tbody">
+                    <tr th:each="item : ${manualItems}"
+                        th:id="'item-row-' + ${item.itemId()}"
+                        th:classappend="${item.status().name() == 'PURCHASED'} ? 'item-purchased'">
+                        <td th:text="${item.name()}"></td>
+                        <td th:text="${item.quantity()}"></td>
+                        <td th:text="${item.unit()}"></td>
+                        <td>
+                            <span th:if="${item.assigneeName() != null && item.assignedToCurrentUser()}"
+                                  th:text="#{shoppinglist.item.you}">Du</span>
+                            <span th:if="${item.assigneeName() != null && !item.assignedToCurrentUser()}"
+                                  th:text="${item.assigneeName()}"></span>
+                            <span th:if="${item.assigneeName() == null}">&mdash;</span>
+                        </td>
+                        <td>
+                            <span th:class="'status-' + ${item.status().name().toLowerCase()}"
+                                  th:text="#{${'shoppinglist.item.status.' + item.status().name()}}"></span>
+                        </td>
+                        <td>
+                            <div style="display:flex; gap:0.25rem; flex-wrap:wrap;">
+                                <div th:replace="~{shoppinglist/overview :: itemActions(${item})}"></div>
+                                <form th:if="${item.status().name() != 'PURCHASED'}"
+                                      th:hx-delete="@{/{tid}/shoppinglist/items/{iid}(tid=${trip.tripId()},iid=${item.itemId()})}"
+                                      hx-target="closest tr"
+                                      hx-swap="outerHTML"
+                                      hx-confirm=""
+                                      th:attr="hx-confirm=#{shoppinglist.item.delete.confirm}"
+                                      style="margin:0;">
+                                    <button type="submit" class="outline secondary"
+                                            style="margin-bottom:0; padding:0.15rem 0.5rem; font-size:0.85rem;"
+                                            th:text="#{common.delete}">Loeschen</button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+                <tfoot>
+                    <tr>
+                        <td colspan="6">
+                            <form th:hx-post="@{/{tid}/shoppinglist/items(tid=${trip.tripId()})}"
+                                  hx-target="#shopping-list-content"
+                                  hx-swap="innerHTML"
+                                  hx-disabled-elt="find [type=submit]"
+                                  hx-on::after-request="if(event.detail.successful) { this.reset(); }"
+                                  style="margin:0;">
+                                <div style="display:flex; gap:0.5rem; align-items:end; flex-wrap:wrap;">
+                                    <label style="margin-bottom:0; flex:2;">
+                                        <span th:text="#{shoppinglist.item.name}">Name</span>
+                                        <input type="text" name="name" required
+                                               th:placeholder="#{shoppinglist.item.name.placeholder}"
+                                               style="margin-bottom:0;">
+                                    </label>
+                                    <label style="margin-bottom:0; flex:1;">
+                                        <span th:text="#{shoppinglist.item.quantity}">Menge</span>
+                                        <input type="number" name="quantity" step="any" min="0.01" required
+                                               th:placeholder="#{shoppinglist.item.quantity.placeholder}"
+                                               style="margin-bottom:0;">
+                                    </label>
+                                    <label style="margin-bottom:0; flex:1;">
+                                        <span th:text="#{shoppinglist.item.unit}">Einheit</span>
+                                        <input type="text" name="unit" required
+                                               th:placeholder="#{shoppinglist.item.unit.placeholder}"
+                                               style="margin-bottom:0;">
+                                    </label>
+                                    <button type="submit" style="margin-bottom:0; white-space:nowrap; width:auto;"
+                                            th:text="#{shoppinglist.item.add}">Eintrag hinzufuegen</button>
+                                </div>
+                            </form>
+                        </td>
+                    </tr>
+                </tfoot>
+            </table>
+        </figure>
+        <p th:if="${manualItems.isEmpty() && recipeItems.isEmpty()}" th:text="#{shoppinglist.empty}">Keine Eintraege vorhanden.</p>
+    </article>
+</div>
+
+<!-- Fragment: itemRow (for HTMX partial row updates) -->
+<tr th:fragment="itemRow" th:id="'item-row-' + ${item.itemId()}"
+    th:classappend="${item.status().name() == 'PURCHASED'} ? 'item-purchased'">
+    <td th:text="${item.name()}"></td>
+    <td th:text="${item.quantity()}"></td>
+    <td th:text="${item.unit()}"></td>
+    <td>
+        <span th:if="${item.assigneeName() != null && item.assignedToCurrentUser()}"
+              th:text="#{shoppinglist.item.you}">Du</span>
+        <span th:if="${item.assigneeName() != null && !item.assignedToCurrentUser()}"
+              th:text="${item.assigneeName()}"></span>
+        <span th:if="${item.assigneeName() == null}">&mdash;</span>
+    </td>
+    <td>
+        <span th:class="'status-' + ${item.status().name().toLowerCase()}"
+              th:text="#{${'shoppinglist.item.status.' + item.status().name()}}"></span>
+    </td>
+    <td>
+        <div style="display:flex; gap:0.25rem; flex-wrap:wrap;">
+            <div th:replace="~{shoppinglist/overview :: itemActions(${item})}"></div>
+            <form th:if="${item.manual() && item.status().name() != 'PURCHASED'}"
+                  th:hx-delete="@{/{tid}/shoppinglist/items/{iid}(tid=${trip.tripId()},iid=${item.itemId()})}"
+                  hx-target="closest tr"
+                  hx-swap="outerHTML"
+                  hx-confirm=""
+                  th:attr="hx-confirm=#{shoppinglist.item.delete.confirm}"
+                  style="margin:0;">
+                <button type="submit" class="outline secondary"
+                        style="margin-bottom:0; padding:0.15rem 0.5rem; font-size:0.85rem;"
+                        th:text="#{common.delete}">Loeschen</button>
+            </form>
+        </div>
+    </td>
+</tr>
+
+<!-- Fragment: emptyRow (for HTMX delete response - removes the row) -->
+<th:block th:fragment="emptyRow"></th:block>
+
+<!-- Fragment: itemActions (action buttons based on status + current user) -->
+<th:block th:fragment="itemActions(item)">
+    <!-- OPEN: show assign button -->
+    <form th:if="${item.status().name() == 'OPEN'}"
+          th:hx-post="@{/{tid}/shoppinglist/items/{iid}/assign(tid=${trip.tripId()},iid=${item.itemId()})}"
+          hx-target="closest tr"
+          hx-swap="outerHTML"
+          hx-disabled-elt="find [type=submit]"
+          style="margin:0;">
+        <button type="submit" class="outline"
+                style="margin-bottom:0; padding:0.15rem 0.5rem; font-size:0.85rem;"
+                th:text="#{shoppinglist.item.assign}">Ich uebernehme</button>
+    </form>
+
+    <!-- ASSIGNED + assigned to current user: show unassign + purchase buttons -->
+    <th:block th:if="${item.status().name() == 'ASSIGNED' && item.assignedToCurrentUser()}">
+        <form th:hx-post="@{/{tid}/shoppinglist/items/{iid}/unassign(tid=${trip.tripId()},iid=${item.itemId()})}"
+              hx-target="closest tr"
+              hx-swap="outerHTML"
+              hx-disabled-elt="find [type=submit]"
+              style="margin:0;">
+            <button type="submit" class="outline secondary"
+                    style="margin-bottom:0; padding:0.15rem 0.5rem; font-size:0.85rem;"
+                    th:text="#{shoppinglist.item.unassign}">Abgeben</button>
+        </form>
+        <form th:hx-post="@{/{tid}/shoppinglist/items/{iid}/purchase(tid=${trip.tripId()},iid=${item.itemId()})}"
+              hx-target="closest tr"
+              hx-swap="outerHTML"
+              hx-disabled-elt="find [type=submit]"
+              style="margin:0;">
+            <button type="submit"
+                    style="margin-bottom:0; padding:0.15rem 0.5rem; font-size:0.85rem;"
+                    th:text="#{shoppinglist.item.purchase}">Erledigt</button>
+        </form>
+    </th:block>
+
+    <!-- PURCHASED: show undo button -->
+    <form th:if="${item.status().name() == 'PURCHASED'}"
+          th:hx-post="@{/{tid}/shoppinglist/items/{iid}/undo-purchase(tid=${trip.tripId()},iid=${item.itemId()})}"
+          hx-target="closest tr"
+          hx-swap="outerHTML"
+          hx-disabled-elt="find [type=submit]"
+          style="margin:0;">
+        <button type="submit" class="outline secondary"
+                style="margin-bottom:0; padding:0.15rem 0.5rem; font-size:0.85rem;"
+                th:text="#{shoppinglist.item.undoPurchase}">Rueckgaengig</button>
+    </form>
+</th:block>
+
+</body>
+</html>

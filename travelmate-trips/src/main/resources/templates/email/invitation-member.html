@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
 </head>
-<body>
+<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
     <h2>Einladung zur Reise</h2>
 
     <p>Hallo <span th:text="${inviteeFirstName}">Max</span>,</p>
@@ -30,10 +30,22 @@
         </tr>
     </table>
 
-    <p>
-        Melde dich bei Travelmate an, um die Einladung anzunehmen oder abzulehnen.
+    <p style="margin-top: 24px;">
+        <a th:href="${invitationLink}"
+           style="display: inline-block; padding: 12px 24px; background-color: #1095c1; color: #fff; text-decoration: none; border-radius: 4px; font-weight: bold;">
+            Einladung annehmen
+        </a>
     </p>
 
-    <p>Viele Gruesse,<br>Dein Travelmate-Team</p>
+    <p style="margin-top: 16px; font-size: 0.9em; color: #666;">
+        Oder klicke auf diesen Link:
+        <a th:href="${invitationLink}" th:text="${invitationLink}">https://travelmate.de/trips/invitations/123</a>
+    </p>
+
+    <hr style="margin-top: 32px; border: none; border-top: 1px solid #ddd;">
+
+    <p style="font-size: 0.85em; color: #999;">
+        Diese E-Mail wurde automatisch versandt.
+    </p>
 </body>
 </html>

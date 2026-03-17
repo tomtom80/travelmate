@@ -1,0 +1,110 @@
+@startuml trips-iteration-8-notification-flow
+!theme plain
+title Invitation Email Notification -- Cross-Concern Flow
+
+skinparam backgroundColor #FEFEFE
+skinparam sequenceArrowThickness 2
+skinparam sequenceMessageAlign center
+skinparam noteBackgroundColor #FFFFCC
+
+actor Organizer
+participant "InvitationService" as IS
+participant "Invitation\nAggregate" as INV
+participant "TravelParty\nProjection" as TP
+database "InvitationRepository" as REPO
+participant "Spring\nEventPublisher" as PUB
+participant "InvitationEmail\nListener\n(AFTER_COMMIT)" as MAIL
+participant "SMTP\n(Mailpit)" as SMTP
+
+== Bestehender Flow: Einzel-Einladung ==
+
+Organizer -> IS : InviteParticipantCommand\n(tripId, email, firstName)
+IS -> INV : Invitation.create(\n  tripId, inviteeEmail,\n  inviteeName, tripInfo)
+activate INV
+INV -> INV : registerEvent(\n  InvitationCreated)
+
+note over INV #FFA500
+  **InvitationCreated**
+  (Business-Event)
+  tenantId, tripId, invitationId,
+  inviteeEmail, inviteeFirstName,
+  tripName, dates, inviterName
+end note
+
+INV --> IS : invitation
+deactivate INV
+
+IS -> REPO : save(invitation)
+activate REPO
+REPO --> IS : saved
+deactivate REPO
+
+note over PUB : @TransactionalEventListener\n(phase = AFTER_COMMIT)
+PUB -> MAIL : InvitationCreated event
+
+MAIL -> SMTP : Send HTML email\nto inviteeEmail
+activate SMTP
+SMTP --> MAIL : OK
+deactivate SMTP
+
+== Erweiterung Iteration 8: Multi-Member-Benachrichtigung ==
+
+Organizer -> IS : InviteParticipantCommand\n(tripId, email, firstName)
+IS -> INV : Invitation.create(...)
+activate INV
+INV -> INV : registerEvent(\n  InvitationCreated)
+INV --> IS : invitation
+deactivate INV
+
+IS -> TP : findByTenantId(\n  inviteeTenantId)
+activate TP
+TP --> IS : travelParty\n(members: [{email, name}, ...])
+deactivate TP
+
+IS -> IS : Erstelle\nInvitationNotificationRequested\n(tripInfo + alle Member-Emails)
+
+note over IS #DDA0DD
+  **InvitationNotificationRequested**
+  (lokales Event, NICHT in common)
+  tripName, tripStartDate, tripEndDate,
+  inviterFirstName, inviterLastName,
+  recipients: [
+    {email: "anna@...", firstName: "Anna"},
+    {email: "bob@...", firstName: "Bob"}
+  ]
+end note
+
+IS -> REPO : save(invitation)
+activate REPO
+REPO --> IS : saved
+deactivate REPO
+
+PUB -> MAIL : InvitationNotificationRequested
+
+loop fuer jeden recipient
+  MAIL -> SMTP : Send HTML email\nto recipient.email
+  activate SMTP
+  SMTP --> MAIL : OK
+  deactivate SMTP
+end
+
+note over MAIL
+  **Template**: email/invitation-member (bestehend)
+  Personalisiert mit recipient.firstName
+  Fire-and-forget (Fehler geloggt, nicht propagiert)
+end note
+
+== Architektur-Kontext ==
+
+note across
+  **Entscheidung (HS-5)**:
+  Email-Versand bleibt im Trips SCS.
+  Kein separater Notification-Service.
+  Kein neues Event in travelmate-common.
+  Kein RabbitMQ-Routing fuer Notifications.
+
+  **Begruendung**: Alle Daten (Trip, Invitation, TravelParty)
+  sind lokal im Trips SCS verfuegbar. YAGNI.
+end note
+
+@enduml
