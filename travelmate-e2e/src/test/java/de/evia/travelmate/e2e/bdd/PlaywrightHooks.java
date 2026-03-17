@@ -117,4 +117,20 @@ public class PlaywrightHooks {
             page.waitForLoadState();
         }
     }
+
+    static void clickAndWaitForHtmx(final String selector) {
+        page.waitForResponse(
+            response -> response.url().contains("/iam/") || response.url().contains("/trips/") || response.url().contains("/expense/"),
+            () -> page.click(selector)
+        );
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+    }
+
+    static void submitHtmxForm(final String formSelector) {
+        page.waitForResponse(
+            response -> response.url().contains("/iam/") || response.url().contains("/trips/") || response.url().contains("/expense/"),
+            () -> page.click(formSelector + " button[type=submit]")
+        );
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+    }
 }
