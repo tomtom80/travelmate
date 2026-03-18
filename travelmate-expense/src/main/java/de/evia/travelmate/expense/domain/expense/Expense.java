@@ -26,6 +26,7 @@ public class Expense extends AggregateRoot {
     private final boolean reviewRequired;
     private final List<Receipt> receipts;
     private final List<ParticipantWeighting> weightings;
+    private final List<AdvancePayment> advancePayments;
     private ExpenseStatus status;
 
     public Expense(final ExpenseId expenseId,
@@ -35,17 +36,30 @@ public class Expense extends AggregateRoot {
                    final List<Receipt> receipts,
                    final List<ParticipantWeighting> weightings,
                    final boolean reviewRequired) {
+        this(expenseId, tenantId, tripId, status, receipts, weightings, List.of(), reviewRequired);
+    }
+
+    public Expense(final ExpenseId expenseId,
+                   final TenantId tenantId,
+                   final UUID tripId,
+                   final ExpenseStatus status,
+                   final List<Receipt> receipts,
+                   final List<ParticipantWeighting> weightings,
+                   final List<AdvancePayment> advancePayments,
+                   final boolean reviewRequired) {
         argumentIsNotNull(expenseId, "expenseId");
         argumentIsNotNull(tenantId, "tenantId");
         argumentIsNotNull(tripId, "tripId");
         argumentIsNotNull(status, "status");
         argumentIsNotNull(weightings, "weightings");
+        argumentIsNotNull(advancePayments, "advancePayments");
         this.expenseId = expenseId;
         this.tenantId = tenantId;
         this.tripId = tripId;
         this.status = status;
         this.receipts = new ArrayList<>(receipts);
         this.weightings = new ArrayList<>(weightings);
+        this.advancePayments = new ArrayList<>(advancePayments);
         this.reviewRequired = reviewRequired;
     }
 
@@ -142,6 +156,45 @@ public class Expense extends AggregateRoot {
         ));
     }
 
+    public void confirmAdvancePayments(final BigDecimal amountPerParty,
+                                       final List<PartyInfo> parties) {
+        assertNotSettled();
+        argumentIsNotNull(amountPerParty, "amountPerParty");
+        argumentIsTrue(amountPerParty.compareTo(BigDecimal.ZERO) > 0,
+            "Advance payment amount must be greater than 0.");
+        argumentIsTrue(amountPerParty.scale() <= 2,
+            "Amount must have at most 2 decimal places.");
+        argumentIsNotNull(parties, "parties");
+        argumentIsTrue(!parties.isEmpty(), "At least one party is required.");
+
+        advancePayments.clear();
+        for (final PartyInfo party : parties) {
+            advancePayments.add(new AdvancePayment(
+                new AdvancePaymentId(UUID.randomUUID()),
+                party.partyTenantId(),
+                party.partyName(),
+                amountPerParty,
+                false
+            ));
+        }
+    }
+
+    public void removeAdvancePayments() {
+        assertNotSettled();
+        advancePayments.clear();
+    }
+
+    public void toggleAdvancePaymentPaid(final AdvancePaymentId advancePaymentId) {
+        assertNotSettled();
+        argumentIsNotNull(advancePaymentId, "advancePaymentId");
+        final AdvancePayment payment = advancePayments.stream()
+            .filter(ap -> ap.advancePaymentId().equals(advancePaymentId))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException(
+                "AdvancePayment " + advancePaymentId.value() + " not found."));
+        payment.togglePaid();
+    }
+
     /**
      * Calculates the net balance for each participant.
      * Positive = others owe this participant. Negative = this participant owes others.
@@ -228,4 +281,13 @@ public class Expense extends AggregateRoot {
     public boolean reviewRequired() { return reviewRequired; }
     public List<Receipt> receipts() { return Collections.unmodifiableList(receipts); }
     public List<ParticipantWeighting> weightings() { return Collections.unmodifiableList(weightings); }
+    public List<AdvancePayment> advancePayments() { return Collections.unmodifiableList(advancePayments); }
+
+    public record PartyInfo(UUID partyTenantId, String partyName) {
+
+        public PartyInfo {
+            argumentIsNotNull(partyTenantId, "partyTenantId");
+            argumentIsNotNull(partyName, "partyName");
+        }
+    }
 }

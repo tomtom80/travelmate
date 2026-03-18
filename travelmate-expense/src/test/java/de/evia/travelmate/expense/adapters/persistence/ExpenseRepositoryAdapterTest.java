@@ -14,6 +14,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.expense.domain.expense.AdvancePayment;
 import de.evia.travelmate.expense.domain.expense.Amount;
 import de.evia.travelmate.expense.domain.expense.Expense;
 import de.evia.travelmate.expense.domain.expense.ExpenseRepository;
@@ -197,6 +198,77 @@ class ExpenseRepositoryAdapterTest {
         assertThat(found.receipts().getFirst().reviewStatus()).isEqualTo(ReviewStatus.REJECTED);
         assertThat(found.receipts().getFirst().reviewerId()).isEqualTo(bob);
         assertThat(found.receipts().getFirst().rejectionReason()).isEqualTo("Wrong amount");
+    }
+
+    @Test
+    void persistsAdvancePayments() {
+        final TenantId tenantId = new TenantId(UUID.randomUUID());
+        final UUID tripId = UUID.randomUUID();
+        final UUID participantId = UUID.randomUUID();
+        final Expense expense = Expense.create(
+            tenantId, tripId,
+            List.of(new ParticipantWeighting(participantId, BigDecimal.ONE))
+        );
+        final UUID partyA = UUID.randomUUID();
+        final UUID partyB = UUID.randomUUID();
+        expense.confirmAdvancePayments(new BigDecimal("500.00"), List.of(
+            new Expense.PartyInfo(partyA, "Familie Mueller"),
+            new Expense.PartyInfo(partyB, "Familie Schmidt")
+        ));
+
+        expenseRepository.save(expense);
+
+        final Optional<Expense> found = expenseRepository.findById(expense.expenseId());
+        assertThat(found).isPresent();
+        assertThat(found.get().advancePayments()).hasSize(2);
+        assertThat(found.get().advancePayments()).allSatisfy(
+            ap -> assertThat(ap.amount()).isEqualByComparingTo("500.00"));
+        assertThat(found.get().advancePayments()).extracting(AdvancePayment::partyTenantId)
+            .containsExactlyInAnyOrder(partyA, partyB);
+    }
+
+    @Test
+    void persistsAdvancePaymentPaidToggle() {
+        final TenantId tenantId = new TenantId(UUID.randomUUID());
+        final UUID tripId = UUID.randomUUID();
+        final UUID participantId = UUID.randomUUID();
+        final Expense expense = Expense.create(
+            tenantId, tripId,
+            List.of(new ParticipantWeighting(participantId, BigDecimal.ONE))
+        );
+        expense.confirmAdvancePayments(new BigDecimal("500.00"), List.of(
+            new Expense.PartyInfo(UUID.randomUUID(), "Familie Mueller")
+        ));
+        expenseRepository.save(expense);
+
+        final Expense loaded = expenseRepository.findById(expense.expenseId()).orElseThrow();
+        loaded.toggleAdvancePaymentPaid(loaded.advancePayments().getFirst().advancePaymentId());
+        expenseRepository.save(loaded);
+
+        final Expense reloaded = expenseRepository.findById(expense.expenseId()).orElseThrow();
+        assertThat(reloaded.advancePayments().getFirst().paid()).isTrue();
+    }
+
+    @Test
+    void persistsAdvancePaymentRemoval() {
+        final TenantId tenantId = new TenantId(UUID.randomUUID());
+        final UUID tripId = UUID.randomUUID();
+        final UUID participantId = UUID.randomUUID();
+        final Expense expense = Expense.create(
+            tenantId, tripId,
+            List.of(new ParticipantWeighting(participantId, BigDecimal.ONE))
+        );
+        expense.confirmAdvancePayments(new BigDecimal("500.00"), List.of(
+            new Expense.PartyInfo(UUID.randomUUID(), "Familie Mueller")
+        ));
+        expenseRepository.save(expense);
+
+        final Expense loaded = expenseRepository.findById(expense.expenseId()).orElseThrow();
+        loaded.removeAdvancePayments();
+        expenseRepository.save(loaded);
+
+        final Expense reloaded = expenseRepository.findById(expense.expenseId()).orElseThrow();
+        assertThat(reloaded.advancePayments()).isEmpty();
     }
 
     @Test

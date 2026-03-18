@@ -120,6 +120,192 @@
         </figure>
     </article>
 
+    <!-- Advance Payments -->
+    <article th:if="${expense.status().name() != 'SETTLED'}">
+        <h2 th:text="#{advance.title}">Vorauszahlungen</h2>
+
+        <!-- No accommodation price set -->
+        <div th:if="${accommodationPrice == null && expense.advancePayments().isEmpty()}">
+            <p th:text="#{advance.noPricePrompt}">Trage einen Gesamtpreis bei der Unterkunft ein.</p>
+        </div>
+
+        <!-- No advance payments yet, but suggestion available -->
+        <div th:if="${expense.advancePayments().isEmpty() && suggestedAdvance != null}">
+            <p th:text="#{advance.basis(${#numbers.formatDecimal(accommodationPrice, 1, 2)}, ${partyCount})}">
+                Basierend auf X EUR und Y Parteien.</p>
+            <p th:text="#{advance.suggestion(${#numbers.formatDecimal(suggestedAdvance, 1, 2)})}">
+                Vorschlag: X EUR pro Reisepartei</p>
+            <p><small th:text="#{advance.adjustHint}">Du kannst den Betrag anpassen.</small></p>
+            <form method="post" th:action="@{/{id}/advance-payments(id=${tripId})}">
+                <label>
+                    <span th:text="#{advance.amountPerParty}">Betrag pro Reisepartei (EUR)</span>
+                    <input type="number" name="amount" step="0.01" min="0.01"
+                           th:value="${suggestedAdvance}" required>
+                </label>
+                <button type="submit" th:text="#{advance.confirm}">Vorauszahlungen bestaetigen</button>
+            </form>
+        </div>
+
+        <!-- Advance payments exist -->
+        <div th:if="${!expense.advancePayments().isEmpty()}">
+            <figure>
+                <table>
+                    <thead>
+                        <tr>
+                            <th th:text="#{advance.party}">Reisepartei</th>
+                            <th th:text="#{advance.amount}">Betrag</th>
+                            <th th:text="#{advance.paid}">Bezahlt</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="ap : ${expense.advancePayments()}">
+                            <td th:text="${ap.partyName()}"></td>
+                            <td th:text="${#numbers.formatDecimal(ap.amount(), 1, 2) + ' EUR'}"></td>
+                            <td>
+                                <span th:if="${ap.paid()}" style="color:green;" th:text="#{advance.paid}">Bezahlt</span>
+                                <span th:if="${!ap.paid()}" style="color:orange;" th:text="#{advance.unpaid}">Offen</span>
+                            </td>
+                            <td>
+                                <form method="post"
+                                      th:action="@{/{tripId}/advance-payments/{apId}/toggle-paid(tripId=${tripId}, apId=${ap.advancePaymentId()})}">
+                                    <button type="submit" class="outline secondary" style="margin:0; padding:0.25rem 0.5rem;">
+                                        <span th:if="${ap.paid()}" th:text="#{advance.unpaid}">Offen</span>
+                                        <span th:if="${!ap.paid()}" th:text="#{advance.paid}">Bezahlt</span>
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </figure>
+
+            <!-- Progress -->
+            <p th:with="paidTotal=${expense.advancePayments().stream().filter(ap -> ap.paid()).map(ap -> ap.amount()).reduce(T(java.math.BigDecimal).ZERO, T(java.math.BigDecimal)::add)},
+                         totalExpected=${expense.advancePayments().stream().map(ap -> ap.amount()).reduce(T(java.math.BigDecimal).ZERO, T(java.math.BigDecimal)::add)}"
+               th:text="#{advance.progress(${#numbers.formatDecimal(paidTotal, 1, 2)}, ${#numbers.formatDecimal(totalExpected, 1, 2)})}">
+                0 von 0 EUR eingegangen
+            </p>
+
+            <!-- Change amount / Remove -->
+            <details>
+                <summary th:text="#{advance.changeAmount}">Betrag aendern</summary>
+                <form method="post" th:action="@{/{id}/advance-payments(id=${tripId})}">
+                    <label>
+                        <span th:text="#{advance.amountPerParty}">Betrag pro Reisepartei (EUR)</span>
+                        <input type="number" name="amount" step="0.01" min="0.01"
+                               th:value="${expense.advancePayments().getFirst().amount()}" required>
+                    </label>
+                    <div style="display:flex; gap:0.5rem;">
+                        <button type="submit" th:text="#{advance.confirm}">Bestaetigen</button>
+                        <button type="button" class="secondary outline"
+                                th:text="#{advance.remove}"
+                                onclick="if(confirm('Vorauszahlungen entfernen?')) { fetch(this.closest('form').action.replace('/advance-payments', '/advance-payments'), {method: 'DELETE'}).then(() => location.reload()); }">
+                            Entfernen
+                        </button>
+                    </div>
+                </form>
+                <form id="remove-advance-form" method="post"
+                      th:action="@{/{id}/advance-payments(id=${tripId})}"
+                      style="display:none;">
+                    <input type="hidden" name="_method" value="DELETE">
+                </form>
+            </details>
+        </div>
+    </article>
+
+    <!-- Advance Payments (settled view) -->
+    <article th:if="${expense.status().name() == 'SETTLED' && !expense.advancePayments().isEmpty()}">
+        <h2 th:text="#{advance.title}">Vorauszahlungen</h2>
+        <figure>
+            <table>
+                <thead>
+                    <tr>
+                        <th th:text="#{advance.party}">Reisepartei</th>
+                        <th th:text="#{advance.amount}">Betrag</th>
+                        <th th:text="#{advance.paid}">Bezahlt</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="ap : ${expense.advancePayments()}">
+                        <td th:text="${ap.partyName()}"></td>
+                        <td th:text="${#numbers.formatDecimal(ap.amount(), 1, 2) + ' EUR'}"></td>
+                        <td>
+                            <span th:if="${ap.paid()}" style="color:green;" th:text="#{advance.paid}">Bezahlt</span>
+                            <span th:if="${!ap.paid()}" style="color:orange;" th:text="#{advance.unpaid}">Offen</span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </figure>
+    </article>
+
+    <!-- Party Settlement -->
+    <article th:if="${!expense.partySettlements().isEmpty()}">
+        <h2 th:text="#{expense.partySettlement}">Abrechnung nach Reisepartei</h2>
+        <figure>
+            <table>
+                <thead>
+                    <tr>
+                        <th th:text="#{expense.partySettlement.party}">Reisepartei</th>
+                        <th th:text="#{expense.partySettlement.members}">Mitglieder</th>
+                        <th th:text="#{expense.partySettlement.totalPaid}">Bezahlt</th>
+                        <th th:text="#{expense.partySettlement.totalOwed}">Anteil</th>
+                        <th th:text="#{expense.partySettlement.balance}">Saldo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="ps : ${expense.partySettlements()}">
+                        <td th:text="${ps.partyName()}"></td>
+                        <td>
+                            <small th:each="name, iter : ${ps.memberNames()}">
+                                <span th:text="${name}"></span><span th:if="${!iter.last}">, </span>
+                            </small>
+                        </td>
+                        <td th:text="${#numbers.formatDecimal(ps.totalPaid(), 1, 2) + ' EUR'}"></td>
+                        <td th:text="${#numbers.formatDecimal(ps.totalOwed(), 1, 2) + ' EUR'}"></td>
+                        <td>
+                            <span th:if="${ps.balance().signum() > 0}" style="color:green;">
+                                +<span th:text="${#numbers.formatDecimal(ps.balance(), 1, 2)}"></span> EUR
+                            </span>
+                            <span th:if="${ps.balance().signum() < 0}" style="color:red;">
+                                <span th:text="${#numbers.formatDecimal(ps.balance(), 1, 2)}"></span> EUR
+                            </span>
+                            <span th:if="${ps.balance().signum() == 0}">
+                                <span th:text="${#numbers.formatDecimal(ps.balance(), 1, 2)}"></span> EUR
+                            </span>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </figure>
+    </article>
+
+    <!-- Party-Level Transfers -->
+    <article th:if="${!expense.partyTransfers().isEmpty()}">
+        <h2 th:text="#{expense.partyTransfers}">Ausgleichszahlungen (Reiseparteien)</h2>
+        <figure>
+            <table>
+                <thead>
+                    <tr>
+                        <th th:text="#{expense.transfer.from}">Von</th>
+                        <th></th>
+                        <th th:text="#{expense.transfer.to}">An</th>
+                        <th th:text="#{expense.transfer.amount}">Betrag</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="transfer : ${expense.partyTransfers()}">
+                        <td th:text="${transfer.fromPartyName()}"></td>
+                        <td th:text="#{expense.partyTransfer.pays}">zahlt an</td>
+                        <td th:text="${transfer.toPartyName()}"></td>
+                        <td th:text="${#numbers.formatDecimal(transfer.amount(), 1, 2) + ' EUR'}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </figure>
+    </article>
+
     <!-- Settlement Plan -->
     <article th:if="${!expense.transfers().isEmpty()}">
         <h2 th:text="#{expense.settlementPlan}">Ausgleichszahlungen</h2>

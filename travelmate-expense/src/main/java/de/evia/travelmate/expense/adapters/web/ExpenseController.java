@@ -23,11 +23,14 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.expense.application.ExpenseService;
+import de.evia.travelmate.expense.domain.expense.AdvancePaymentSuggestion;
 import de.evia.travelmate.expense.domain.expense.ExpenseCategory;
 import de.evia.travelmate.expense.application.command.AddReceiptCommand;
 import de.evia.travelmate.expense.application.command.ApproveReceiptCommand;
+import de.evia.travelmate.expense.application.command.ConfirmAdvancePaymentsCommand;
 import de.evia.travelmate.expense.application.command.RejectReceiptCommand;
 import de.evia.travelmate.expense.application.command.ResubmitReceiptCommand;
+import de.evia.travelmate.expense.application.command.ToggleAdvancePaymentPaidCommand;
 import de.evia.travelmate.expense.application.command.UpdateWeightingCommand;
 import de.evia.travelmate.expense.application.representation.ExpenseRepresentation;
 import de.evia.travelmate.expense.domain.trip.TripParticipant;
@@ -66,12 +69,23 @@ public class ExpenseController {
 
         final ExpenseRepresentation expense = expenseService.findByTripId(tenantId, tripId, true);
 
+        final BigDecimal accommodationPrice = projection.accommodationTotalPrice();
+        final long partyCount = countDistinctParties(projection);
+        BigDecimal suggestedAdvance = null;
+        if (accommodationPrice != null && accommodationPrice.compareTo(BigDecimal.ZERO) > 0
+                && partyCount > 0) {
+            suggestedAdvance = AdvancePaymentSuggestion.suggest(accommodationPrice, (int) partyCount);
+        }
+
         model.addAttribute("title", messageSource.getMessage("expense.title", null, Locale.GERMAN));
         model.addAttribute("view", "expense/detail");
         model.addAttribute("expense", expense);
         model.addAttribute("tripName", projection.tripName());
         model.addAttribute("tripId", tripId);
         model.addAttribute("participantNames", participantNames);
+        model.addAttribute("accommodationPrice", accommodationPrice);
+        model.addAttribute("partyCount", partyCount);
+        model.addAttribute("suggestedAdvance", suggestedAdvance);
         return "layout/default";
     }
 
@@ -194,6 +208,55 @@ public class ExpenseController {
         return populateWeightingFragment(expense, projection, model);
     }
 
+    @PostMapping("/{tripId}/advance-payments")
+    public String confirmAdvancePayments(@AuthenticationPrincipal final Jwt jwt,
+                                         @PathVariable final UUID tripId,
+                                         @RequestParam final BigDecimal amount,
+                                         final HttpServletResponse response,
+                                         final Locale locale) {
+        requireAuthentication(jwt);
+        final TripProjection projection = findProjection(tripId);
+        final TenantId tenantId = projection.tenantId();
+
+        expenseService.confirmAdvancePayments(
+            tenantId, new ConfirmAdvancePaymentsCommand(tripId, amount));
+
+        triggerSuccessToast(response, messageSource.getMessage("advance.confirmed", null, locale));
+        return "redirect:/" + tripId;
+    }
+
+    @DeleteMapping("/{tripId}/advance-payments")
+    public String removeAdvancePayments(@AuthenticationPrincipal final Jwt jwt,
+                                        @PathVariable final UUID tripId,
+                                        final HttpServletResponse response,
+                                        final Locale locale) {
+        requireAuthentication(jwt);
+        final TripProjection projection = findProjection(tripId);
+        final TenantId tenantId = projection.tenantId();
+
+        expenseService.removeAdvancePayments(tenantId, tripId);
+
+        triggerSuccessToast(response, messageSource.getMessage("advance.removed", null, locale));
+        return "redirect:/" + tripId;
+    }
+
+    @PostMapping("/{tripId}/advance-payments/{advancePaymentId}/toggle-paid")
+    public String toggleAdvancePaymentPaid(@AuthenticationPrincipal final Jwt jwt,
+                                           @PathVariable final UUID tripId,
+                                           @PathVariable final UUID advancePaymentId,
+                                           final HttpServletResponse response,
+                                           final Locale locale) {
+        requireAuthentication(jwt);
+        final TripProjection projection = findProjection(tripId);
+        final TenantId tenantId = projection.tenantId();
+
+        expenseService.toggleAdvancePaymentPaid(
+            tenantId, new ToggleAdvancePaymentPaidCommand(tripId, advancePaymentId));
+
+        triggerSuccessToast(response, messageSource.getMessage("advance.toggledPaid", null, locale));
+        return "redirect:/" + tripId;
+    }
+
     @PostMapping("/{tripId}/settle")
     public String settle(@AuthenticationPrincipal final Jwt jwt,
                          @PathVariable final UUID tripId) {
@@ -233,6 +296,14 @@ public class ExpenseController {
             names.put(participant.participantId(), participant.name());
         }
         return names;
+    }
+
+    private long countDistinctParties(final TripProjection projection) {
+        return projection.participants().stream()
+            .filter(TripParticipant::hasPartyInfo)
+            .map(TripParticipant::partyTenantId)
+            .distinct()
+            .count();
     }
 
     private String populateReceiptFragment(final ExpenseRepresentation expense,

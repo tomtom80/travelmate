@@ -66,7 +66,7 @@ public class TripService {
 
         tripRepository.save(trip);
         publishEvents(trip);
-        publishParticipantJoinedEvents(trip);
+        publishParticipantJoinedEvents(trip, party);
         return new TripRepresentation(trip);
     }
 
@@ -145,7 +145,7 @@ public class TripService {
         trip.clearDomainEvents();
     }
 
-    private void publishParticipantJoinedEvents(final Trip trip) {
+    private void publishParticipantJoinedEvents(final Trip trip, final TravelParty party) {
         for (final Participant participant : trip.participants()) {
             final String name = participant.firstName() != null
                 ? participant.firstName() + " " + participant.lastName()
@@ -155,6 +155,8 @@ public class TripService {
                 trip.tripId().value(),
                 participant.participantId(),
                 name,
+                party.tenantId().value(),
+                party.name(),
                 LocalDate.now()
             ));
         }

@@ -22,6 +22,7 @@ import jakarta.servlet.http.HttpServletResponse;
 
 import de.evia.travelmate.common.domain.TenantId;
 
+import de.evia.travelmate.trips.application.AccommodationService;
 import de.evia.travelmate.trips.application.InvitationService;
 import de.evia.travelmate.trips.application.MealPlanService;
 import de.evia.travelmate.trips.application.TripService;
@@ -47,17 +48,20 @@ public class TripController {
     private final TripService tripService;
     private final InvitationService invitationService;
     private final MealPlanService mealPlanService;
+    private final AccommodationService accommodationService;
     private final TravelPartyRepository travelPartyRepository;
     private final MessageSource messageSource;
 
     public TripController(final TripService tripService,
                           final InvitationService invitationService,
                           final MealPlanService mealPlanService,
+                          final AccommodationService accommodationService,
                           final TravelPartyRepository travelPartyRepository,
                           final MessageSource messageSource) {
         this.tripService = tripService;
         this.invitationService = invitationService;
         this.mealPlanService = mealPlanService;
+        this.accommodationService = accommodationService;
         this.travelPartyRepository = travelPartyRepository;
         this.messageSource = messageSource;
     }
@@ -107,6 +111,7 @@ public class TripController {
         model.addAttribute("currentMemberId", identity.memberId());
         model.addAttribute("isOrganizer", trip.organizerId().equals(identity.memberId()));
         model.addAttribute("hasMealPlan", mealPlanService.existsByTripId(new TripId(tripId)));
+        model.addAttribute("hasAccommodation", accommodationService.existsByTripId(new TripId(tripId)));
         return "layout/default";
     }
 

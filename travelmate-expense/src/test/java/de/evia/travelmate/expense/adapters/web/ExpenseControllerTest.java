@@ -34,14 +34,19 @@ import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.expense.application.ExpenseService;
 import de.evia.travelmate.expense.application.command.AddReceiptCommand;
 import de.evia.travelmate.expense.application.command.ApproveReceiptCommand;
+import de.evia.travelmate.expense.application.command.ConfirmAdvancePaymentsCommand;
 import de.evia.travelmate.expense.application.command.RejectReceiptCommand;
 import de.evia.travelmate.expense.application.command.ResubmitReceiptCommand;
+import de.evia.travelmate.expense.application.command.ToggleAdvancePaymentPaidCommand;
 import de.evia.travelmate.expense.application.command.UpdateWeightingCommand;
+import de.evia.travelmate.expense.application.representation.AdvancePaymentRepresentation;
 import de.evia.travelmate.expense.application.representation.ExpenseRepresentation;
 import de.evia.travelmate.expense.application.representation.ReceiptRepresentation;
 import de.evia.travelmate.expense.application.representation.CategoryBreakdownRepresentation;
 import de.evia.travelmate.expense.application.representation.DailyCostRepresentation;
 import de.evia.travelmate.expense.application.representation.ParticipantSummaryRepresentation;
+import de.evia.travelmate.expense.application.representation.PartySettlementRepresentation;
+import de.evia.travelmate.expense.application.representation.PartyTransferRepresentation;
 import de.evia.travelmate.expense.application.representation.TransferRepresentation;
 import de.evia.travelmate.expense.application.representation.WeightingRepresentation;
 import de.evia.travelmate.expense.domain.expense.ExpenseStatus;
@@ -109,7 +114,10 @@ class ExpenseControllerTest {
                 new ParticipantSummaryRepresentation(PARTICIPANT_B, BigDecimal.ZERO, new BigDecimal("21.25"), new BigDecimal("-21.25"))
             ),
             List.of(new DailyCostRepresentation(LocalDate.of(2026, 3, 10), new BigDecimal("42.50"), 1)),
-            new BigDecimal("42.50")
+            new BigDecimal("42.50"),
+            List.of(),
+            List.of(),
+            List.of()
         );
     }
 
@@ -257,6 +265,49 @@ class ExpenseControllerTest {
             .andExpect(header().exists("HX-Trigger"));
 
         verify(expenseService).resubmitReceipt(eq(new TenantId(TENANT_UUID)), any(ResubmitReceiptCommand.class));
+    }
+
+    @Test
+    void confirmAdvancePaymentsRedirectsToDetail() throws Exception {
+        when(expenseService.confirmAdvancePayments(eq(new TenantId(TENANT_UUID)),
+            any(ConfirmAdvancePaymentsCommand.class))).thenReturn(expense);
+
+        mockMvc.perform(post("/" + TRIP_UUID + "/advance-payments")
+                .with(jwt().jwt(j -> j.claim("email", USER_EMAIL)))
+                .param("amount", "500.00"))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/" + TRIP_UUID));
+
+        verify(expenseService).confirmAdvancePayments(eq(new TenantId(TENANT_UUID)),
+            any(ConfirmAdvancePaymentsCommand.class));
+    }
+
+    @Test
+    void removeAdvancePaymentsRedirectsToDetail() throws Exception {
+        when(expenseService.removeAdvancePayments(new TenantId(TENANT_UUID), TRIP_UUID))
+            .thenReturn(expense);
+
+        mockMvc.perform(delete("/" + TRIP_UUID + "/advance-payments")
+                .with(jwt().jwt(j -> j.claim("email", USER_EMAIL))))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/" + TRIP_UUID));
+
+        verify(expenseService).removeAdvancePayments(new TenantId(TENANT_UUID), TRIP_UUID);
+    }
+
+    @Test
+    void toggleAdvancePaymentPaidRedirectsToDetail() throws Exception {
+        final UUID apId = UUID.randomUUID();
+        when(expenseService.toggleAdvancePaymentPaid(eq(new TenantId(TENANT_UUID)),
+            any(ToggleAdvancePaymentPaidCommand.class))).thenReturn(expense);
+
+        mockMvc.perform(post("/" + TRIP_UUID + "/advance-payments/" + apId + "/toggle-paid")
+                .with(jwt().jwt(j -> j.claim("email", USER_EMAIL))))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/" + TRIP_UUID));
+
+        verify(expenseService).toggleAdvancePaymentPaid(eq(new TenantId(TENANT_UUID)),
+            any(ToggleAdvancePaymentPaidCommand.class));
     }
 
     @Test

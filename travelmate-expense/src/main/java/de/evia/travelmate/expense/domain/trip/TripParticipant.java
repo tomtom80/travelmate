@@ -8,7 +8,8 @@ import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 public record TripParticipant(UUID participantId, String name,
-                               LocalDate arrivalDate, LocalDate departureDate) {
+                               LocalDate arrivalDate, LocalDate departureDate,
+                               UUID partyTenantId, String partyName) {
 
     public TripParticipant {
         argumentIsNotNull(participantId, "participantId");
@@ -16,11 +17,20 @@ public record TripParticipant(UUID participantId, String name,
     }
 
     public TripParticipant(final UUID participantId, final String name) {
-        this(participantId, name, null, null);
+        this(participantId, name, null, null, null, null);
+    }
+
+    public TripParticipant(final UUID participantId, final String name,
+                            final LocalDate arrivalDate, final LocalDate departureDate) {
+        this(participantId, name, arrivalDate, departureDate, null, null);
     }
 
     public boolean hasStayPeriod() {
         return arrivalDate != null && departureDate != null;
+    }
+
+    public boolean hasPartyInfo() {
+        return partyTenantId != null && partyName != null;
     }
 
     public long nights() {

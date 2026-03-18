@@ -467,6 +467,129 @@ class ExpenseTest {
         assertThat(plan.transfers()).isEmpty();
     }
 
+    // --- Advance Payments ---
+
+    @Test
+    void confirmAdvancePaymentsCreatesOnePerParty() {
+        final Expense expense = createExpenseForTwoAdults();
+        final UUID partyA = UUID.randomUUID();
+        final UUID partyB = UUID.randomUUID();
+        final List<Expense.PartyInfo> parties = List.of(
+            new Expense.PartyInfo(partyA, "Familie Mueller"),
+            new Expense.PartyInfo(partyB, "Familie Schmidt")
+        );
+
+        expense.confirmAdvancePayments(new BigDecimal("500.00"), parties);
+
+        assertThat(expense.advancePayments()).hasSize(2);
+        assertThat(expense.advancePayments()).allSatisfy(
+            ap -> assertThat(ap.amount()).isEqualByComparingTo("500.00")
+        );
+        assertThat(expense.advancePayments()).extracting(AdvancePayment::partyTenantId)
+            .containsExactlyInAnyOrder(partyA, partyB);
+        assertThat(expense.advancePayments()).allSatisfy(
+            ap -> assertThat(ap.paid()).isFalse()
+        );
+    }
+
+    @Test
+    void confirmAdvancePaymentsReplacesExisting() {
+        final Expense expense = createExpenseForTwoAdults();
+        final UUID partyA = UUID.randomUUID();
+        final List<Expense.PartyInfo> parties = List.of(
+            new Expense.PartyInfo(partyA, "Familie Mueller")
+        );
+
+        expense.confirmAdvancePayments(new BigDecimal("500.00"), parties);
+        assertThat(expense.advancePayments()).hasSize(1);
+
+        expense.confirmAdvancePayments(new BigDecimal("600.00"), parties);
+        assertThat(expense.advancePayments()).hasSize(1);
+        assertThat(expense.advancePayments().getFirst().amount()).isEqualByComparingTo("600.00");
+        assertThat(expense.advancePayments().getFirst().paid()).isFalse();
+    }
+
+    @Test
+    void confirmAdvancePaymentsRejectsZeroAmount() {
+        final Expense expense = createExpenseForTwoAdults();
+        final List<Expense.PartyInfo> parties = List.of(
+            new Expense.PartyInfo(UUID.randomUUID(), "Familie Mueller")
+        );
+
+        assertThatThrownBy(() -> expense.confirmAdvancePayments(BigDecimal.ZERO, parties))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("greater than 0");
+    }
+
+    @Test
+    void confirmAdvancePaymentsRejectsMoreThanTwoDecimalPlaces() {
+        final Expense expense = createExpenseForTwoAdults();
+        final List<Expense.PartyInfo> parties = List.of(
+            new Expense.PartyInfo(UUID.randomUUID(), "Familie Mueller")
+        );
+
+        assertThatThrownBy(() -> expense.confirmAdvancePayments(new BigDecimal("500.123"), parties))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("2 decimal places");
+    }
+
+    @Test
+    void confirmAdvancePaymentsRejectsEmptyParties() {
+        final Expense expense = createExpenseForTwoAdults();
+
+        assertThatThrownBy(() -> expense.confirmAdvancePayments(new BigDecimal("500.00"), List.of()))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("party");
+    }
+
+    @Test
+    void confirmAdvancePaymentsRejectsOnSettled() {
+        final Expense expense = createExpenseForTwoAdults();
+        expense.addReceipt("Food", new Amount(BigDecimal.TEN), ALICE, ALICE, LocalDate.now(), GROCERIES);
+        expense.settle();
+
+        assertThatThrownBy(() -> expense.confirmAdvancePayments(new BigDecimal("500.00"),
+            List.of(new Expense.PartyInfo(UUID.randomUUID(), "Test"))))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("SETTLED");
+    }
+
+    @Test
+    void removeAdvancePaymentsClearsAll() {
+        final Expense expense = createExpenseForTwoAdults();
+        expense.confirmAdvancePayments(new BigDecimal("500.00"), List.of(
+            new Expense.PartyInfo(UUID.randomUUID(), "Familie Mueller"),
+            new Expense.PartyInfo(UUID.randomUUID(), "Familie Schmidt")
+        ));
+        assertThat(expense.advancePayments()).hasSize(2);
+
+        expense.removeAdvancePayments();
+
+        assertThat(expense.advancePayments()).isEmpty();
+    }
+
+    @Test
+    void toggleAdvancePaymentPaidChangesStatus() {
+        final Expense expense = createExpenseForTwoAdults();
+        expense.confirmAdvancePayments(new BigDecimal("500.00"), List.of(
+            new Expense.PartyInfo(UUID.randomUUID(), "Familie Mueller")
+        ));
+        final AdvancePaymentId apId = expense.advancePayments().getFirst().advancePaymentId();
+
+        expense.toggleAdvancePaymentPaid(apId);
+
+        assertThat(expense.advancePayments().getFirst().paid()).isTrue();
+    }
+
+    @Test
+    void toggleAdvancePaymentPaidThrowsForUnknownId() {
+        final Expense expense = createExpenseForTwoAdults();
+
+        assertThatThrownBy(() -> expense.toggleAdvancePaymentPaid(new AdvancePaymentId(UUID.randomUUID())))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("not found");
+    }
+
     // --- Helpers ---
 
     private Expense createExpenseForTwoAdults() {

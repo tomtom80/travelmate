@@ -26,6 +26,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.trips.application.AccommodationService;
 import de.evia.travelmate.trips.application.InvitationService;
 import de.evia.travelmate.trips.application.MealPlanService;
 import de.evia.travelmate.trips.application.TripService;
@@ -61,6 +62,9 @@ class TripControllerTest {
 
     @MockitoBean
     private MealPlanService mealPlanService;
+
+    @MockitoBean
+    private AccommodationService accommodationService;
 
     @MockitoBean
     private TravelPartyRepository travelPartyRepository;

@@ -43,6 +43,9 @@ public class ExpenseJpaEntity {
     @OneToMany(mappedBy = "expense", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<WeightingJpaEntity> weightings = new ArrayList<>();
 
+    @OneToMany(mappedBy = "expense", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    private List<AdvancePaymentJpaEntity> advancePayments = new ArrayList<>();
+
     protected ExpenseJpaEntity() {
     }
 
@@ -64,4 +67,5 @@ public class ExpenseJpaEntity {
     public boolean isReviewRequired() { return reviewRequired; }
     public List<ReceiptJpaEntity> getReceipts() { return receipts; }
     public List<WeightingJpaEntity> getWeightings() { return weightings; }
+    public List<AdvancePaymentJpaEntity> getAdvancePayments() { return advancePayments; }
 }

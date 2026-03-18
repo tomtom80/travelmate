@@ -121,6 +121,8 @@ public class InvitationService {
             trip.tripId().value(),
             invitation.inviteeId(),
             member.email(),
+            party.tenantId().value(),
+            party.name(),
             LocalDate.now()
         ));
     }
@@ -195,6 +197,8 @@ public class InvitationService {
         final List<Invitation> awaiting = invitationRepository.findByInviteeEmailAndStatus(
             email, InvitationStatus.AWAITING_REGISTRATION);
 
+        final TravelParty memberParty = travelPartyRepository.findByMemberEmail(email).orElse(null);
+
         for (final Invitation invitation : awaiting) {
             invitation.linkToMember(memberId);
 
@@ -205,11 +209,15 @@ public class InvitationService {
             tripRepository.save(trip);
             invitationRepository.save(invitation);
 
+            final UUID partyTenantId = memberParty != null ? memberParty.tenantId().value() : null;
+            final String partyName = memberParty != null ? memberParty.name() : null;
             eventPublisher.publishEvent(new ParticipantJoinedTrip(
                 invitation.tenantId().value(),
                 trip.tripId().value(),
                 memberId,
                 email,
+                partyTenantId,
+                partyName,
                 LocalDate.now()
             ));
         }

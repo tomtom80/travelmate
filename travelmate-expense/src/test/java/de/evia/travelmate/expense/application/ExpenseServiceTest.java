@@ -26,14 +26,17 @@ import de.evia.travelmate.common.domain.EntityNotFoundException;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.common.events.expense.ExpenseCreated;
 import de.evia.travelmate.common.events.expense.ExpenseSettled;
+import de.evia.travelmate.common.events.trips.AccommodationPriceSet;
 import de.evia.travelmate.common.events.trips.ParticipantJoinedTrip;
 import de.evia.travelmate.common.events.trips.StayPeriodUpdated;
 import de.evia.travelmate.common.events.trips.TripCompleted;
 import de.evia.travelmate.common.events.trips.TripCreated;
 import de.evia.travelmate.expense.application.command.AddReceiptCommand;
 import de.evia.travelmate.expense.application.command.ApproveReceiptCommand;
+import de.evia.travelmate.expense.application.command.ConfirmAdvancePaymentsCommand;
 import de.evia.travelmate.expense.application.command.RejectReceiptCommand;
 import de.evia.travelmate.expense.application.command.ResubmitReceiptCommand;
+import de.evia.travelmate.expense.application.command.ToggleAdvancePaymentPaidCommand;
 import de.evia.travelmate.expense.application.command.UpdateWeightingCommand;
 import de.evia.travelmate.expense.application.representation.ExpenseRepresentation;
 import de.evia.travelmate.expense.domain.expense.Expense;
@@ -117,6 +120,26 @@ class ExpenseServiceTest {
         verify(tripProjectionRepository).save(captor.capture());
         assertThat(captor.getValue().participants()).hasSize(1);
         assertThat(captor.getValue().participants().getFirst().participantId()).isEqualTo(ALICE);
+    }
+
+    @Test
+    void onParticipantJoinedStoresPartyInfo() {
+        final UUID partyTenantId = UUID.randomUUID();
+        final ParticipantJoinedTrip event = new ParticipantJoinedTrip(
+            TENANT_UUID, TRIP_ID, ALICE, "Alice", partyTenantId, "Familie Schmidt", LocalDate.now()
+        );
+        final TripProjection projection = TripProjection.create(TRIP_ID, TENANT_ID, "Summer Vacation");
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.of(projection));
+        when(tripProjectionRepository.save(any(TripProjection.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+
+        expenseService.onParticipantJoined(event);
+
+        final ArgumentCaptor<TripProjection> captor = ArgumentCaptor.forClass(TripProjection.class);
+        verify(tripProjectionRepository).save(captor.capture());
+        final TripParticipant saved = captor.getValue().participants().getFirst();
+        assertThat(saved.partyTenantId()).isEqualTo(partyTenantId);
+        assertThat(saved.partyName()).isEqualTo("Familie Schmidt");
     }
 
     @Test
@@ -304,6 +327,30 @@ class ExpenseServiceTest {
     }
 
     @Test
+    void findByTripIdIncludesPartySettlementsWhenPartyInfoAvailable() {
+        final UUID partySchmidt = UUID.randomUUID();
+        final UUID partyMueller = UUID.randomUUID();
+        final Expense expense = createOpenExpense();
+        expense.addReceipt("Dinner", new de.evia.travelmate.expense.domain.expense.Amount(
+            new java.math.BigDecimal("100.00")), ALICE, ALICE, LocalDate.of(2026, 7, 2), null);
+        when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.of(expense));
+
+        final TripProjection projection = TripProjection.create(TRIP_ID, TENANT_ID, "Summer Vacation");
+        projection.addParticipant(new TripParticipant(
+            ALICE, "Alice", null, null, partySchmidt, "Familie Schmidt"));
+        projection.addParticipant(new TripParticipant(
+            BOB, "Bob", null, null, partyMueller, "Familie Mueller"));
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.of(projection));
+
+        final ExpenseRepresentation result = expenseService.findByTripId(TENANT_ID, TRIP_ID, true);
+
+        assertThat(result.partySettlements()).hasSize(2);
+        assertThat(result.partyTransfers()).hasSize(1);
+        assertThat(result.partyTransfers().getFirst().fromPartyName()).isEqualTo("Familie Mueller");
+        assertThat(result.partyTransfers().getFirst().toPartyName()).isEqualTo("Familie Schmidt");
+    }
+
+    @Test
     void findByTripIdThrowsWhenNotFound() {
         when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.empty());
 
@@ -368,6 +415,94 @@ class ExpenseServiceTest {
             .isEqualTo(de.evia.travelmate.expense.domain.expense.ReviewStatus.SUBMITTED);
         assertThat(result.receipts().getFirst().description()).isEqualTo("Groceries corrected");
         assertThat(result.receipts().getFirst().amount()).isEqualByComparingTo(new BigDecimal("45.00"));
+    }
+
+    // --- onAccommodationPriceSet ---
+
+    @Test
+    void onAccommodationPriceSetUpdatesProjectionPrice() {
+        final AccommodationPriceSet event = new AccommodationPriceSet(
+            TENANT_UUID, TRIP_ID, new BigDecimal("3000.00"), LocalDate.now()
+        );
+        final TripProjection projection = TripProjection.create(TRIP_ID, TENANT_ID, "Summer Vacation");
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.of(projection));
+        when(tripProjectionRepository.save(any(TripProjection.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+
+        expenseService.onAccommodationPriceSet(event);
+
+        final ArgumentCaptor<TripProjection> captor = ArgumentCaptor.forClass(TripProjection.class);
+        verify(tripProjectionRepository).save(captor.capture());
+        assertThat(captor.getValue().accommodationTotalPrice()).isEqualByComparingTo("3000.00");
+    }
+
+    @Test
+    void onAccommodationPriceSetSkipsIfProjectionMissing() {
+        final AccommodationPriceSet event = new AccommodationPriceSet(
+            TENANT_UUID, TRIP_ID, new BigDecimal("3000.00"), LocalDate.now()
+        );
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.empty());
+
+        expenseService.onAccommodationPriceSet(event);
+
+        verify(tripProjectionRepository, never()).save(any());
+    }
+
+    // --- confirmAdvancePayments ---
+
+    @Test
+    void confirmAdvancePaymentsCreatesPaymentsFromParties() {
+        final UUID partySchmidt = UUID.randomUUID();
+        final UUID partyMueller = UUID.randomUUID();
+        final Expense expense = createOpenExpense();
+        when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.of(expense));
+        when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        final TripProjection projection = TripProjection.create(TRIP_ID, TENANT_ID, "Summer Vacation");
+        projection.addParticipant(new TripParticipant(
+            ALICE, "Alice", null, null, partySchmidt, "Familie Schmidt"));
+        projection.addParticipant(new TripParticipant(
+            BOB, "Bob", null, null, partyMueller, "Familie Mueller"));
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.of(projection));
+
+        final ExpenseRepresentation result = expenseService.confirmAdvancePayments(
+            TENANT_ID, new ConfirmAdvancePaymentsCommand(TRIP_ID, new BigDecimal("500.00")));
+
+        assertThat(result.advancePayments()).hasSize(2);
+        assertThat(result.advancePayments()).allSatisfy(
+            ap -> assertThat(ap.amount()).isEqualByComparingTo("500.00"));
+    }
+
+    // --- removeAdvancePayments ---
+
+    @Test
+    void removeAdvancePaymentsClearsAll() {
+        final Expense expense = createOpenExpense();
+        expense.confirmAdvancePayments(new BigDecimal("500.00"), List.of(
+            new de.evia.travelmate.expense.domain.expense.Expense.PartyInfo(UUID.randomUUID(), "Test")));
+        when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.of(expense));
+        when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        final ExpenseRepresentation result = expenseService.removeAdvancePayments(TENANT_ID, TRIP_ID);
+
+        assertThat(result.advancePayments()).isEmpty();
+    }
+
+    // --- toggleAdvancePaymentPaid ---
+
+    @Test
+    void toggleAdvancePaymentPaidTogglesPaidStatus() {
+        final Expense expense = createOpenExpense();
+        expense.confirmAdvancePayments(new BigDecimal("500.00"), List.of(
+            new de.evia.travelmate.expense.domain.expense.Expense.PartyInfo(UUID.randomUUID(), "Test")));
+        final UUID apId = expense.advancePayments().getFirst().advancePaymentId().value();
+        when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.of(expense));
+        when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        final ExpenseRepresentation result = expenseService.toggleAdvancePaymentPaid(
+            TENANT_ID, new ToggleAdvancePaymentPaidCommand(TRIP_ID, apId));
+
+        assertThat(result.advancePayments().getFirst().paid()).isTrue();
     }
 
     // --- helpers ---

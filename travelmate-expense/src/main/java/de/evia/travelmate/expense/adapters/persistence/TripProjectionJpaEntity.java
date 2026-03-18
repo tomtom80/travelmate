@@ -1,5 +1,6 @@
 package de.evia.travelmate.expense.adapters.persistence;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
@@ -33,6 +34,9 @@ public class TripProjectionJpaEntity {
     @Column(name = "end_date")
     private LocalDate endDate;
 
+    @Column(name = "accommodation_total_price")
+    private BigDecimal accommodationTotalPrice;
+
     @OneToMany(mappedBy = "tripProjection", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<TripParticipantJpaEntity> participants = new ArrayList<>();
 
@@ -53,5 +57,7 @@ public class TripProjectionJpaEntity {
     public void setStartDate(final LocalDate startDate) { this.startDate = startDate; }
     public LocalDate getEndDate() { return endDate; }
     public void setEndDate(final LocalDate endDate) { this.endDate = endDate; }
+    public BigDecimal getAccommodationTotalPrice() { return accommodationTotalPrice; }
+    public void setAccommodationTotalPrice(final BigDecimal accommodationTotalPrice) { this.accommodationTotalPrice = accommodationTotalPrice; }
     public List<TripParticipantJpaEntity> getParticipants() { return participants; }
 }

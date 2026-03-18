@@ -179,6 +179,21 @@
         </article>
     </dialog>
 
+    <!-- Accommodation Link -->
+    <article>
+        <h2 th:text="#{accommodation.title}">Unterkunft</h2>
+        <div th:if="${hasAccommodation}">
+            <a th:href="@{/{id}/accommodation(id=${trip.tripId()})}" role="button"
+               th:text="#{accommodation.view}">Unterkunft anzeigen</a>
+        </div>
+        <div th:if="${!hasAccommodation}">
+            <p th:text="#{accommodation.empty}">Noch keine Unterkunft hinterlegt.</p>
+            <a th:if="${isOrganizer && trip.status() != 'COMPLETED' && trip.status() != 'CANCELLED'}"
+               th:href="@{/{id}/accommodation(id=${trip.tripId()})}" role="button"
+               th:text="#{accommodation.add}">Unterkunft hinzufuegen</a>
+        </div>
+    </article>
+
     <!-- Meal Plan Link -->
     <article th:if="${trip.startDate() != null && trip.endDate() != null}">
         <h2 th:text="#{mealplan.title}">Essensplan</h2>

@@ -3,6 +3,7 @@ package de.evia.travelmate.expense.domain.trip;
 import static de.evia.travelmate.common.domain.Assertion.argumentIsNotBlank;
 import static de.evia.travelmate.common.domain.Assertion.argumentIsNotNull;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -18,6 +19,7 @@ public class TripProjection {
     private String tripName;
     private LocalDate startDate;
     private LocalDate endDate;
+    private BigDecimal accommodationTotalPrice;
     private final List<TripParticipant> participants;
 
     public TripProjection(final UUID tripId, final TenantId tenantId,
@@ -68,10 +70,15 @@ public class TripProjection {
             final TripParticipant p = participants.get(i);
             if (p.participantId().equals(participantId)) {
                 participants.set(i, new TripParticipant(
-                    p.participantId(), p.name(), arrivalDate, departureDate));
+                    p.participantId(), p.name(), arrivalDate, departureDate,
+                    p.partyTenantId(), p.partyName()));
                 return;
             }
         }
+    }
+
+    public void setAccommodationTotalPrice(final BigDecimal accommodationTotalPrice) {
+        this.accommodationTotalPrice = accommodationTotalPrice;
     }
 
     public UUID tripId() { return tripId; }
@@ -79,5 +86,6 @@ public class TripProjection {
     public String tripName() { return tripName; }
     public LocalDate startDate() { return startDate; }
     public LocalDate endDate() { return endDate; }
+    public BigDecimal accommodationTotalPrice() { return accommodationTotalPrice; }
     public List<TripParticipant> participants() { return Collections.unmodifiableList(participants); }
 }

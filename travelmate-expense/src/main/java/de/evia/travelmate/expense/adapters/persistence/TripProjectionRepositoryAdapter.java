@@ -32,6 +32,7 @@ public class TripProjectionRepositoryAdapter implements TripProjectionRepository
         entity.setTripName(projection.tripName());
         entity.setStartDate(projection.startDate());
         entity.setEndDate(projection.endDate());
+        entity.setAccommodationTotalPrice(projection.accommodationTotalPrice());
         syncParticipants(entity, projection);
         jpaRepository.save(entity);
         return projection;
@@ -61,12 +62,16 @@ public class TripProjectionRepositoryAdapter implements TripProjectionRepository
                 existing.get().setName(participant.name());
                 existing.get().setArrivalDate(participant.arrivalDate());
                 existing.get().setDepartureDate(participant.departureDate());
+                existing.get().setPartyTenantId(participant.partyTenantId());
+                existing.get().setPartyName(participant.partyName());
             } else {
                 final TripParticipantJpaEntity newEntity = new TripParticipantJpaEntity(
                     entity, participant.participantId(), participant.name()
                 );
                 newEntity.setArrivalDate(participant.arrivalDate());
                 newEntity.setDepartureDate(participant.departureDate());
+                newEntity.setPartyTenantId(participant.partyTenantId());
+                newEntity.setPartyName(participant.partyName());
                 entity.getParticipants().add(newEntity);
             }
         }
@@ -75,9 +80,10 @@ public class TripProjectionRepositoryAdapter implements TripProjectionRepository
     private TripProjection toDomain(final TripProjectionJpaEntity entity) {
         final var participants = entity.getParticipants().stream()
             .map(p -> new TripParticipant(p.getParticipantId(), p.getName(),
-                p.getArrivalDate(), p.getDepartureDate()))
+                p.getArrivalDate(), p.getDepartureDate(),
+                p.getPartyTenantId(), p.getPartyName()))
             .toList();
-        return new TripProjection(
+        final TripProjection projection = new TripProjection(
             entity.getTripId(),
             new TenantId(entity.getTenantId()),
             entity.getTripName(),
@@ -85,5 +91,7 @@ public class TripProjectionRepositoryAdapter implements TripProjectionRepository
             entity.getEndDate(),
             participants
         );
+        projection.setAccommodationTotalPrice(entity.getAccommodationTotalPrice());
+        return projection;
     }
 }

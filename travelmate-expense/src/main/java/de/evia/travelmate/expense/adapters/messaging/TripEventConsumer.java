@@ -9,6 +9,7 @@ import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 
+import de.evia.travelmate.common.events.trips.AccommodationPriceSet;
 import de.evia.travelmate.common.events.trips.ParticipantJoinedTrip;
 import de.evia.travelmate.common.events.trips.StayPeriodUpdated;
 import de.evia.travelmate.common.events.trips.TripCompleted;
@@ -26,6 +27,7 @@ public class TripEventConsumer {
     private final Timer participantJoinedTimer;
     private final Timer stayPeriodUpdatedTimer;
     private final Timer tripCompletedTimer;
+    private final Timer accommodationPriceSetTimer;
 
     public TripEventConsumer(final ExpenseService expenseService, final MeterRegistry meterRegistry) {
         this.expenseService = expenseService;
@@ -33,6 +35,7 @@ public class TripEventConsumer {
         this.participantJoinedTimer = eventTimer(meterRegistry, "ParticipantJoinedTrip");
         this.stayPeriodUpdatedTimer = eventTimer(meterRegistry, "StayPeriodUpdated");
         this.tripCompletedTimer = eventTimer(meterRegistry, "TripCompleted");
+        this.accommodationPriceSetTimer = eventTimer(meterRegistry, "AccommodationPriceSet");
     }
 
     @RabbitListener(queues = RabbitMqConfig.QUEUE_TRIP_CREATED)
@@ -59,6 +62,13 @@ public class TripEventConsumer {
     public void onTripCompleted(final TripCompleted event) {
         LOG.info("Received TripCompleted for trip {} in tenant {}", event.tripId(), event.tenantId());
         tripCompletedTimer.record(() -> expenseService.onTripCompleted(event));
+    }
+
+    @RabbitListener(queues = RabbitMqConfig.QUEUE_ACCOMMODATION_PRICE_SET)
+    public void onAccommodationPriceSet(final AccommodationPriceSet event) {
+        LOG.info("Received AccommodationPriceSet for trip {} with price {}",
+            event.tripId(), event.totalPrice());
+        accommodationPriceSetTimer.record(() -> expenseService.onAccommodationPriceSet(event));
     }
 
     private static Timer eventTimer(final MeterRegistry registry, final String eventType) {

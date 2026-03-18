@@ -10,6 +10,17 @@ public record ParticipantJoinedTrip(
     UUID tripId,
     UUID participantId,
     String username,
+    UUID participantTenantId,
+    String partyName,
     LocalDate occurredOn
 ) implements DomainEvent {
+
+    /**
+     * Backward-compatible constructor without party information.
+     */
+    public ParticipantJoinedTrip(final UUID tenantId, final UUID tripId,
+                                  final UUID participantId, final String username,
+                                  final LocalDate occurredOn) {
+        this(tenantId, tripId, participantId, username, null, null, occurredOn);
+    }
 }

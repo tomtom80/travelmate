@@ -37,6 +37,12 @@ public class TripParticipantJpaEntity {
     @Column(name = "departure_date")
     private LocalDate departureDate;
 
+    @Column(name = "party_tenant_id")
+    private UUID partyTenantId;
+
+    @Column(name = "party_name")
+    private String partyName;
+
     protected TripParticipantJpaEntity() {
     }
 
@@ -55,6 +61,10 @@ public class TripParticipantJpaEntity {
     public void setArrivalDate(final LocalDate arrivalDate) { this.arrivalDate = arrivalDate; }
     public LocalDate getDepartureDate() { return departureDate; }
     public void setDepartureDate(final LocalDate departureDate) { this.departureDate = departureDate; }
+    public UUID getPartyTenantId() { return partyTenantId; }
+    public void setPartyTenantId(final UUID partyTenantId) { this.partyTenantId = partyTenantId; }
+    public String getPartyName() { return partyName; }
+    public void setPartyName(final String partyName) { this.partyName = partyName; }
 
     public static class TripParticipantId implements Serializable {
         private UUID tripProjection;

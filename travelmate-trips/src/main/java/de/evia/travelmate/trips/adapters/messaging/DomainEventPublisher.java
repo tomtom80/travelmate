@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.event.TransactionPhase;
 import org.springframework.transaction.event.TransactionalEventListener;
 
+import de.evia.travelmate.common.events.trips.AccommodationPriceSet;
 import de.evia.travelmate.common.events.trips.ExternalUserInvitedToTrip;
 import de.evia.travelmate.common.events.trips.ParticipantJoinedTrip;
 import de.evia.travelmate.common.events.trips.StayPeriodUpdated;
@@ -50,6 +51,11 @@ public class DomainEventPublisher {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onExternalUserInvited(final ExternalUserInvitedToTrip event) {
         publishSafely(RoutingKeys.EXTERNAL_USER_INVITED, event);
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onAccommodationPriceSet(final AccommodationPriceSet event) {
+        publishSafely(RoutingKeys.ACCOMMODATION_PRICE_SET, event);
     }
 
     private void publishSafely(final String routingKey, final Object event) {

@@ -7,6 +7,8 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.expense.domain.expense.AdvancePayment;
+import de.evia.travelmate.expense.domain.expense.AdvancePaymentId;
 import de.evia.travelmate.expense.domain.expense.Amount;
 import de.evia.travelmate.expense.domain.expense.Expense;
 import de.evia.travelmate.expense.domain.expense.ExpenseId;
@@ -38,6 +40,7 @@ public class ExpenseRepositoryAdapter implements ExpenseRepository {
         entity.setStatus(expense.status());
         syncReceipts(entity, expense);
         syncWeightings(entity, expense);
+        syncAdvancePayments(entity, expense);
         jpaRepository.save(entity);
         return expense;
     }
@@ -105,6 +108,32 @@ public class ExpenseRepositoryAdapter implements ExpenseRepository {
         }
     }
 
+    private void syncAdvancePayments(final ExpenseJpaEntity entity, final Expense expense) {
+        entity.getAdvancePayments().removeIf(ap ->
+            expense.advancePayments().stream()
+                .noneMatch(dap -> dap.advancePaymentId().value().equals(ap.getAdvancePaymentId())));
+
+        for (final AdvancePayment ap : expense.advancePayments()) {
+            final var existing = entity.getAdvancePayments().stream()
+                .filter(e -> e.getAdvancePaymentId().equals(ap.advancePaymentId().value()))
+                .findFirst();
+            if (existing.isPresent()) {
+                existing.get().setPaid(ap.paid());
+                existing.get().setAmount(ap.amount());
+                existing.get().setPartyName(ap.partyName());
+            } else {
+                entity.getAdvancePayments().add(new AdvancePaymentJpaEntity(
+                    ap.advancePaymentId().value(),
+                    entity,
+                    ap.partyTenantId(),
+                    ap.partyName(),
+                    ap.amount(),
+                    ap.paid()
+                ));
+            }
+        }
+    }
+
     private Expense toDomain(final ExpenseJpaEntity entity) {
         final var receipts = entity.getReceipts().stream()
             .map(r -> new Receipt(
@@ -125,6 +154,16 @@ public class ExpenseRepositoryAdapter implements ExpenseRepository {
             .map(w -> new ParticipantWeighting(w.getParticipantId(), w.getWeight()))
             .toList();
 
+        final var advancePayments = entity.getAdvancePayments().stream()
+            .map(ap -> new AdvancePayment(
+                new AdvancePaymentId(ap.getAdvancePaymentId()),
+                ap.getPartyTenantId(),
+                ap.getPartyName(),
+                ap.getAmount(),
+                ap.isPaid()
+            ))
+            .toList();
+
         return new Expense(
             new ExpenseId(entity.getExpenseId()),
             new TenantId(entity.getTenantId()),
@@ -132,6 +171,7 @@ public class ExpenseRepositoryAdapter implements ExpenseRepository {
             entity.getStatus(),
             receipts,
             weightings,
+            advancePayments,
             entity.isReviewRequired()
         );
     }

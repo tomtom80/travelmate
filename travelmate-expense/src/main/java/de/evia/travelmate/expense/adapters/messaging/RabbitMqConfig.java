@@ -26,11 +26,13 @@ public class RabbitMqConfig {
     public static final String QUEUE_PARTICIPANT_JOINED = "expense.participant-joined";
     public static final String QUEUE_TRIP_COMPLETED = "expense.trip-completed";
     public static final String QUEUE_STAY_PERIOD_UPDATED = "expense.stay-period-updated";
+    public static final String QUEUE_ACCOMMODATION_PRICE_SET = "expense.accommodation-price-set";
 
     public static final String QUEUE_TRIP_CREATED_DLQ = QUEUE_TRIP_CREATED + ".dlq";
     public static final String QUEUE_PARTICIPANT_JOINED_DLQ = QUEUE_PARTICIPANT_JOINED + ".dlq";
     public static final String QUEUE_TRIP_COMPLETED_DLQ = QUEUE_TRIP_COMPLETED + ".dlq";
     public static final String QUEUE_STAY_PERIOD_UPDATED_DLQ = QUEUE_STAY_PERIOD_UPDATED + ".dlq";
+    public static final String QUEUE_ACCOMMODATION_PRICE_SET_DLQ = QUEUE_ACCOMMODATION_PRICE_SET + ".dlq";
 
     @Bean
     public TopicExchange topicExchange() {
@@ -108,6 +110,23 @@ public class RabbitMqConfig {
             .with(RoutingKeys.STAY_PERIOD_UPDATED);
     }
 
+    @Bean
+    public Queue accommodationPriceSetQueue() {
+        return QueueBuilder.durable(QUEUE_ACCOMMODATION_PRICE_SET)
+            .withArgument("x-dead-letter-exchange", RoutingKeys.DLX_EXCHANGE)
+            .withArgument("x-dead-letter-routing-key", QUEUE_ACCOMMODATION_PRICE_SET_DLQ)
+            .build();
+    }
+
+    // --- Main queue bindings ---
+
+    @Bean
+    public Binding accommodationPriceSetBinding(final Queue accommodationPriceSetQueue,
+                                                 final TopicExchange topicExchange) {
+        return BindingBuilder.bind(accommodationPriceSetQueue).to(topicExchange)
+            .with(RoutingKeys.ACCOMMODATION_PRICE_SET);
+    }
+
     // --- Dead letter queues ---
 
     @Bean
@@ -154,5 +173,17 @@ public class RabbitMqConfig {
                                                 final DirectExchange deadLetterExchange) {
         return BindingBuilder.bind(stayPeriodUpdatedDlq).to(deadLetterExchange)
             .with(QUEUE_STAY_PERIOD_UPDATED_DLQ);
+    }
+
+    @Bean
+    public Queue accommodationPriceSetDlq() {
+        return QueueBuilder.durable(QUEUE_ACCOMMODATION_PRICE_SET_DLQ).build();
+    }
+
+    @Bean
+    public Binding accommodationPriceSetDlqBinding(final Queue accommodationPriceSetDlq,
+                                                    final DirectExchange deadLetterExchange) {
+        return BindingBuilder.bind(accommodationPriceSetDlq).to(deadLetterExchange)
+            .with(QUEUE_ACCOMMODATION_PRICE_SET_DLQ);
     }
 }

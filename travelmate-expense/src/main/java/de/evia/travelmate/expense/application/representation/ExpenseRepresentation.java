@@ -11,12 +11,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
+import de.evia.travelmate.expense.domain.expense.AdvancePayment;
 import de.evia.travelmate.expense.domain.expense.Expense;
 import de.evia.travelmate.expense.domain.expense.ExpenseCategory;
 import de.evia.travelmate.expense.domain.expense.ExpenseStatus;
 import de.evia.travelmate.expense.domain.expense.ParticipantWeighting;
+import de.evia.travelmate.expense.domain.expense.PartySettlement;
 import de.evia.travelmate.expense.domain.expense.Receipt;
 import de.evia.travelmate.expense.domain.expense.SettlementPlan;
+import de.evia.travelmate.expense.domain.trip.TripParticipant;
 
 public record ExpenseRepresentation(
     UUID expenseId,
@@ -30,16 +33,26 @@ public record ExpenseRepresentation(
     List<CategoryBreakdownRepresentation> categoryBreakdown,
     List<ParticipantSummaryRepresentation> participantSummaries,
     List<DailyCostRepresentation> dailyCosts,
-    BigDecimal totalAmount
+    BigDecimal totalAmount,
+    List<PartySettlementRepresentation> partySettlements,
+    List<PartyTransferRepresentation> partyTransfers,
+    List<AdvancePaymentRepresentation> advancePayments
 ) {
 
     public static ExpenseRepresentation from(final Expense expense) {
-        return from(expense, null, null);
+        return from(expense, null, null, List.of());
     }
 
     public static ExpenseRepresentation from(final Expense expense,
                                               final LocalDate tripStartDate,
                                               final LocalDate tripEndDate) {
+        return from(expense, tripStartDate, tripEndDate, List.of());
+    }
+
+    public static ExpenseRepresentation from(final Expense expense,
+                                              final LocalDate tripStartDate,
+                                              final LocalDate tripEndDate,
+                                              final List<TripParticipant> participants) {
         final List<ReceiptRepresentation> receipts = expense.receipts().stream()
             .map(r -> new ReceiptRepresentation(
                 r.receiptId().value(),
@@ -78,6 +91,21 @@ public record ExpenseRepresentation(
         final List<DailyCostRepresentation> dailyCosts =
             buildDailyCosts(expense.receipts(), tripStartDate, tripEndDate);
 
+        final List<PartySettlementRepresentation> partySettlements =
+            buildPartySettlements(balances, expense.weightings(), expense.receipts(), participants);
+        final List<PartyTransferRepresentation> partyTransfers =
+            buildPartyTransfers(balances, participants);
+
+        final List<AdvancePaymentRepresentation> advancePayments = expense.advancePayments().stream()
+            .map(ap -> new AdvancePaymentRepresentation(
+                ap.advancePaymentId().value(),
+                ap.partyTenantId(),
+                ap.partyName(),
+                ap.amount(),
+                ap.paid()
+            ))
+            .toList();
+
         return new ExpenseRepresentation(
             expense.expenseId().value(),
             expense.tripId(),
@@ -90,7 +118,10 @@ public record ExpenseRepresentation(
             categoryBreakdown,
             participantSummaries,
             dailyCosts,
-            totalAmount
+            totalAmount,
+            partySettlements,
+            partyTransfers,
+            advancePayments
         );
     }
 
@@ -168,5 +199,112 @@ public record ExpenseRepresentation(
                 entry.getKey(), entry.getValue(), counts.get(entry.getKey())));
         }
         return result;
+    }
+
+    private static List<PartySettlementRepresentation> buildPartySettlements(
+            final Map<UUID, BigDecimal> individualBalances,
+            final List<ParticipantWeighting> weightings,
+            final List<Receipt> receipts,
+            final List<TripParticipant> participants) {
+        final Map<UUID, UUID> participantToParty = buildParticipantToPartyMap(participants);
+        if (participantToParty.isEmpty()) {
+            return List.of();
+        }
+
+        final Map<UUID, BigDecimal> partyBalances = PartySettlement.aggregateByParty(
+            individualBalances, participantToParty);
+
+        final Map<UUID, String> partyNames = new HashMap<>();
+        for (final TripParticipant p : participants) {
+            if (p.hasPartyInfo()) {
+                partyNames.putIfAbsent(p.partyTenantId(), p.partyName());
+            }
+        }
+
+        final BigDecimal totalWeight = weightings.stream()
+            .map(ParticipantWeighting::weight)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        final BigDecimal totalAmount = receipts.stream()
+            .map(r -> r.amount().value())
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        final Map<UUID, BigDecimal> partyPaid = new HashMap<>();
+        for (final Receipt receipt : receipts) {
+            final UUID partyId = participantToParty.get(receipt.paidBy());
+            if (partyId != null) {
+                partyPaid.merge(partyId, receipt.amount().value(), BigDecimal::add);
+            }
+        }
+
+        final Map<UUID, BigDecimal> partyOwed = new HashMap<>();
+        for (final ParticipantWeighting w : weightings) {
+            final UUID partyId = participantToParty.get(w.participantId());
+            if (partyId != null && totalWeight.signum() > 0) {
+                final BigDecimal share = totalAmount.multiply(w.weight())
+                    .divide(totalWeight, 2, RoundingMode.HALF_UP);
+                partyOwed.merge(partyId, share, BigDecimal::add);
+            }
+        }
+
+        final Map<UUID, List<String>> partyMembers = new HashMap<>();
+        for (final TripParticipant p : participants) {
+            if (p.hasPartyInfo()) {
+                partyMembers.computeIfAbsent(p.partyTenantId(), k -> new ArrayList<>())
+                    .add(p.name());
+            }
+        }
+
+        return partyBalances.entrySet().stream()
+            .map(e -> new PartySettlementRepresentation(
+                e.getKey(),
+                partyNames.getOrDefault(e.getKey(), e.getKey().toString()),
+                partyPaid.getOrDefault(e.getKey(), BigDecimal.ZERO),
+                partyOwed.getOrDefault(e.getKey(), BigDecimal.ZERO),
+                e.getValue(),
+                partyMembers.getOrDefault(e.getKey(), List.of())
+            ))
+            .toList();
+    }
+
+    private static List<PartyTransferRepresentation> buildPartyTransfers(
+            final Map<UUID, BigDecimal> individualBalances,
+            final List<TripParticipant> participants) {
+        final Map<UUID, UUID> participantToParty = buildParticipantToPartyMap(participants);
+        if (participantToParty.isEmpty()) {
+            return List.of();
+        }
+
+        final Map<UUID, String> partyNames = new HashMap<>();
+        for (final TripParticipant p : participants) {
+            if (p.hasPartyInfo()) {
+                partyNames.putIfAbsent(p.partyTenantId(), p.partyName());
+            }
+        }
+
+        final Map<UUID, BigDecimal> partyBalances = PartySettlement.aggregateByParty(
+            individualBalances, participantToParty);
+        final List<PartySettlement.PartyTransfer> transfers =
+            PartySettlement.calculateTransfers(partyBalances);
+
+        return transfers.stream()
+            .map(t -> new PartyTransferRepresentation(
+                t.fromPartyId(),
+                partyNames.getOrDefault(t.fromPartyId(), t.fromPartyId().toString()),
+                t.toPartyId(),
+                partyNames.getOrDefault(t.toPartyId(), t.toPartyId().toString()),
+                t.amount()
+            ))
+            .toList();
+    }
+
+    private static Map<UUID, UUID> buildParticipantToPartyMap(final List<TripParticipant> participants) {
+        final Map<UUID, UUID> map = new HashMap<>();
+        for (final TripParticipant p : participants) {
+            if (p.hasPartyInfo()) {
+                map.put(p.participantId(), p.partyTenantId());
+            }
+        }
+        return map;
     }
 }

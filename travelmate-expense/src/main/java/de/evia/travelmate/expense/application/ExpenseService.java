@@ -1,6 +1,7 @@
 package de.evia.travelmate.expense.application;
 
 import java.math.BigDecimal;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.UUID;
 
@@ -17,12 +18,16 @@ import de.evia.travelmate.common.events.trips.ParticipantJoinedTrip;
 import de.evia.travelmate.common.events.trips.StayPeriodUpdated;
 import de.evia.travelmate.common.events.trips.TripCompleted;
 import de.evia.travelmate.common.events.trips.TripCreated;
+import de.evia.travelmate.common.events.trips.AccommodationPriceSet;
 import de.evia.travelmate.expense.application.command.AddReceiptCommand;
 import de.evia.travelmate.expense.application.command.ApproveReceiptCommand;
+import de.evia.travelmate.expense.application.command.ConfirmAdvancePaymentsCommand;
 import de.evia.travelmate.expense.application.command.RejectReceiptCommand;
 import de.evia.travelmate.expense.application.command.ResubmitReceiptCommand;
+import de.evia.travelmate.expense.application.command.ToggleAdvancePaymentPaidCommand;
 import de.evia.travelmate.expense.application.command.UpdateWeightingCommand;
 import de.evia.travelmate.expense.application.representation.ExpenseRepresentation;
+import de.evia.travelmate.expense.domain.expense.AdvancePaymentId;
 import de.evia.travelmate.expense.domain.expense.Amount;
 import de.evia.travelmate.expense.domain.expense.Expense;
 import de.evia.travelmate.expense.domain.expense.ExpenseRepository;
@@ -68,7 +73,9 @@ public class ExpenseService {
                 LOG.warn("TripProjection not found for trip {}, creating stub", event.tripId());
                 return TripProjection.create(event.tripId(), new TenantId(event.tenantId()), "Unknown Trip");
             });
-        projection.addParticipant(new TripParticipant(event.participantId(), event.username()));
+        projection.addParticipant(new TripParticipant(
+            event.participantId(), event.username(), null, null,
+            event.participantTenantId(), event.partyName()));
         tripProjectionRepository.save(projection);
     }
 
@@ -149,6 +156,47 @@ public class ExpenseService {
         return ExpenseRepresentation.from(expense);
     }
 
+    public void onAccommodationPriceSet(final AccommodationPriceSet event) {
+        final TripProjection projection = tripProjectionRepository.findByTripId(event.tripId())
+            .orElseGet(() -> {
+                LOG.warn("TripProjection not found for trip {}, skipping accommodation price", event.tripId());
+                return null;
+            });
+        if (projection == null) {
+            return;
+        }
+        projection.setAccommodationTotalPrice(event.totalPrice());
+        tripProjectionRepository.save(projection);
+        LOG.info("Updated accommodation total price for trip {} to {}", event.tripId(), event.totalPrice());
+    }
+
+    public ExpenseRepresentation confirmAdvancePayments(final TenantId tenantId,
+                                                         final ConfirmAdvancePaymentsCommand command) {
+        final Expense expense = findByTripId(tenantId, command.tripId());
+        final TripProjection projection = tripProjectionRepository.findByTripId(command.tripId())
+            .orElseThrow(() -> new EntityNotFoundException("TripProjection", command.tripId().toString()));
+
+        final List<Expense.PartyInfo> parties = buildPartyInfos(projection);
+        expense.confirmAdvancePayments(command.amount(), parties);
+        expenseRepository.save(expense);
+        return ExpenseRepresentation.from(expense);
+    }
+
+    public ExpenseRepresentation removeAdvancePayments(final TenantId tenantId, final UUID tripId) {
+        final Expense expense = findByTripId(tenantId, tripId);
+        expense.removeAdvancePayments();
+        expenseRepository.save(expense);
+        return ExpenseRepresentation.from(expense);
+    }
+
+    public ExpenseRepresentation toggleAdvancePaymentPaid(final TenantId tenantId,
+                                                           final ToggleAdvancePaymentPaidCommand command) {
+        final Expense expense = findByTripId(tenantId, command.tripId());
+        expense.toggleAdvancePaymentPaid(new AdvancePaymentId(command.advancePaymentId()));
+        expenseRepository.save(expense);
+        return ExpenseRepresentation.from(expense);
+    }
+
     public ExpenseRepresentation settle(final TenantId tenantId, final UUID tripId) {
         final Expense expense = findByTripId(tenantId, tripId);
         expense.settle();
@@ -162,8 +210,9 @@ public class ExpenseService {
                                                final boolean representationOnly) {
         final Expense expense = findByTripId(tenantId, tripId);
         final TripProjection projection = tripProjectionRepository.findByTripId(tripId).orElse(null);
-        if (projection != null && projection.startDate() != null) {
-            return ExpenseRepresentation.from(expense, projection.startDate(), projection.endDate());
+        if (projection != null) {
+            return ExpenseRepresentation.from(expense, projection.startDate(), projection.endDate(),
+                projection.participants());
         }
         return ExpenseRepresentation.from(expense);
     }
@@ -171,6 +220,18 @@ public class ExpenseService {
     private Expense findByTripId(final TenantId tenantId, final UUID tripId) {
         return expenseRepository.findByTripId(tenantId, tripId)
             .orElseThrow(() -> new EntityNotFoundException("Expense", tripId.toString()));
+    }
+
+    private List<Expense.PartyInfo> buildPartyInfos(final TripProjection projection) {
+        final LinkedHashMap<UUID, String> partyMap = new LinkedHashMap<>();
+        for (final TripParticipant p : projection.participants()) {
+            if (p.hasPartyInfo()) {
+                partyMap.putIfAbsent(p.partyTenantId(), p.partyName());
+            }
+        }
+        return partyMap.entrySet().stream()
+            .map(e -> new Expense.PartyInfo(e.getKey(), e.getValue()))
+            .toList();
     }
 
     private void publishEvents(final Expense expense) {
