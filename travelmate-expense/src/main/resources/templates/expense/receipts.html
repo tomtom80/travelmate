@@ -61,6 +61,52 @@
                                     </form>
                                 </article>
                             </dialog>
+                            <!-- Resubmit button for REJECTED receipts -->
+                            <button th:if="${receipt.reviewStatus().name() == 'REJECTED'}"
+                                    class="outline"
+                                    onclick="this.closest('td').querySelector('.resubmit-dialog').showModal()"
+                                    th:text="#{expense.receipt.resubmit}">Erneut einreichen</button>
+                            <!-- Resubmit dialog -->
+                            <dialog th:if="${receipt.reviewStatus().name() == 'REJECTED'}" class="resubmit-dialog">
+                                <article>
+                                    <header>
+                                        <button aria-label="Close" rel="prev"
+                                                onclick="this.closest('dialog').close()"></button>
+                                        <h3 th:text="#{expense.receipt.resubmit}">Erneut einreichen</h3>
+                                    </header>
+                                    <div role="alert" style="background:#fef2f2; border:1px solid #fecaca; border-radius:4px; padding:0.75rem; margin-bottom:1rem;">
+                                        <strong th:text="#{expense.receipt.rejectionReason}">Ablehnungsgrund:</strong>
+                                        <span th:text="${receipt.rejectionReason()}"></span>
+                                    </div>
+                                    <form th:hx-post="@{/{tid}/receipts/{rid}/resubmit(tid=${tripId},rid=${receipt.receiptId()})}"
+                                          hx-target="#receipts" hx-swap="innerHTML"
+                                          hx-on::after-request="if(event.detail.successful) this.closest('dialog').close()">
+                                        <label>
+                                            <span th:text="#{expense.receipt.description}">Beschreibung</span>
+                                            <input type="text" name="description" required th:value="${receipt.description()}">
+                                        </label>
+                                        <label>
+                                            <span th:text="#{expense.receipt.amount}">Betrag</span>
+                                            <input type="number" name="amount" step="0.01" min="0.01" required th:value="${receipt.amount()}">
+                                        </label>
+                                        <label>
+                                            <span th:text="#{expense.receipt.date}">Datum</span>
+                                            <input type="date" name="date" required th:value="${receipt.date()}">
+                                        </label>
+                                        <label>
+                                            <span th:text="#{expense.receipt.category}">Kategorie</span>
+                                            <select name="category">
+                                                <option th:each="cat : ${T(de.evia.travelmate.expense.domain.expense.ExpenseCategory).values()}"
+                                                        th:value="${cat}" th:text="#{${'expense.category.' + cat}}"
+                                                        th:selected="${cat.name() == receipt.category()}"></option>
+                                            </select>
+                                        </label>
+                                        <footer>
+                                            <button type="submit" th:text="#{expense.receipt.resubmit}">Erneut einreichen</button>
+                                        </footer>
+                                    </form>
+                                </article>
+                            </dialog>
                             <!-- Remove button for non-settled receipts -->
                             <button th:if="${receipt.reviewStatus().name() != 'APPROVED'}"
                                     class="outline secondary"

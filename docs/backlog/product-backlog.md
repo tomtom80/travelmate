@@ -1161,17 +1161,24 @@ IAM ──(U)──→ D. Conformist ──→ Trips ──→ Partnership ─�
 
 ---
 
-#### US-EXP-013: Advance Payment (Anzahlung) Tracking
+#### US-EXP-013: Advance Payment (Anzahlung) — Equal Round Amount per TravelParty
 **Epic**: E-EXP-02
 **Priority**: Should
 **Size**: M
-**As an** Organizer, **I want** to record advance payments (e.g., accommodation deposit), **so that** they are accounted for in the final settlement.
+**As an** Organizer, **I want** to set a single equal advance payment amount for all TravelParties — auto-suggested from the accommodation cost — **so that** each family pays the same round amount before the trip and that amount is credited in the final settlement.
 
 ##### Acceptance Criteria
-- **Given** I enter an advance payment with payer and amount, **When** the settlement is calculated, **Then** the advance is credited to the payer.
+- **Given** the accommodation price is set and parties are known, **When** the Organizer opens the advance payment form, **Then** the system suggests: `ceil(accommodationPrice / partyCount / 50) × 50`.
+- **Given** the suggested amount is shown, **When** the Organizer adjusts it (e.g., adds buffer), **Then** the custom amount is accepted.
+- **Given** the Organizer confirms, **Then** the same amount is recorded as advance for EACH travel party.
+- **Given** advances are recorded, **When** the settlement is calculated, **Then** each party's advance is credited as a flat amount.
 
 ##### Technical Notes
-- New entity or special Receipt type: AdvancePayment (payerId, amount, date, description)
+- New entity `AdvancePayment` within Expense aggregate (advancePaymentId, description, amount, paidByPartyId, paidByPartyName, paidAt, paid, createdAt)
+- New Domain Service: `AdvancePaymentSuggestion` — formula: `ceil(accommodationCost / partyCount / 50) × 50`
+- Same amount for ALL parties — no per-party weighting for advances
+- "Bezahlt" toggle per party to track actual payment receipt
+- Depends on S9-A (accommodation price) and S9-C (party-level settlement view)
 
 ---
 
@@ -1792,21 +1799,28 @@ Items from `docs/arc42/11-risks-and-technical-debt.md`:
 | US-TRIPS-054 | E-TRIPS-06 | Should | M |
 | US-IAM-050 | E-IAM-06 | Must | M |
 
-### Iteration 9+ (Future — Location, Bring, PWA, Polish)
+### Iteration 9 (v0.9.0 — Accommodation, Party Settlement, Advance Payments, Expense Polish + PWA)
+
+| Story | ID | Epic | Priority | Size | Bounded Context |
+|-------|----|------|----------|------|-----------------|
+| S9-A: Create Accommodation with Room Inventory | US-TRIPS-060 | E-TRIPS-07 | Must | L | Trips |
+| S9-B: Assign Travel Parties to Rooms | US-TRIPS-065 | E-TRIPS-07 | Must | M | Trips |
+| S9-C: Party-Level Settlement View | US-EXP-050 | E-EXP-04 | Must | M | Expense |
+| S9-D: Advance Payment (Equal Round Amount) | US-EXP-013 | E-EXP-02 | Should | M | Expense |
+| S9-E: Re-Submit Rejected Receipt | US-EXP-042 | E-EXP-05 | Should | S | Expense |
+| S9-F: PWA Manifest & Install Prompt | US-INFRA-041 | E-INFRA-05 | Should | S | Infrastructure |
+
+### Iteration 10+ (Future — Import, Polls, Polish)
 
 | Story | Epic | Priority | Size |
 |-------|------|----------|------|
-| US-TRIPS-060 | E-TRIPS-07 | Should | M |
 | US-TRIPS-061 | E-TRIPS-07 | Could | M |
 | US-TRIPS-062 | E-TRIPS-07 | Could | L |
 | US-TRIPS-055 | E-TRIPS-06 | Could | L |
-| US-EXP-013 | E-EXP-02 | Should | M |
 | US-EXP-022 | E-EXP-03 | Could | M |
 | US-EXP-032 | E-EXP-04 | Could | M |
 | US-EXP-033 | E-EXP-04 | Could | M |
-| US-EXP-042 | E-EXP-05 | Should | S |
 | US-INFRA-040 | E-INFRA-05 | Could | XL |
-| US-INFRA-041 | E-INFRA-05 | Should | S |
 | US-INFRA-042 | E-INFRA-05 | Should | M |
 | US-INFRA-055 | E-INFRA-06 | Could | XL |
 | US-IAM-051 | E-IAM-06 | Could | M |

@@ -27,6 +27,7 @@ import de.evia.travelmate.expense.domain.expense.ExpenseCategory;
 import de.evia.travelmate.expense.application.command.AddReceiptCommand;
 import de.evia.travelmate.expense.application.command.ApproveReceiptCommand;
 import de.evia.travelmate.expense.application.command.RejectReceiptCommand;
+import de.evia.travelmate.expense.application.command.ResubmitReceiptCommand;
 import de.evia.travelmate.expense.application.command.UpdateWeightingCommand;
 import de.evia.travelmate.expense.application.representation.ExpenseRepresentation;
 import de.evia.travelmate.expense.domain.trip.TripParticipant;
@@ -132,6 +133,28 @@ public class ExpenseController {
             tenantId, new RejectReceiptCommand(tripId, receiptId, reviewerId, reason));
 
         triggerSuccessToast(response, messageSource.getMessage("expense.receiptRejected", null, locale));
+        return populateReceiptFragment(expense, projection, model);
+    }
+
+    @PostMapping("/{tripId}/receipts/{receiptId}/resubmit")
+    public String resubmitReceipt(@AuthenticationPrincipal final Jwt jwt,
+                                  @PathVariable final UUID tripId,
+                                  @PathVariable final UUID receiptId,
+                                  @RequestParam final String description,
+                                  @RequestParam final BigDecimal amount,
+                                  @RequestParam final LocalDate date,
+                                  @RequestParam(required = false) final ExpenseCategory category,
+                                  final HttpServletResponse response,
+                                  final Locale locale,
+                                  final Model model) {
+        requireAuthentication(jwt);
+        final TripProjection projection = findProjection(tripId);
+        final TenantId tenantId = projection.tenantId();
+
+        final ExpenseRepresentation expense = expenseService.resubmitReceipt(
+            tenantId, new ResubmitReceiptCommand(tripId, receiptId, description, amount, date, category));
+
+        triggerSuccessToast(response, messageSource.getMessage("expense.receiptResubmitted", null, locale));
         return populateReceiptFragment(expense, projection, model);
     }
 

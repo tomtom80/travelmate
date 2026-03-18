@@ -1,0 +1,22 @@
+{
+  "name": "Travelmate",
+  "short_name": "Travelmate",
+  "description": "Gemeinsam Reisen planen — Einkaufslisten, Essensplaene, Abrechnungen.",
+  "start_url": "/trips/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/iam/images/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/iam/images/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

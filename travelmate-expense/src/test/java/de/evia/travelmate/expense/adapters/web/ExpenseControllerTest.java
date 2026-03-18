@@ -35,6 +35,7 @@ import de.evia.travelmate.expense.application.ExpenseService;
 import de.evia.travelmate.expense.application.command.AddReceiptCommand;
 import de.evia.travelmate.expense.application.command.ApproveReceiptCommand;
 import de.evia.travelmate.expense.application.command.RejectReceiptCommand;
+import de.evia.travelmate.expense.application.command.ResubmitReceiptCommand;
 import de.evia.travelmate.expense.application.command.UpdateWeightingCommand;
 import de.evia.travelmate.expense.application.representation.ExpenseRepresentation;
 import de.evia.travelmate.expense.application.representation.ReceiptRepresentation;
@@ -236,6 +237,26 @@ class ExpenseControllerTest {
             .andExpect(header().exists("HX-Trigger"));
 
         verify(expenseService).rejectReceipt(eq(new TenantId(TENANT_UUID)), any(RejectReceiptCommand.class));
+    }
+
+    @Test
+    void resubmitReceiptReturnsReceiptFragment() throws Exception {
+        when(expenseService.resubmitReceipt(eq(new TenantId(TENANT_UUID)), any(ResubmitReceiptCommand.class)))
+            .thenReturn(expense);
+
+        mockMvc.perform(post("/" + TRIP_UUID + "/receipts/" + RECEIPT_UUID + "/resubmit")
+                .with(jwt().jwt(j -> j.claim("email", USER_EMAIL)))
+                .param("description", "Corrected Supermarkt")
+                .param("amount", "45.00")
+                .param("date", "2026-03-10")
+                .param("category", "GROCERIES"))
+            .andExpect(status().isOk())
+            .andExpect(view().name("expense/receipts :: receiptList"))
+            .andExpect(model().attributeExists("expense"))
+            .andExpect(model().attributeExists("participantNames"))
+            .andExpect(header().exists("HX-Trigger"));
+
+        verify(expenseService).resubmitReceipt(eq(new TenantId(TENANT_UUID)), any(ResubmitReceiptCommand.class));
     }
 
     @Test
