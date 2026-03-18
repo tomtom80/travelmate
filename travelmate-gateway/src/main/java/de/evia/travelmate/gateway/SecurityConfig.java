@@ -30,7 +30,7 @@ public class SecurityConfig {
 
         http
             .authorizeExchange(exchanges -> exchanges
-                .pathMatchers("/", "/actuator/health/**", "/iam/", "/iam/signup", "/iam/signup/**", "/iam/register", "/iam/register/**", "/iam/css/**", "/iam/images/**").permitAll()
+                .pathMatchers("/", "/actuator/health/**", "/manifest.json", "/iam/", "/iam/signup", "/iam/signup/**", "/iam/register", "/iam/register/**", "/iam/css/**", "/iam/images/**").permitAll()
                 .anyExchange().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2

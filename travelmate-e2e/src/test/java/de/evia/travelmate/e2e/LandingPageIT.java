@@ -2,6 +2,11 @@ package de.evia.travelmate.e2e;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
+
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
@@ -73,5 +78,25 @@ class LandingPageIT extends E2ETestBase {
         assertThat(content).contains("Reisepartei erstellen");
         assertThat(content).doesNotContain("Whitelabel Error Page");
         assertThat(content).doesNotContain("Sign in to Travelmate");
+    }
+
+    @Test
+    @Order(10)
+    void pwaManifestJsonIsAccessible() throws Exception {
+        try (final HttpClient client = HttpClient.newHttpClient()) {
+            final HttpRequest request = HttpRequest.newBuilder()
+                .uri(URI.create(BASE_URL + "/manifest.json"))
+                .GET()
+                .build();
+            final HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
+
+            assertThat(response.statusCode()).isEqualTo(200);
+            final String body = response.body();
+            assertThat(body).contains("\"name\"");
+            assertThat(body).contains("Travelmate");
+            assertThat(body).contains("\"display\"");
+            assertThat(body).contains("standalone");
+            assertThat(body).contains("\"icons\"");
+        }
     }
 }
