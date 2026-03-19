@@ -1810,18 +1810,24 @@ Items from `docs/arc42/11-risks-and-technical-debt.md`:
 | S9-E: Re-Submit Rejected Receipt | US-EXP-042 | E-EXP-05 | Should | S | Expense |
 | S9-F: PWA Manifest & Install Prompt | US-INFRA-041 | E-INFRA-05 | Should | S | Infrastructure |
 
-### Iteration 10+ (Future — Import, Polls, Polish)
+### Iteration 10 (v0.10.0 — Recipe Import, Category Breakdown, PDF Export)
+
+| Story | ID | Epic | Priority | Size | Bounded Context |
+|-------|----|------|----------|------|-----------------|
+| S10-A: Recipe Import from URL | US-TRIPS-041 | E-TRIPS-05 | Should | L | Trips |
+| S10-B: Accommodation URL Import | US-TRIPS-061 | E-TRIPS-07 | Could | M | Trips |
+| S10-C: Settlement per Category | US-EXP-032 | E-EXP-04 | Could | M | Expense |
+| S10-D: Export Settlement as PDF | US-EXP-033 | E-EXP-04 | Could | M | Expense |
+| S10-E: Lighthouse CI | US-INFRA-042 | E-INFRA-05 | Should | S | Infrastructure |
+
+### Iteration 11+ (Future — Polls, Bring, Custom Split, Polish)
 
 | Story | Epic | Priority | Size |
 |-------|------|----------|------|
-| US-TRIPS-061 | E-TRIPS-07 | Could | M |
 | US-TRIPS-062 | E-TRIPS-07 | Could | L |
 | US-TRIPS-055 | E-TRIPS-06 | Could | L |
 | US-EXP-022 | E-EXP-03 | Could | M |
-| US-EXP-032 | E-EXP-04 | Could | M |
-| US-EXP-033 | E-EXP-04 | Could | M |
 | US-INFRA-040 | E-INFRA-05 | Could | XL |
-| US-INFRA-042 | E-INFRA-05 | Should | M |
 | US-INFRA-055 | E-INFRA-06 | Could | XL |
 | US-IAM-051 | E-IAM-06 | Could | M |
 | US-IAM-052 | E-IAM-06 | Could | S |
