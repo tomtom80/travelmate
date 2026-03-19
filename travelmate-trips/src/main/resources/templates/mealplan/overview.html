@@ -7,7 +7,8 @@
         <p><a th:href="@{/{id}(id=${trip.tripId()})}" th:text="${trip.name()}">Reise</a></p>
     </hgroup>
 
-    <figure class="mealplan-table">
+    <!-- Desktop: Table layout (hidden on mobile) -->
+    <figure class="mealplan-desktop">
         <table>
             <thead>
                 <tr>
@@ -20,48 +21,60 @@
             <tbody>
                 <tr th:each="entry : ${slotsByDate}">
                     <td><strong th:text="${entry.key}"></strong></td>
-                    <td th:each="slot : ${entry.value}">
-                        <!-- Status indicator -->
-                        <div th:switch="${slot.status()}">
-                            <span th:case="'SKIP'" class="mealslot-skip" th:text="#{mealSlotStatus.SKIP}">Auslassen</span>
-                            <span th:case="'EATING_OUT'" class="mealslot-eating-out" th:text="#{mealSlotStatus.EATING_OUT}">Auswaerts essen</span>
-                            <span th:case="*">
-                                <span th:if="${slot.recipeName()}" th:text="${slot.recipeName()}"></span>
-                                <em th:unless="${slot.recipeName()}" th:text="#{mealplan.noRecipe}">Kein Rezept</em>
-                            </span>
-                        </div>
-
-                        <!-- Status form -->
-                        <form method="post"
-                              th:action="@{/{tid}/mealplan/slots/{sid}/status(tid=${trip.tripId()},sid=${slot.slotId()})}"
-                              style="margin:0.25rem 0 0 0;">
-                            <select name="status" onchange="this.form.submit()" style="margin-bottom:0; padding:0.25rem; font-size:0.85rem;">
-                                <option value="PLANNED" th:selected="${slot.status() == 'PLANNED'}" th:text="#{mealSlotStatus.PLANNED}">Geplant</option>
-                                <option value="SKIP" th:selected="${slot.status() == 'SKIP'}" th:text="#{mealSlotStatus.SKIP}">Auslassen</option>
-                                <option value="EATING_OUT" th:selected="${slot.status() == 'EATING_OUT'}" th:text="#{mealSlotStatus.EATING_OUT}">Auswaerts</option>
-                            </select>
-                        </form>
-
-                        <!-- Recipe picker (only for PLANNED slots) -->
-                        <form th:if="${slot.status() == 'PLANNED'}" method="post"
-                              th:action="@{/{tid}/mealplan/slots/{sid}/recipe(tid=${trip.tripId()},sid=${slot.slotId()})}"
-                              style="margin:0.25rem 0 0 0;">
-                            <select name="recipeId" onchange="this.form.submit()" style="margin-bottom:0; padding:0.25rem; font-size:0.85rem;">
-                                <option value="" th:text="#{mealplan.selectRecipe}">-- Rezept waehlen --</option>
-                                <option th:each="r : ${recipes}"
-                                        th:value="${r.recipeId()}"
-                                        th:selected="${slot.recipeId() != null && slot.recipeId().equals(r.recipeId())}"
-                                        th:text="${r.name()}">
-                                </option>
-                            </select>
-                        </form>
-                    </td>
+                    <td th:each="slot : ${entry.value}"
+                        th:insert="~{mealplan/overview :: slotContent(${slot})}"></td>
                 </tr>
             </tbody>
         </table>
     </figure>
 
+    <!-- Mobile: Day-by-day accordion (hidden on desktop) -->
+    <div class="mealplan-mobile">
+        <article th:each="entry : ${slotsByDate}" style="margin-bottom:0.5rem;">
+            <details>
+                <summary><strong th:text="${entry.key}"></strong></summary>
+                <div th:each="slot : ${entry.value}" style="margin-bottom:0.75rem; padding:0.5rem; border-left:3px solid var(--pico-primary);">
+                    <small><strong th:text="#{${'mealType.' + slot.mealType()}}">Mahlzeit</strong></small>
+                    <div th:insert="~{mealplan/overview :: slotContent(${slot})}"></div>
+                </div>
+            </details>
+        </article>
+    </div>
+
     <a th:href="@{/{id}(id=${trip.tripId()})}" role="button" class="outline" th:text="#{common.back}">Zurueck</a>
+</div>
+
+<!-- Shared fragment for slot content (used by both desktop and mobile) -->
+<div th:fragment="slotContent(slot)" th:remove="tag">
+    <div th:switch="${slot.status()}">
+        <span th:case="'SKIP'" class="mealslot-skip" th:text="#{mealSlotStatus.SKIP}">Auslassen</span>
+        <span th:case="'EATING_OUT'" class="mealslot-eating-out" th:text="#{mealSlotStatus.EATING_OUT}">Auswaerts essen</span>
+        <span th:case="*">
+            <span th:if="${slot.recipeName()}" th:text="${slot.recipeName()}"></span>
+            <em th:unless="${slot.recipeName()}" th:text="#{mealplan.noRecipe}">Kein Rezept</em>
+        </span>
+    </div>
+    <form method="post"
+          th:action="@{/{tid}/mealplan/slots/{sid}/status(tid=${trip.tripId()},sid=${slot.slotId()})}"
+          style="margin:0.25rem 0 0 0;">
+        <select name="status" onchange="this.form.submit()" style="margin-bottom:0; padding:0.25rem; font-size:0.85rem;">
+            <option value="PLANNED" th:selected="${slot.status() == 'PLANNED'}" th:text="#{mealSlotStatus.PLANNED}">Geplant</option>
+            <option value="SKIP" th:selected="${slot.status() == 'SKIP'}" th:text="#{mealSlotStatus.SKIP}">Auslassen</option>
+            <option value="EATING_OUT" th:selected="${slot.status() == 'EATING_OUT'}" th:text="#{mealSlotStatus.EATING_OUT}">Auswaerts</option>
+        </select>
+    </form>
+    <form th:if="${slot.status() == 'PLANNED'}" method="post"
+          th:action="@{/{tid}/mealplan/slots/{sid}/recipe(tid=${trip.tripId()},sid=${slot.slotId()})}"
+          style="margin:0.25rem 0 0 0;">
+        <select name="recipeId" onchange="this.form.submit()" style="margin-bottom:0; padding:0.25rem; font-size:0.85rem;">
+            <option value="" th:text="#{mealplan.selectRecipe}">-- Rezept waehlen --</option>
+            <option th:each="r : ${recipes}"
+                    th:value="${r.recipeId()}"
+                    th:selected="${slot.recipeId() != null && slot.recipeId().equals(r.recipeId())}"
+                    th:text="${r.name()}">
+            </option>
+        </select>
+    </form>
 </div>
 </body>
 </html>

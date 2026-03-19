@@ -169,9 +169,23 @@ body > footer {
     font-size: 0.875rem;
 }
 
+/* ========== Mealplan: desktop/mobile toggle ========== */
+.mealplan-mobile { display: none; }
+.mealplan-desktop { display: block; }
+
+/* ========== Recipe buttons: consistent sizing ========== */
+.table-cards td div[style*="display:flex"] a[role="button"],
+.table-cards td div[style*="display:flex"] button {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.85rem;
+}
+
 /* ========== Mobile Responsive (max-width: 767px) ========== */
 
 @media (max-width: 767px) {
+    /* Mealplan: show accordion, hide table */
+    .mealplan-mobile { display: block; }
+    .mealplan-desktop { display: none; }
     /* 1. Grid columns stack vertically */
     .grid {
         grid-template-columns: 1fr !important;
