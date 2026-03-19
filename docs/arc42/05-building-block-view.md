@@ -34,8 +34,8 @@ Das System besteht aus folgenden Bausteinen:
 |----------|--------------|
 | **Spring Cloud Gateway** | Zentrales Routing, Authentifizierungsprüfung |
 | **travelmate-iam** | Reisepartei-Verwaltung (Tenants), Mitglieder (Accounts), Mitreisende (Dependents), Sign-up via Keycloak Admin API |
-| **travelmate-trips** | Trip-Planung, Einladungen, Teilnehmer, Aufenthaltsdauer, Trip-Status-Lifecycle, Rezeptverwaltung, Essensplan |
-| **travelmate-expense** | Abrechnung abgeschlossener Trips: Belege (Receipts), gewichtete Kostenaufteilung (Weightings), Saldo-Berechnung (Settlement). Konsumiert Trip-Events fuer lokale TripProjection. Port 8083, Context-Path `/expense`, Datenbank `travelmate_expense` (Port 5434) |
+| **travelmate-trips** | Trip-Planung, Einladungen, Teilnehmer, Aufenthaltsdauer, Trip-Status-Lifecycle, Rezeptverwaltung, Essensplan, Einkaufsliste, Unterkunft |
+| **travelmate-expense** | Abrechnung abgeschlossener Trips: Belege (Receipts), gewichtete Kostenaufteilung (Weightings), Saldo-Berechnung (Settlement), Reisepartei-Abrechnung (Party Settlement), Vorauszahlungen (Advance Payments). Konsumiert Trip-Events fuer lokale TripProjection. Port 8083, Context-Path `/expense`, Datenbank `travelmate_expense` (Port 5434) |
 | **RabbitMQ (AMQP)** | Asynchroner Nachrichtenaustausch zwischen den SCS (Topic Exchange `travelmate.events`) |
 | **Keycloak** | Zentraler Identity Provider (OIDC) |
 | **PostgreSQL (je SCS)** | Datenhaltung, jeweils isoliert pro Service |
@@ -86,7 +86,9 @@ de.evia.travelmate.<service>/
 - Invitation (Aggregate Root: Einladung zu einem Trip, Typen: MEMBER/EXTERNAL, Status: AWAITING_REGISTRATION/PENDING/ACCEPTED/DECLINED)
 - Recipe (Aggregate Root: RecipeId, TenantId, RecipeName, Servings, Ingredients — pro-Tenant Rezeptbibliothek)
 - MealPlan (Aggregate Root: MealPlanId, TenantId, TripId, MealSlots — Essensplan-Raster pro Trip, 3 Mahlzeiten/Tag)
-- Zukuenftig: ShoppingList, Accommodation
+- ShoppingList (Aggregate Root: ShoppingListId, TenantId, TripId, ShoppingItems — persistierte Einkaufsliste pro Trip, generiert aus MealPlan-Rezepten + manuelle Items)
+- Accommodation (Aggregate Root: AccommodationId, TenantId, TripId, Rooms, RoomAssignments — Unterkunft pro Trip mit Zimmern und Belegungszuordnung)
+- IngredientAggregator (Domain Service: Skalierung und Aggregation von Rezept-Zutaten nach Teilnehmerzahl)
 
 **Trips Adapter-Erweiterungen (Iteration 4):**
 - `adapters/mail/InvitationEmailListener` — Versendet Einladungs-E-Mails via Spring Mail + Thymeleaf nach `InvitationCreated`-Event
@@ -96,12 +98,15 @@ de.evia.travelmate.<service>/
 - `adapters/messaging/ExternalInvitationConsumer` — Konsumiert `ExternalUserInvitedToTrip` und erstellt Keycloak-User + Account
 
 **Expense:**
-- Expense (Aggregate Root: ExpenseId, TenantId, TripId, Status OPEN/SETTLED, Receipts, ParticipantWeightings)
-- Receipt (Entity: Beschreibung, Betrag, Bezahlt-von, Datum)
-- TripProjection (Projektion der Trips-Daten, konsumiert Trips-Events: TripCreated, ParticipantJoinedTrip, TripCompleted)
+- Expense (Aggregate Root: ExpenseId, TenantId, TripId, Status OPEN/SETTLED, Receipts, ParticipantWeightings, AdvancePayments)
+- Receipt (Entity: Beschreibung, Betrag, Bezahlt-von, Datum, Kategorie, Review-Status)
+- AdvancePayment (Entity: AdvancePaymentId, partyTenantId, partyName, Betrag, Bezahlt-Status — Vorauszahlung pro Reisepartei)
+- PartySettlement (Domain Service: Aggregiert individuelle Salden auf Reisepartei-Ebene, berechnet minimale Transfers zwischen Parteien)
+- AdvancePaymentSuggestion (Domain Service: Berechnet gerundeten Vorschlag fuer Vorauszahlungen — `ceil(accommodationCost / partyCount / 50) * 50`)
+- TripProjection (Projektion der Trips-Daten, konsumiert Trips-Events: TripCreated, ParticipantJoinedTrip, TripCompleted, AccommodationPriceSet. Erweitert um accommodationTotalPrice und partyTenantId/partyName pro Teilnehmer)
 
-**Expense Adapter-Erweiterungen (Iteration 5):**
-- `adapters/messaging/TripEventConsumer` — Konsumiert `TripCreated`, `ParticipantJoinedTrip` und `TripCompleted` Events via RabbitMQ
+**Expense Adapter-Erweiterungen (Iteration 5–9):**
+- `adapters/messaging/TripEventConsumer` — Konsumiert `TripCreated`, `ParticipantJoinedTrip`, `TripCompleted` und `AccommodationPriceSet` Events via RabbitMQ
 - `adapters/messaging/RabbitMqConfig` — Definiert Queues und Bindings fuer Trips-Events
 - `adapters/web/ExpenseController` — Thymeleaf + HTMX Controller fuer Beleg-Erfassung, Gewichtungen und Abschluss
 - `adapters/persistence/ExpenseRepositoryAdapter` — JPA-Implementierung fuer Expense-Aggregat

@@ -20,15 +20,21 @@ UI verwendet Fachsprache, Code verwendet technische Namen. Siehe ADR-0011 fuer d
 | **Mahlzeittyp** | Meal Type | MealType | Trips | Enum: BREAKFAST (Fruehstueck), LUNCH (Mittagessen), DINNER (Abendessen). |
 | **Rezept** | Recipe | Recipe | Trips | Ein Rezept in der Rezeptbibliothek der Reisepartei. Enthaelt Name, Portionen und Zutatenliste. |
 | **Zutat** | Ingredient | Ingredient | Trips | Eine Zutat eines Rezepts mit Name, Menge und Einheit. |
-| **ShoppingList** | Einkaufsliste | Automatisch generierte Liste aller benötigten Zutaten für den Trip. |
+| **Einkaufsliste** | Shopping List | ShoppingList | Trips | Persistiertes Aggregat: automatisch aus MealPlan-Rezepten generierte Liste + manuell hinzugefuegte Items. Status-Lifecycle pro Item: OPEN -> ASSIGNED -> PURCHASED. |
+| **Einkaufsartikel** | Shopping Item | ShoppingItem | Trips | Entity innerhalb der ShoppingList. Quelle: RECIPE (automatisch) oder MANUAL (manuell). Status: OPEN, ASSIGNED, PURCHASED. |
+| **Zutat-Aggregator** | Ingredient Aggregator | IngredientAggregator | Trips | Domain Service: Skaliert Rezept-Zutaten nach Teilnehmerzahl und aggregiert identische Zutaten (gleicher Name + Einheit). |
+| **Unterkunft** | Accommodation | Accommodation | Trips | Gebuchte Unterkunft fuer einen Trip mit Name, Adresse, URL, Check-in/Check-out, Gesamtpreis, Zimmern und Zimmerbelegungen. |
+| **Zimmer** | Room | Room | Trips | Entity innerhalb der Accommodation mit Zimmertyp (SINGLE, DOUBLE, TWIN, TRIPLE, QUAD, DORMITORY, SUITE, APARTMENT) und Bettenanzahl. |
+| **Zimmerbelegung** | Room Assignment | RoomAssignment | Trips | Zuordnung einer Reisepartei zu einem Zimmer mit Personenzahl. |
+| **Vorauszahlung** | Advance Payment | AdvancePayment | Expense | Vorauszahlung pro Reisepartei fuer die Unterkunft. Betrag wird gerundet vorgeschlagen, Bezahlt-Status kann togglet werden. |
+| **Vorauszahlungsvorschlag** | Advance Payment Suggestion | AdvancePaymentSuggestion | Expense | Domain Service: `ceil(accommodationCost / partyCount / 50) * 50` — rundet auf 50er-Schritte auf. |
+| **Reisepartei-Abrechnung** | Party Settlement | PartySettlement | Expense | Domain Service: Aggregiert individuelle Salden auf Reisepartei-Ebene und berechnet minimale Transfers zwischen Parteien (Greedy-Algorithmus). |
 | **Expense** | Abrechnung | Die Gesamtabrechnung aller Kosten eines Trips. |
 | **Receipt** | Beleg / Bon | Ein einzelner Kassenbeleg mit Betrag und optionalem Foto. |
 | **Weighting** | Gewichtung | Faktor für die Kostenaufteilung pro Person: 1.0 = Erwachsener, 0.5 = Teilzeit-Teilnehmer, 0.0 = Kind unter 3 Jahren. |
 | **Settlement** | Abrechnung / Saldo | Der berechnete Saldo pro Familie nach Verrechnung aller Belege und Gewichtungen. |
-| **TripProjection (Expense)** | Trip-Projektion | Lokales Read-Model im Expense SCS, projiziert aus Trips-Events (TripCreated, ParticipantJoinedTrip). Enthaelt Trip-Name, TenantId und Teilnehmerliste. |
-| **Accommodation** | Unterkunft / Hütte | Die gebuchte Unterkunft für den Trip. |
+| **TripProjection (Expense)** | Trip-Projektion | Lokales Read-Model im Expense SCS, projiziert aus Trips-Events (TripCreated, ParticipantJoinedTrip, AccommodationPriceSet). Enthaelt Trip-Name, TenantId, Teilnehmerliste (mit partyTenantId/partyName), und accommodationTotalPrice. |
 | **LocationPoll** | Standort-Abstimmung | Eine Abstimmung unter den Teilnehmern zur Auswahl der Unterkunft. |
-| **DownPayment** | Anzahlung | Eine Vorauszahlung für den Trip (z.B. Hütten-Buchung). |
 | **Policy** | Rollenzuweisung | Die Zuordnung einer Rolle zu einem Benutzer (User-Role-Mapping). |
 | **Group** | Gruppe | Eine Zusammenfassung von Benutzern, z.B. eine Familie innerhalb eines Mandanten. |
 | **Role** | Rolle | Eine fachliche Berechtigung im System, z.B. `organizer` oder `participant`. |
@@ -44,6 +50,7 @@ UI verwendet Fachsprache, Code verwendet technische Namen. Siehe ADR-0011 fuer d
 | **Domain Event** | Ein fachliches Ereignis, das eine Zustandsänderung in einem Bounded Context signalisiert und asynchron an andere Kontexte weitergegeben wird. |
 | **ExpenseCreated** | Domain Event: Abrechnung wurde fuer einen abgeschlossenen Trip automatisch erstellt. |
 | **ExpenseSettled** | Domain Event: Abrechnung wurde abgeschlossen, alle Salden sind berechnet. |
+| **AccommodationPriceSet** | Domain Event (Trips → Expense): Unterkunftspreis wurde gesetzt oder geaendert. Expense aktualisiert `TripProjection.accommodationTotalPrice`. |
 | **TenantId** | Technischer Schlüssel zur Mandantentrennung, der in jedem Aggregat enthalten ist. |
 | **OIDC** | OpenID Connect — Authentifizierungsprotokoll auf Basis von OAuth 2.0, implementiert über Keycloak. |
 | **RabbitMQ** | Message Broker fuer asynchrone Kommunikation zwischen SCS via AMQP (Topic Exchange `travelmate.events`). |

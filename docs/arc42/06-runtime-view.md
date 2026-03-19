@@ -231,6 +231,102 @@ Browser        Gateway        Trips-SCS      PostgreSQL
 5. Jeder Slot hat ein Status-Dropdown (PLANNED → SKIP oder EATING_OUT) und eine Rezeptauswahl
 6. Statusaenderung oder Rezeptzuweisung per Formular-POST, Redirect zurueck zur Uebersicht
 
+## Szenario 4d: Einkaufsliste generieren und verwalten (Iteration 8)
+
+```
+Browser        Gateway        Trips-SCS      PostgreSQL
+  │               │              │               │
+  │──POST generate▶              │               │
+  │  /{tripId}/   │──Route───────▶               │
+  │  shopping-list│              │──find MealPlan─▶
+  │  /generate    │              │◀──MealPlan─────│
+  │               │              │──find Recipes──▶
+  │               │              │◀──Recipes──────│
+  │               │              │──find Trip─────▶
+  │               │              │◀──participants─│
+  │               │              │                │
+  │               │              │──IngredientAggregator
+  │               │              │  .aggregate(recipes, participants)
+  │               │              │──ShoppingList.generate()
+  │               │              │  (RECIPE items + bestehende MANUAL items)
+  │               │              │──save───────────▶
+  │◀──Redirect to shopping-list──│               │
+  │               │              │               │
+  │──GET /{tripId}▶              │               │
+  │  /shopping-   │──Route───────▶               │
+  │  list         │              │──find list─────▶
+  │◀──HTML (hx-trigger="every 5s")──────────────│
+  │               │              │               │
+  │──POST status──▶              │               │
+  │  /items/{id}/ │──Route───────▶               │
+  │  assign       │              │──item.assign(participantId)
+  │               │              │──save───────────▶
+  │◀──HTML Fragment (HTMX)──────│               │
+```
+
+1. Organisator klickt "Einkaufsliste generieren" auf der Trip-Detailseite
+2. `ShoppingListService` laedt MealPlan, sammelt alle Slots mit Status `PLANNED` und zugewiesenem Rezept
+3. `IngredientAggregator` skaliert Zutaten nach Teilnehmerzahl (`trip.participants.size() / recipe.servings`) und aggregiert identische Zutaten (gleicher Name + Einheit)
+4. `ShoppingList.generate()` erstellt RECIPE-Items aus den skalierten Zutaten, bestehende MANUAL-Items bleiben erhalten
+5. Einkaufsliste wird mit HTMX-Polling alle 5 Sekunden aktualisiert (`hx-trigger="every 5s"`)
+6. Status-Transitionen: OPEN -> ASSIGNED -> PURCHASED, plus Direkt-Kauf (OPEN -> PURCHASED) und Reversal (PURCHASED -> ASSIGNED)
+
+## Szenario 4e: Unterkunft und Vorauszahlungen (Iteration 9)
+
+```
+Browser     Trips-SCS      RabbitMQ       Expense-SCS      PostgreSQL
+  │             │              │               │               │
+  │──POST ──────▶              │               │               │
+  │  accommodation             │               │               │
+  │             │──Accommodation.create()      │               │
+  │             │  (name, rooms, totalPrice)   │               │
+  │             │──save────────▶               │               │
+  │             │──AccommodationPriceSet───────▶               │
+  │◀──HTML──────│              │               │               │
+  │             │              │               │               │
+  │             │              │──consume───────▶               │
+  │             │              │               │──tripProjection
+  │             │              │               │  .setAccommodationTotalPrice()
+  │             │              │               │──save──────────▶
+  │             │              │               │               │
+  │──POST ──────────────────────────────────────▶               │
+  │  advance-   │              │               │──AdvancePaymentSuggestion
+  │  payments/  │              │               │  .suggest(totalPrice, partyCount)
+  │  generate   │              │               │──expense.generateAdvancePayments()
+  │             │              │               │──save──────────▶
+  │◀──HTML──────────────────────────────────────│               │
+```
+
+1. Organisator erstellt eine Unterkunft mit Name, Adresse, Zimmern und Gesamtpreis
+2. Bei Angabe eines Preises > 0 wird `AccommodationPriceSet`-Event via RabbitMQ publiziert
+3. Expense-SCS konsumiert das Event und aktualisiert `TripProjection.accommodationTotalPrice`
+4. Organisator kann Vorauszahlungs-Vorschlaege generieren: `AdvancePaymentSuggestion.suggest()` rundet auf 50er-Schritte auf
+5. Vorauszahlungen werden pro Reisepartei erstellt mit Bezahlt-Status (toggle)
+6. Zimmerbelegung: Reiseparteien werden Zimmern zugewiesen mit Personenzahl
+
+## Szenario 4f: Reisepartei-Abrechnung (Iteration 9)
+
+```
+Expense-SCS
+  │
+  │──expense.calculateBalance()
+  │  (individuelle Salden pro Teilnehmer)
+  │
+  │──PartySettlement.aggregateByParty()
+  │  (Gruppierung: participantId → partyTenantId)
+  │  (Ergebnis: Saldo pro Reisepartei)
+  │
+  │──PartySettlement.calculateTransfers()
+  │  (Greedy-Algorithmus: minimale Transfers zwischen Parteien)
+  │
+  │──Darstellung: "Reisepartei X zahlt Y EUR an Reisepartei Z"
+```
+
+1. Individuelle Salden werden wie bisher aus Belegen und Gewichtungen berechnet
+2. `PartySettlement.aggregateByParty()` gruppiert individuelle Salden nach `partyTenantId` (aus `ParticipantJoinedTrip`-Event)
+3. `PartySettlement.calculateTransfers()` berechnet minimale Ueberweisungen zwischen Reiseparteien (Greedy-Algorithmus)
+4. Die UI zeigt sowohl individuelle als auch Reisepartei-Salden an
+
 ## Szenario 5: Account-Registrierung
 
 ```

@@ -8,8 +8,8 @@ Travelmate ermöglicht Familien und Freundesgruppen die gemeinsame Planung von H
 
 | Akteur | Beschreibung |
 |--------|-------------|
-| **Organisator** | Erstellt Trips, verwaltet Teilnehmer, plant Mahlzeiten |
-| **Teilnehmer** | Nimmt am Trip teil, trägt Mahlzeiten ein, erfasst Belege |
+| **Organisator** | Erstellt Trips, verwaltet Teilnehmer, plant Mahlzeiten, verwaltet Unterkunft und Einkaufsliste |
+| **Teilnehmer** | Nimmt am Trip teil, traegt Mahlzeiten ein, erfasst Belege, kauft Einkaufslistenartikel ein |
 | **Keycloak** | Externes Identity Management (OIDC) |
 
 ## Technischer Kontext
@@ -57,7 +57,7 @@ Travelmate ermöglicht Familien und Freundesgruppen die gemeinsame Planung von H
 | HTTP | Gateway → SCS | HTTP | Internes Routing zu den Services |
 | AMQP | IAM → Trips | Async | Domain Events via Topic Exchange (z.B. `AccountRegistered`) |
 | AMQP | IAM → Expense | Async | Domain Events via Topic Exchange |
-| AMQP | Trips → Expense | Async | Domain Events via Topic Exchange (`TripCreated`, `ParticipantJoinedTrip`, `TripCompleted`) |
+| AMQP | Trips → Expense | Async | Domain Events via Topic Exchange (`TripCreated`, `ParticipantJoinedTrip`, `TripCompleted`, `AccommodationPriceSet`) |
 | OIDC | SCS → Keycloak | HTTPS | Authentifizierung und Token-Validierung |
 | JDBC | SCS → PostgreSQL | TCP | Datenpersistierung (je Service eigene DB) |
 

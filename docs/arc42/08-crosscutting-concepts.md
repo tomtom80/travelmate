@@ -43,10 +43,11 @@ Die asynchrone Kommunikation zwischen SCS basiert auf Domain Events ueber Rabbit
 | Event | Routing Key | Beschreibung |
 |-------|------------|--------------|
 | `TripCreated` | `trips.trip-created` | Trip wurde erstellt |
-| `ParticipantJoinedTrip` | `trips.participant-confirmed` | Teilnehmer bestaetigt |
+| `ParticipantJoinedTrip` | `trips.participant-confirmed` | Teilnehmer bestaetigt (erweitert um `participantTenantId` und `partyName` seit Iteration 9) |
 | `TripCompleted` | `trips.trip-completed` | Trip abgeschlossen |
 | `InvitationCreated` | `trips.invitation-created` | Einladung erstellt (loest E-Mail aus) |
 | `ExternalUserInvitedToTrip` | `trips.external-user-invited` | Externe Einladung (IAM erstellt User) |
+| `AccommodationPriceSet` | `trips.accommodation.price-set` | Unterkunftspreis gesetzt/geaendert (Expense aktualisiert TripProjection) |
 
 ### Expense Events
 
@@ -69,8 +70,9 @@ IAM                         RabbitMQ             Trips / Expense
 Trips                       RabbitMQ             Expense
  │                               │                   │
  │──TripCreated─────────────────▶│──────────────────▶│  → TripProjection anlegen
- │──ParticipantJoinedTrip───────▶│──────────────────▶│  → Teilnehmer in Projektion
+ │──ParticipantJoinedTrip───────▶│──────────────────▶│  → Teilnehmer in Projektion (+ partyTenantId/partyName)
  │──TripCompleted───────────────▶│──────────────────▶│  → Expense erstellen (Gewichtungen 1.0)
+ │──AccommodationPriceSet───────▶│──────────────────▶│  → accommodationTotalPrice in Projektion
 ```
 
 ## E-Mail-Kommunikation (ADR-0012)
@@ -96,12 +98,41 @@ public record TenantName(String value) {
 }
 ```
 
+## HTMX-Polling fuer Echtzeit-Updates (Iteration 8)
+
+Da das Trips-SCS Servlet-basiert ist (kein WebFlux/SSE), werden Echtzeit-Updates ueber HTMX-Polling realisiert:
+
+- **Polling-Intervall:** Alle 5 Sekunden via `hx-trigger="every 5s"` auf der Einkaufslistenseite
+- **Automatische Deaktivierung:** Polling wird fuer COMPLETED/CANCELLED Trips deaktiviert (kein unnötiger Traffic)
+- **Partial-Rendering:** Nur das Listenfragment wird aktualisiert, nicht die gesamte Seite
+- **Anwendungsfall:** Mehrere Teilnehmer kaufen gleichzeitig im Supermarkt ein und sehen Status-Aenderungen der anderen in Echtzeit
+
+```html
+<div hx-get="/{tripId}/shopping-list/items"
+     hx-trigger="every 5s"
+     hx-swap="innerHTML">
+  <!-- Shopping-Items werden alle 5s neu geladen -->
+</div>
+```
+
 ## Progressive Web App (PWA)
 
-- **Service Worker:** Caching-Strategien für Offline-Fähigkeit
-- **Web App Manifest:** Installation auf dem Homescreen
-- **Mobile-First Design:** Responsives Layout optimiert für Smartphones
-- **Offline-Unterstützung:** Kritische Daten lokal verfügbar (z.B. Einkaufsliste)
+- **Web App Manifest:** `manifest.json` im Gateway mit App-Name, Icons und Theme-Color (Iteration 9)
+- **App-Icons:** Bereitgestellt in verschiedenen Groessen fuer Homescreen-Installation
+- **Mobile-First Design:** Responsives Layout optimiert fuer Smartphones (PicoCSS 2)
+- **Offline-Unterstuetzung:** Geplant fuer zukuenftige Iterationen (z.B. Einkaufsliste offline)
+
+## Reisepartei-Abrechnung (Party Settlement, Iteration 9)
+
+Die Kostenabrechnung erfolgt auf zwei Ebenen:
+
+1. **Individuelle Ebene:** Jeder Teilnehmer hat einen Saldo basierend auf Belegen und Gewichtungen (wie bisher)
+2. **Reisepartei-Ebene:** `PartySettlement` aggregiert individuelle Salden nach `partyTenantId`
+
+- **Datenherkunft:** `ParticipantJoinedTrip`-Event wurde um `participantTenantId` und `partyName` erweitert
+- **Gruppierung:** Alle Teilnehmer einer Reisepartei werden zu einem Partei-Saldo zusammengefasst
+- **Transfer-Berechnung:** Greedy-Algorithmus minimiert die Anzahl der Ueberweisungen zwischen Parteien
+- **Vorauszahlungen:** `AdvancePaymentSuggestion` berechnet gerundete Vorschlaege: `ceil(accommodationCost / partyCount / 50) * 50`
 
 ## Persistenz
 
