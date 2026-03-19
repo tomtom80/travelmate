@@ -34,6 +34,8 @@ import de.evia.travelmate.trips.application.representation.AccommodationRepresen
 import de.evia.travelmate.trips.application.representation.PartyOption;
 import de.evia.travelmate.trips.application.representation.RoomAssignmentRepresentation;
 import de.evia.travelmate.trips.application.representation.TripRepresentation;
+import de.evia.travelmate.trips.domain.accommodation.AccommodationImportResult;
+import de.evia.travelmate.trips.domain.accommodation.ImportedRoom;
 import de.evia.travelmate.trips.domain.trip.TripId;
 import de.evia.travelmate.trips.domain.travelparty.TravelParty;
 import de.evia.travelmate.trips.domain.travelparty.TravelPartyRepository;
@@ -201,6 +203,48 @@ public class AccommodationController {
         );
         accommodationService.removeRoomAssignment(command);
         return "redirect:/" + tripId + "/accommodation";
+    }
+
+    @PostMapping("/{tripId}/accommodation/import")
+    public String importAccommodation(@AuthenticationPrincipal final Jwt jwt,
+                                       @PathVariable final UUID tripId,
+                                       @RequestParam final String url,
+                                       final Model model) {
+        final ResolvedIdentity identity = requireIdentity(jwt);
+        validateTripAccess(tripId, identity);
+        validateEditable(tripId, identity);
+
+        final TripRepresentation trip = tripService.findById(new TripId(tripId));
+        model.addAttribute("view", "accommodation/overview");
+        model.addAttribute("trip", trip);
+        model.addAttribute("isOrganizer", true);
+        model.addAttribute("isEditable", true);
+
+        try {
+            final Optional<AccommodationImportResult> importResult = accommodationService.importFromUrl(url);
+            if (importResult.isPresent()) {
+                final AccommodationImportResult data = importResult.get();
+                model.addAttribute("importResult", data);
+                model.addAttribute("importSuccess", true);
+                model.addAttribute("importUrl", url);
+                model.addAttribute("prefillName", data.name());
+                model.addAttribute("prefillAddress", data.address());
+                model.addAttribute("prefillUrl", data.bookingUrl());
+                model.addAttribute("prefillCheckIn", data.checkIn());
+                model.addAttribute("prefillCheckOut", data.checkOut());
+                model.addAttribute("prefillTotalPrice", data.totalPrice());
+                model.addAttribute("prefillNotes", data.notes());
+                model.addAttribute("prefillRooms", data.rooms());
+            } else {
+                model.addAttribute("importError", "accommodation.import.error");
+                model.addAttribute("prefillUrl", url);
+            }
+        } catch (final IllegalArgumentException e) {
+            model.addAttribute("importError", "accommodation.import.error.url");
+            model.addAttribute("prefillUrl", url);
+        }
+
+        return "layout/default";
     }
 
     @PostMapping("/{tripId}/accommodation/delete")

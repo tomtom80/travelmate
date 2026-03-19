@@ -37,6 +37,9 @@ import de.evia.travelmate.trips.application.command.SetAccommodationCommand;
 import de.evia.travelmate.trips.application.representation.AccommodationRepresentation;
 import de.evia.travelmate.trips.application.representation.RoomRepresentation;
 import de.evia.travelmate.trips.application.representation.TripRepresentation;
+import de.evia.travelmate.trips.domain.accommodation.AccommodationImportResult;
+import de.evia.travelmate.trips.domain.accommodation.ImportedRoom;
+import de.evia.travelmate.trips.domain.accommodation.RoomType;
 import de.evia.travelmate.trips.domain.trip.TripId;
 import de.evia.travelmate.trips.domain.travelparty.TravelParty;
 import de.evia.travelmate.trips.domain.travelparty.TravelPartyRepository;
@@ -278,6 +281,83 @@ class AccommodationControllerTest {
                 .param("partyTenantId", TENANT_UUID.toString())
                 .param("partyName", "Test")
                 .param("personCount", "2"))
+            .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void importAccommodationPrefillsForm() throws Exception {
+        final AccommodationImportResult importResult = new AccommodationImportResult(
+            "Chalet am Kogl", "Kogl 32, 8551 Wies", "https://www.huetten.com/chalet",
+            null, null, new BigDecimal("4025"), "Traumhafte Huette",
+            List.of(new ImportedRoom("Schlafzimmer 1", RoomType.DOUBLE, 2, null))
+        );
+        when(accommodationService.importFromUrl("https://www.huetten.com/chalet"))
+            .thenReturn(Optional.of(importResult));
+
+        mockMvc.perform(post("/" + TRIP_UUID + "/accommodation/import")
+                .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
+                .param("url", "https://www.huetten.com/chalet"))
+            .andExpect(status().isOk())
+            .andExpect(view().name("layout/default"))
+            .andExpect(model().attribute("importSuccess", true))
+            .andExpect(model().attribute("prefillName", "Chalet am Kogl"))
+            .andExpect(model().attribute("prefillAddress", "Kogl 32, 8551 Wies"))
+            .andExpect(model().attributeExists("prefillRooms"));
+    }
+
+    @Test
+    void importAccommodationShowsErrorWhenNoData() throws Exception {
+        when(accommodationService.importFromUrl("https://example.com/empty"))
+            .thenReturn(Optional.empty());
+
+        mockMvc.perform(post("/" + TRIP_UUID + "/accommodation/import")
+                .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
+                .param("url", "https://example.com/empty"))
+            .andExpect(status().isOk())
+            .andExpect(view().name("layout/default"))
+            .andExpect(model().attribute("importError", "accommodation.import.error"))
+            .andExpect(model().attribute("prefillUrl", "https://example.com/empty"));
+    }
+
+    @Test
+    void importAccommodationShowsErrorForInvalidUrl() throws Exception {
+        when(accommodationService.importFromUrl("file:///etc/passwd"))
+            .thenThrow(new IllegalArgumentException("Only HTTP or HTTPS URLs are allowed."));
+
+        mockMvc.perform(post("/" + TRIP_UUID + "/accommodation/import")
+                .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
+                .param("url", "file:///etc/passwd"))
+            .andExpect(status().isOk())
+            .andExpect(view().name("layout/default"))
+            .andExpect(model().attribute("importError", "accommodation.import.error.url"));
+    }
+
+    @Test
+    void importAccommodationRejectsNonOrganizer() throws Exception {
+        final UUID otherMember = UUID.randomUUID();
+        final TripRepresentation trip = new TripRepresentation(
+            TRIP_UUID, TENANT_UUID, "Trip", null,
+            LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 5),
+            "PLANNING", otherMember, List.of(MEMBER_UUID, otherMember));
+        when(tripService.findById(new TripId(TRIP_UUID))).thenReturn(trip);
+
+        mockMvc.perform(post("/" + TRIP_UUID + "/accommodation/import")
+                .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
+                .param("url", "https://example.com"))
+            .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void importAccommodationRejectsCompletedTrip() throws Exception {
+        final TripRepresentation completedTrip = new TripRepresentation(
+            TRIP_UUID, TENANT_UUID, "Trip", null,
+            LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 5),
+            "COMPLETED", MEMBER_UUID, List.of(MEMBER_UUID));
+        when(tripService.findById(new TripId(TRIP_UUID))).thenReturn(completedTrip);
+
+        mockMvc.perform(post("/" + TRIP_UUID + "/accommodation/import")
+                .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
+                .param("url", "https://example.com"))
             .andExpect(status().isBadRequest());
     }
 

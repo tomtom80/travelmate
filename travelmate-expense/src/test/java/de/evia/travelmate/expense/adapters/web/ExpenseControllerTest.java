@@ -7,7 +7,9 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
@@ -30,8 +32,12 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import org.springframework.http.MediaType;
+import org.springframework.mock.web.MockMultipartFile;
+
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.expense.application.ExpenseService;
+import de.evia.travelmate.expense.application.SettlementPdfService;
 import de.evia.travelmate.expense.application.command.AddReceiptCommand;
 import de.evia.travelmate.expense.application.command.ApproveReceiptCommand;
 import de.evia.travelmate.expense.application.command.ConfirmAdvancePaymentsCommand;
@@ -77,6 +83,9 @@ class ExpenseControllerTest {
     @MockitoBean
     private TripProjectionRepository tripProjectionRepository;
 
+    @MockitoBean
+    private SettlementPdfService settlementPdfService;
+
     private TripProjection projection;
     private ExpenseRepresentation expense;
 
@@ -108,7 +117,7 @@ class ExpenseControllerTest {
             ),
             Map.of(PARTICIPANT_A, new BigDecimal("21.25"), PARTICIPANT_B, new BigDecimal("-21.25")),
             List.of(new TransferRepresentation(PARTICIPANT_B, PARTICIPANT_A, new BigDecimal("21.25"))),
-            List.of(new CategoryBreakdownRepresentation(null, new BigDecimal("42.50"), 1)),
+            List.of(new CategoryBreakdownRepresentation(null, new BigDecimal("42.50"), new BigDecimal("100.0"), 1)),
             List.of(
                 new ParticipantSummaryRepresentation(PARTICIPANT_A, new BigDecimal("42.50"), new BigDecimal("21.25"), new BigDecimal("21.25")),
                 new ParticipantSummaryRepresentation(PARTICIPANT_B, BigDecimal.ZERO, new BigDecimal("21.25"), new BigDecimal("-21.25"))
@@ -315,5 +324,64 @@ class ExpenseControllerTest {
         mockMvc.perform(get("/"))
             .andExpect(status().isOk())
             .andExpect(view().name("layout/default"));
+    }
+
+    // --- Receipt Scan (S10-B) ---
+
+    @Test
+    void scanReceiptReturnsPrefilledForm() throws Exception {
+        final MockMultipartFile file = new MockMultipartFile(
+            "file", "receipt.jpg", "image/jpeg", new byte[]{1, 2, 3});
+
+        mockMvc.perform(multipart("/" + TRIP_UUID + "/receipts/scan")
+                .file(file)
+                .with(jwt().jwt(j -> j.claim("email", USER_EMAIL))))
+            .andExpect(status().isOk())
+            .andExpect(view().name("expense/scan-result :: scanResultForm"))
+            .andExpect(model().attributeExists("tripId"))
+            .andExpect(model().attributeExists("participantNames"))
+            .andExpect(model().attributeExists("scanResult"));
+    }
+
+    @Test
+    void scanReceiptRejectsInvalidMimeType() throws Exception {
+        final MockMultipartFile file = new MockMultipartFile(
+            "file", "doc.pdf", "application/pdf", new byte[]{1, 2, 3});
+
+        mockMvc.perform(multipart("/" + TRIP_UUID + "/receipts/scan")
+                .file(file)
+                .with(jwt().jwt(j -> j.claim("email", USER_EMAIL))))
+            .andExpect(status().isOk())
+            .andExpect(model().attributeExists("scanError"));
+    }
+
+    @Test
+    void scanReceiptRejectsEmptyFile() throws Exception {
+        final MockMultipartFile file = new MockMultipartFile(
+            "file", "empty.jpg", "image/jpeg", new byte[0]);
+
+        mockMvc.perform(multipart("/" + TRIP_UUID + "/receipts/scan")
+                .file(file)
+                .with(jwt().jwt(j -> j.claim("email", USER_EMAIL))))
+            .andExpect(status().isOk())
+            .andExpect(model().attributeExists("scanError"));
+    }
+
+    // --- Settlement PDF (S10-D) ---
+
+    @Test
+    void exportSettlementPdfReturnsPdf() throws Exception {
+        when(expenseService.findByTripId(new TenantId(TENANT_UUID), TRIP_UUID, true))
+            .thenReturn(expense);
+        when(settlementPdfService.generatePdf(any(), any(), any()))
+            .thenReturn(new byte[]{37, 80, 68, 70}); // %PDF
+
+        mockMvc.perform(get("/" + TRIP_UUID + "/settlement.pdf")
+                .with(jwt().jwt(j -> j.claim("email", USER_EMAIL))))
+            .andExpect(status().isOk())
+            .andExpect(content().contentType(MediaType.APPLICATION_PDF))
+            .andExpect(header().exists("Content-Disposition"));
+
+        verify(settlementPdfService).generatePdf(any(), any(), any());
     }
 }

@@ -136,9 +136,19 @@ public record ExpenseRepresentation(
             counts.merge(cat, 1, Integer::sum);
         }
 
+        final BigDecimal grandTotal = totals.values().stream()
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+
         return totals.entrySet().stream()
             .sorted(Comparator.comparing(Map.Entry<ExpenseCategory, BigDecimal>::getValue).reversed())
-            .map(e -> new CategoryBreakdownRepresentation(e.getKey(), e.getValue(), counts.get(e.getKey())))
+            .map(e -> {
+                final BigDecimal pct = grandTotal.signum() > 0
+                    ? e.getValue().multiply(new BigDecimal("100"))
+                        .divide(grandTotal, 1, RoundingMode.HALF_UP)
+                    : BigDecimal.ZERO;
+                return new CategoryBreakdownRepresentation(
+                    e.getKey(), e.getValue(), pct, counts.get(e.getKey()));
+            })
             .toList();
     }
 

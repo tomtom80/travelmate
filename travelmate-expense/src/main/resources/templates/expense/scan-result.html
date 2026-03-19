@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<body>
+<div th:fragment="scanResultForm">
+    <div th:if="${scanError}" role="alert" style="background:#fef2f2; border:1px solid #fecaca; border-radius:4px; padding:0.75rem; margin-bottom:1rem;">
+        <span th:text="${scanError}"></span>
+    </div>
+    <div th:if="${scanHint}" role="status" style="background:#fffbeb; border:1px solid #fed7aa; border-radius:4px; padding:0.75rem; margin-bottom:1rem;">
+        <span th:text="${scanHint}"></span>
+    </div>
+    <form hx-post th:hx-post="@{/{id}/receipts(id=${tripId})}"
+          hx-target="#receipts"
+          hx-swap="innerHTML"
+          hx-disabled-elt="find [type=submit]"
+          hx-on::after-request="if(event.detail.successful) { this.reset(); document.getElementById('scan-receipt-dialog').close(); }">
+        <label>
+            <span th:text="#{expense.receipt.description}">Beschreibung</span>
+            <input type="text" name="description" required
+                   th:value="${prefillDescription}">
+        </label>
+        <div class="grid">
+            <label>
+                <span th:text="#{expense.receipt.amount}">Betrag</span>
+                <input type="number" name="amount" step="0.01" min="0.01" required
+                       th:value="${prefillAmount}">
+            </label>
+            <label>
+                <span th:text="#{expense.receipt.date}">Datum</span>
+                <input type="date" name="date" required
+                       th:value="${prefillDate}">
+            </label>
+        </div>
+        <div class="grid">
+            <label>
+                <span th:text="#{expense.receipt.paidBy}">Bezahlt von</span>
+                <select name="paidBy" required>
+                    <option th:each="entry : ${participantNames}"
+                            th:value="${entry.key}"
+                            th:text="${entry.value}">
+                    </option>
+                </select>
+            </label>
+            <label>
+                <span th:text="#{expense.receipt.category}">Kategorie</span>
+                <select name="category">
+                    <option th:each="cat : ${T(de.evia.travelmate.expense.domain.expense.ExpenseCategory).values()}"
+                            th:value="${cat}"
+                            th:text="#{${'expense.category.' + cat}}"
+                            th:selected="${cat == prefillCategory}">
+                    </option>
+                </select>
+            </label>
+        </div>
+        <footer>
+            <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+                <button type="button" class="secondary"
+                        onclick="document.getElementById('scan-receipt-dialog').close()"
+                        th:text="#{common.cancel}">Abbrechen</button>
+                <button type="submit" th:text="#{expense.receipt.add}">Beleg hinzufuegen</button>
+            </div>
+        </footer>
+    </form>
+</div>
+</body>
+</html>

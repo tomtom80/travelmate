@@ -7,6 +7,7 @@ import de.evia.travelmate.expense.domain.expense.ExpenseCategory;
 public record CategoryBreakdownRepresentation(
     ExpenseCategory category,
     BigDecimal total,
+    BigDecimal percentage,
     int receiptCount
 ) {
 }

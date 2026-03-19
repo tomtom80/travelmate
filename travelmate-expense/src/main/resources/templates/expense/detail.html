@@ -18,7 +18,7 @@
         </p>
     </article>
 
-    <!-- Category Breakdown -->
+    <!-- Category Breakdown (S10-C) -->
     <article th:if="${!expense.categoryBreakdown().isEmpty()}">
         <h2 th:text="#{expense.categoryBreakdown}">Ausgaben nach Kategorie</h2>
         <figure>
@@ -27,6 +27,7 @@
                     <tr>
                         <th th:text="#{expense.receipt.category}">Kategorie</th>
                         <th th:text="#{expense.receipt.amount}">Betrag</th>
+                        <th th:text="#{expense.category.percentage}">Anteil</th>
                         <th th:text="#{expense.categoryBreakdown.receiptCount}">Belege</th>
                     </tr>
                 </thead>
@@ -34,6 +35,13 @@
                     <tr th:each="cat : ${expense.categoryBreakdown()}">
                         <td th:text="#{${'expense.category.' + cat.category()}}">Kategorie</td>
                         <td th:text="${#numbers.formatDecimal(cat.total(), 1, 2) + ' EUR'}"></td>
+                        <td>
+                            <div style="display:flex; align-items:center; gap:0.5rem;">
+                                <progress th:value="${cat.percentage()}" max="100"
+                                          style="flex:1; height:0.5rem;"></progress>
+                                <small th:text="${#numbers.formatDecimal(cat.percentage(), 1, 1) + ' %'}"></small>
+                            </div>
+                        </td>
                         <td th:text="${cat.receiptCount()}"></td>
                     </tr>
                 </tbody>
@@ -71,9 +79,11 @@
             <div th:replace="~{expense/receipts :: receiptList}"></div>
         </div>
 
-        <div th:if="${expense.status().name() != 'SETTLED'}" style="margin-top:1rem;">
+        <div th:if="${expense.status().name() != 'SETTLED'}" style="margin-top:1rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
             <button onclick="document.getElementById('add-receipt-dialog').showModal()"
                     th:text="#{expense.receipt.add}">Beleg hinzufuegen</button>
+            <button class="outline" onclick="document.getElementById('scan-receipt-dialog').showModal()"
+                    th:text="#{expense.scan.button}">Kassenzettel scannen</button>
         </div>
     </article>
 
@@ -398,6 +408,39 @@
                     </div>
                 </footer>
             </form>
+        </article>
+    </dialog>
+
+    <!-- PDF Export Button (S10-D) -->
+    <div th:if="${expense.status().name() == 'SETTLED'}" style="margin-top:1rem;">
+        <a th:href="@{/{id}/settlement.pdf(id=${tripId})}" class="outline"
+           role="button" th:text="#{expense.pdf.download}">Abrechnung als PDF exportieren</a>
+    </div>
+
+    <!-- Dialog: Scan Receipt (S10-B) -->
+    <dialog id="scan-receipt-dialog" th:if="${expense.status().name() != 'SETTLED'}">
+        <article>
+            <header>
+                <button aria-label="Close" rel="prev"
+                        onclick="document.getElementById('scan-receipt-dialog').close()"></button>
+                <h3 th:text="#{expense.scan.title}">Kassenzettel scannen</h3>
+            </header>
+            <p><small th:text="#{expense.scan.hint}">Fotografiere den Kassenzettel oder waehle ein Bild aus.</small></p>
+            <form hx-post th:hx-post="@{/{id}/receipts/scan(id=${tripId})}"
+                  hx-target="#scan-result-container"
+                  hx-swap="innerHTML"
+                  hx-encoding="multipart/form-data"
+                  hx-disabled-elt="find [type=submit]"
+                  hx-indicator="#scan-spinner">
+                <label>
+                    <input type="file" name="file" accept="image/*" capture="environment" required>
+                </label>
+                <footer>
+                    <button type="submit" th:text="#{expense.scan.analyse}">Analysieren</button>
+                    <span id="scan-spinner" class="htmx-indicator" aria-busy="true" style="display:none;"></span>
+                </footer>
+            </form>
+            <div id="scan-result-container"></div>
         </article>
     </dialog>
 

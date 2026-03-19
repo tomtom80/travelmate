@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8" />
+    <style>
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 11pt;
+            color: #333;
+            margin: 2cm;
+        }
+        h1 { font-size: 18pt; margin-bottom: 4pt; }
+        h2 { font-size: 13pt; margin-top: 16pt; margin-bottom: 6pt; border-bottom: 1px solid #ccc; padding-bottom: 4pt; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 12pt; }
+        th, td { padding: 4pt 6pt; text-align: left; border-bottom: 1px solid #eee; font-size: 10pt; }
+        th { background-color: #f5f5f5; font-weight: bold; border-bottom: 2px solid #ddd; }
+        .amount { text-align: right; }
+        .positive { color: #16a34a; }
+        .negative { color: #dc2626; }
+        .footer { margin-top: 24pt; font-size: 9pt; color: #999; border-top: 1px solid #ddd; padding-top: 8pt; }
+        .header-meta { font-size: 10pt; color: #666; margin-bottom: 16pt; }
+        .transfer-row td { padding: 6pt; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <h1 th:text="${tripName}">Reisename</h1>
+    <div class="header-meta">
+        <span th:text="${tripStartDate}">01.07.2026</span> &ndash; <span th:text="${tripEndDate}">14.07.2026</span>
+        &nbsp;&nbsp;|&nbsp;&nbsp;
+        <span th:text="#{expense.pdf.generated}">Erstellt am</span>: <span th:text="${generatedDate}">19.03.2026</span>
+        &nbsp;&nbsp;|&nbsp;&nbsp;
+        <span th:text="#{expense.pdf.createdWith}">Erstellt mit Travelmate</span>
+    </div>
+
+    <!-- Total -->
+    <p>
+        <strong th:text="#{expense.totalAmount}">Gesamtbetrag</strong>:
+        <span th:text="${#numbers.formatDecimal(expense.totalAmount(), 1, 'POINT', 2, 'COMMA')}">0,00</span> EUR
+    </p>
+
+    <!-- Party Settlement -->
+    <div th:if="${!expense.partySettlements().isEmpty()}">
+        <h2 th:text="#{expense.partySettlement}">Abrechnung nach Reisepartei</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th th:text="#{expense.partySettlement.party}">Reisepartei</th>
+                    <th th:text="#{expense.partySettlement.members}">Mitglieder</th>
+                    <th class="amount" th:text="#{expense.partySettlement.totalPaid}">Bezahlt</th>
+                    <th class="amount" th:text="#{expense.partySettlement.totalOwed}">Anteil</th>
+                    <th class="amount" th:text="#{expense.partySettlement.balance}">Saldo</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="ps : ${expense.partySettlements()}">
+                    <td th:text="${ps.partyName()}"></td>
+                    <td>
+                        <span th:each="name, iter : ${ps.memberNames()}" th:text="${name + (iter.last ? '' : ', ')}"></span>
+                    </td>
+                    <td class="amount" th:text="${#numbers.formatDecimal(ps.totalPaid(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
+                    <td class="amount" th:text="${#numbers.formatDecimal(ps.totalOwed(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
+                    <td class="amount">
+                        <span th:if="${ps.balance().signum() > 0}" class="positive"
+                              th:text="'+' + ${#numbers.formatDecimal(ps.balance(), 1, 'POINT', 2, 'COMMA')} + ' EUR'"></span>
+                        <span th:if="${ps.balance().signum() < 0}" class="negative"
+                              th:text="${#numbers.formatDecimal(ps.balance(), 1, 'POINT', 2, 'COMMA')} + ' EUR'"></span>
+                        <span th:if="${ps.balance().signum() == 0}"
+                              th:text="${#numbers.formatDecimal(ps.balance(), 1, 'POINT', 2, 'COMMA')} + ' EUR'"></span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Party Transfers -->
+    <div th:if="${!expense.partyTransfers().isEmpty()}">
+        <h2 th:text="#{expense.partyTransfers}">Ausgleichszahlungen</h2>
+        <table>
+            <tbody>
+                <tr th:each="t : ${expense.partyTransfers()}" class="transfer-row">
+                    <td th:text="${t.fromPartyName()}"></td>
+                    <td th:text="#{expense.pdf.transferArrow}">&#x2192; zahlt an</td>
+                    <td th:text="${t.toPartyName()}"></td>
+                    <td class="amount" th:text="${#numbers.formatDecimal(t.amount(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Category Breakdown -->
+    <div th:if="${!expense.categoryBreakdown().isEmpty()}">
+        <h2 th:text="#{expense.categoryBreakdown}">Ausgaben nach Kategorie</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th th:text="#{expense.receipt.category}">Kategorie</th>
+                    <th class="amount" th:text="#{expense.receipt.amount}">Betrag</th>
+                    <th class="amount" th:text="#{expense.category.percentage}">Anteil</th>
+                    <th class="amount" th:text="#{expense.categoryBreakdown.receiptCount}">Belege</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="cat : ${expense.categoryBreakdown()}">
+                    <td th:text="#{${'expense.category.' + cat.category()}}">Kategorie</td>
+                    <td class="amount" th:text="${#numbers.formatDecimal(cat.total(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
+                    <td class="amount" th:text="${#numbers.formatDecimal(cat.percentage(), 1, 'POINT', 1, 'COMMA') + ' %'}"></td>
+                    <td class="amount" th:text="${cat.receiptCount()}"></td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Advance Payments -->
+    <div th:if="${!expense.advancePayments().isEmpty()}">
+        <h2 th:text="#{advance.title}">Vorauszahlungen</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th th:text="#{advance.party}">Reisepartei</th>
+                    <th class="amount" th:text="#{advance.amount}">Betrag</th>
+                    <th th:text="#{advance.paid}">Bezahlt</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="ap : ${expense.advancePayments()}">
+                    <td th:text="${ap.partyName()}"></td>
+                    <td class="amount" th:text="${#numbers.formatDecimal(ap.amount(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
+                    <td>
+                        <span th:if="${ap.paid()}" th:text="#{advance.paid}">Bezahlt</span>
+                        <span th:if="${!ap.paid()}" th:text="#{advance.unpaid}">Offen</span>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <p th:text="#{expense.pdf.disclaimer}">Diese Abrechnung ist nicht rechtsverbindlich.</p>
+    </div>
+</body>
+</html>

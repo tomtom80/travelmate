@@ -247,14 +247,140 @@
     </article>
 
     <!-- Empty state: no accommodation yet -->
-    <article th:if="${accommodation == null}">
+    <article th:if="${accommodation == null && importSuccess == null}">
         <p th:if="${!isEditable}" th:text="#{accommodation.empty}">Noch keine Unterkunft hinterlegt.</p>
 
         <div th:if="${isEditable}">
             <p th:text="#{accommodation.empty}">Noch keine Unterkunft hinterlegt.</p>
+
+            <!-- Import from URL -->
+            <details style="margin-bottom:1rem;">
+                <summary th:text="#{accommodation.import}">URL importieren</summary>
+                <form method="post" th:action="@{/{tid}/accommodation/import(tid=${trip.tripId()})}">
+                    <div class="grid">
+                        <label>
+                            <input type="url" name="url" required th:placeholder="#{accommodation.import.url.placeholder}">
+                        </label>
+                        <label>
+                            <button type="submit" th:text="#{accommodation.import.button}">Importieren</button>
+                        </label>
+                    </div>
+                </form>
+            </details>
+
+            <!-- Import error message -->
+            <div th:if="${importError}" role="alert"
+                 style="padding:0.75rem 1rem; border-left:4px solid var(--pico-color-red-500, red); background:var(--pico-color-red-50, #ffebee); margin-bottom:1rem;">
+                <span th:text="#{${importError}}">Fehler</span>
+            </div>
+
             <button onclick="document.getElementById('add-accommodation-dialog').showModal()"
                     th:text="#{accommodation.add}">Unterkunft hinzufuegen</button>
         </div>
+    </article>
+
+    <!-- Import success: pre-filled form -->
+    <article th:if="${importSuccess}">
+        <header>
+            <h3 th:text="#{accommodation.add}">Unterkunft hinzufuegen</h3>
+        </header>
+        <div role="alert" style="padding:0.75rem 1rem; border-left:4px solid var(--pico-color-green-500, green); background:var(--pico-color-green-50, #e8f5e9); margin-bottom:1rem;">
+            <span th:text="#{accommodation.import.success}">Daten importiert.</span>
+        </div>
+        <form method="post" th:action="@{/{tid}/accommodation(tid=${trip.tripId()})}">
+            <label>
+                <span th:text="#{accommodation.name}">Name</span>
+                <input type="text" name="name" required maxlength="200" th:value="${prefillName}" th:placeholder="#{accommodation.name.placeholder}">
+            </label>
+            <label>
+                <span th:text="#{accommodation.address}">Adresse</span>
+                <input type="text" name="address" maxlength="500" th:value="${prefillAddress}">
+            </label>
+            <label>
+                <span th:text="#{accommodation.url}">Buchungs-URL</span>
+                <input type="url" name="url" maxlength="1000" th:value="${prefillUrl}">
+            </label>
+            <div class="grid">
+                <label>
+                    <span th:text="#{accommodation.checkIn}">Check-in</span>
+                    <input type="date" name="checkIn" th:value="${prefillCheckIn}">
+                </label>
+                <label>
+                    <span th:text="#{accommodation.checkOut}">Check-out</span>
+                    <input type="date" name="checkOut" th:value="${prefillCheckOut}">
+                </label>
+            </div>
+            <label>
+                <span th:text="#{accommodation.totalPrice}">Gesamtpreis</span>
+                <input type="number" name="totalPrice" step="0.01" min="0" th:value="${prefillTotalPrice}">
+            </label>
+
+            <h4 th:text="#{accommodation.rooms}">Zimmer</h4>
+            <!-- Pre-filled rooms from import -->
+            <th:block th:if="${prefillRooms != null && !prefillRooms.isEmpty()}" th:each="room : ${prefillRooms}">
+                <div class="grid" style="border:1px solid var(--pico-muted-border-color, #ccc); border-radius:0.25rem; padding:0.5rem; margin-bottom:0.5rem;">
+                    <label>
+                        <span th:text="#{accommodation.room.name}">Bezeichnung</span>
+                        <input type="text" name="roomName" required maxlength="100" th:value="${room.name()}">
+                    </label>
+                    <label>
+                        <span th:text="#{accommodation.room.type}">Typ</span>
+                        <select name="roomType" required>
+                            <option value="SINGLE" th:text="#{roomType.SINGLE}" th:selected="${room.roomType().name() == 'SINGLE'}">Einzelzimmer</option>
+                            <option value="DOUBLE" th:text="#{roomType.DOUBLE}" th:selected="${room.roomType().name() == 'DOUBLE'}">Doppelzimmer</option>
+                            <option value="QUAD" th:text="#{roomType.QUAD}" th:selected="${room.roomType().name() == 'QUAD'}">4-Bett-Zimmer</option>
+                            <option value="DORMITORY" th:text="#{roomType.DORMITORY}" th:selected="${room.roomType().name() == 'DORMITORY'}">Matratzenlager</option>
+                            <option value="OTHER" th:text="#{roomType.OTHER}" th:selected="${room.roomType().name() == 'OTHER'}">Sonstiges</option>
+                        </select>
+                    </label>
+                    <label>
+                        <span th:text="#{accommodation.room.bedCount}">Betten</span>
+                        <input type="number" name="roomBedCount" required min="1" th:value="${room.bedCount()}">
+                    </label>
+                    <label>
+                        <span th:text="#{accommodation.room.pricePerNight}">Preis/Nacht</span>
+                        <input type="number" name="roomPricePerNight" step="0.01" min="0" th:value="${room.pricePerNight()}">
+                    </label>
+                </div>
+            </th:block>
+            <!-- Default empty room if no rooms imported -->
+            <th:block th:if="${prefillRooms == null || prefillRooms.isEmpty()}">
+                <div class="grid">
+                    <label>
+                        <span th:text="#{accommodation.room.name}">Bezeichnung</span>
+                        <input type="text" name="roomName" required maxlength="100" th:placeholder="#{accommodation.room.name.placeholder}">
+                    </label>
+                    <label>
+                        <span th:text="#{accommodation.room.type}">Typ</span>
+                        <select name="roomType" required>
+                            <option value="SINGLE" th:text="#{roomType.SINGLE}">Einzelzimmer</option>
+                            <option value="DOUBLE" th:text="#{roomType.DOUBLE}">Doppelzimmer</option>
+                            <option value="QUAD" th:text="#{roomType.QUAD}">4-Bett-Zimmer</option>
+                            <option value="DORMITORY" th:text="#{roomType.DORMITORY}">Matratzenlager</option>
+                            <option value="OTHER" th:text="#{roomType.OTHER}">Sonstiges</option>
+                        </select>
+                    </label>
+                </div>
+                <div class="grid">
+                    <label>
+                        <span th:text="#{accommodation.room.bedCount}">Betten</span>
+                        <input type="number" name="roomBedCount" required min="1" value="2">
+                    </label>
+                    <label>
+                        <span th:text="#{accommodation.room.pricePerNight}">Preis/Nacht</span>
+                        <input type="number" name="roomPricePerNight" step="0.01" min="0">
+                    </label>
+                </div>
+            </th:block>
+
+            <footer>
+                <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+                    <a th:href="@{/{tid}/accommodation(tid=${trip.tripId()})}" role="button" class="secondary"
+                       th:text="#{common.cancel}">Abbrechen</a>
+                    <button type="submit" th:text="#{accommodation.save}">Speichern</button>
+                </div>
+            </footer>
+        </form>
     </article>
 
     <!-- Add Accommodation Dialog -->

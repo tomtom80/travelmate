@@ -17,6 +17,8 @@ import de.evia.travelmate.trips.application.command.RoomCommand;
 import de.evia.travelmate.trips.application.command.SetAccommodationCommand;
 import de.evia.travelmate.trips.application.representation.AccommodationRepresentation;
 import de.evia.travelmate.trips.domain.accommodation.Accommodation;
+import de.evia.travelmate.trips.domain.accommodation.AccommodationImportPort;
+import de.evia.travelmate.trips.domain.accommodation.AccommodationImportResult;
 import de.evia.travelmate.trips.domain.accommodation.AccommodationRepository;
 import de.evia.travelmate.trips.domain.accommodation.Room;
 import de.evia.travelmate.trips.domain.accommodation.RoomAssignmentId;
@@ -29,12 +31,19 @@ import de.evia.travelmate.trips.domain.trip.TripId;
 public class AccommodationService {
 
     private final AccommodationRepository accommodationRepository;
+    private final AccommodationImportPort accommodationImportPort;
     private final ApplicationEventPublisher eventPublisher;
 
     public AccommodationService(final AccommodationRepository accommodationRepository,
+                                final AccommodationImportPort accommodationImportPort,
                                 final ApplicationEventPublisher eventPublisher) {
         this.accommodationRepository = accommodationRepository;
+        this.accommodationImportPort = accommodationImportPort;
         this.eventPublisher = eventPublisher;
+    }
+
+    public Optional<AccommodationImportResult> importFromUrl(final String url) {
+        return accommodationImportPort.importFromUrl(url);
     }
 
     public AccommodationRepresentation setAccommodation(final SetAccommodationCommand command) {

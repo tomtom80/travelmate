@@ -30,7 +30,10 @@ import de.evia.travelmate.trips.application.command.RoomCommand;
 import de.evia.travelmate.trips.application.command.SetAccommodationCommand;
 import de.evia.travelmate.trips.application.representation.AccommodationRepresentation;
 import de.evia.travelmate.trips.domain.accommodation.Accommodation;
+import de.evia.travelmate.trips.domain.accommodation.AccommodationImportPort;
+import de.evia.travelmate.trips.domain.accommodation.AccommodationImportResult;
 import de.evia.travelmate.trips.domain.accommodation.AccommodationRepository;
+import de.evia.travelmate.trips.domain.accommodation.ImportedRoom;
 import de.evia.travelmate.trips.domain.accommodation.Room;
 import de.evia.travelmate.trips.domain.accommodation.RoomType;
 import de.evia.travelmate.trips.domain.trip.TripId;
@@ -43,6 +46,9 @@ class AccommodationServiceTest {
 
     @Mock
     private AccommodationRepository accommodationRepository;
+
+    @Mock
+    private AccommodationImportPort accommodationImportPort;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -232,5 +238,32 @@ class AccommodationServiceTest {
         when(accommodationRepository.existsByTripId(new TripId(TRIP_UUID))).thenReturn(true);
 
         assertThat(accommodationService.existsByTripId(new TripId(TRIP_UUID))).isTrue();
+    }
+
+    @Test
+    void importFromUrlDelegatesToPort() {
+        final String url = "https://www.huetten.com/chalet";
+        final AccommodationImportResult importResult = new AccommodationImportResult(
+            "Chalet am Kogl", "Kogl 32, 8551 Wies", url,
+            null, null, new BigDecimal("4025"), null,
+            List.of(new ImportedRoom("Schlafzimmer 1", RoomType.DOUBLE, 2, null))
+        );
+        when(accommodationImportPort.importFromUrl(url)).thenReturn(Optional.of(importResult));
+
+        final Optional<AccommodationImportResult> result = accommodationService.importFromUrl(url);
+
+        assertThat(result).isPresent();
+        assertThat(result.get().name()).isEqualTo("Chalet am Kogl");
+        verify(accommodationImportPort).importFromUrl(url);
+    }
+
+    @Test
+    void importFromUrlReturnsEmptyWhenPortReturnsEmpty() {
+        final String url = "https://example.com/nothing";
+        when(accommodationImportPort.importFromUrl(url)).thenReturn(Optional.empty());
+
+        final Optional<AccommodationImportResult> result = accommodationService.importFromUrl(url);
+
+        assertThat(result).isEmpty();
     }
 }
