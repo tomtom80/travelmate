@@ -55,23 +55,23 @@
                         <td th:data-label="#{invitation.member}" th:text="${p.firstName() + ' ' + p.lastName()}"></td>
                         <td th:data-label="#{trip.arrivalDate}" th:text="${p.arrivalDate()}"></td>
                         <td th:data-label="#{trip.departureDate}" th:text="${p.departureDate()}"></td>
-                        <td th:if="${p.participantId() == currentMemberId || isOrganizer}">
+                        <td th:if="${p.participantId() == currentMemberId || isOrganizer}" data-label="">
                             <form method="post"
                                   th:action="@{/{tid}/participants/{pid}/stay-period(tid=${trip.tripId()},pid=${p.participantId()})}"
                                   style="margin-bottom:0;">
-                                <div style="display:flex; gap:0.5rem; align-items:center;">
+                                <div class="grid" style="gap:0.5rem; align-items:end;">
                                     <label style="margin-bottom:0;">
-                                        <span class="sr-only" th:text="#{trip.arrivalDate}">Anreise</span>
+                                        <span th:text="#{trip.arrivalDate}">Anreise</span>
                                         <input type="date" name="arrivalDate" th:value="${p.arrivalDate()}"
                                                th:aria-label="#{trip.arrivalDate}" required style="margin-bottom:0;">
                                     </label>
                                     <label style="margin-bottom:0;">
-                                        <span class="sr-only" th:text="#{trip.departureDate}">Abreise</span>
+                                        <span th:text="#{trip.departureDate}">Abreise</span>
                                         <input type="date" name="departureDate" th:value="${p.departureDate()}"
                                                th:aria-label="#{trip.departureDate}" required style="margin-bottom:0;">
                                     </label>
                                     <button type="submit" th:text="#{common.save}"
-                                            style="margin-bottom:0; white-space:nowrap; width:auto;">Speichern</button>
+                                            style="margin-bottom:0;">Speichern</button>
                                 </div>
                             </form>
                         </td>

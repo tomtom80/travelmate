@@ -9,7 +9,7 @@
 
     <a th:href="@{/recipes/new}" role="button" th:text="#{recipe.create}">Neues Rezept</a>
 
-    <figure th:if="${!recipes.isEmpty()}">
+    <figure class="table-cards" th:if="${!recipes.isEmpty()}">
         <table>
             <thead>
                 <tr>
@@ -21,10 +21,10 @@
             </thead>
             <tbody>
                 <tr th:each="r : ${recipes}">
-                    <td th:text="${r.name()}"></td>
-                    <td th:text="${r.servings()}"></td>
-                    <td th:text="${r.ingredients().size()}"></td>
-                    <td>
+                    <td th:data-label="#{recipe.name}" th:text="${r.name()}"></td>
+                    <td th:data-label="#{recipe.servings}" th:text="${r.servings()}"></td>
+                    <td th:data-label="#{recipe.ingredients}" th:text="${r.ingredients().size()}"></td>
+                    <td data-label="">
                         <div style="display:flex; gap:0.5rem;">
                             <a th:href="@{/recipes/{id}/edit(id=${r.recipeId()})}"
                                role="button" class="outline" th:text="#{common.edit}">Bearbeiten</a>
