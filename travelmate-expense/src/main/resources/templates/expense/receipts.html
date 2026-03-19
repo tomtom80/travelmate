@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="receiptList">
-    <figure th:if="${!expense.receipts().isEmpty()}">
+    <figure class="table-cards" th:if="${!expense.receipts().isEmpty()}">
         <table>
             <thead>
                 <tr>
@@ -17,12 +17,12 @@
             </thead>
             <tbody>
                 <tr th:each="receipt : ${expense.receipts()}">
-                    <td th:text="${receipt.description()}"></td>
-                    <td th:text="${#numbers.formatDecimal(receipt.amount(), 1, 2)}"></td>
-                    <td th:text="${participantNames[receipt.paidBy()] != null ? participantNames[receipt.paidBy()] : receipt.paidBy()}"></td>
-                    <td th:text="${receipt.date()}"></td>
-                    <td th:text="#{${'expense.category.' + receipt.category()}}">Sonstiges</td>
-                    <td th:if="${expense.reviewRequired()}">
+                    <td th:data-label="#{expense.receipt.description}" th:text="${receipt.description()}"></td>
+                    <td th:data-label="#{expense.receipt.amount}" th:text="${#numbers.formatDecimal(receipt.amount(), 1, 2)}"></td>
+                    <td th:data-label="#{expense.receipt.paidBy}" th:text="${participantNames[receipt.paidBy()] != null ? participantNames[receipt.paidBy()] : receipt.paidBy()}"></td>
+                    <td th:data-label="#{expense.receipt.date}" th:text="${receipt.date()}"></td>
+                    <td th:data-label="#{expense.receipt.category}" th:text="#{${'expense.category.' + receipt.category()}}">Sonstiges</td>
+                    <td th:if="${expense.reviewRequired()}" th:data-label="#{expense.receipt.reviewStatus}">
                         <mark th:text="#{${'expense.reviewStatus.' + receipt.reviewStatus()}}">Status</mark>
                         <small th:if="${receipt.rejectionReason() != null}"
                                th:text="${receipt.rejectionReason()}" style="display:block; color:red;"></small>

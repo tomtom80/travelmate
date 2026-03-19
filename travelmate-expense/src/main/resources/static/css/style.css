@@ -71,3 +71,116 @@ body > footer {
     color: var(--pico-muted-color);
     font-size: 0.875rem;
 }
+
+/* ========== Mobile Responsive (max-width: 767px) ========== */
+
+@media (max-width: 767px) {
+    /* 1. Grid columns stack vertically */
+    .grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* 2. Navigation collapse */
+    nav.container {
+        flex-direction: column;
+        padding: 0.5rem;
+    }
+    nav.container > ul {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.25rem;
+    }
+    nav.container > ul:first-child {
+        flex-direction: row;
+    }
+
+    /* 3. Responsive table → card pattern */
+    .table-cards table,
+    .table-cards thead,
+    .table-cards tbody,
+    .table-cards th,
+    .table-cards td,
+    .table-cards tr {
+        display: block;
+    }
+    .table-cards thead {
+        display: none;
+    }
+    .table-cards tr {
+        margin-bottom: 1rem;
+        border: 1px solid var(--pico-muted-border-color);
+        border-radius: var(--pico-border-radius);
+        padding: 0.75rem;
+    }
+    .table-cards td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.25rem 0;
+        border: none;
+    }
+    .table-cards td::before {
+        content: attr(data-label);
+        font-weight: bold;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+    .table-cards td:empty {
+        display: none;
+    }
+
+    /* 4. Dialogs → bottom sheets */
+    dialog {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        top: auto;
+        max-height: 90vh;
+        max-width: 100vw;
+        width: 100%;
+        margin: 0;
+        border-radius: var(--pico-border-radius) var(--pico-border-radius) 0 0;
+        overflow-y: auto;
+    }
+    dialog > article {
+        margin: 0;
+        max-height: 85vh;
+        overflow-y: auto;
+    }
+    dialog .grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* 5. Dialog slide-up animation */
+    dialog[open] {
+        animation: slideUp 0.25s ease-out;
+    }
+    @keyframes slideUp {
+        from { transform: translateY(100%); }
+        to   { transform: translateY(0); }
+    }
+
+    /* 6. Buttons: minimum touch target */
+    button, [role="button"], a[role="button"], input[type="submit"] {
+        min-height: 44px;
+        min-width: 44px;
+    }
+
+    /* 7. Form inputs: larger on mobile */
+    input, select, textarea {
+        font-size: 16px; /* prevents iOS zoom on focus */
+    }
+
+    /* 8. Container padding reduction */
+    .container {
+        padding-left: 0.75rem;
+        padding-right: 0.75rem;
+    }
+
+    /* 9. Action button groups: stack vertically */
+    td > div[style*="display:flex"] {
+        flex-direction: column;
+        gap: 0.25rem;
+    }
+}

@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="companionList">
-    <figure>
+    <figure class="table-cards">
         <table th:if="${!dependents.isEmpty()}">
             <thead>
                 <tr>
@@ -14,9 +14,9 @@
             </thead>
             <tbody>
                 <tr th:each="dep : ${dependents}">
-                    <td th:text="${dep.firstName()}"></td>
-                    <td th:text="${dep.lastName()}"></td>
-                    <td th:text="${dep.dateOfBirth()}"></td>
+                    <td th:data-label="#{companion.firstName}" th:text="${dep.firstName()}"></td>
+                    <td th:data-label="#{companion.lastName}" th:text="${dep.lastName()}"></td>
+                    <td th:data-label="#{common.dateOfBirth}" th:text="${dep.dateOfBirth()}"></td>
                     <td>
                         <button hx-delete th:hx-delete="@{'/dashboard/companions/' + ${dep.dependentId()}}"
                                 hx-target="#companions"

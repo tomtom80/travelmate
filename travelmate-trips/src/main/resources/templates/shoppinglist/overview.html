@@ -78,7 +78,7 @@
                 </form>
             </div>
         </header>
-        <figure th:if="${!recipeItems.isEmpty()}">
+        <figure class="table-cards" th:if="${!recipeItems.isEmpty()}">
             <table>
                 <thead>
                     <tr>
@@ -94,17 +94,17 @@
                     <tr th:each="item : ${recipeItems}"
                         th:id="'item-row-' + ${item.itemId()}"
                         th:classappend="${item.status().name() == 'PURCHASED'} ? 'item-purchased'">
-                        <td th:text="${item.name()}"></td>
-                        <td th:text="${item.quantity()}"></td>
-                        <td th:text="${item.unit()}"></td>
-                        <td>
+                        <td th:data-label="#{shoppinglist.item.name}" th:text="${item.name()}"></td>
+                        <td th:data-label="#{shoppinglist.item.quantity}" th:text="${item.quantity()}"></td>
+                        <td th:data-label="#{shoppinglist.item.unit}" th:text="${item.unit()}"></td>
+                        <td data-label="Assignee">
                             <span th:if="${item.assigneeName() != null && item.assignedToCurrentUser()}"
                                   th:text="#{shoppinglist.item.you}">Du</span>
                             <span th:if="${item.assigneeName() != null && !item.assignedToCurrentUser()}"
                                   th:text="${item.assigneeName()}"></span>
                             <span th:if="${item.assigneeName() == null}">&mdash;</span>
                         </td>
-                        <td>
+                        <td th:data-label="#{trip.status}">
                             <span th:class="'status-' + ${item.status().name().toLowerCase()}"
                                   th:text="#{${'shoppinglist.item.status.' + item.status().name()}}"></span>
                         </td>
@@ -123,7 +123,7 @@
         <header>
             <h2 style="margin-bottom:0;" th:text="#{shoppinglist.section.manual}">Manuelle Eintraege</h2>
         </header>
-        <figure>
+        <figure class="table-cards">
             <table>
                 <thead>
                     <tr>
@@ -139,17 +139,17 @@
                     <tr th:each="item : ${manualItems}"
                         th:id="'item-row-' + ${item.itemId()}"
                         th:classappend="${item.status().name() == 'PURCHASED'} ? 'item-purchased'">
-                        <td th:text="${item.name()}"></td>
-                        <td th:text="${item.quantity()}"></td>
-                        <td th:text="${item.unit()}"></td>
-                        <td>
+                        <td th:data-label="#{shoppinglist.item.name}" th:text="${item.name()}"></td>
+                        <td th:data-label="#{shoppinglist.item.quantity}" th:text="${item.quantity()}"></td>
+                        <td th:data-label="#{shoppinglist.item.unit}" th:text="${item.unit()}"></td>
+                        <td data-label="Assignee">
                             <span th:if="${item.assigneeName() != null && item.assignedToCurrentUser()}"
                                   th:text="#{shoppinglist.item.you}">Du</span>
                             <span th:if="${item.assigneeName() != null && !item.assignedToCurrentUser()}"
                                   th:text="${item.assigneeName()}"></span>
                             <span th:if="${item.assigneeName() == null}">&mdash;</span>
                         </td>
-                        <td>
+                        <td th:data-label="#{trip.status}">
                             <span th:class="'status-' + ${item.status().name().toLowerCase()}"
                                   th:text="#{${'shoppinglist.item.status.' + item.status().name()}}"></span>
                         </td>
@@ -215,17 +215,17 @@
 <!-- Fragment: itemRow (for HTMX partial row updates) -->
 <tr th:fragment="itemRow" th:id="'item-row-' + ${item.itemId()}"
     th:classappend="${item.status().name() == 'PURCHASED'} ? 'item-purchased'">
-    <td th:text="${item.name()}"></td>
-    <td th:text="${item.quantity()}"></td>
-    <td th:text="${item.unit()}"></td>
-    <td>
+    <td th:data-label="#{shoppinglist.item.name}" th:text="${item.name()}"></td>
+    <td th:data-label="#{shoppinglist.item.quantity}" th:text="${item.quantity()}"></td>
+    <td th:data-label="#{shoppinglist.item.unit}" th:text="${item.unit()}"></td>
+    <td data-label="Assignee">
         <span th:if="${item.assigneeName() != null && item.assignedToCurrentUser()}"
               th:text="#{shoppinglist.item.you}">Du</span>
         <span th:if="${item.assigneeName() != null && !item.assignedToCurrentUser()}"
               th:text="${item.assigneeName()}"></span>
         <span th:if="${item.assigneeName() == null}">&mdash;</span>
     </td>
-    <td>
+    <td th:data-label="#{trip.status}">
         <span th:class="'status-' + ${item.status().name().toLowerCase()}"
               th:text="#{${'shoppinglist.item.status.' + item.status().name()}}"></span>
     </td>

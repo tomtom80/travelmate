@@ -21,7 +21,7 @@
     <!-- Category Breakdown (S10-C) -->
     <article th:if="${!expense.categoryBreakdown().isEmpty()}">
         <h2 th:text="#{expense.categoryBreakdown}">Ausgaben nach Kategorie</h2>
-        <figure>
+        <figure class="table-cards">
             <table>
                 <thead>
                     <tr>
@@ -33,16 +33,16 @@
                 </thead>
                 <tbody>
                     <tr th:each="cat : ${expense.categoryBreakdown()}">
-                        <td th:text="#{${'expense.category.' + cat.category()}}">Kategorie</td>
-                        <td th:text="${#numbers.formatDecimal(cat.total(), 1, 2) + ' EUR'}"></td>
-                        <td>
+                        <td th:data-label="#{expense.receipt.category}" th:text="#{${'expense.category.' + cat.category()}}">Kategorie</td>
+                        <td th:data-label="#{expense.receipt.amount}" th:text="${#numbers.formatDecimal(cat.total(), 1, 2) + ' EUR'}"></td>
+                        <td th:data-label="#{expense.category.percentage}">
                             <div style="display:flex; align-items:center; gap:0.5rem;">
                                 <progress th:value="${cat.percentage()}" max="100"
                                           style="flex:1; height:0.5rem;"></progress>
                                 <small th:text="${#numbers.formatDecimal(cat.percentage(), 1, 1) + ' %'}"></small>
                             </div>
                         </td>
-                        <td th:text="${cat.receiptCount()}"></td>
+                        <td th:data-label="#{expense.categoryBreakdown.receiptCount}" th:text="${cat.receiptCount()}"></td>
                     </tr>
                 </tbody>
             </table>
@@ -52,7 +52,7 @@
     <!-- Daily Costs -->
     <article th:if="${!expense.dailyCosts().isEmpty()}">
         <h2 th:text="#{expense.dailyCosts}">Tageskosten</h2>
-        <figure>
+        <figure class="table-cards">
             <table>
                 <thead>
                     <tr>
@@ -63,9 +63,9 @@
                 </thead>
                 <tbody>
                     <tr th:each="day : ${expense.dailyCosts()}">
-                        <td th:text="${#temporals.format(day.date(), 'dd.MM.yyyy')}"></td>
-                        <td th:text="${#numbers.formatDecimal(day.total(), 1, 2) + ' EUR'}"></td>
-                        <td th:text="${day.receiptCount()}"></td>
+                        <td th:data-label="#{expense.dailyCosts.date}" th:text="${#temporals.format(day.date(), 'dd.MM.yyyy')}"></td>
+                        <td th:data-label="#{expense.dailyCosts.total}" th:text="${#numbers.formatDecimal(day.total(), 1, 2) + ' EUR'}"></td>
+                        <td th:data-label="#{expense.dailyCosts.receiptCount}" th:text="${day.receiptCount()}"></td>
                     </tr>
                 </tbody>
             </table>
@@ -98,7 +98,7 @@
     <!-- Participant Summary -->
     <article th:if="${!expense.participantSummaries().isEmpty()}">
         <h2 th:text="#{expense.participantSummary}">Teilnehmeruebersicht</h2>
-        <figure>
+        <figure class="table-cards">
             <table>
                 <thead>
                     <tr>
@@ -110,10 +110,10 @@
                 </thead>
                 <tbody>
                     <tr th:each="ps : ${expense.participantSummaries()}">
-                        <td th:text="${participantNames[ps.participantId()] != null ? participantNames[ps.participantId()] : ps.participantId()}"></td>
-                        <td th:text="${#numbers.formatDecimal(ps.totalPaid(), 1, 2) + ' EUR'}"></td>
-                        <td th:text="${#numbers.formatDecimal(ps.fairShare(), 1, 2) + ' EUR'}"></td>
-                        <td>
+                        <td th:data-label="#{expense.balance.participant}" th:text="${participantNames[ps.participantId()] != null ? participantNames[ps.participantId()] : ps.participantId()}"></td>
+                        <td th:data-label="#{expense.participantSummary.totalPaid}" th:text="${#numbers.formatDecimal(ps.totalPaid(), 1, 2) + ' EUR'}"></td>
+                        <td th:data-label="#{expense.participantSummary.fairShare}" th:text="${#numbers.formatDecimal(ps.fairShare(), 1, 2) + ' EUR'}"></td>
+                        <td th:data-label="#{expense.participantSummary.balance}">
                             <span th:if="${ps.balance().signum() > 0}" style="color:green;">
                                 +<span th:text="${#numbers.formatDecimal(ps.balance(), 1, 2)}"></span> EUR
                             </span>
@@ -158,7 +158,7 @@
 
         <!-- Advance payments exist -->
         <div th:if="${!expense.advancePayments().isEmpty()}">
-            <figure>
+            <figure class="table-cards">
                 <table>
                     <thead>
                         <tr>
@@ -170,9 +170,9 @@
                     </thead>
                     <tbody>
                         <tr th:each="ap : ${expense.advancePayments()}">
-                            <td th:text="${ap.partyName()}"></td>
-                            <td th:text="${#numbers.formatDecimal(ap.amount(), 1, 2) + ' EUR'}"></td>
-                            <td>
+                            <td th:data-label="#{advance.party}" th:text="${ap.partyName()}"></td>
+                            <td th:data-label="#{advance.amount}" th:text="${#numbers.formatDecimal(ap.amount(), 1, 2) + ' EUR'}"></td>
+                            <td th:data-label="#{advance.paid}">
                                 <span th:if="${ap.paid()}" style="color:green;" th:text="#{advance.paid}">Bezahlt</span>
                                 <span th:if="${!ap.paid()}" style="color:orange;" th:text="#{advance.unpaid}">Offen</span>
                             </td>
@@ -227,7 +227,7 @@
     <!-- Advance Payments (settled view) -->
     <article th:if="${expense.status().name() == 'SETTLED' && !expense.advancePayments().isEmpty()}">
         <h2 th:text="#{advance.title}">Vorauszahlungen</h2>
-        <figure>
+        <figure class="table-cards">
             <table>
                 <thead>
                     <tr>
@@ -238,9 +238,9 @@
                 </thead>
                 <tbody>
                     <tr th:each="ap : ${expense.advancePayments()}">
-                        <td th:text="${ap.partyName()}"></td>
-                        <td th:text="${#numbers.formatDecimal(ap.amount(), 1, 2) + ' EUR'}"></td>
-                        <td>
+                        <td th:data-label="#{advance.party}" th:text="${ap.partyName()}"></td>
+                        <td th:data-label="#{advance.amount}" th:text="${#numbers.formatDecimal(ap.amount(), 1, 2) + ' EUR'}"></td>
+                        <td th:data-label="#{advance.paid}">
                             <span th:if="${ap.paid()}" style="color:green;" th:text="#{advance.paid}">Bezahlt</span>
                             <span th:if="${!ap.paid()}" style="color:orange;" th:text="#{advance.unpaid}">Offen</span>
                         </td>
@@ -253,7 +253,7 @@
     <!-- Party Settlement -->
     <article th:if="${!expense.partySettlements().isEmpty()}">
         <h2 th:text="#{expense.partySettlement}">Abrechnung nach Reisepartei</h2>
-        <figure>
+        <figure class="table-cards">
             <table>
                 <thead>
                     <tr>
@@ -266,15 +266,15 @@
                 </thead>
                 <tbody>
                     <tr th:each="ps : ${expense.partySettlements()}">
-                        <td th:text="${ps.partyName()}"></td>
-                        <td>
+                        <td th:data-label="#{expense.partySettlement.party}" th:text="${ps.partyName()}"></td>
+                        <td th:data-label="#{expense.partySettlement.members}">
                             <small th:each="name, iter : ${ps.memberNames()}">
                                 <span th:text="${name}"></span><span th:if="${!iter.last}">, </span>
                             </small>
                         </td>
-                        <td th:text="${#numbers.formatDecimal(ps.totalPaid(), 1, 2) + ' EUR'}"></td>
-                        <td th:text="${#numbers.formatDecimal(ps.totalOwed(), 1, 2) + ' EUR'}"></td>
-                        <td>
+                        <td th:data-label="#{expense.partySettlement.totalPaid}" th:text="${#numbers.formatDecimal(ps.totalPaid(), 1, 2) + ' EUR'}"></td>
+                        <td th:data-label="#{expense.partySettlement.totalOwed}" th:text="${#numbers.formatDecimal(ps.totalOwed(), 1, 2) + ' EUR'}"></td>
+                        <td th:data-label="#{expense.partySettlement.balance}">
                             <span th:if="${ps.balance().signum() > 0}" style="color:green;">
                                 +<span th:text="${#numbers.formatDecimal(ps.balance(), 1, 2)}"></span> EUR
                             </span>
@@ -294,7 +294,7 @@
     <!-- Party-Level Transfers -->
     <article th:if="${!expense.partyTransfers().isEmpty()}">
         <h2 th:text="#{expense.partyTransfers}">Ausgleichszahlungen (Reiseparteien)</h2>
-        <figure>
+        <figure class="table-cards">
             <table>
                 <thead>
                     <tr>
@@ -306,10 +306,10 @@
                 </thead>
                 <tbody>
                     <tr th:each="transfer : ${expense.partyTransfers()}">
-                        <td th:text="${transfer.fromPartyName()}"></td>
+                        <td th:data-label="#{expense.transfer.from}" th:text="${transfer.fromPartyName()}"></td>
                         <td th:text="#{expense.partyTransfer.pays}">zahlt an</td>
-                        <td th:text="${transfer.toPartyName()}"></td>
-                        <td th:text="${#numbers.formatDecimal(transfer.amount(), 1, 2) + ' EUR'}"></td>
+                        <td th:data-label="#{expense.transfer.to}" th:text="${transfer.toPartyName()}"></td>
+                        <td th:data-label="#{expense.transfer.amount}" th:text="${#numbers.formatDecimal(transfer.amount(), 1, 2) + ' EUR'}"></td>
                     </tr>
                 </tbody>
             </table>
@@ -319,7 +319,7 @@
     <!-- Settlement Plan -->
     <article th:if="${!expense.transfers().isEmpty()}">
         <h2 th:text="#{expense.settlementPlan}">Ausgleichszahlungen</h2>
-        <figure>
+        <figure class="table-cards">
             <table>
                 <thead>
                     <tr>
@@ -331,10 +331,10 @@
                 </thead>
                 <tbody>
                     <tr th:each="transfer : ${expense.transfers()}">
-                        <td th:text="${participantNames[transfer.from()] != null ? participantNames[transfer.from()] : transfer.from()}"></td>
+                        <td th:data-label="#{expense.transfer.from}" th:text="${participantNames[transfer.from()] != null ? participantNames[transfer.from()] : transfer.from()}"></td>
                         <td th:text="#{expense.transfer.pays}">zahlt</td>
-                        <td th:text="${participantNames[transfer.to()] != null ? participantNames[transfer.to()] : transfer.to()}"></td>
-                        <td th:text="${#numbers.formatDecimal(transfer.amount(), 1, 2) + ' EUR'}"></td>
+                        <td th:data-label="#{expense.transfer.to}" th:text="${participantNames[transfer.to()] != null ? participantNames[transfer.to()] : transfer.to()}"></td>
+                        <td th:data-label="#{expense.transfer.amount}" th:text="${#numbers.formatDecimal(transfer.amount(), 1, 2) + ' EUR'}"></td>
                     </tr>
                 </tbody>
             </table>

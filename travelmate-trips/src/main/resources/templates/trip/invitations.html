@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="invitationList">
-    <figure>
+    <figure class="table-cards">
         <table th:if="${!invitations.isEmpty()}">
             <thead>
                 <tr>
@@ -13,11 +13,11 @@
             </thead>
             <tbody>
                 <tr th:each="inv : ${invitations}">
-                    <td>
+                    <td th:data-label="#{invitation.member}">
                         <span th:text="${inv.inviteeName()}"></span>
                         <small th:if="${inv.invitationType() == 'EXTERNAL'}" th:text="#{invitation.statusExternal}"> (extern)</small>
                     </td>
-                    <td><mark th:text="#{${'invitation.status.' + inv.status()}}"></mark></td>
+                    <td th:data-label="#{trip.status}"><mark th:text="#{${'invitation.status.' + inv.status()}}"></mark></td>
                     <td th:if="${inv.status() == 'PENDING' && inv.inviteeId() == currentMemberId}">
                         <div class="grid">
                             <form hx-post th:hx-post="@{/{tid}/invitations/{iid}/accept(tid=${inv.tripId()},iid=${inv.invitationId()})}"

@@ -5,7 +5,7 @@
     <div th:if="${memberError}" class="error">
         <p th:text="#{${memberError}}"></p>
     </div>
-    <figure>
+    <figure class="table-cards">
         <table th:if="${!members.isEmpty()}">
             <thead>
                 <tr>
@@ -18,10 +18,10 @@
             </thead>
             <tbody>
                 <tr th:each="m : ${members}">
-                    <td th:text="${m.firstName()}"></td>
-                    <td th:text="${m.lastName()}"></td>
-                    <td th:text="${m.email()}"></td>
-                    <td th:text="${m.dateOfBirth()}"></td>
+                    <td th:data-label="#{member.firstName}" th:text="${m.firstName()}"></td>
+                    <td th:data-label="#{member.lastName}" th:text="${m.lastName()}"></td>
+                    <td th:data-label="#{member.email}" th:text="${m.email()}"></td>
+                    <td th:data-label="#{common.dateOfBirth}" th:text="${m.dateOfBirth()}"></td>
                     <td>
                         <button th:if="${currentAccount != null and m.accountId() != currentAccount.accountId().value()}"
                                 hx-delete th:hx-delete="@{'/dashboard/members/' + ${m.accountId()}}"

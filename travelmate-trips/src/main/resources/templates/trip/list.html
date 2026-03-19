@@ -33,7 +33,7 @@
 
     <h1 th:text="#{trip.title}">Reisen</h1>
 
-    <figure>
+    <figure class="table-cards">
         <table th:if="${!trips.isEmpty()}">
             <thead>
                 <tr>
@@ -46,13 +46,13 @@
             </thead>
             <tbody>
                 <tr th:each="trip : ${trips}">
-                    <td>
+                    <td th:data-label="#{trip.name}">
                         <a th:href="@{/{id}(id=${trip.tripId()})}"
                            th:text="${trip.name()}"></a>
                     </td>
-                    <td th:text="${trip.startDate()}"></td>
-                    <td th:text="${trip.endDate()}"></td>
-                    <td><mark th:text="#{${'trip.status.' + trip.status()}}"></mark></td>
+                    <td th:data-label="#{trip.startDate}" th:text="${trip.startDate()}"></td>
+                    <td th:data-label="#{trip.endDate}" th:text="${trip.endDate()}"></td>
+                    <td th:data-label="#{trip.status}"><mark th:text="#{${'trip.status.' + trip.status()}}"></mark></td>
                     <td>
                         <a th:if="${trip.status() == 'COMPLETED'}"
                            th:href="|/expense/${trip.tripId()}|"

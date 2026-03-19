@@ -2,7 +2,7 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="weightingList">
-    <figure th:if="${!expense.weightings().isEmpty()}">
+    <figure class="table-cards" th:if="${!expense.weightings().isEmpty()}">
         <table>
             <thead>
                 <tr>
@@ -13,8 +13,8 @@
             </thead>
             <tbody>
                 <tr th:each="weighting : ${expense.weightings()}">
-                    <td th:text="${participantNames[weighting.participantId()] != null ? participantNames[weighting.participantId()] : weighting.participantId()}"></td>
-                    <td th:if="${expense.status().name() == 'OPEN'}">
+                    <td th:data-label="#{expense.weighting.participant}" th:text="${participantNames[weighting.participantId()] != null ? participantNames[weighting.participantId()] : weighting.participantId()}"></td>
+                    <td th:data-label="#{expense.weighting.weight}" th:if="${expense.status().name() == 'OPEN'}">
                         <form th:hx-post="@{/{tid}/weightings(tid=${tripId})}"
                               hx-target="#weightings"
                               hx-swap="innerHTML"
@@ -28,7 +28,7 @@
                                     style="margin-bottom:0; white-space:nowrap; width:auto;">Aktualisieren</button>
                         </form>
                     </td>
-                    <td th:if="${expense.status().name() != 'OPEN'}"
+                    <td th:data-label="#{expense.weighting.weight}" th:if="${expense.status().name() != 'OPEN'}"
                         th:text="${#numbers.formatDecimal(weighting.weight(), 1, 1)}"></td>
                 </tr>
             </tbody>
