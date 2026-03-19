@@ -119,7 +119,7 @@ class ExpenseLifecycleIT extends E2ETestBase {
 
         page.waitForResponse(
             response -> response.url().contains("/expense/"),
-            () -> page.locator("dialog button[type=submit]").click()
+            () -> page.locator("#add-receipt-dialog button[type=submit]").click()
         );
         page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
 

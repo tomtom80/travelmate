@@ -120,7 +120,7 @@ public class ExpenseLifecycleSteps {
 
         page.waitForResponse(
             response -> response.url().contains("/expense/"),
-            () -> page.locator("dialog button[type=submit]").click()
+            () -> page.locator("#add-receipt-dialog button[type=submit]").click()
         );
         page.waitForLoadState(LoadState.NETWORKIDLE);
         receiptAdded = true;
