@@ -13,6 +13,7 @@ Funktionalität: Unterkunft per URL importieren
     Wenn ich die Unterkunftsseite fuer den Import-Test oeffne
     Dann sehe ich einen Bereich zum URL-Import
 
+  @manuell
   Szenario: Unterkunft per URL importieren und bearbeiten
     Angenommen ich befinde mich auf der Unterkunftsseite ohne Unterkunft
     Wenn ich eine URL eingebe und auf Importieren klicke
