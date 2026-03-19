@@ -361,6 +361,32 @@ class AccommodationControllerTest {
             .andExpect(status().isBadRequest());
     }
 
+    @Test
+    void setAccommodationWithMultipleRoomsRedirectsToOverview() throws Exception {
+        when(accommodationService.setAccommodation(any(SetAccommodationCommand.class)))
+            .thenReturn(accommodationRepresentation());
+
+        mockMvc.perform(post("/" + TRIP_UUID + "/accommodation")
+                .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
+                .param("name", "Chalet")
+                .param("roomName", "Schlafzimmer 1")
+                .param("roomName", "Schlafzimmer 2")
+                .param("roomName", "Kinderzimmer")
+                .param("roomType", "DOUBLE")
+                .param("roomType", "DOUBLE")
+                .param("roomType", "QUAD")
+                .param("roomBedCount", "2")
+                .param("roomBedCount", "2")
+                .param("roomBedCount", "4")
+                .param("roomPricePerNight", "")
+                .param("roomPricePerNight", "")
+                .param("roomPricePerNight", ""))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/" + TRIP_UUID + "/accommodation"));
+
+        verify(accommodationService).setAccommodation(any(SetAccommodationCommand.class));
+    }
+
     private AccommodationRepresentation accommodationRepresentation() {
         return new AccommodationRepresentation(
             UUID.randomUUID(), TRIP_UUID, "Huette", null, null,

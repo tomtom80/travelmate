@@ -316,62 +316,80 @@
             </label>
 
             <h4 th:text="#{accommodation.rooms}">Zimmer</h4>
-            <!-- Pre-filled rooms from import -->
-            <th:block th:if="${prefillRooms != null && !prefillRooms.isEmpty()}" th:each="room : ${prefillRooms}">
-                <div class="grid" style="border:1px solid var(--pico-muted-border-color, #ccc); border-radius:0.25rem; padding:0.5rem; margin-bottom:0.5rem;">
-                    <label>
-                        <span th:text="#{accommodation.room.name}">Bezeichnung</span>
-                        <input type="text" name="roomName" required maxlength="100" th:value="${room.name()}">
-                    </label>
-                    <label>
-                        <span th:text="#{accommodation.room.type}">Typ</span>
-                        <select name="roomType" required>
-                            <option value="SINGLE" th:text="#{roomType.SINGLE}" th:selected="${room.roomType().name() == 'SINGLE'}">Einzelzimmer</option>
-                            <option value="DOUBLE" th:text="#{roomType.DOUBLE}" th:selected="${room.roomType().name() == 'DOUBLE'}">Doppelzimmer</option>
-                            <option value="QUAD" th:text="#{roomType.QUAD}" th:selected="${room.roomType().name() == 'QUAD'}">4-Bett-Zimmer</option>
-                            <option value="DORMITORY" th:text="#{roomType.DORMITORY}" th:selected="${room.roomType().name() == 'DORMITORY'}">Matratzenlager</option>
-                            <option value="OTHER" th:text="#{roomType.OTHER}" th:selected="${room.roomType().name() == 'OTHER'}">Sonstiges</option>
-                        </select>
-                    </label>
-                    <label>
-                        <span th:text="#{accommodation.room.bedCount}">Betten</span>
-                        <input type="number" name="roomBedCount" required min="1" th:value="${room.bedCount()}">
-                    </label>
-                    <label>
-                        <span th:text="#{accommodation.room.pricePerNight}">Preis/Nacht</span>
-                        <input type="number" name="roomPricePerNight" step="0.01" min="0" th:value="${room.pricePerNight()}">
-                    </label>
-                </div>
-            </th:block>
-            <!-- Default empty room if no rooms imported -->
-            <th:block th:if="${prefillRooms == null || prefillRooms.isEmpty()}">
-                <div class="grid">
-                    <label>
-                        <span th:text="#{accommodation.room.name}">Bezeichnung</span>
-                        <input type="text" name="roomName" required maxlength="100" th:placeholder="#{accommodation.room.name.placeholder}">
-                    </label>
-                    <label>
-                        <span th:text="#{accommodation.room.type}">Typ</span>
-                        <select name="roomType" required>
-                            <option value="SINGLE" th:text="#{roomType.SINGLE}">Einzelzimmer</option>
-                            <option value="DOUBLE" th:text="#{roomType.DOUBLE}">Doppelzimmer</option>
-                            <option value="QUAD" th:text="#{roomType.QUAD}">4-Bett-Zimmer</option>
-                            <option value="DORMITORY" th:text="#{roomType.DORMITORY}">Matratzenlager</option>
-                            <option value="OTHER" th:text="#{roomType.OTHER}">Sonstiges</option>
-                        </select>
-                    </label>
-                </div>
-                <div class="grid">
-                    <label>
-                        <span th:text="#{accommodation.room.bedCount}">Betten</span>
-                        <input type="number" name="roomBedCount" required min="1" value="2">
-                    </label>
-                    <label>
-                        <span th:text="#{accommodation.room.pricePerNight}">Preis/Nacht</span>
-                        <input type="number" name="roomPricePerNight" step="0.01" min="0">
-                    </label>
-                </div>
-            </th:block>
+            <div th:if="${importResult != null && importResult.maxGuests() != null}"
+                 style="margin-bottom:0.5rem; color:var(--pico-muted-color, gray);">
+                <small th:text="'Max. ' + ${importResult.maxGuests()} + ' Personen'"></small>
+            </div>
+            <div id="import-room-rows">
+                <!-- Pre-filled rooms from import -->
+                <th:block th:if="${prefillRooms != null && !prefillRooms.isEmpty()}" th:each="room : ${prefillRooms}">
+                    <div class="room-row" style="border:1px solid var(--pico-muted-border-color, #ccc); border-radius:0.25rem; padding:0.5rem; margin-bottom:0.5rem; position:relative;">
+                        <button type="button" class="outline secondary remove-room-btn"
+                                style="position:absolute; top:0.25rem; right:0.25rem; padding:0.1rem 0.4rem; font-size:0.75rem; margin:0;"
+                                onclick="removeRoomRow(this)">&times;</button>
+                        <div class="grid">
+                            <label>
+                                <span th:text="#{accommodation.room.name}">Bezeichnung</span>
+                                <input type="text" name="roomName" required maxlength="100" th:value="${room.name()}">
+                            </label>
+                            <label>
+                                <span th:text="#{accommodation.room.type}">Typ</span>
+                                <select name="roomType" required>
+                                    <option value="SINGLE" th:text="#{roomType.SINGLE}" th:selected="${room.roomType().name() == 'SINGLE'}">Einzelzimmer</option>
+                                    <option value="DOUBLE" th:text="#{roomType.DOUBLE}" th:selected="${room.roomType().name() == 'DOUBLE'}">Doppelzimmer</option>
+                                    <option value="QUAD" th:text="#{roomType.QUAD}" th:selected="${room.roomType().name() == 'QUAD'}">4-Bett-Zimmer</option>
+                                    <option value="DORMITORY" th:text="#{roomType.DORMITORY}" th:selected="${room.roomType().name() == 'DORMITORY'}">Matratzenlager</option>
+                                    <option value="OTHER" th:text="#{roomType.OTHER}" th:selected="${room.roomType().name() == 'OTHER'}">Sonstiges</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="grid">
+                            <label>
+                                <span th:text="#{accommodation.room.bedCount}">Betten</span>
+                                <input type="number" name="roomBedCount" required min="1" th:value="${room.bedCount()}">
+                            </label>
+                            <label>
+                                <span th:text="#{accommodation.room.pricePerNight}">Preis/Nacht</span>
+                                <input type="number" name="roomPricePerNight" step="0.01" min="0" th:value="${room.pricePerNight()}">
+                            </label>
+                        </div>
+                    </div>
+                </th:block>
+                <!-- Default empty room if no rooms imported -->
+                <th:block th:if="${prefillRooms == null || prefillRooms.isEmpty()}">
+                    <div class="room-row" style="border:1px solid var(--pico-muted-border-color, #ccc); border-radius:0.25rem; padding:0.5rem; margin-bottom:0.5rem;">
+                        <div class="grid">
+                            <label>
+                                <span th:text="#{accommodation.room.name}">Bezeichnung</span>
+                                <input type="text" name="roomName" required maxlength="100" th:placeholder="#{accommodation.room.name.placeholder}">
+                            </label>
+                            <label>
+                                <span th:text="#{accommodation.room.type}">Typ</span>
+                                <select name="roomType" required>
+                                    <option value="SINGLE" th:text="#{roomType.SINGLE}">Einzelzimmer</option>
+                                    <option value="DOUBLE" th:text="#{roomType.DOUBLE}">Doppelzimmer</option>
+                                    <option value="QUAD" th:text="#{roomType.QUAD}">4-Bett-Zimmer</option>
+                                    <option value="DORMITORY" th:text="#{roomType.DORMITORY}">Matratzenlager</option>
+                                    <option value="OTHER" th:text="#{roomType.OTHER}">Sonstiges</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="grid">
+                            <label>
+                                <span th:text="#{accommodation.room.bedCount}">Betten</span>
+                                <input type="number" name="roomBedCount" required min="1" value="2">
+                            </label>
+                            <label>
+                                <span th:text="#{accommodation.room.pricePerNight}">Preis/Nacht</span>
+                                <input type="number" name="roomPricePerNight" step="0.01" min="0">
+                            </label>
+                        </div>
+                    </div>
+                </th:block>
+            </div>
+            <button type="button" class="outline" style="margin-bottom:1rem;"
+                    onclick="addRoomRow('import-room-rows')"
+                    th:text="#{accommodation.room.addMore}">+ Zimmer hinzufuegen</button>
 
             <footer>
                 <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
@@ -420,32 +438,39 @@
                 </label>
 
                 <h4 th:text="#{accommodation.rooms}">Zimmer</h4>
-                <div class="grid">
-                    <label>
-                        <span th:text="#{accommodation.room.name}">Bezeichnung</span>
-                        <input type="text" name="roomName" required maxlength="100" th:placeholder="#{accommodation.room.name.placeholder}">
-                    </label>
-                    <label>
-                        <span th:text="#{accommodation.room.type}">Typ</span>
-                        <select name="roomType" required>
-                            <option value="SINGLE" th:text="#{roomType.SINGLE}">Einzelzimmer</option>
-                            <option value="DOUBLE" th:text="#{roomType.DOUBLE}">Doppelzimmer</option>
-                            <option value="QUAD" th:text="#{roomType.QUAD}">4-Bett-Zimmer</option>
-                            <option value="DORMITORY" th:text="#{roomType.DORMITORY}">Matratzenlager</option>
-                            <option value="OTHER" th:text="#{roomType.OTHER}">Sonstiges</option>
-                        </select>
-                    </label>
+                <div id="dialog-room-rows">
+                    <div class="room-row" style="border:1px solid var(--pico-muted-border-color, #ccc); border-radius:0.25rem; padding:0.5rem; margin-bottom:0.5rem;">
+                        <div class="grid">
+                            <label>
+                                <span th:text="#{accommodation.room.name}">Bezeichnung</span>
+                                <input type="text" name="roomName" required maxlength="100" th:placeholder="#{accommodation.room.name.placeholder}">
+                            </label>
+                            <label>
+                                <span th:text="#{accommodation.room.type}">Typ</span>
+                                <select name="roomType" required>
+                                    <option value="SINGLE" th:text="#{roomType.SINGLE}">Einzelzimmer</option>
+                                    <option value="DOUBLE" th:text="#{roomType.DOUBLE}">Doppelzimmer</option>
+                                    <option value="QUAD" th:text="#{roomType.QUAD}">4-Bett-Zimmer</option>
+                                    <option value="DORMITORY" th:text="#{roomType.DORMITORY}">Matratzenlager</option>
+                                    <option value="OTHER" th:text="#{roomType.OTHER}">Sonstiges</option>
+                                </select>
+                            </label>
+                        </div>
+                        <div class="grid">
+                            <label>
+                                <span th:text="#{accommodation.room.bedCount}">Betten</span>
+                                <input type="number" name="roomBedCount" required min="1" value="2">
+                            </label>
+                            <label>
+                                <span th:text="#{accommodation.room.pricePerNight}">Preis/Nacht</span>
+                                <input type="number" name="roomPricePerNight" step="0.01" min="0">
+                            </label>
+                        </div>
+                    </div>
                 </div>
-                <div class="grid">
-                    <label>
-                        <span th:text="#{accommodation.room.bedCount}">Betten</span>
-                        <input type="number" name="roomBedCount" required min="1" value="2">
-                    </label>
-                    <label>
-                        <span th:text="#{accommodation.room.pricePerNight}">Preis/Nacht</span>
-                        <input type="number" name="roomPricePerNight" step="0.01" min="0">
-                    </label>
-                </div>
+                <button type="button" class="outline" style="margin-bottom:1rem;"
+                        onclick="addRoomRow('dialog-room-rows')"
+                        th:text="#{accommodation.room.addMore}">+ Zimmer hinzufuegen</button>
 
                 <footer>
                     <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
@@ -460,6 +485,63 @@
     </dialog>
 
     <a th:href="@{/{id}(id=${trip.tripId()})}" role="button" class="outline" th:text="#{common.back}">Zurueck</a>
+
+    <!-- Hidden template for room row cloning -->
+    <template id="room-row-template">
+        <div class="room-row" style="border:1px solid var(--pico-muted-border-color, #ccc); border-radius:0.25rem; padding:0.5rem; margin-bottom:0.5rem; position:relative;">
+            <button type="button" class="outline secondary remove-room-btn"
+                    style="position:absolute; top:0.25rem; right:0.25rem; padding:0.1rem 0.4rem; font-size:0.75rem; margin:0;"
+                    onclick="removeRoomRow(this)">&times;</button>
+            <div class="grid">
+                <label>
+                    <span th:text="#{accommodation.room.name}">Bezeichnung</span>
+                    <input type="text" name="roomName" required maxlength="100" data-placeholder="Schlafzimmer">
+                </label>
+                <label>
+                    <span th:text="#{accommodation.room.type}">Typ</span>
+                    <select name="roomType" required>
+                        <option value="SINGLE" th:text="#{roomType.SINGLE}">Einzelzimmer</option>
+                        <option value="DOUBLE" selected th:text="#{roomType.DOUBLE}">Doppelzimmer</option>
+                        <option value="QUAD" th:text="#{roomType.QUAD}">4-Bett-Zimmer</option>
+                        <option value="DORMITORY" th:text="#{roomType.DORMITORY}">Matratzenlager</option>
+                        <option value="OTHER" th:text="#{roomType.OTHER}">Sonstiges</option>
+                    </select>
+                </label>
+            </div>
+            <div class="grid">
+                <label>
+                    <span th:text="#{accommodation.room.bedCount}">Betten</span>
+                    <input type="number" name="roomBedCount" required min="1" value="2">
+                </label>
+                <label>
+                    <span th:text="#{accommodation.room.pricePerNight}">Preis/Nacht</span>
+                    <input type="number" name="roomPricePerNight" step="0.01" min="0">
+                </label>
+            </div>
+        </div>
+    </template>
+
+    <script>
+    /*<![CDATA[*/
+    function addRoomRow(containerId) {
+        var container = document.getElementById(containerId);
+        var template = document.getElementById('room-row-template');
+        var clone = template.content.cloneNode(true);
+        var roomCount = container.querySelectorAll('.room-row').length + 1;
+        var nameInput = clone.querySelector('input[name="roomName"]');
+        nameInput.value = nameInput.getAttribute('data-placeholder') + ' ' + roomCount;
+        container.appendChild(clone);
+    }
+
+    function removeRoomRow(button) {
+        var row = button.closest('.room-row');
+        var container = row.parentElement;
+        if (container.querySelectorAll('.room-row').length > 1) {
+            row.remove();
+        }
+    }
+    /*]]>*/
+    </script>
 </div>
 </body>
 </html>

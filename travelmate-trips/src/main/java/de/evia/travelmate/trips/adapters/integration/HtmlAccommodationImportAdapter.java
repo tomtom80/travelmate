@@ -31,6 +31,14 @@ public class HtmlAccommodationImportAdapter implements AccommodationImportPort {
         "BedAndBreakfast", "Resort", "Campground"
     );
     private static final Pattern PRICE_PATTERN = Pattern.compile("(\\d[\\d.,]*)");
+    private static final Pattern BEDROOMS_PATTERN = Pattern.compile(
+        "(\\d+)\\s*(?:Schlafzimmer|bedrooms?|Zimmer)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern BEDS_PATTERN = Pattern.compile(
+        "(\\d+)\\s*(?:Betten|beds?|Schlafpl[aä]tze)", Pattern.CASE_INSENSITIVE);
+    private static final Pattern GUESTS_PATTERN = Pattern.compile(
+        "(?:(?:max\\.?\\s*)?(\\d+)\\s*(?:Personen|Gäste|G[aä]ste|guests?|sleeps|accommodates))" +
+        "|(?:(?:sleeps|accommodates)\\s*(\\d+))", Pattern.CASE_INSENSITIVE);
+    private static final int DEFAULT_BEDS_PER_ROOM = 2;
     private static final int MAX_NOTES_LENGTH = 500;
     private static final int FETCH_TIMEOUT_MS = 5000;
     private static final String USER_AGENT = "Travelmate/0.10.0";
@@ -109,7 +117,8 @@ public class HtmlAccommodationImportAdapter implements AccommodationImportPort {
         final String name = textOrNull(jsonLd, "name");
         final String address = extractAddress(jsonLd);
         final BigDecimal totalPrice = extractPrice(jsonLd);
-        final List<ImportedRoom> rooms = extractRooms(jsonLd);
+        final Integer maxGuests = intOrNull(jsonLd, "maximumAttendeeCapacity");
+        final List<ImportedRoom> rooms = extractRooms(jsonLd, document);
         final String ogDescription = metaContent(document, "og:description");
         final String notes = truncate(ogDescription, MAX_NOTES_LENGTH);
 
@@ -121,7 +130,8 @@ public class HtmlAccommodationImportAdapter implements AccommodationImportPort {
             null,
             totalPrice,
             notes,
-            rooms
+            rooms,
+            maxGuests
         );
     }
 
@@ -137,6 +147,9 @@ public class HtmlAccommodationImportAdapter implements AccommodationImportPort {
         }
 
         final String notes = truncate(ogDescription, MAX_NOTES_LENGTH);
+        final List<ImportedRoom> rooms = extractRoomsFromHtmlBody(document, null);
+        final Integer maxGuests = matchGuests(
+            document.body() != null ? document.body().text() : "");
 
         return Optional.of(new AccommodationImportResult(
             name.trim(),
@@ -146,7 +159,8 @@ public class HtmlAccommodationImportAdapter implements AccommodationImportPort {
             null,
             null,
             notes,
-            List.of()
+            rooms,
+            maxGuests
         ));
     }
 
@@ -201,7 +215,25 @@ public class HtmlAccommodationImportAdapter implements AccommodationImportPort {
         return null;
     }
 
-    private List<ImportedRoom> extractRooms(final JsonNode jsonLd) {
+    private List<ImportedRoom> extractRooms(final JsonNode jsonLd, final Document document) {
+        // Step 1: Try containsPlace JSON-LD (most detailed)
+        final List<ImportedRoom> containsPlaceRooms = extractRoomsFromContainsPlace(jsonLd);
+        if (!containsPlaceRooms.isEmpty()) {
+            return containsPlaceRooms;
+        }
+
+        // Step 2: Try numberOfRooms/numberOfBedrooms from JSON-LD
+        final Integer maxGuests = intOrNull(jsonLd, "maximumAttendeeCapacity");
+        final List<ImportedRoom> jsonLdRooms = generateRoomsFromJsonLdProperties(jsonLd, maxGuests);
+        if (!jsonLdRooms.isEmpty()) {
+            return jsonLdRooms;
+        }
+
+        // Step 3: HTML body text fallback
+        return extractRoomsFromHtmlBody(document, maxGuests);
+    }
+
+    private List<ImportedRoom> extractRoomsFromContainsPlace(final JsonNode jsonLd) {
         final JsonNode containsPlace = jsonLd.get("containsPlace");
         if (containsPlace == null || !containsPlace.isArray()) {
             return List.of();
@@ -218,6 +250,54 @@ public class HtmlAccommodationImportAdapter implements AccommodationImportPort {
             rooms.add(new ImportedRoom(name, roomType, bedCount, null));
         }
         return rooms;
+    }
+
+    private List<ImportedRoom> generateRoomsFromJsonLdProperties(final JsonNode jsonLd,
+                                                                   final Integer maxGuests) {
+        final Integer numberOfRooms = intOrNull(jsonLd, "numberOfRooms");
+        final Integer numberOfBedrooms = intOrNull(jsonLd, "numberOfBedrooms");
+        final int roomCount = numberOfBedrooms != null ? numberOfBedrooms
+            : numberOfRooms != null ? numberOfRooms : 0;
+
+        if (roomCount <= 0) {
+            return List.of();
+        }
+
+        return generateGenericRooms(roomCount, maxGuests);
+    }
+
+    List<ImportedRoom> extractRoomsFromHtmlBody(final Document document, final Integer jsonLdMaxGuests) {
+        final String bodyText = document.body() != null ? document.body().text() : "";
+
+        final Integer bedrooms = matchFirstInt(BEDROOMS_PATTERN, bodyText);
+        final Integer beds = matchFirstInt(BEDS_PATTERN, bodyText);
+        final Integer guests = jsonLdMaxGuests != null ? jsonLdMaxGuests : matchGuests(bodyText);
+
+        if (bedrooms != null && bedrooms > 0) {
+            return generateGenericRooms(bedrooms, guests != null ? guests : beds);
+        }
+
+        return List.of();
+    }
+
+    private List<ImportedRoom> generateGenericRooms(final int roomCount, final Integer totalCapacity) {
+        final List<ImportedRoom> rooms = new ArrayList<>();
+        for (int i = 1; i <= roomCount; i++) {
+            final int bedsPerRoom = estimateBedsPerRoom(roomCount, totalCapacity, i);
+            final RoomType roomType = inferRoomTypeFromBedCount(bedsPerRoom);
+            rooms.add(new ImportedRoom("Schlafzimmer " + i, roomType, bedsPerRoom, null));
+        }
+        return rooms;
+    }
+
+    private int estimateBedsPerRoom(final int roomCount, final Integer totalCapacity, final int roomIndex) {
+        if (totalCapacity == null || totalCapacity <= 0) {
+            return DEFAULT_BEDS_PER_ROOM;
+        }
+        final int baseBedsPerRoom = totalCapacity / roomCount;
+        final int remainder = totalCapacity % roomCount;
+        // Distribute remainder to the first rooms
+        return roomIndex <= remainder ? baseBedsPerRoom + 1 : baseBedsPerRoom;
     }
 
     private int extractBedCount(final JsonNode roomNode) {
@@ -256,6 +336,60 @@ public class HtmlAccommodationImportAdapter implements AccommodationImportPort {
             return RoomType.QUAD;
         }
         return RoomType.DORMITORY;
+    }
+
+    private RoomType inferRoomTypeFromBedCount(final int bedCount) {
+        if (bedCount == 1) {
+            return RoomType.SINGLE;
+        }
+        if (bedCount == 2) {
+            return RoomType.DOUBLE;
+        }
+        if (bedCount <= 4) {
+            return RoomType.QUAD;
+        }
+        return RoomType.DORMITORY;
+    }
+
+    private Integer intOrNull(final JsonNode node, final String field) {
+        final JsonNode child = node.get(field);
+        if (child == null || child.isNull()) {
+            return null;
+        }
+        final int value = child.asInt(0);
+        return value > 0 ? value : null;
+    }
+
+    private Integer matchFirstInt(final Pattern pattern, final String text) {
+        final Matcher matcher = pattern.matcher(text);
+        if (matcher.find()) {
+            try {
+                return Integer.parseInt(matcher.group(1));
+            } catch (final NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
+    }
+
+    private Integer matchGuests(final String text) {
+        final Matcher matcher = GUESTS_PATTERN.matcher(text);
+        if (matcher.find()) {
+            // Group 1 is for "N Personen" pattern, group 2 is for "sleeps N" pattern
+            final String group1 = matcher.group(1);
+            final String group2 = matcher.group(2);
+            try {
+                if (group1 != null) {
+                    return Integer.parseInt(group1);
+                }
+                if (group2 != null) {
+                    return Integer.parseInt(group2);
+                }
+            } catch (final NumberFormatException ignored) {
+                return null;
+            }
+        }
+        return null;
     }
 
     private String textOrNull(final JsonNode node, final String field) {

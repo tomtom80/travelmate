@@ -80,6 +80,13 @@
             <scope>runtime</scope>
         </dependency>
 
+        <!-- OCR: Tesseract via tess4j -->
+        <dependency>
+            <groupId>net.sourceforge.tess4j</groupId>
+            <artifactId>tess4j</artifactId>
+            <version>5.13.0</version>
+        </dependency>
+
         <!-- PDF generation: Flying Saucer + OpenPDF -->
         <dependency>
             <groupId>org.xhtmlrenderer</groupId>

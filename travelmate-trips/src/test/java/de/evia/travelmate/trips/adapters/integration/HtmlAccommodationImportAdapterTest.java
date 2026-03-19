@@ -3,11 +3,13 @@ package de.evia.travelmate.trips.adapters.integration;
 import static org.assertj.core.api.Assertions.assertThat;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 
 import de.evia.travelmate.trips.domain.accommodation.AccommodationImportResult;
+import de.evia.travelmate.trips.domain.accommodation.ImportedRoom;
 import de.evia.travelmate.trips.domain.accommodation.RoomType;
 
 class HtmlAccommodationImportAdapterTest {
@@ -174,6 +176,7 @@ class HtmlAccommodationImportAdapterTest {
         assertThat(data.address()).contains("Wies");
         assertThat(data.bookingUrl()).isEqualTo("https://www.huetten.com/chalet");
         assertThat(data.totalPrice()).isEqualByComparingTo(new BigDecimal("4025"));
+        assertThat(data.maxGuests()).isEqualTo(13);
         assertThat(data.rooms()).hasSize(3);
         assertThat(data.rooms().getFirst().name()).isEqualTo("Schlafzimmer 1");
         assertThat(data.rooms().getFirst().roomType()).isEqualTo(RoomType.DOUBLE);
@@ -283,5 +286,261 @@ class HtmlAccommodationImportAdapterTest {
 
         assertThat(result).isPresent();
         assertThat(result.get().notes()).hasSize(500);
+    }
+
+    @Test
+    void generatesRoomsFromNumberOfRoomsAndCapacity() {
+        final String html = """
+            <html>
+            <head>
+                <title>Chalet am Kogl</title>
+                <script type="application/ld+json">
+                {
+                    "@type": "LodgingBusiness",
+                    "name": "Chalet am Kogl",
+                    "address": {"streetAddress": "Kogl 32", "postalCode": "8551", "addressLocality": "Wies"},
+                    "maximumAttendeeCapacity": 13,
+                    "numberOfRooms": 6,
+                    "priceRange": "ab 4025 EUR pro Woche"
+                }
+                </script>
+            </head>
+            <body>5 Schlafzimmer, 13 Schlafplaetze, 4 Badezimmer</body>
+            </html>
+            """;
+        final HtmlAccommodationImportAdapter adapter = new HtmlAccommodationImportAdapter();
+
+        final Optional<AccommodationImportResult> result = adapter.parseHtml(html, "https://huetten.com/chalet");
+
+        assertThat(result).isPresent();
+        final AccommodationImportResult data = result.get();
+        assertThat(data.name()).isEqualTo("Chalet am Kogl");
+        assertThat(data.maxGuests()).isEqualTo(13);
+        assertThat(data.rooms()).hasSize(6);
+        // 13 / 6 = 2 remainder 1, so first room gets 3 beds, rest get 2
+        assertThat(data.rooms().getFirst().name()).isEqualTo("Schlafzimmer 1");
+        assertThat(data.rooms().getFirst().bedCount()).isEqualTo(3);
+        assertThat(data.rooms().getFirst().roomType()).isEqualTo(RoomType.QUAD);
+        assertThat(data.rooms().get(1).bedCount()).isEqualTo(2);
+        assertThat(data.rooms().get(1).roomType()).isEqualTo(RoomType.DOUBLE);
+    }
+
+    @Test
+    void generatesRoomsFromNumberOfBedroomsPreferredOverNumberOfRooms() {
+        final String html = """
+            <html>
+            <head>
+                <title>Ferienhaus</title>
+                <script type="application/ld+json">
+                {
+                    "@type": "VacationRental",
+                    "name": "Ferienhaus Bergblick",
+                    "numberOfBedrooms": 3,
+                    "numberOfRooms": 5,
+                    "maximumAttendeeCapacity": 8
+                }
+                </script>
+            </head>
+            <body></body>
+            </html>
+            """;
+        final HtmlAccommodationImportAdapter adapter = new HtmlAccommodationImportAdapter();
+
+        final Optional<AccommodationImportResult> result = adapter.parseHtml(html, "https://example.com");
+
+        assertThat(result).isPresent();
+        final AccommodationImportResult data = result.get();
+        // numberOfBedrooms (3) takes precedence over numberOfRooms (5)
+        assertThat(data.rooms()).hasSize(3);
+        // 8 / 3 = 2 remainder 2, so first 2 rooms get 3 beds, last gets 2
+        assertThat(data.rooms().get(0).bedCount()).isEqualTo(3);
+        assertThat(data.rooms().get(1).bedCount()).isEqualTo(3);
+        assertThat(data.rooms().get(2).bedCount()).isEqualTo(2);
+    }
+
+    @Test
+    void generatesRoomsFromNumberOfRoomsWithoutCapacity() {
+        final String html = """
+            <html>
+            <head>
+                <title>Hotel</title>
+                <script type="application/ld+json">
+                {
+                    "@type": "Hotel",
+                    "name": "Hotel Simple",
+                    "numberOfRooms": 4
+                }
+                </script>
+            </head>
+            <body></body>
+            </html>
+            """;
+        final HtmlAccommodationImportAdapter adapter = new HtmlAccommodationImportAdapter();
+
+        final Optional<AccommodationImportResult> result = adapter.parseHtml(html, "https://example.com");
+
+        assertThat(result).isPresent();
+        final AccommodationImportResult data = result.get();
+        assertThat(data.rooms()).hasSize(4);
+        // Without capacity, each room defaults to 2 beds
+        for (final ImportedRoom room : data.rooms()) {
+            assertThat(room.bedCount()).isEqualTo(2);
+            assertThat(room.roomType()).isEqualTo(RoomType.DOUBLE);
+        }
+    }
+
+    @Test
+    void extractsRoomsFromHtmlBodyWhenNoJsonLd() {
+        final String html = """
+            <html>
+            <head>
+                <title>Berghuette Alpenruh</title>
+                <meta property="og:title" content="Berghuette Alpenruh">
+            </head>
+            <body>
+                <h1>Berghuette Alpenruh</h1>
+                <p>Unsere Huette bietet 5 Schlafzimmer mit insgesamt 13 Betten fuer max. 13 Personen.</p>
+            </body>
+            </html>
+            """;
+        final HtmlAccommodationImportAdapter adapter = new HtmlAccommodationImportAdapter();
+
+        final Optional<AccommodationImportResult> result = adapter.parseHtml(html, "https://example.com");
+
+        assertThat(result).isPresent();
+        final AccommodationImportResult data = result.get();
+        assertThat(data.rooms()).hasSize(5);
+        assertThat(data.maxGuests()).isEqualTo(13);
+        // 13 beds / 5 rooms = 2 remainder 3 → first 3 rooms get 3, last 2 get 2
+        assertThat(data.rooms().get(0).bedCount()).isEqualTo(3);
+        assertThat(data.rooms().get(3).bedCount()).isEqualTo(2);
+    }
+
+    @Test
+    void extractsRoomsFromHtmlBodyGermanSchlafplaetze() {
+        final String html = """
+            <html>
+            <head>
+                <title>Chalet Test</title>
+                <meta property="og:title" content="Chalet Test">
+                <script type="application/ld+json">
+                {
+                    "@type": "LodgingBusiness",
+                    "name": "Chalet Test",
+                    "maximumAttendeeCapacity": 13,
+                    "numberOfRooms": 6
+                }
+                </script>
+            </head>
+            <body>5 Schlafzimmer, 13 Schlafplaetze, 4 Badezimmer</body>
+            </html>
+            """;
+        final HtmlAccommodationImportAdapter adapter = new HtmlAccommodationImportAdapter();
+
+        final Optional<AccommodationImportResult> result = adapter.parseHtml(html, "https://example.com");
+
+        assertThat(result).isPresent();
+        // numberOfRooms from JSON-LD takes precedence since there are no containsPlace entries
+        assertThat(result.get().rooms()).hasSize(6);
+        assertThat(result.get().maxGuests()).isEqualTo(13);
+    }
+
+    @Test
+    void extractsRoomsFromHtmlBodyEnglishBedrooms() {
+        final String html = """
+            <html>
+            <head>
+                <title>Mountain Lodge</title>
+                <meta property="og:title" content="Mountain Lodge">
+            </head>
+            <body>
+                <p>This lovely lodge has 4 bedrooms and sleeps 10 guests comfortably.</p>
+            </body>
+            </html>
+            """;
+        final HtmlAccommodationImportAdapter adapter = new HtmlAccommodationImportAdapter();
+
+        final Optional<AccommodationImportResult> result = adapter.parseHtml(html, "https://example.com");
+
+        assertThat(result).isPresent();
+        final AccommodationImportResult data = result.get();
+        assertThat(data.rooms()).hasSize(4);
+        // 10 / 4 = 2 remainder 2 → first 2 rooms get 3, last 2 get 2
+        assertThat(data.rooms().get(0).bedCount()).isEqualTo(3);
+        assertThat(data.rooms().get(2).bedCount()).isEqualTo(2);
+    }
+
+    @Test
+    void htmlBodyBedroomsWithoutGuestsDefaultsTo2BedsPerRoom() {
+        final String html = """
+            <html>
+            <head>
+                <title>Simple House</title>
+                <meta property="og:title" content="Simple House">
+            </head>
+            <body>
+                <p>3 Schlafzimmer verfuegbar.</p>
+            </body>
+            </html>
+            """;
+        final HtmlAccommodationImportAdapter adapter = new HtmlAccommodationImportAdapter();
+
+        final Optional<AccommodationImportResult> result = adapter.parseHtml(html, "https://example.com");
+
+        assertThat(result).isPresent();
+        final List<ImportedRoom> rooms = result.get().rooms();
+        assertThat(rooms).hasSize(3);
+        for (final ImportedRoom room : rooms) {
+            assertThat(room.bedCount()).isEqualTo(2);
+        }
+    }
+
+    @Test
+    void htmlBodyUsesBedsAsFallbackForCapacity() {
+        final String html = """
+            <html>
+            <head>
+                <title>Haus am See</title>
+                <meta property="og:title" content="Haus am See">
+            </head>
+            <body>
+                <p>4 Schlafzimmer, 10 Betten</p>
+            </body>
+            </html>
+            """;
+        final HtmlAccommodationImportAdapter adapter = new HtmlAccommodationImportAdapter();
+
+        final Optional<AccommodationImportResult> result = adapter.parseHtml(html, "https://example.com");
+
+        assertThat(result).isPresent();
+        final List<ImportedRoom> rooms = result.get().rooms();
+        assertThat(rooms).hasSize(4);
+        // 10 / 4 = 2 remainder 2 → first 2 rooms get 3, last 2 get 2
+        assertThat(rooms.get(0).bedCount()).isEqualTo(3);
+        assertThat(rooms.get(1).bedCount()).isEqualTo(3);
+        assertThat(rooms.get(2).bedCount()).isEqualTo(2);
+        assertThat(rooms.get(3).bedCount()).isEqualTo(2);
+    }
+
+    @Test
+    void containsPlaceTakesPrecedenceOverNumberOfRooms() {
+        // The existing test data JSON_LD_LODGING_BUSINESS has both containsPlace and numberOfRooms
+        // containsPlace should take precedence (3 rooms, not 5)
+        final HtmlAccommodationImportAdapter adapter = new HtmlAccommodationImportAdapter();
+
+        final Optional<AccommodationImportResult> result = adapter.parseHtml(JSON_LD_LODGING_BUSINESS, "https://example.com");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().rooms()).hasSize(3); // from containsPlace, not numberOfRooms=5
+    }
+
+    @Test
+    void maxGuestsIsNullWhenNotProvided() {
+        final HtmlAccommodationImportAdapter adapter = new HtmlAccommodationImportAdapter();
+
+        final Optional<AccommodationImportResult> result = adapter.parseHtml(JSON_LD_VACATION_RENTAL, "https://example.com");
+
+        assertThat(result).isPresent();
+        assertThat(result.get().maxGuests()).isNull();
     }
 }

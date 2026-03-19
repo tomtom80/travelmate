@@ -45,6 +45,11 @@ spring:
   thymeleaf:
     cache: false
 
+travelmate:
+  ocr:
+    tessdata-path: ${TESSDATA_PATH:/usr/share/tesseract-ocr/5/tessdata}
+    language: deu
+
 management:
   endpoints:
     web:

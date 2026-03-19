@@ -12,6 +12,19 @@ public record AccommodationImportResult(
     LocalDate checkOut,
     BigDecimal totalPrice,
     String notes,
-    List<ImportedRoom> rooms
+    List<ImportedRoom> rooms,
+    Integer maxGuests
 ) {
+    public AccommodationImportResult(
+        final String name,
+        final String address,
+        final String bookingUrl,
+        final LocalDate checkIn,
+        final LocalDate checkOut,
+        final BigDecimal totalPrice,
+        final String notes,
+        final List<ImportedRoom> rooms
+    ) {
+        this(name, address, bookingUrl, checkIn, checkOut, totalPrice, notes, rooms, null);
+    }
 }
