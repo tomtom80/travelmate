@@ -1810,20 +1810,21 @@ Items from `docs/arc42/11-risks-and-technical-debt.md`:
 | S9-E: Re-Submit Rejected Receipt | US-EXP-042 | E-EXP-05 | Should | S | Expense |
 | S9-F: PWA Manifest & Install Prompt | US-INFRA-041 | E-INFRA-05 | Should | S | Infrastructure |
 
-### Iteration 10 (v0.10.0 — Recipe Import, Category Breakdown, PDF Export)
+### Iteration 10 (v0.10.0 — Accommodation URL Import, Receipt Scan, Settlement Polish)
 
 | Story | ID | Epic | Priority | Size | Bounded Context |
 |-------|----|------|----------|------|-----------------|
-| S10-A: Recipe Import from URL | US-TRIPS-041 | E-TRIPS-05 | Should | L | Trips |
-| S10-B: Accommodation URL Import | US-TRIPS-061 | E-TRIPS-07 | Could | M | Trips |
+| S10-A: Accommodation URL Import | US-TRIPS-061 | E-TRIPS-07 | Must | L | Trips |
+| S10-B: Kassenzettel-Scan (Receipt Photo OCR) | US-EXP-060 | E-EXP-06 | Should | M | Expense |
 | S10-C: Settlement per Category | US-EXP-032 | E-EXP-04 | Could | M | Expense |
 | S10-D: Export Settlement as PDF | US-EXP-033 | E-EXP-04 | Could | M | Expense |
 | S10-E: Lighthouse CI | US-INFRA-042 | E-INFRA-05 | Should | S | Infrastructure |
 
-### Iteration 11+ (Future — Polls, Bring, Custom Split, Polish)
+### Iteration 11+ (Future — Polls, Bring, Recipe Import, Custom Split, Polish)
 
 | Story | Epic | Priority | Size |
 |-------|------|----------|------|
+| US-TRIPS-041 | E-TRIPS-05 | Could | L |
 | US-TRIPS-062 | E-TRIPS-07 | Could | L |
 | US-TRIPS-055 | E-TRIPS-06 | Could | L |
 | US-EXP-022 | E-EXP-03 | Could | M |

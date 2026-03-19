@@ -1,91 +1,100 @@
-# Iteration 10 — Refined User Stories: Recipe Import, Settlement Polish, TravelParty Names + Lighthouse CI
+# Iteration 10 — Refined User Stories: Accommodation URL Import, Receipt OCR Scan, Settlement Polish + Lighthouse CI
 
-**Date**: 2026-03-19
+**Date**: 2026-03-19 (REWRITTEN after user priority correction)
 **Target Version**: v0.10.0
-**Bounded Contexts**: Trips (Recipe Import from URL), Expense (Custom Receipt Splitting, Settlement per Category), Infrastructure (Lighthouse CI)
+**Bounded Contexts**: Trips (Accommodation URL Import), Expense (Receipt OCR Scan, Settlement per Category, PDF Export), Infrastructure (Lighthouse CI)
 
 ---
 
 ## Overview
 
-Iteration 10 delivers the long-deferred Recipe Import from URL as the anchor story, three medium
-stories that close meaningful gaps in the Expense domain, and one infrastructure story that
-establishes automated quality monitoring.
+This document replaces the earlier Iteration 10 scope. The previous plan treated Recipe Import
+from URL as the headline story. After a priority review with the user, the correct priorities are:
 
-**US-TRIPS-041 (Recipe Import from URL)** has been deferred from Iteration 7 and Iteration 9. It
-establishes the URL-import adapter pattern that will later apply to accommodation imports (US-TRIPS-061).
-It has the highest user-visible impact of any remaining Trips story and is therefore the L story
-for this iteration.
+1. **HIGH** — Accommodation URL Import (US-TRIPS-061): paste a vacation rental URL, system scrapes
+   it, editable preview form, saves as Accommodation with rooms. This is the highest-priority
+   remaining feature because accommodation drives cost distribution, advance payments, and room
+   assignment — the core group trip planning challenge.
 
-**US-EXP-022 (Custom Receipt Splitting)** closes a real-world gap: not every group expense is
-shared equally. Activity receipts (ski rental for adults only, entry fee for one family) need to be
-assigned to a subset of participants. This is the most frequently requested Expense enhancement.
+2. **MEDIUM** — Kassenzettel-Scan / Receipt Photo OCR (US-EXP-002): participant photographs a
+   grocery receipt with their phone, OCR extracts total amount and date, editable preview form,
+   saves as Receipt in Expense. MVP scope: extract total amount + date reliably. Item-level line
+   extraction is a stretch goal.
 
-**US-EXP-032 (Settlement per Category)** complements the party-level settlement view from
-Iteration 9 with a category breakdown. It is pure read-side work — no new aggregates, no schema
-changes.
+3. **LOW** — Recipe Import from URL (US-TRIPS-041): DEFERRED to Iteration 11+. The meal planning
+   area is not the core value driver. The adapter pattern developed for Accommodation URL Import
+   (scraping + SSRF + editable preview) applies here as well when the time comes.
 
-**US-INFRA-042 (Lighthouse CI)** has been deferred twice. The PWA manifest is now in place
-(Iteration 9), making Lighthouse installability checks meaningful. Adding automated quality gates
-closes the loop on mobile performance and accessibility.
+### Shared Import Pipeline Pattern
 
-**S10-E (TravelParty Display Name Propagation)** is a new story arising from the Iteration 9
-open design question Q1. The Expense SCS currently derives party names from the first participant's
-last name. This story publishes a proper `TravelPartyNameRegistered` event and consumes it in
-Expense, giving the settlement view correct party names.
+All import features follow the same UX pipeline:
+
+```
+Input (URL / Camera) → Analyse (HTTP + OCR) → Vorschau (editable form, pre-filled) → EDIT → Bestätigung → Speichern
+```
+
+The EDIT step is mandatory. The import result is a suggestion, not a commitment. Users must be
+able to correct any field before saving. The form after import reuses the existing create form
+for the respective entity — no separate confirmation UI is needed.
 
 ---
 
 ## Dependency Graph
 
 ```
-S10-A: Recipe Import from URL (US-TRIPS-041)
-  — standalone; requires no new events or schema in other SCS
-  — establishes RecipeImportPort + JsonLdRecipeImportAdapter in Trips
-  — Recipe aggregate (domain) unchanged; new secondary port only
-  — foundation for future US-TRIPS-061 (Accommodation URL Import)
+S10-A: Accommodation URL Import (US-TRIPS-061)
+  — requires S9-A Accommodation entity to exist (done in Iteration 9)
+  — new secondary port: AccommodationImportPort in Trips domain/accommodation/
+  — new adapter: HtmlAccommodationImportAdapter in adapters/integration/
+  — reuses existing SetAccommodationCommand + TripService.setAccommodation()
+  — publishes AccommodationPriceSet event (via existing path) when import is saved
+  — SSRF protection required (same pattern for future Recipe Import)
+  — no Flyway migration (schema exists from Iter 9)
+  — foundation for future US-TRIPS-062 (Accommodation Poll with comparison)
 
-S10-B: Custom Receipt Splitting (US-EXP-022)
-  — adds SplitMode (WEIGHTED_ALL / CUSTOM_PARTICIPANTS) to Receipt entity
-  — new command: UpdateReceiptSplitCommand
-  — SettlementCalculator must respect per-receipt participant filter
-  — builds on existing Expense aggregate; no new event contracts
-  — Flyway V10 in Expense
+S10-B: Kassenzettel-Scan / Receipt Photo OCR (US-EXP-002)
+  — new secondary port: ReceiptOcrPort in Expense domain/expense/
+  — new adapter: OcrReceiptAdapter in adapters/integration/
+  — reuses existing SubmitReceiptCommand + Expense.submitReceipt()
+  — MVP: extract totalAmount + date; item lines are a stretch goal
+  — requires a decision on OCR technology (see Open Design Questions)
+  — Flyway migration: image_path column on receipt table (if not already present)
+  — no new domain events
 
 S10-C: Settlement per Category (US-EXP-032)
   — pure read-side: derives category totals from existing Receipt data
   — no new aggregates, no Flyway migration
-  — can be developed independently; renders as a new section on the
-    settlement detail page
+  — independent; can be developed alongside S10-A or S10-B
+  — renders as a new section on the existing settlement detail page
 
-S10-D: Lighthouse CI (US-INFRA-042)
+S10-D: Export Settlement as PDF (US-EXP-033)
+  — depends on S10-C category breakdown being available (reuses in PDF)
+  — introduces new library dependency (iText or similar)
+  — Thymeleaf-to-PDF is an alternative if iText licensing is a concern
+  — no schema changes
+
+S10-E: Lighthouse CI (US-INFRA-042)
   — GitHub Actions workflow addition; no SCS changes
   — depends on PWA manifest (done in Iteration 9)
   — can be implemented at any point in the iteration
 
-S10-E: TravelParty Display Name Propagation (NEW — from Iter 9 Q1)
-  — new event: TravelPartyNameRegistered in travelmate-common/events/trips/
-  — published by Trips SCS when a TravelParty joins a Trip for the first time
-  — consumed by Expense SCS to update partyName in TripProjection
-  — Flyway V10 already covers the party_name column added in V8; no new migration needed
-  — should be implemented before S10-B to ensure correct party names in custom split UI
-
 --- NOT this iteration ---
 
-US-TRIPS-061 (Accommodation URL Import)
-  — Could priority; deferred; wait until S10-A establishes the adapter pattern
+US-TRIPS-041 (Recipe Import from URL)
+  — LOW priority; deferred to Iteration 11+
+  — the HtmlAccommodationImportAdapter pattern (S10-A) will be reused when the time comes
 
 US-TRIPS-062 (Accommodation Poll)
-  — Could priority; new LocationPoll aggregate; out of scope
+  — Could/L; new LocationPoll aggregate; out of scope
 
-US-EXP-033 (Export Settlement as PDF)
-  — Could priority; introduces new PDF library dependency; out of scope
+US-EXP-022 (Custom Receipt Splitting)
+  — Could/M; deferred — OCR scan (S10-B) takes the M slot in Expense
 
 US-INFRA-040 (Service Worker / Offline)
   — Could/XL; deferred
 
 US-TRIPS-055 (Bring App Integration)
-  — Could priority; no stable public API; deferred
+  — Could; no stable public API; deferred
 ```
 
 ---
@@ -94,24 +103,23 @@ US-TRIPS-055 (Bring App Integration)
 
 | ID | Story | Priority | Size | Bounded Context |
 |----|-------|----------|------|-----------------|
-| S10-A | Recipe Import from URL | Should | L | Trips |
-| S10-B | Custom Receipt Splitting per Receipt | Could | M | Expense |
+| S10-A | Accommodation URL Import | Must | L | Trips |
+| S10-B | Kassenzettel-Scan / Receipt Photo OCR | Should | M | Expense |
 | S10-C | Settlement per Category | Could | M | Expense |
-| S10-D | Lighthouse CI | Should | M | Infrastructure |
-| S10-E | TravelParty Display Name Propagation | Should | S | Trips + Expense |
+| S10-D | Export Settlement as PDF | Could | M | Expense |
+| S10-E | Lighthouse CI | Should | S | Infrastructure |
 
 **Scope rationale:**
-- S10-A is the mandatory L story — deferred twice, explicitly prioritised by the user. It
-  establishes the URL-import adapter pattern for the codebase.
-- S10-E is a small but high-leverage story. The Iteration 9 party settlement view works but
-  shows derived names ("Family of Schmidt"). A proper event closes that gap and makes all
-  settlement UIs coherent. It should be done before S10-B since the custom split UI shows
-  party names in the participant selector.
-- S10-B adds meaningful value for real group trips where not every expense is shared by
-  everyone (ski rental, activity, children's programme). It is the most requested Expense
-  feature after settlement.
-- S10-C is pure read-side work with no schema changes — very low risk, visible improvement.
-- S10-D closes the automated quality monitoring gap now that the PWA manifest is in place.
+- S10-A is the mandatory L story: accommodation is THE core planning hub, and entering it manually
+  is friction that URL import directly eliminates. The Iteration 9 Accommodation entity already
+  exists; this story adds the import path to it.
+- S10-B closes the receipt entry UX gap. Photographing a supermarket receipt is how group trips
+  actually work in the field — the current manual entry forces users to read out and type every
+  number. Even a rough OCR with an editable form is a significant UX improvement.
+- S10-C is pure read-side work with no schema changes — low risk, visible improvement.
+- S10-D builds naturally on S10-C (the category breakdown goes into the PDF). Introduces a new
+  dependency but the scope is bounded.
+- S10-E closes the automated quality monitoring gap now that the PWA manifest is in place.
 
 ---
 
@@ -119,372 +127,442 @@ US-TRIPS-055 (Bring App Integration)
 
 | Order | Story | Rationale |
 |-------|-------|-----------|
-| 1 | S10-D | Lighthouse CI — purely additive GitHub Actions change, no SCS impact |
-| 2 | S10-E | Party names — fixes Iter 9 Q1 before S10-B needs party names in UI |
-| 3 | S10-A | Recipe Import — standalone, high value, establishes adapter pattern |
-| 4 | S10-C | Settlement per Category — read-side only, safe to merge at any time |
-| 5 | S10-B | Custom Splitting — builds on S10-E (party names) for correct UI display |
+| 1 | S10-E | Lighthouse CI — purely additive GitHub Actions change, no SCS impact |
+| 2 | S10-A | Accommodation URL Import — highest user value; reuses Iter 9 schema |
+| 3 | S10-C | Settlement per Category — read-side only, safe to merge at any time |
+| 4 | S10-D | PDF Export — builds on S10-C category breakdown |
+| 5 | S10-B | Receipt OCR Scan — requires OCR technology decision first (see Open Design Questions) |
 
 ---
 
 ## New Domain Model (Iteration 10)
 
-### Trips SCS — RecipeImportPort (Secondary Port)
+### Trips SCS — AccommodationImportPort (Secondary Port)
 
-Recipe Import from URL introduces a new secondary port in the domain layer and a new adapter in
-`adapters/integration/`. The Recipe aggregate itself is not changed.
+Accommodation URL Import introduces a new secondary port in the domain layer and an adapter in
+`adapters/integration/`. The existing `Accommodation` entity, `SetAccommodationCommand`, and
+`TripService.setAccommodation()` are not changed — the import path ends at the editable preview
+form and the save goes through the existing command.
 
 ```
-RecipeImportPort (interface in domain/recipe/)
-  Optional<RecipeImportResult> importFromUrl(String url)
+AccommodationImportPort (interface in domain/accommodation/)
+  Optional<AccommodationImportResult> importFromUrl(String url)
 
-RecipeImportResult (Record in domain/recipe/)
+AccommodationImportResult (Record in domain/accommodation/)
   String name
-  int servings
-  List<ImportedIngredient> ingredients
+  String address           (nullable)
+  String bookingUrl        (the original URL, preserved as booking reference)
+  LocalDate checkIn        (nullable)
+  LocalDate checkOut       (nullable)
+  BigDecimal totalPrice    (nullable)
+  String notes             (nullable — e.g. scraped description snippet)
+  List<ImportedRoom> rooms (may be empty if room structure not found on page)
 
-ImportedIngredient (Record in domain/recipe/)
-  String name
-  BigDecimal quantity
-  String unit
+ImportedRoom (Record in domain/accommodation/)
+  String name              (e.g. "Schlafzimmer 1", "Doppelzimmer")
+  RoomType roomType        (best guess from scraped text; nullable → defaults to DOUBLE)
+  int bedCount             (default 2 if not parseable)
+  BigDecimal pricePerNight (nullable)
 
-JsonLdRecipeImportAdapter (implements RecipeImportPort, in adapters/integration/)
-  — fetches URL with timeout (5 seconds max)
-  — parses HTML for <script type="application/ld+json"> blocks
-  — extracts schema.org/Recipe: name, recipeYield, recipeIngredient[]
-  — SSRF protection: blocks private IP ranges and localhost
-  — returns Optional.empty() if no schema.org/Recipe found or on error
+HtmlAccommodationImportAdapter (implements AccommodationImportPort, in adapters/integration/)
+  — fetches URL with 5-second timeout
+  — parses HTML via Jsoup (new dependency on travelmate-trips pom.xml)
+  — extracts: og:title / property name, og:description / address, price, dates, room hints
+  — SSRF protection: resolves host to IP, rejects RFC 1918 / loopback ranges before fetching
+  — returns Optional.empty() on fetch error, parse error, or no relevant data found
 ```
 
 The adapter is wired via Spring `@Bean` in a `@Configuration` class. The domain only knows the
-port. Tests mock the port to avoid real HTTP calls.
+port. Tests mock the port to avoid real HTTP calls. The adapter uses heuristics — different
+rental platforms have different HTML structures. The editable preview form is the safety net for
+all misrecognition.
 
-### Trips SCS — New Event: TravelPartyNameRegistered (S10-E)
+**Primary extraction targets (in priority order):**
+1. `og:title` → `name`
+2. `schema.org/LodgingBusiness` JSON-LD: `name`, `address`, `priceRange`, `checkinTime`,
+   `checkoutTime`, `amenityFeature`
+3. `og:description` → `notes` (first 500 chars)
+4. Booking.com / Ferienhausmiete.de HTML patterns as fallback (opportunistic, not guaranteed)
+5. If nothing found: return `Optional.empty()`
 
-Published by Trips SCS when a TravelParty first becomes visible in a Trip context (i.e., when
-a participant from that party joins a Trip). This gives the Expense SCS a reliable party name.
+### Expense SCS — ReceiptOcrPort (Secondary Port)
 
-```
-TravelPartyNameRegistered (Record in travelmate-common/events/trips/)
-  UUID tripId
-  TenantId partyTenantId   — the TravelParty's tenant
-  String  partyName         — e.g. "Familie Schmidt"
-  Instant occurredOn
-```
-
-The TravelParty projection in Trips SCS already has the party name (it is the Tenant name from the
-IAM SCS). When the first participant of a party joins a Trip, Trips publishes this event. Expense
-consumes it and updates `party_name` in `trip_projection_participant`.
-
-Routing key: `trips.party.name_registered` (new; add to `RoutingKeys.java` in common).
-
-### Expense SCS — SplitMode on Receipt (S10-B)
+Receipt OCR introduces a new secondary port in the domain layer and an adapter in
+`adapters/integration/`. The existing `SubmitReceiptCommand` and `Expense.submitReceipt()` path
+is unchanged — the OCR result pre-fills the form, and the user saves through the existing flow.
 
 ```
-SplitMode (enum in domain/expense/)
-  WEIGHTED_ALL    — default: all participants share the cost, weighted
-  CUSTOM          — only listed participants share the cost, weighted among themselves
+ReceiptOcrPort (interface in domain/expense/)
+  OcrResult analyseReceipt(byte[] imageBytes, String mimeType)
 
-Receipt (existing entity — extended)
-  + SplitMode splitMode   (default: WEIGHTED_ALL)
-  + List<UUID> splitParticipantIds  (empty = all; only relevant when splitMode = CUSTOM)
+OcrResult (Record in domain/expense/)
+  boolean success
+  BigDecimal totalAmount   (nullable — main extraction target)
+  LocalDate receiptDate    (nullable)
+  String rawText           (full OCR text output, for debugging / manual correction)
+  List<OcrLineItem> items  (may be empty — stretch goal)
+  String errorMessage      (non-null when success=false)
+
+OcrLineItem (Record in domain/expense/)
+  String description
+  BigDecimal amount
+
+TesseractOcrAdapter (implements ReceiptOcrPort, in adapters/integration/)
+  OR
+CloudVisionOcrAdapter (implements ReceiptOcrPort, in adapters/integration/)
+  — technology to be decided (see Open Design Questions)
+  — MVP extraction: total amount (last large number on receipt) + date (dd.MM.yyyy pattern)
+  — image pre-processing: convert to greyscale + contrast boost before OCR if using Tesseract
+  — returns success=false with errorMessage when image is unreadable or OCR confidence too low
 ```
 
-The `SettlementCalculator` is extended: for each Receipt, if `splitMode == CUSTOM`, only the
-listed participantIds are included in the denominator when computing shares for that receipt.
-Party-level grouping from Iteration 9 still applies — custom splitting just changes which
-participants contribute to the pool for that specific receipt.
+### Receipt Entity — Image Storage
+
+If image storage is not already on `receipt` (check whether US-EXP-002 was previously partially
+implemented), add:
+
+```
+Receipt (existing entity — may need extension)
+  + String imagePath    (nullable — relative path or object key; null for manual entries)
+  + String mimeType     (nullable — "image/jpeg", "image/png")
+```
+
+Image storage MVP: local filesystem in a configurable directory (e.g., `./uploads/receipts/`).
+S3-compatible storage is a future concern. The image is stored before OCR is called. If OCR
+fails, the image is still stored and the user can enter data manually.
 
 ---
 
-## Story S10-A: US-TRIPS-041 — Recipe Import from URL
+## Story S10-A: US-TRIPS-061 — Accommodation URL Import
 
-**Epic**: E-TRIPS-05
-**Priority**: Should
+**Epic**: E-TRIPS-07
+**Priority**: Must (was Could in product backlog — elevated by user)
 **Size**: L
-**As a** Member, **I want** to import a Recipe from a URL (e.g., chefkoch.de, allrecipes.com),
-**so that** I don't have to type ingredients manually when a recipe already exists online.
+**As an** Organizer, **I want** to paste a vacation rental URL and have the system extract the
+accommodation details automatically, **so that** I don't have to manually type the property name,
+address, price, and room details from a booking confirmation page.
 
 ### Background
 
-Most commonly used recipe sites embed structured data as `schema.org/Recipe` in JSON-LD format
-within a `<script type="application/ld+json">` tag. The adapter fetches the page, parses that
-JSON-LD, and pre-fills the Recipe form. If no structured data is found, the user falls back to
-manual entry. This is the same adapter pattern that will later apply to accommodation URL imports
-(US-TRIPS-061).
+The Iteration 9 Accommodation entity exists with a full room inventory model (name, address, URL,
+check-in/out, rooms with types + bed counts, total price). The manual entry form is already
+implemented. This story adds an import path: the Organizer pastes a URL, the system scrapes
+what it can, and the normal accommodation form is pre-filled for review and correction.
+
+The import pipeline is: **URL Input → Fetch + Parse → Editable Pre-filled Form → Save**
+
+The pre-filled form is the *same* accommodation form as used for manual entry — no separate
+confirmation step. The user edits what the scraper got wrong and saves normally.
 
 ### Acceptance Criteria
 
-#### Happy Path — Successful Import
+#### Happy Path — URL with Structured Data
 
-- **Given** I am on the Recipe list page,
-  **When** I click "Rezept aus URL importieren",
-  **Then** a form opens with a URL input field and an "Importieren" button.
+- **Given** I am viewing a Trip detail page as Organizer and the Trip has no accommodation yet,
+  **When** I click "Unterkunft aus URL importieren",
+  **Then** a dialog or section opens with a URL input field and an "Importieren" button.
 
-- **Given** I enter a URL for a recipe page that contains `schema.org/Recipe` JSON-LD
-  (e.g., a chefkoch.de recipe),
+- **Given** I paste the URL of a vacation rental page that contains `schema.org/LodgingBusiness`
+  JSON-LD or rich Open Graph metadata (name, address, price),
   **When** I click "Importieren",
-  **Then** the recipe form is pre-filled with: the extracted recipe name, servings count,
-  and ingredient list (name, quantity, unit parsed from the ingredient strings).
-  The form is editable — I can correct any field before saving.
+  **Then** the accommodation form is displayed pre-filled with:
+  - Name extracted from the page title / og:title / JSON-LD name
+  - Address from JSON-LD address or og:description
+  - The original URL pre-filled as "Buchungslink"
+  - Price if found (total or per-night × nights)
+  - Rooms if the page contains room-level information (room type hints, bed counts)
+  All fields are editable. I can correct any misrecognized value before saving.
 
 - **Given** the form is pre-filled and I click "Speichern",
-  **Then** the Recipe is created exactly as if I had entered it manually (same aggregate
-  path, same `Recipe.create(...)` factory method).
+  **Then** the accommodation is saved exactly as if I had entered it manually (same
+  `SetAccommodationCommand` path, same domain event `AccommodationPriceSet` published if
+  total price is set).
 
-- **Given** the URL contains multiple JSON-LD blocks,
-  **When** the adapter parses,
-  **Then** the first block of type `schema.org/Recipe` is used.
+#### Partial Import — Some Fields Missing
 
-#### Partial Import — Missing Fields
-
-- **Given** the URL has a `schema.org/Recipe` block but `recipeYield` is missing,
+- **Given** the URL page has a name but no price or room details,
   **When** the form is pre-filled,
-  **Then** the servings field is left empty (defaulting to 1 in the form's placeholder).
-  All other extracted fields are shown.
+  **Then** name is filled, all other fields are empty with their normal placeholders.
+  The empty fields are editable — I fill them in before saving.
 
-- **Given** the URL has a `schema.org/Recipe` block but some ingredient strings cannot be
-  parsed into (quantity, unit, name) triplets,
+- **Given** the scraped page has no recognizable room structure,
   **When** the form is pre-filled,
-  **Then** those ingredients are shown as name-only entries with empty quantity and unit.
-  The user can complete them manually.
+  **Then** the room list starts with one empty room row (same default as manual "Zimmer hinzufügen").
+  I can add, edit, and remove rooms before saving.
 
-#### Import Failure — No Structured Data
+- **Given** the scraped total price is a per-night price and check-in/out are not found,
+  **When** the form is pre-filled,
+  **Then** the price field is pre-filled with the scraped number and a hint note is shown:
+  "Dieser Preis könnte ein Preis pro Nacht sein — bitte überprüfe den Gesamtpreis."
 
-- **Given** I enter a URL for a page that exists but does not contain `schema.org/Recipe`
-  JSON-LD,
+#### Import Failure — No Data Extractable
+
+- **Given** I paste a URL for a page that exists but contains no recognizable accommodation
+  metadata (no og:title, no JSON-LD, no price patterns),
   **When** I click "Importieren",
-  **Then** I see the message: "Auf dieser Seite wurde kein Rezept gefunden. Bitte gib die
-  Zutaten manuell ein." The empty Recipe form is displayed so I can proceed manually.
+  **Then** the normal accommodation form is shown empty with the URL pre-filled as "Buchungslink"
+  and a notice: "Auf dieser Seite konnten keine Unterkunftsdaten erkannt werden. Bitte fülle
+  die Felder manuell aus."
 
 #### Import Failure — HTTP Error
 
-- **Given** I enter a URL that returns HTTP 404, 500, or any non-200 response,
+- **Given** I paste a URL that returns HTTP 404, 500, or any non-200 response,
   **When** I click "Importieren",
-  **Then** I see the message: "Die URL konnte nicht geladen werden (Status {statusCode}).
-  Bitte prüfe den Link oder gib das Rezept manuell ein."
+  **Then** I see the error: "Die URL konnte nicht geladen werden (Status {statusCode}).
+  Bitte prüfe den Link oder gib die Unterkunft manuell ein."
 
-- **Given** the URL request times out (takes longer than 5 seconds),
+- **Given** the URL request times out (longer than 5 seconds),
   **When** I click "Importieren",
-  **Then** I see the message: "Die Verbindung hat zu lange gedauert. Bitte versuche es erneut
-  oder gib das Rezept manuell ein."
+  **Then** I see the error: "Die Verbindung hat zu lange gedauert. Bitte versuche es erneut
+  oder gib die Unterkunft manuell ein."
 
 #### SSRF Protection
 
-- **Given** I enter a URL pointing to a private IP range (10.x.x.x, 192.168.x.x, 172.16-31.x.x)
-  or localhost,
+- **Given** I paste a URL pointing to a private IP range (10.x.x.x, 192.168.x.x,
+  172.16.x.x–172.31.x.x) or localhost,
   **When** I click "Importieren",
-  **Then** the request is blocked and I see: "Diese URL ist nicht erreichbar." No network
-  request is made.
+  **Then** the request is blocked before any network call is made. I see:
+  "Diese URL ist nicht erreichbar."
 
-- **Given** I enter a URL with a non-HTTP/HTTPS scheme (e.g., `file://`, `ftp://`),
+- **Given** I paste a URL with a non-HTTP/HTTPS scheme (e.g., `file://`, `ftp://`),
   **When** I click "Importieren",
   **Then** I see the validation error: "Bitte gib eine gültige HTTP- oder HTTPS-URL ein."
 
-#### Concurrent Use — Preview and Edit
+#### Editable Preview is Mandatory
 
 - **Given** the import succeeds and the form is pre-filled,
-  **When** I add, remove, or modify any ingredient before saving,
-  **Then** the final Recipe contains my edited version, not the original import. The import
-  result is a suggestion only.
+  **When** I correct the total price, add or remove a room, or change the room type,
+  **Then** the saved accommodation reflects my edits, not the raw import result.
+  The import result is a suggestion only — saving goes through the normal form submission path.
 
-- **Given** I submit the pre-filled form without changes,
-  **Then** the Recipe is saved with exactly the imported data.
+- **Given** the import succeeds and I save without changing anything,
+  **Then** the accommodation is saved with the imported values.
 
 #### Authorization
 
-- **Given** I have the `participant` role,
-  **When** I access the import form or POST the import URL,
-  **Then** the operation is allowed. Recipe creation is open to all roles (same as manual
-  creation).
+- **Given** I have the `participant` role (not `organizer`),
+  **When** I attempt to access the import form or POST to the import endpoint,
+  **Then** I receive HTTP 403 Forbidden.
+
+- **Given** I am an Organizer of a different Tenant,
+  **When** I attempt to import accommodation for a Trip I don't own,
+  **Then** the Trip is not found (TenantId scoping enforced at repository). HTTP 404.
+
+#### Trip Status Constraints
+
+- **Given** the Trip is COMPLETED or CANCELLED,
+  **When** the Organizer views the Trip detail page,
+  **Then** the "Unterkunft aus URL importieren" button is not rendered. Existing accommodation
+  is shown in read-only mode.
+
+- **Given** the Trip is PLANNING, CONFIRMED, or IN_PROGRESS,
+  **When** the Organizer uses the import,
+  **Then** the operation is allowed.
 
 #### Multi-Tenancy
 
-- The created Recipe is scoped to the requesting user's TenantId, resolved from the JWT
+- The imported accommodation is scoped to the organizer's TenantId, resolved from the JWT
   email claim via TravelPartyRepository. No cross-tenant access.
 
 ### Technical Notes
 
 - Bounded Context: Trips
-- New secondary port: `RecipeImportPort` in `domain/recipe/`
+- New secondary port: `AccommodationImportPort` in `domain/accommodation/`
   ```java
-  public interface RecipeImportPort {
-      Optional<RecipeImportResult> importFromUrl(String url);
+  public interface AccommodationImportPort {
+      Optional<AccommodationImportResult> importFromUrl(String url);
   }
   ```
-- New Records in `domain/recipe/`:
-  - `RecipeImportResult(String name, int servings, List<ImportedIngredient> ingredients)`
-  - `ImportedIngredient(String name, BigDecimal quantity, String unit)`
-- New adapter: `JsonLdRecipeImportAdapter` in `adapters/integration/`
+- New Records in `domain/accommodation/`:
+  - `AccommodationImportResult(String name, String address, String bookingUrl, LocalDate checkIn, LocalDate checkOut, BigDecimal totalPrice, String notes, List<ImportedRoom> rooms)`
+  - `ImportedRoom(String name, RoomType roomType, int bedCount, BigDecimal pricePerNight)`
+- New adapter: `HtmlAccommodationImportAdapter` in `adapters/integration/`
   - HTTP client: `java.net.http.HttpClient` with 5-second connection + read timeout
-  - JSON-LD parser: Jackson `ObjectMapper` (already on classpath); find
-    `<script type="application/ld+json">` via Jsoup (new dependency) or regex fallback
-  - Preferred library: **Jsoup 1.18.x** for HTML parsing (add to `travelmate-trips/pom.xml`)
-  - SSRF check: resolve URL's host to IP, reject if in RFC 1918 / loopback ranges
-  - Ingredient string parsing: split on first number + unit pattern (e.g., "200 g Mehl" →
-    quantity=200, unit="g", name="Mehl"). Use a simple regex:
-    `^(\d+[\.,]?\d*)\s*([a-zA-ZäöüÄÖÜß]+)\s+(.+)$` — if no match, treat full string as name
-  - If JSON-LD is an array `[{...}]`, iterate to find `@type: "Recipe"`
-  - schema.org field mapping:
-    - `name` → RecipeImportResult.name
-    - `recipeYield` → servings (may be a string "4 Portionen" — extract leading integer)
-    - `recipeIngredient[]` → each string parsed via ingredient regex above
-- New Controller endpoint in `RecipeController`:
-  - `GET /recipes/import` → renders `recipe/import-form.html`
-  - `POST /recipes/import` → calls `RecipeImportPort.importFromUrl(url)`, then
-    renders `recipe/form.html` pre-populated with the result (or error message)
-  - The import step does NOT save anything — it just pre-fills the form.
-    The actual save is the existing `POST /recipes`.
-- No new domain event; no Flyway migration (no schema changes)
+  - HTML parsing: **Jsoup 1.18.x** (new dependency on `travelmate-trips/pom.xml`)
+  - JSON-LD: parse `<script type="application/ld+json">` blocks via `ObjectMapper`; find
+    `@type: "LodgingBusiness"` or `@type: "Hotel"` or `@type: "VacationRental"`
+  - Open Graph fallback: `og:title` → name, `og:description` → notes
+  - Price extraction: regex on page text for EUR/€ patterns; prefer JSON-LD `priceRange`
+  - Room extraction: look for `numberOfRooms`, `amenityFeature` with bed counts; fallback to
+    counting `<article>` or `<section>` elements with bed-related keywords (Bett, Zimmer, Schlafzimmer)
+  - SSRF check: resolve URL's hostname to IP via `InetAddress.getByName()`, reject if:
+    - 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16 (RFC 1918)
+    - 127.0.0.0/8 or `::1` (loopback)
+    - 169.254.0.0/16 (link-local)
+  - Returns `Optional.empty()` on any error (timeout, parse failure, no data found)
+- New Controller endpoints in `TripController` (or new `AccommodationImportController`):
+  - `GET /trips/{tripId}/accommodation/import` → renders `accommodation/import-form.html`
+    (URL input only, with SSRF note visible to user)
+  - `POST /trips/{tripId}/accommodation/import` → calls `AccommodationImportPort.importFromUrl(url)`,
+    renders `accommodation/form.html` (existing create form) pre-populated with result.
+    On failure: renders `accommodation/import-form.html` with error message.
+  - The import step does NOT save. The save goes through `POST /trips/{tripId}/accommodation`
+    (existing `SetAccommodationCommand` path).
+- No new domain event (AccommodationPriceSet is already published by existing path on save)
+- No Flyway migration (Accommodation schema from V11/V12 in Trips already exists)
+- Routing key: no new routing key needed
 - Test strategy:
-  - Unit tests for `JsonLdRecipeImportAdapter` with mocked HTTP responses (use
-    `MockWebServer` from OkHttp or WireMock)
-  - Unit tests for SSRF IP range validation
-  - Unit tests for the ingredient string parser
-  - Controller test: mock `RecipeImportPort` → verify form pre-fill + error message paths
-  - E2E test: use WireMock stub in `travelmate-e2e` to serve a fixture HTML page with
-    schema.org/Recipe JSON-LD; verify the form is pre-filled correctly
-- Ingredient string parsing corner cases:
-  - Fractions: "½ TL Salz" → quantity=0.5, unit="TL", name="Salz"
-  - Range: "2-3 EL Öl" → quantity=2 (take lower bound), unit="EL", name="Öl"
-  - No quantity: "Salz nach Geschmack" → name="Salz nach Geschmack", quantity=null, unit=""
-  - All no-match cases: full string as name, quantity=null, unit=""
-- BDD scenario: "Als Mitglied möchte ich ein Rezept per URL importieren"
-- `RoutingKeys`: no changes needed
+  - Unit tests for `HtmlAccommodationImportAdapter` with mocked HTTP responses (WireMock)
+  - Unit tests for SSRF IP range validation — positive and negative cases
+  - Unit tests for price and room extraction heuristics with fixture HTML snippets
+  - Controller test: mock `AccommodationImportPort` → verify pre-fill + error paths
+  - E2E test: WireMock stub serves a fixture HTML page with JSON-LD LodgingBusiness; verify
+    the accommodation form is pre-filled and saves correctly
+- BDD scenario: "Als Organisator möchte ich eine Unterkunft per URL importieren"
 
 ---
 
-## Story S10-B: US-EXP-022 — Custom Receipt Splitting per Receipt
+## Story S10-B: US-EXP-002 — Kassenzettel-Scan / Receipt Photo OCR
 
-**Epic**: E-EXP-03
-**Priority**: Could
+**Epic**: E-EXP-01
+**Priority**: Should
 **Size**: M
-**As an** Organizer, **I want** to restrict a specific receipt to a subset of participants (e.g.,
-ski rental for adults only), **so that** not every expense is borne by the entire group and the
-settlement reflects actual consumption.
+**As a** Participant, **I want** to photograph a receipt with my phone and have the total amount
+and date extracted automatically, **so that** I can submit an expense quickly without typing out
+every number from a long supermarket receipt.
 
 ### Background
 
-In group trips, many expenses are not shared by everyone: ski rental applies only to adults
-who ski, a children's activity applies only to families with children under 12, a special
-dinner may apply only to one Travel Party. The default `WEIGHTED_ALL` split works for shared
-costs (groceries, accommodation). Custom splits are the exception, not the rule — the UI must
-make the default easy and custom selection discoverable but not dominant.
+In practice, trip participants stop at a supermarket, bakery, or lift ticket office and pay for
+the group. The current flow requires opening the app, manually entering the amount, date, and
+description. For a long supermarket receipt this is slow and error-prone. Photographing the
+receipt and having OCR extract the total and date reduces the entry burden to a quick review
+and one tap.
 
-The custom split operates at the participant level: the Organizer selects which individual
-participants share the cost. The weighting of the selected participants relative to each other
-determines their shares — the same algorithm as `WEIGHTED_ALL` but with a filtered participant
-list.
+MVP scope: extract total amount and date reliably. The user still enters description and category
+manually. Line-item extraction (individual items on the receipt) is a stretch goal — it adds
+complexity and the primary value is capturing the total.
+
+The pipeline is: **Camera/Gallery Upload → Server-side OCR → Editable Pre-filled Form → Submit**
 
 ### Acceptance Criteria
 
-#### Default Mode — WEIGHTED_ALL
+#### Happy Path — Photo Upload and OCR
 
-- **Given** I submit a receipt without changing the split mode,
-  **When** it is saved,
-  **Then** `splitMode = WEIGHTED_ALL` and `splitParticipantIds` is empty. The settlement
-  includes all participants in the denominator for this receipt. This is the existing behaviour
-  and must remain unchanged.
+- **Given** I am on the Expense receipt page for a Trip,
+  **When** I click "Kassenzettel fotografieren" (or "Foto hochladen"),
+  **Then** the browser opens the camera (on mobile) or file picker (on desktop) filtered to
+  image types (`accept="image/*" capture="environment"`).
 
-#### Custom Split — Setting the Split
+- **Given** I take a photo or select an image from my gallery,
+  **When** the image is uploaded (POST to the server),
+  **Then** the server stores the image, runs OCR, and returns the pre-filled receipt form:
+  - Amount field: extracted total amount (last large currency value on the receipt), or empty
+  - Date field: extracted date in dd.MM.yyyy format, or today's date as default
+  - Description: empty (user fills in)
+  - Category: unchanged default (GROCERIES pre-selected or user's last used)
+  The original photo is shown as a thumbnail on the form for reference.
 
-- **Given** I am creating or editing a receipt,
-  **When** I click "Benutzerdefinierte Aufteilung" (collapsed by default),
-  **Then** a participant multi-select opens, showing all participants of the Trip with their
-  name and weighting.
+- **Given** the form is pre-filled and I verify or correct the amount and date,
+  **When** I click "Beleg einreichen",
+  **Then** the Receipt is created with the entered (corrected) amount, date, description,
+  category, and a reference to the stored image. This goes through the existing
+  `SubmitReceiptCommand` path.
 
-- **Given** the multi-select is open and I select a subset of participants (e.g., 3 of 8),
-  **When** I save the receipt,
-  **Then** `splitMode = CUSTOM` and `splitParticipantIds` contains the selected IDs.
+#### Partial Recognition — Amount or Date Missing
 
-- **Given** I select all participants,
-  **When** I save,
-  **Then** the result is equivalent to `WEIGHTED_ALL`. The system accepts it; no error.
+- **Given** the OCR runs but cannot confidently identify the total amount
+  (e.g., the receipt is blurry, or no large currency value is found),
+  **When** the form is shown,
+  **Then** the amount field is empty. A hint is shown: "Betrag konnte nicht erkannt werden —
+  bitte manuell eingeben." The user types the amount.
 
-- **Given** I select zero participants,
-  **When** I try to save with `CUSTOM` mode,
-  **Then** I see the error: "Bitte wähle mindestens einen Teilnehmer aus."
+- **Given** the OCR finds the amount but not the date,
+  **When** the form is shown,
+  **Then** the date field defaults to today's date. A hint is shown: "Datum konnte nicht
+  erkannt werden — bitte prüfen."
 
-#### Custom Split — View
+- **Given** the OCR fails entirely (image too dark, receipt crumpled, file unreadable),
+  **When** OCR processing completes,
+  **Then** the receipt form is shown empty (except the stored image thumbnail) with the message:
+  "Der Kassenzettel konnte nicht gelesen werden. Bitte fülle die Felder manuell aus."
 
-- **Given** a receipt has `splitMode = CUSTOM`,
-  **When** I view the receipt list,
-  **Then** the receipt shows a badge "Teilaufteilung" with a tooltip listing the selected
-  participant names.
+#### Image Format Constraints
 
-- **Given** I view the settlement calculation,
-  **When** a receipt has a custom split,
-  **Then** only the selected participants bear the cost of that receipt (with their weights).
-  All other receipts continue to use `WEIGHTED_ALL`.
+- **Given** I upload a file that is not an image (e.g., a PDF, a text file),
+  **When** the upload is submitted,
+  **Then** I see the error: "Bitte lade ein Bild hoch (JPEG, PNG oder HEIC)."
 
-#### Settlement Calculation Impact
+- **Given** I upload an image larger than 10 MB,
+  **When** the upload is submitted,
+  **Then** I see the error: "Die Datei ist zu groß. Bitte wähle ein Bild unter 10 MB."
 
-- **Given** a Trip has 4 participants (A: 1.0, B: 1.0, C: 0.5, D: 0.0) and a receipt of
-  100 EUR with custom split selecting only A and B (weights 1.0 each),
-  **When** the settlement runs,
-  **Then** A bears 50 EUR and B bears 50 EUR. C and D bear 0 EUR for this receipt.
-  The party-level settlement (from Iter 9) groups these correctly.
+#### Manual Entry Path — Not Affected
 
-- **Given** a receipt has `splitMode = WEIGHTED_ALL`,
-  **When** the settlement runs,
-  **Then** the calculation is identical to the existing algorithm. No regression.
+- **Given** I choose to enter a receipt without a photo (existing "Beleg manuell hinzufügen"),
+  **When** I submit,
+  **Then** the existing flow is unchanged. No photo, no OCR. `imagePath` on the Receipt is null.
 
-- **Given** a custom split selects participants from one TravelParty only,
-  **When** the settlement runs,
-  **Then** that receipt is attributed entirely to that party's share.
+#### View — Receipt with Photo
 
-#### Edit and Remove Custom Split
+- **Given** a Receipt has a stored image,
+  **When** I view the receipt in the list,
+  **Then** a small photo thumbnail is shown next to the receipt row.
 
-- **Given** a receipt has a custom split,
-  **When** I edit the receipt and switch back to "Alle Teilnehmer" (clear the custom selection),
-  **Then** `splitMode` reverts to `WEIGHTED_ALL` and `splitParticipantIds` is cleared.
+- **Given** I click the thumbnail,
+  **Then** the image opens in a lightbox or new tab for review.
 
 #### Authorization
 
 - **Given** I have the `participant` role,
-  **When** I submit a receipt,
-  **Then** I can set a custom split for my own receipt (same as creating a receipt).
+  **When** I upload a receipt photo and submit the form,
+  **Then** the operation is allowed. Both participants and organizers can scan receipts.
 
-- **Given** I have the `organizer` role,
-  **When** I edit another participant's receipt's split (e.g., from the review queue),
-  **Then** the split is updated. Organizers may adjust split mode as part of receipt management.
+- **Given** I try to access OCR results for a receipt that belongs to a different Trip or Tenant,
+  **When** the request is made,
+  **Then** HTTP 403 Forbidden (TenantId scoping enforced).
 
 #### Multi-Tenancy
 
-- Participant IDs in `splitParticipantIds` must belong to the same Trip. The settlement
-  service validates this when computing. Cross-trip or cross-tenant participant IDs are rejected.
+- The uploaded image is stored in a tenant-scoped path (e.g., `uploads/{tenantId}/receipts/`).
+  No cross-tenant image access.
 
 ### Technical Notes
 
 - Bounded Context: Expense
-- `Receipt` entity extension:
-  - Add `SplitMode splitMode` (enum: `WEIGHTED_ALL`, `CUSTOM`) — default `WEIGHTED_ALL`
-  - Add `List<UUID> splitParticipantIds` (empty list = all)
-- `SplitMode` enum: new enum in `domain/expense/` (or as inner class of `Receipt` — team decision)
-- Commands:
-  - Extend `SubmitReceiptCommand` and `EditReceiptCommand` with:
-    `SplitMode splitMode`, `List<UUID> splitParticipantIds`
-- `Expense.submitReceipt(...)` and `Expense.editReceipt(...)`: accept and store split fields
-  - Invariant: if `splitMode == CUSTOM` and `splitParticipantIds.isEmpty()`, throw
-    `IllegalArgumentException("A custom split must include at least one participant.")`
-- `SettlementCalculator` update:
-  - For each receipt, determine the effective participant set:
-    - `WEIGHTED_ALL`: all participants
-    - `CUSTOM`: only those in `splitParticipantIds` (intersected with actual participants)
-  - Compute the denominator (total weight) from the effective set only
-  - Distribute the receipt amount proportionally among the effective set
-  - Accumulate into the per-participant (and per-party) balance as before
-- Flyway migration: V10 in Expense — add `split_mode VARCHAR(20) NOT NULL DEFAULT
-  'WEIGHTED_ALL'` and `split_participant_ids TEXT NULL` (stored as comma-separated UUIDs or
-  JSON array) to the `receipt` table
-- UI: receipt form (`expense/receipt-form.html`) — collapsible "Benutzerdefinierte Aufteilung"
-  section with participant checkboxes. Collapsed by default; opens on click.
-  HTMX: no partial update needed; standard form submission.
-  Receipt list row: small "Teilaufteilung" badge when `splitMode == CUSTOM`.
-- Participant list for the multi-select: retrieved from `TripProjection.participants` (existing
-  read model in Expense SCS)
-- Domain Events: none
-- BDD scenario: "Als Organisator möchte ich einen Beleg nur bestimmten Teilnehmern zuordnen"
+- New secondary port: `ReceiptOcrPort` in `domain/expense/`
+  ```java
+  public interface ReceiptOcrPort {
+      OcrResult analyseReceipt(byte[] imageBytes, String mimeType);
+  }
+  ```
+- New Records in `domain/expense/`:
+  - `OcrResult(boolean success, BigDecimal totalAmount, LocalDate receiptDate, String rawText, List<OcrLineItem> items, String errorMessage)`
+  - `OcrLineItem(String description, BigDecimal amount)`
+- OCR technology: **OPEN DESIGN QUESTION — see Open Design Questions section below**
+- Image storage: local filesystem for MVP
+  - Config property: `travelmate.upload.receipts-dir` (default `./uploads/receipts/`)
+  - Filename: `{tenantId}/{receiptId}.{extension}` (UUID prevents collisions)
+  - Receipt entity extension: `imagePath VARCHAR(500) NULL`, `mimeType VARCHAR(50) NULL`
+  - Flyway migration: check whether `imagePath` already exists on `receipt` table (US-EXP-002
+    was partially described in product backlog as XL). If not, add in new Expense Flyway V11.
+- New Controller endpoints in `ReceiptController` (or new `ReceiptScanController`):
+  - `GET /expense/{tripId}/receipts/scan` → renders `expense/receipt-scan.html`
+    (camera/file upload form only, no OCR yet)
+  - `POST /expense/{tripId}/receipts/scan/upload` → multipart upload:
+    1. Validates file type and size
+    2. Stores image to filesystem
+    3. Calls `ReceiptOcrPort.analyseReceipt(bytes, mimeType)`
+    4. Renders `expense/receipt-form.html` (existing form) pre-filled with OCR result
+       and `imagePath` as hidden field
+  - The save goes through existing `POST /expense/{tripId}/receipts` (`SubmitReceiptCommand`)
+- New HTMX interaction: the upload triggers a spinner while OCR runs server-side.
+  Use `hx-indicator` on the upload button. OCR latency is typically 1–5 seconds.
+- Total amount extraction heuristics (for Tesseract path):
+  - Scan `rawText` for the last occurrence of a currency pattern: `\d+[.,]\d{2}` or `EUR \d+`
+  - Candidate filtering: ignore per-item prices (too many), prefer the largest number in the
+    last 3 lines of the receipt (where "GESAMT", "TOTAL", "SUMME" typically appears)
+  - Date extraction: regex for German date formats: `\d{2}\.\d{2}\.\d{4}`, `\d{2}/\d{2}/\d{4}`
+- Test strategy:
+  - Unit tests for `TesseractOcrAdapter` (or `CloudVisionOcrAdapter`) with fixture image files
+  - Unit tests for amount and date extraction logic
+  - Unit tests for file type and size validation
+  - Controller test: mock `ReceiptOcrPort` → verify pre-fill + error paths
+  - E2E test: upload a pre-prepared JPEG of a sample receipt; assert amount + date fields
+    are populated (or show the empty-with-hint state if OCR not configured in CI)
+  - E2E test: verify manual entry path is unaffected
+- Flyway migration: V11 in Expense (if `image_path` / `mime_type` not already on `receipt`)
+- BDD scenario: "Als Teilnehmer möchte ich einen Kassenzettel fotografieren und einreichen"
 
 ---
 
@@ -521,13 +599,13 @@ settlement page.
   Restaurant       180 €      18%
   Aktivitäten       90 €       9%
   Transport         60 €       6%
-  Sonstiges          0 €       0%   ← not shown if zero
-  ─────────────────────────
+  ─────────────────────────────────
   Gesamt         1.000 €     100%
   ```
   Only categories with amounts > 0 are shown. Categories with 0 EUR are omitted.
 
-- **Given** the accommodation total from `TripProjection.accommodationTotal` is set,
+- **Given** the accommodation total from `TripProjection.accommodationTotal` is set (populated
+  by the `AccommodationPriceSet` event consumed in Iteration 9),
   **When** the category section is rendered,
   **Then** it is included in the "Unterkunft" row alongside any ACCOMMODATION-category receipts.
   The Unterkunft total = `accommodationTotal + sum(receipts with category=ACCOMMODATION)`.
@@ -538,7 +616,7 @@ settlement page.
 
 - **Given** there are no approved receipts,
   **When** the settlement page loads,
-  **Then** the category section is not shown (empty state: no receipts to categorise).
+  **Then** the category section is not shown (empty state).
 
 #### Participant View
 
@@ -546,27 +624,21 @@ settlement page.
   **When** the category section is shown,
   **Then** the same breakdown is visible. All participants can see the category summary.
 
-- **Given** I view the category breakdown,
-  **When** I click on a category row,
-  **Then** a detail panel shows the individual receipts in that category (receipt description,
-  date, submitter, amount). This is an HTMX-powered collapsible expansion.
-
-#### Export Consideration
-
-- The category breakdown is rendered on the settlement page only. PDF export (US-EXP-033)
-  is deferred — it will include this breakdown when implemented.
+- **Given** I click on a category row,
+  **Then** a detail panel expands (HTMX `hx-get`) showing the individual receipts in that
+  category: description, date, submitter name, amount.
 
 #### Multi-Tenancy
 
-- Category totals are derived from the `Expense` aggregate, which is scoped to the
-  organizer's `tenantId`. No cross-tenant data exposure.
+- Category totals are derived from the `Expense` aggregate scoped to the organizer's `tenantId`.
+  No cross-tenant data exposure.
 
 ### Technical Notes
 
 - Bounded Context: Expense
 - No new aggregate, entity, or event
 - No Flyway migration
-- New Read Model / Representation: `CategoryBreakdown` record
+- New read model: `CategoryBreakdown` record
   ```java
   record CategoryBreakdown(
       ExpenseCategory category,
@@ -578,22 +650,111 @@ settlement page.
   Computed in `SettlementService` (or a new `CategoryBreakdownService`) from
   `Expense.receipts()` filtered to `status == APPROVED`.
   Accommodation total added to the `ACCOMMODATION` bucket from `TripProjection.accommodationTotal`.
-- `SettlementService`: add `List<CategoryBreakdown> computeCategoryBreakdown(Expense expense,
-  TripProjection projection)` — pure computation, no side effects
+- New method: `List<CategoryBreakdown> computeCategoryBreakdown(Expense expense, TripProjection projection)` — pure computation, no side effects
 - UI: `settlement/detail.html` — new collapsible section below the party balance table.
   Each row is expandable via HTMX `hx-get` to load receipt detail for that category.
-  New fragment: `settlement/category-breakdown.html`
-- Receipt category enum: `ExpenseCategory` already exists (from Iteration 6: GROCERIES,
-  ACCOMMODATION, RESTAURANT, ACTIVITIES, TRANSPORT, OTHER). Use as-is.
+  New Thymeleaf fragment: `settlement/category-breakdown.html`
+- `ExpenseCategory` enum already exists (from Iteration 6): GROCERIES, ACCOMMODATION,
+  RESTAURANT, ACTIVITIES, TRANSPORT, OTHER. Use as-is.
 - BDD scenario: "Als Organisator möchte ich die Gesamtkosten nach Kategorie aufgeschlüsselt sehen"
 
 ---
 
-## Story S10-D: US-INFRA-042 — Lighthouse CI Integration
+## Story S10-D: US-EXP-033 — Export Settlement as PDF
+
+**Epic**: E-EXP-04
+**Priority**: Could
+**Size**: M
+**As an** Organizer, **I want** to export the settlement as a PDF document, **so that** I can
+share it with Travel Parties who don't use the app, send it by email, or keep it as a record.
+
+### Background
+
+After a group trip, the Organizer often needs to communicate the final settlement to all parties.
+Not all participants reliably check the app after the trip ends. A shareable PDF with the
+party-level settlement, transfer statements, and category breakdown is a practical artefact that
+closes the trip administratively.
+
+### Acceptance Criteria
+
+#### PDF Export Trigger
+
+- **Given** a Trip is COMPLETED and a settlement has been calculated,
+  **When** the Organizer views the Settlement page,
+  **Then** an "Abrechnung als PDF exportieren" button is visible.
+
+- **Given** I click the button,
+  **When** the PDF is generated,
+  **Then** the browser downloads a PDF file named: `Abrechnung_{tripName}_{date}.pdf`
+
+#### PDF Content
+
+- **Given** the PDF is generated,
+  **Then** it contains the following sections in order:
+  1. **Header**: Trip name, trip dates, generation date, "Erstellt mit Travelmate"
+  2. **Party-Level Settlement Summary**: one row per TravelParty with share, credits, balance
+  3. **Transfer Statements**: "Familie Schmidt überweist 130 € an Familie Müller" per line
+  4. **Cost Breakdown per Category** (from S10-C): table with category, amount, percentage
+  5. **Footer**: "Diese Abrechnung ist nicht rechtsverbindlich."
+
+- **Given** no `AccommodationPriceSet` event has been received for the Trip,
+  **When** the PDF is generated,
+  **Then** the category breakdown shows only receipt-based costs. No accommodation row.
+
+- **Given** advance payments were recorded (S9-D),
+  **When** the PDF is generated,
+  **Then** each party row shows: share, receipts credited, advance credited, balance.
+
+#### Format
+
+- **Given** the PDF is opened on any device,
+  **Then** it is formatted for A4 (portrait), readable without zooming on a desktop screen.
+  Tables use standard borders. Currency values use German number formatting (. thousands, , decimal).
+
+- **Given** a party name or trip name is longer than 50 characters,
+  **When** the PDF is rendered,
+  **Then** the text wraps or is truncated with "…" — no content overflow outside the page bounds.
+
+#### Authorization
+
+- **Given** I have the `participant` role (not `organizer`),
+  **When** I try to access the PDF export endpoint,
+  **Then** I receive HTTP 403 Forbidden.
+
+- **Given** the Trip is not in COMPLETED status,
+  **When** the PDF export is triggered,
+  **Then** the button is not shown. If the endpoint is called directly, HTTP 400 Bad Request.
+
+#### Multi-Tenancy
+
+- The PDF is generated from data scoped to the organizer's TenantId. No cross-tenant data.
+
+### Technical Notes
+
+- Bounded Context: Expense
+- PDF generation library: **iText 8** (community/AGPL) or **Flying Saucer** (LGPL, renders
+  Thymeleaf HTML to PDF) — team decision (see Open Design Questions)
+- Preferred approach for maintainability: **Thymeleaf HTML template → Flying Saucer / OpenPDF**
+  (reuses the existing Thymeleaf skill; no separate PDF layout API to learn)
+  Alternative: iText 8 programmatic approach (more control, stricter layout)
+- New Thymeleaf template: `settlement/pdf.html` — designed for print layout (no HTMX, no
+  interactive elements, CSS `@media print` rules)
+- New Controller endpoint: `GET /expense/{tripId}/settlement/pdf`
+  - Requires `organizer` role
+  - Calls `SettlementService.computeSettlement(...)` and `computeCategoryBreakdown(...)`
+  - Generates PDF bytes
+  - Returns `ResponseEntity<byte[]>` with `Content-Type: application/pdf` and
+    `Content-Disposition: attachment; filename="Abrechnung_...pdf"`
+- No new domain event, no Flyway migration
+- BDD scenario: "Als Organisator möchte ich die Abrechnung als PDF herunterladen"
+
+---
+
+## Story S10-E: US-INFRA-042 — Lighthouse CI Integration
 
 **Epic**: E-INFRA-05
 **Priority**: Should
-**Size**: M
+**Size**: S
 **As a** developer, **I want** Lighthouse CI to automatically audit key Travelmate pages on every
 pull request, **so that** mobile performance, PWA installability, and accessibility regressions
 are caught before they reach main.
@@ -610,11 +771,8 @@ plugs into the same infrastructure, running after the E2E suite completes.
 
 - **Given** a pull request is opened or updated,
   **When** the GitHub Actions pipeline runs,
-  **Then** after the E2E tests pass, a Lighthouse CI step runs and audits at least the
-  following pages (authenticated via session cookie from a test login):
-  1. Trip list page (`/trips`)
-  2. Shopping list page for a test trip
-  3. Settlement page for a completed test trip
+  **Then** after the E2E tests pass, a Lighthouse CI step audits at least the Trip list page
+  (`/trips`) as an authenticated user.
 
 - **Given** Lighthouse runs on the Trip list page,
   **When** the audit completes,
@@ -622,224 +780,134 @@ plugs into the same infrastructure, running after the E2E suite completes.
   - Performance: >= 80
   - Accessibility: >= 90
   - Best Practices: >= 90
-  - PWA (Installable): pass
+  - PWA (Installable): pass (installable-manifest)
 
 - **Given** any threshold is breached,
   **When** the CI step completes,
-  **Then** the pipeline is marked as failed and the PR cannot be merged (branch protection rule).
-  The Lighthouse HTML report is uploaded as a CI artifact.
+  **Then** the pipeline is marked as failed. The Lighthouse HTML report is uploaded as a CI artifact.
 
 - **Given** all thresholds pass,
   **When** the CI step completes,
-  **Then** the pipeline step passes and the Lighthouse HTML report is available as a build
-  artifact for review (retained for 7 days).
+  **Then** the Lighthouse HTML report is available as a build artifact (retained for 7 days).
 
 #### Audit Configuration
 
-- **Given** the Lighthouse config is defined,
-  **Then** the following Lighthouse categories are audited:
-  `performance`, `accessibility`, `best-practices`, `pwa`.
-  The `seo` category is excluded (internal app, not public-facing).
+- **Then** the following Lighthouse categories are audited: `performance`, `accessibility`,
+  `best-practices`, `pwa`. The `seo` category is excluded (internal app, not public-facing).
 
 - **Given** pages require authentication,
   **When** Lighthouse runs,
-  **Then** a pre-script performs a headless login via the test user credentials
+  **Then** a pre-script performs a headless login via test user credentials
   (`testuser` / `testpassword`) and passes the session to Lighthouse.
-  Alternatively: Lighthouse runs in the same Playwright browser context after login.
-
-- **Given** the infrastructure is not running (CI cold start),
-  **When** the Lighthouse step begins,
-  **Then** it waits for the health checks of Gateway and all SCS to pass before auditing
-  (same wait logic as existing E2E tests).
-
-#### Reporting
-
-- **Given** the CI run is complete,
-  **When** a developer views the PR checks,
-  **Then** they see a Lighthouse CI summary comment on the PR with score badges for
-  Performance, Accessibility, Best Practices, and PWA, and links to the full report.
 
 #### Scope Limitation
 
-- The `seo` category is explicitly excluded.
-- Lighthouse is not run on POST/mutation endpoints.
-- Mobile simulation: Lighthouse runs with the "Mobile" Lighthouse preset (throttled 4G,
-  mobile viewport 375px). Desktop is not audited in this iteration.
+- Lighthouse is run with the "Mobile" preset (throttled 4G, mobile viewport 375px).
+- Not run on POST/mutation endpoints.
+- No custom install prompt UI required by this story.
 
 ### Technical Notes
 
 - Bounded Context: Infrastructure / CI
 - Tool: `@lhci/cli` (Lighthouse CI) via `npm`
-- GitHub Actions: new job `lighthouse` in `.github/workflows/ci.yml` (or a new
-  `lighthouse.yml` workflow)
-  - Runs after the `e2e` job succeeds (uses `needs: [e2e]`)
-  - Uses `actions/upload-artifact` to store HTML reports
-  - Uses `github-actions-lighthouse-ci` action or direct `lhci autorun`
+- GitHub Actions: new job `lighthouse` in CI workflow
+  - `needs: [e2e]` (runs after E2E succeeds)
+  - `actions/upload-artifact` for HTML reports
 - Config file: `.lighthouserc.json` at repository root
-  ```json
-  {
-    "ci": {
-      "collect": {
-        "url": [
-          "http://localhost:8080/trips",
-          "http://localhost:8080/trips/{tripId}/shopping-list",
-          "http://localhost:8080/expense/{tripId}/settlement"
-        ],
-        "numberOfRuns": 1,
-        "settings": {
-          "preset": "perf",
-          "formFactor": "mobile",
-          "screenEmulation": { "mobile": true }
-        }
-      },
-      "assert": {
-        "assertions": {
-          "categories:performance": ["error", {"minScore": 0.8}],
-          "categories:accessibility": ["error", {"minScore": 0.9}],
-          "categories:best-practices": ["error", {"minScore": 0.9}],
-          "installable-manifest": ["error", {"minScore": 1}]
-        }
-      },
-      "upload": { "target": "filesystem", "outputDir": ".lighthouseci" }
-    }
-  }
-  ```
-- Authentication: the CI pipeline already has Keycloak test users. A setup step performs
-  a Playwright login and extracts the session cookie (or uses the same Docker test context
-  as E2E tests). See existing E2E test infrastructure in `travelmate-e2e`.
-- Trip/settlement URLs: CI creates a test trip (same pattern as E2E test setup) and
-  substitutes its ID into the URL list.
-- E2E test addition: Playwright assertion that `link[rel="manifest"]` returns HTTP 200 (sanity
-  check that the manifest file is served).
-- No SCS code changes required.
+- Authentication: same Docker test context as E2E tests; Playwright login step extracts
+  session cookie before Lighthouse audit
+- No SCS code changes required
 - BDD scenario: none (CI infrastructure story)
 
 ---
 
-## Story S10-E: TravelParty Display Name Propagation
+## Cross-SCS Event Flow (Iteration 10)
 
-**Epic**: E-TRIPS-02
-**Priority**: Should
-**Size**: S
-**As an** Organizer, **I want** the correct TravelParty name (e.g., "Familie Schmidt") to appear
-in the settlement view and advance payment overview, **so that** the party-level settlement is
-readable without needing to know internal party IDs.
+No new cross-SCS events are introduced in Iteration 10.
 
-### Background
-
-Iteration 9 added party-level settlement (S9-C) and advance payments (S9-D). The Expense SCS
-derives party names from the first participant's last name: "Family {lastName}". This is a
-workaround for the fact that the `ParticipantJoinedTrip` event does not carry the TravelParty's
-display name (Tenant name). This story closes that gap with a proper event that carries the
-party name and is consumed by the Expense SCS.
-
-The Trips SCS already has the correct party name in the `TravelParty` projection (it mirrors
-the `Tenant.name` from the IAM SCS via the `TenantCreated` event). When a participant joins a
-Trip, the Trips SCS can look up their TravelParty and publish the party name.
-
-### Acceptance Criteria
-
-#### Event Publishing (Trips SCS)
-
-- **Given** a participant joins a Trip (MEMBER invitation accepted or organizer auto-join),
-  **When** the `ParticipantJoinedTrip` event is processed,
-  **Then** the Trips SCS also publishes `TravelPartyNameRegistered(tripId, partyTenantId,
-  partyName)` if this is the first participant from that TravelParty to join the Trip.
-
-  > "First participant from that party" means: at the time of the join, no other participant
-  > with the same `tenantId` is already listed in the Trip's participant list. If a second
-  > member of the same family joins, no new event is published (the name is already known).
-
-- **Given** the TravelParty name changes in the IAM SCS (US-IAM-012, not yet implemented),
-  **Then** updating the party name in the settlement view is deferred. This story handles
-  the initial propagation only.
-
-#### Event Consumption (Expense SCS)
-
-- **Given** a `TravelPartyNameRegistered` event is received,
-  **When** the Expense SCS processes it,
-  **Then** all `ProjectedParticipant` rows in `trip_projection_participant` for the given
-  `tripId` and `partyTenantId` have their `party_name` column updated to the event's
-  `partyName` value.
-
-- **Given** the `party_name` is updated,
-  **When** the settlement page renders,
-  **Then** the party row shows the actual name (e.g., "Familie Schmidt") instead of the
-  derived fallback ("Family of Schmidt").
-
-#### Advance Payment View
-
-- **Given** advance payments are configured (S9-D),
-  **When** the advance payment overview is shown,
-  **Then** each party is listed by its actual name ("Familie Schmidt — 500 € — nicht bezahlt"),
-  not by a derived name.
-
-#### Fallback Behaviour
-
-- **Given** the `TravelPartyNameRegistered` event has not yet been received for a party
-  (e.g., event processing is delayed),
-  **When** the settlement renders,
-  **Then** the derived fallback ("Family of {lastName}") is shown. No blank names.
-  The event is idempotent: if received multiple times, `party_name` is simply overwritten
-  with the same value.
-
-#### Multi-Tenancy
-
-- The event carries `partyTenantId` and `tripId`. The Expense SCS consumer looks up the
-  `TripProjection` by `tripId` (which is already scoped to the organizer's tenantId). No
-  cross-tenant access.
-
-### Technical Notes
-
-- Bounded Context: Trips (publishes) + Expense (consumes)
-- New event contract in `travelmate-common/events/trips/`:
-  ```java
-  public record TravelPartyNameRegistered(
-      UUID tripId,
-      TenantId partyTenantId,
-      String partyName,
-      Instant occurredOn
-  ) implements DomainEvent {}
-  ```
-- New routing key: `trips.party.name_registered` in `RoutingKeys.java`
-- Trips SCS — event publishing:
-  - In `TripService.joinTrip(...)` (or the method called when an invitation is accepted):
-    after publishing `ParticipantJoinedTrip`, check if this is the first participant
-    from `partyTenantId` in the Trip's current participant list.
-    If yes: look up the TravelParty name from `TravelPartyRepository.findByTenantId(partyTenantId)`
-    and `registerEvent(new TravelPartyNameRegistered(tripId, partyTenantId, party.name(), Instant.now()))`.
-  - The auto-join path (organizer creates Trip) also publishes this event.
-- Expense SCS — new consumer: `TravelPartyNameRegisteredConsumer` in `adapters/messaging/`
-  - Finds `TripProjection` by `tripId`
-  - Updates all `ProjectedParticipant` entries where `partyTenantId` matches: sets `partyName`
-  - Saves and commits
-  - Idempotent: repeated messages are safe (same `party_name` is written)
-- No Flyway migration: `party_name` column on `trip_projection_participant` already exists
-  (added in V8 for Iteration 9)
-- Domain Events produced: `TravelPartyNameRegistered`
-- BDD scenario: "Als Organisator möchte ich den korrekten Namen der Reisepartei in der Abrechnung sehen"
+The `AccommodationPriceSet` event (published by Trips, consumed by Expense) was introduced in
+Iteration 9 and is triggered whenever `TripService.setAccommodation()` saves a non-null totalPrice.
+S10-A reuses this path: when the imported accommodation is saved through the normal form, the
+same event is published. No change needed.
 
 ---
 
-## Cross-SCS Event Flow (New in Iteration 10)
+## Open Design Questions
 
-```
-Trips SCS                                Expense SCS
-────────────────────────────────────────────────────────────────
-TripService.joinTrip(participantId, ...)
-  └─► Trip.addParticipant(...)
-  └─► registerEvent(ParticipantJoinedTrip)           → existing
-  └─► if first from party: registerEvent(TravelPartyNameRegistered)  ← NEW
-  └─► repository.save(trip)
-  └─► @TransactionalEventListener → RabbitMQ
-                                         TravelPartyNameRegisteredConsumer ← NEW
-                                           └─► TripProjection.updatePartyName(partyTenantId, name)
-                                           └─► Renders as "Familie Schmidt" in settlement UI
-```
+### Q1: OCR Technology Choice (S10-B — MUST RESOLVE BEFORE IMPLEMENTATION)
 
-**Routing key**: `trips.party.name_registered` (new; add to `RoutingKeys.java` in common)
-**Exchange**: `travelmate.events` (existing topic exchange)
-**Consumer**: `TravelPartyNameRegisteredConsumer` in `travelmate-expense/adapters/messaging/`
+Two viable paths for receipt OCR in the JVM / Docker environment:
+
+#### Option A: Tesseract (Self-Hosted)
+
+- Java wrapper: `tess4j 5.x` (wraps Tesseract C library via JNI) or `bytedeco/tesseract`
+- Tesseract binary + German language pack (`deu.traineddata`) must be present in the Docker image
+- Docker image size increase: ~200–400 MB for Tesseract + language packs
+- Accuracy on printed receipts: good for laser/inkjet, poor for thermal/faded receipts
+- No API key, no external dependency, no per-call cost
+- Latency: 2–5 seconds per image on a typical server CPU
+- **Setup effort**: moderate — Dockerfile changes + JNI dependency + image pre-processing
+  (greyscale + contrast) to improve recognition accuracy on supermarket thermal receipts
+- **Recommendation for MVP**: viable if the team is comfortable with Docker changes
+
+#### Option B: Google Cloud Vision API
+
+- Library: `google-cloud-vision` Java client
+- Accuracy: significantly better than Tesseract, especially for thermal receipts
+- Cost: free tier — 1000 units/month; then $1.50 per 1000 units. For a hobby project: free.
+- Requires a Google Cloud API key stored as an environment variable (`GOOGLE_VISION_API_KEY`)
+- Latency: 1–2 seconds per image (network-dependent)
+- No Docker image changes required
+- **Setup effort**: low — add Maven dependency + config property + API key in docker-compose
+- **Recommendation**: preferred for accuracy and simplicity of setup
+
+#### Option C: AWS Textract
+
+- Similar to Cloud Vision; stronger for structured documents (invoices, tables)
+- Overkill for MVP receipt scan; more complex IAM setup
+- Not recommended for this iteration
+
+**Decision needed from team:** Is external API dependency acceptable (Cloud Vision), or is
+self-hosted Tesseract required for offline / privacy / cost reasons?
+
+**Pragmatic default**: start with Cloud Vision (Option B) for accuracy in the MVP iteration.
+Design `ReceiptOcrPort` so the adapter is swappable if a switch to Tesseract is required later.
+If no API key is configured, the adapter returns `OcrResult(success=false, errorMessage="OCR
+nicht konfiguriert")` and the form shows empty with a note — the manual entry path always works.
+
+### Q2: PDF Generation Library (S10-D)
+
+Two options:
+
+#### Option A: Flying Saucer + OpenPDF (LGPL)
+
+- Renders an XHTML Thymeleaf template to PDF via CSS
+- Familiar: reuses existing Thymeleaf template skills
+- Limitations: CSS support is CSS2.1 only (no Flexbox/Grid); PicoCSS will need a print
+  stylesheet override
+- Dependencies: `org.xhtmlrenderer:flying-saucer-pdf-openpdf` + `com.github.librepdf:openpdf`
+
+#### Option B: iText 8 (AGPL)
+
+- Programmatic PDF generation; full control over layout
+- AGPL license: requires open-sourcing any derivative work — acceptable for an open-source project
+- More verbose API but no CSS limitations
+- Dependencies: `com.itextpdf:itext-core`
+
+**Recommendation**: Flying Saucer + OpenPDF for the MVP. The settlement PDF is a simple table
+document — CSS2.1 is sufficient. If the layout proves too constrained, migrate to iText later.
+
+### Q3: Accommodation Scraping Accuracy Expectations
+
+Vacation rental platforms (Booking.com, Airbnb, Ferienhausmiete.de, HomeAway) actively work
+to prevent scraping, change their HTML structure, and may return different markup to server-side
+requests vs. browser requests. The import is **best-effort**:
+
+- The user ALWAYS gets an editable form — scraping failure is a degraded mode, not an error
+- The "Buchungslink" field is always pre-filled with the original URL (even if nothing else is extracted)
+- Platform-specific adapters (Booking.com, Ferienhausmiete.de) are NOT planned — the adapter
+  uses only generic metadata (Open Graph, JSON-LD LodgingBusiness)
+- Accuracy expectation: name and URL reliably; price, rooms, and dates opportunistically
 
 ---
 
@@ -847,16 +915,17 @@ TripService.joinTrip(participantId, ...)
 
 | Item | Reason |
 |------|--------|
-| US-TRIPS-061: Import Accommodation from URL | Could priority; depends on S10-A adapter pattern being proven first; deferred to Iteration 11 |
-| US-TRIPS-062: Accommodation Poll | Could/L; new LocationPoll aggregate; substantial scope |
-| US-EXP-033: Export Settlement as PDF | Could; introduces PDF library; deferred |
+| US-TRIPS-041: Recipe Import from URL | LOW priority per user — deferred to Iteration 11+ |
+| US-TRIPS-062: Accommodation Poll | Could/L; new LocationPoll aggregate; out of scope |
+| US-EXP-022: Custom Splitting per Receipt | Could/M; Receipt OCR (S10-B) takes the M slot |
 | US-INFRA-040: Service Worker / Offline Caching | Could/XL; deferred |
-| US-TRIPS-055: Bring App Integration | Could; no stable public API documented; deferred |
-| US-IAM-012: Edit Travel Party Name | Could/S; low demand; deferred |
-| US-IAM-040/041: Multi-Organizer Role Management | Should; Keycloak Admin API work; deferred to a dedicated IAM iteration |
+| US-TRIPS-055: Bring App Integration | Could; no stable public API; deferred |
+| US-IAM-040/041: Multi-Organizer Role Management | Should; deferred to dedicated IAM iteration |
 | Rejection history / audit trail for receipts | Out of scope from S9-E; future story |
 | US-INFRA-055: Transactional Outbox Pattern | Could/XL; significant infrastructure change; deferred |
-| TravelParty name update propagation (if name changes) | Depends on US-IAM-012; deferred |
+| S10-E (formerly): TravelParty Name Propagation | Was in old Iter 10 plan; re-evaluate — still needed for party name in settlement (separate small story if capacity allows) |
+| OCR line-item extraction | Stretch goal for S10-B; not in MVP acceptance criteria |
+| Accommodation URL import for Airbnb / Booking.com structured scraping | Out of scope; generic Open Graph + JSON-LD only |
 
 ---
 
@@ -864,12 +933,9 @@ TripService.joinTrip(participantId, ...)
 
 | SCS | Version | Content |
 |-----|---------|---------|
-| Trips | none new | No schema changes in Iteration 10 |
-| Expense | V10 | Add `split_mode VARCHAR(20) NOT NULL DEFAULT 'WEIGHTED_ALL'` and `split_participant_ids TEXT NULL` to `receipt` table |
-| Common | — | New event record `TravelPartyNameRegistered.java`; new routing key constant |
-
-> Note: Expense V8 (`trip_participant_party_info`) already added `party_name` to
-> `trip_projection_participant`. No migration needed for S10-E.
+| Trips | none new | Accommodation schema exists from V11/V12 (Iter 9); no changes for import path |
+| Expense | V11 (if needed) | Add `image_path VARCHAR(500) NULL`, `mime_type VARCHAR(50) NULL` to `receipt` table (check if already present from earlier stubs) |
+| Common | — | No new event contracts in Iteration 10 |
 
 ---
 
@@ -877,30 +943,14 @@ TripService.joinTrip(participantId, ...)
 
 | UI (DE) | UI (EN) | Code | Context |
 |---------|---------|------|---------|
-| Rezept aus URL importieren | Import Recipe from URL | RecipeImportPort | Trips |
-| Importieren | Import | POST /recipes/import | Trips |
-| Strukturierte Daten | Structured Data | schema.org/Recipe JSON-LD | Trips |
-| Zutatenzeile | Ingredient String | ImportedIngredient | Trips |
-| Benutzerdefinierte Aufteilung | Custom Split | SplitMode.CUSTOM | Expense |
-| Alle Teilnehmer | All Participants | SplitMode.WEIGHTED_ALL | Expense |
-| Teilaufteilung | Partial Split | CUSTOM split badge | Expense |
+| Unterkunft aus URL importieren | Import Accommodation from URL | AccommodationImportPort | Trips |
+| Importieren | Import | POST /trips/{id}/accommodation/import | Trips |
+| Vorschau bearbeiten | Edit Preview | editable pre-filled form | Trips + Expense |
+| Buchungslink | Booking URL | AccommodationImportResult.bookingUrl | Trips |
+| Kassenzettel fotografieren | Scan Receipt | ReceiptOcrPort | Expense |
+| Betrag erkannt | Amount detected | OcrResult.totalAmount | Expense |
+| Betrag konnte nicht erkannt werden | Amount could not be detected | OcrResult (fallback hint) | Expense |
+| Abrechnung als PDF exportieren | Export Settlement as PDF | GET /expense/{id}/settlement/pdf | Expense |
 | Kostenübersicht nach Kategorie | Settlement per Category | CategoryBreakdown | Expense |
-| Reiseparteiname | Travel Party Name | TravelPartyNameRegistered | Events (new) |
 | Qualitätsprüfung | Quality Gate | Lighthouse CI | Infrastructure |
 | Barrierefreiheit | Accessibility | Lighthouse `accessibility` category | Infrastructure |
-
----
-
-## Dependency Map for Team Assignment
-
-```
-S10-D (Lighthouse CI)     → no code dependencies on other stories; start first
-S10-E (Party Names)       → depends on common (new event); implement before S10-B
-S10-A (Recipe Import)     → depends on Jsoup added to pom.xml; standalone otherwise
-S10-C (Category Breakdown)→ read-only; no code dependencies; implement any time
-S10-B (Custom Split)      → depends on S10-E for correct party name display in UI
-```
-
-If two developers work in parallel:
-- Dev 1: S10-D → S10-A
-- Dev 2: S10-E → S10-C → S10-B
