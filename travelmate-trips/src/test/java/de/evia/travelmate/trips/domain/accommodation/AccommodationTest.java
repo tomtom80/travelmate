@@ -21,7 +21,7 @@ class AccommodationTest {
 
     @Test
     void createAccommodationWithOneRoom() {
-        final Room room = new Room("Zimmer 1", RoomType.DOUBLE, 2, new BigDecimal("80.00"));
+        final Room room = new Room("Zimmer 1", 2, new BigDecimal("80.00"));
 
         final Accommodation accommodation = Accommodation.create(
             TENANT_ID, TRIP_ID, "Berghuette Alpenblick", "Alpweg 12", "https://booking.com/123",
@@ -43,7 +43,7 @@ class AccommodationTest {
 
     @Test
     void createRegistersAccommodationPriceSetEvent() {
-        final Room room = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
+        final Room room = new Room("Zimmer 1", 2, null);
 
         final Accommodation accommodation = Accommodation.create(
             TENANT_ID, TRIP_ID, "Huette", null, null,
@@ -60,7 +60,7 @@ class AccommodationTest {
 
     @Test
     void createWithNullPriceDoesNotRegisterEvent() {
-        final Room room = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
+        final Room room = new Room("Zimmer 1", 2, null);
 
         final Accommodation accommodation = Accommodation.create(
             TENANT_ID, TRIP_ID, "Huette", null, null,
@@ -72,7 +72,7 @@ class AccommodationTest {
 
     @Test
     void createWithZeroPriceDoesNotRegisterEvent() {
-        final Room room = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
+        final Room room = new Room("Zimmer 1", 2, null);
 
         final Accommodation accommodation = Accommodation.create(
             TENANT_ID, TRIP_ID, "Huette", null, null,
@@ -102,7 +102,7 @@ class AccommodationTest {
 
     @Test
     void createRejectsBlankName() {
-        final Room room = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
+        final Room room = new Room("Zimmer 1", 2, null);
 
         assertThatThrownBy(() -> Accommodation.create(
             TENANT_ID, TRIP_ID, "", null, null,
@@ -112,7 +112,7 @@ class AccommodationTest {
 
     @Test
     void createRejectsNameExceeding200Characters() {
-        final Room room = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
+        final Room room = new Room("Zimmer 1", 2, null);
         final String longName = "A".repeat(201);
 
         assertThatThrownBy(() -> Accommodation.create(
@@ -124,7 +124,7 @@ class AccommodationTest {
 
     @Test
     void createRejectsCheckInAfterCheckOut() {
-        final Room room = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
+        final Room room = new Room("Zimmer 1", 2, null);
 
         assertThatThrownBy(() -> Accommodation.create(
             TENANT_ID, TRIP_ID, "Huette", null, null,
@@ -136,7 +136,7 @@ class AccommodationTest {
 
     @Test
     void createRejectsNegativeTotalPrice() {
-        final Room room = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
+        final Room room = new Room("Zimmer 1", 2, null);
 
         assertThatThrownBy(() -> Accommodation.create(
             TENANT_ID, TRIP_ID, "Huette", null, null,
@@ -147,12 +147,12 @@ class AccommodationTest {
 
     @Test
     void addRoom() {
-        final Room room1 = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
+        final Room room1 = new Room("Zimmer 1", 2, null);
         final Accommodation accommodation = Accommodation.create(
             TENANT_ID, TRIP_ID, "Huette", null, null,
             null, null, null, List.of(room1)
         );
-        final Room room2 = new Room("Zimmer 2", RoomType.QUAD, 4, null);
+        final Room room2 = new Room("Zimmer 2", 4, null);
 
         accommodation.addRoom(room2);
 
@@ -161,8 +161,8 @@ class AccommodationTest {
 
     @Test
     void removeRoom() {
-        final Room room1 = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
-        final Room room2 = new Room("Zimmer 2", RoomType.QUAD, 4, null);
+        final Room room1 = new Room("Zimmer 1", 2, null);
+        final Room room2 = new Room("Zimmer 2", 4, null);
         final Accommodation accommodation = Accommodation.create(
             TENANT_ID, TRIP_ID, "Huette", null, null,
             null, null, null, List.of(room1, room2)
@@ -176,7 +176,7 @@ class AccommodationTest {
 
     @Test
     void removeLastRoomIsRejected() {
-        final Room room = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
+        final Room room = new Room("Zimmer 1", 2, null);
         final Accommodation accommodation = Accommodation.create(
             TENANT_ID, TRIP_ID, "Huette", null, null,
             null, null, null, List.of(room)
@@ -189,8 +189,8 @@ class AccommodationTest {
 
     @Test
     void removeNonExistentRoomIsRejected() {
-        final Room room1 = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
-        final Room room2 = new Room("Zimmer 2", RoomType.QUAD, 4, null);
+        final Room room1 = new Room("Zimmer 1", 2, null);
+        final Room room2 = new Room("Zimmer 2", 4, null);
         final Accommodation accommodation = Accommodation.create(
             TENANT_ID, TRIP_ID, "Huette", null, null,
             null, null, null, List.of(room1, room2)
@@ -203,8 +203,8 @@ class AccommodationTest {
 
     @Test
     void totalBedCount() {
-        final Room room1 = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
-        final Room room2 = new Room("Zimmer 2", RoomType.QUAD, 4, null);
+        final Room room1 = new Room("Zimmer 1", 2, null);
+        final Room room2 = new Room("Zimmer 2", 4, null);
         final Accommodation accommodation = Accommodation.create(
             TENANT_ID, TRIP_ID, "Huette", null, null,
             null, null, null, List.of(room1, room2)
@@ -215,7 +215,7 @@ class AccommodationTest {
 
     @Test
     void updateDetailsChangesFields() {
-        final Room room = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
+        final Room room = new Room("Zimmer 1", 2, null);
         final Accommodation accommodation = Accommodation.create(
             TENANT_ID, TRIP_ID, "Huette", null, null,
             null, null, null, List.of(room)
@@ -238,7 +238,7 @@ class AccommodationTest {
 
     @Test
     void updateDetailsPublishesPriceSetEventWhenPriceChanges() {
-        final Room room = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
+        final Room room = new Room("Zimmer 1", 2, null);
         final Accommodation accommodation = Accommodation.create(
             TENANT_ID, TRIP_ID, "Huette", null, null,
             null, null, new BigDecimal("100.00"), List.of(room)
@@ -254,7 +254,7 @@ class AccommodationTest {
 
     @Test
     void updateDetailsDoesNotPublishEventWhenPriceUnchanged() {
-        final Room room = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
+        final Room room = new Room("Zimmer 1", 2, null);
         final Accommodation accommodation = Accommodation.create(
             TENANT_ID, TRIP_ID, "Huette", null, null,
             null, null, new BigDecimal("100.00"), List.of(room)
@@ -268,7 +268,7 @@ class AccommodationTest {
 
     @Test
     void assignPartyToRoom() {
-        final Room room = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
+        final Room room = new Room("Zimmer 1", 2, null);
         final Accommodation accommodation = Accommodation.create(
             TENANT_ID, TRIP_ID, "Huette", null, null,
             null, null, null, List.of(room)
@@ -285,7 +285,7 @@ class AccommodationTest {
 
     @Test
     void assignMultiplePartiesToSameRoom() {
-        final Room room = new Room("Matratzenlager", RoomType.DORMITORY, 10, null);
+        final Room room = new Room("Matratzenlager", 10, null);
         final Accommodation accommodation = Accommodation.create(
             TENANT_ID, TRIP_ID, "Huette", null, null,
             null, null, null, List.of(room)
@@ -300,7 +300,7 @@ class AccommodationTest {
 
     @Test
     void assignPartyToRoomRejectsInvalidRoomId() {
-        final Room room = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
+        final Room room = new Room("Zimmer 1", 2, null);
         final Accommodation accommodation = Accommodation.create(
             TENANT_ID, TRIP_ID, "Huette", null, null,
             null, null, null, List.of(room)
@@ -314,7 +314,7 @@ class AccommodationTest {
 
     @Test
     void assignPartyToRoomRejectsZeroPersonCount() {
-        final Room room = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
+        final Room room = new Room("Zimmer 1", 2, null);
         final Accommodation accommodation = Accommodation.create(
             TENANT_ID, TRIP_ID, "Huette", null, null,
             null, null, null, List.of(room)
@@ -328,7 +328,7 @@ class AccommodationTest {
 
     @Test
     void removeAssignment() {
-        final Room room = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
+        final Room room = new Room("Zimmer 1", 2, null);
         final Accommodation accommodation = Accommodation.create(
             TENANT_ID, TRIP_ID, "Huette", null, null,
             null, null, null, List.of(room)
@@ -343,7 +343,7 @@ class AccommodationTest {
 
     @Test
     void removeAssignmentRejectsInvalidId() {
-        final Room room = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
+        final Room room = new Room("Zimmer 1", 2, null);
         final Accommodation accommodation = Accommodation.create(
             TENANT_ID, TRIP_ID, "Huette", null, null,
             null, null, null, List.of(room)
@@ -357,7 +357,7 @@ class AccommodationTest {
 
     @Test
     void updateAssignmentPersonCount() {
-        final Room room = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
+        final Room room = new Room("Zimmer 1", 2, null);
         final Accommodation accommodation = Accommodation.create(
             TENANT_ID, TRIP_ID, "Huette", null, null,
             null, null, null, List.of(room)
@@ -372,8 +372,8 @@ class AccommodationTest {
 
     @Test
     void assignmentsForRoom() {
-        final Room room1 = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
-        final Room room2 = new Room("Zimmer 2", RoomType.QUAD, 4, null);
+        final Room room1 = new Room("Zimmer 1", 2, null);
+        final Room room2 = new Room("Zimmer 2", 4, null);
         final Accommodation accommodation = Accommodation.create(
             TENANT_ID, TRIP_ID, "Huette", null, null,
             null, null, null, List.of(room1, room2)
@@ -387,7 +387,7 @@ class AccommodationTest {
 
     @Test
     void personCountExceedingBedCountIsAllowed() {
-        final Room room = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
+        final Room room = new Room("Zimmer 1", 2, null);
         final Accommodation accommodation = Accommodation.create(
             TENANT_ID, TRIP_ID, "Huette", null, null,
             null, null, null, List.of(room)
@@ -399,8 +399,61 @@ class AccommodationTest {
     }
 
     @Test
+    void updateRoomChangesNameAndBedCount() {
+        final Room room = new Room("Zimmer 1", 2, null);
+        final Accommodation accommodation = Accommodation.create(
+            TENANT_ID, TRIP_ID, "Huette", null, null,
+            null, null, null, List.of(room)
+        );
+
+        accommodation.updateRoom(room.roomId(), "Grosses Zimmer", 4);
+
+        assertThat(accommodation.rooms().getFirst().name()).isEqualTo("Grosses Zimmer");
+        assertThat(accommodation.rooms().getFirst().bedCount()).isEqualTo(4);
+    }
+
+    @Test
+    void updateRoomRejectsInvalidRoomId() {
+        final Room room = new Room("Zimmer 1", 2, null);
+        final Accommodation accommodation = Accommodation.create(
+            TENANT_ID, TRIP_ID, "Huette", null, null,
+            null, null, null, List.of(room)
+        );
+
+        assertThatThrownBy(() -> accommodation.updateRoom(
+            new RoomId(UUID.randomUUID()), "Name", 2
+        )).isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("not found");
+    }
+
+    @Test
+    void updateRoomRejectsBlankName() {
+        final Room room = new Room("Zimmer 1", 2, null);
+        final Accommodation accommodation = Accommodation.create(
+            TENANT_ID, TRIP_ID, "Huette", null, null,
+            null, null, null, List.of(room)
+        );
+
+        assertThatThrownBy(() -> accommodation.updateRoom(room.roomId(), "", 2))
+            .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    @Test
+    void updateRoomRejectsZeroBedCount() {
+        final Room room = new Room("Zimmer 1", 2, null);
+        final Accommodation accommodation = Accommodation.create(
+            TENANT_ID, TRIP_ID, "Huette", null, null,
+            null, null, null, List.of(room)
+        );
+
+        assertThatThrownBy(() -> accommodation.updateRoom(room.roomId(), "Zimmer 1", 0))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("Bed count must be at least 1");
+    }
+
+    @Test
     void createAccommodationHasEmptyAssignments() {
-        final Room room = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
+        final Room room = new Room("Zimmer 1", 2, null);
         final Accommodation accommodation = Accommodation.create(
             TENANT_ID, TRIP_ID, "Huette", null, null,
             null, null, null, List.of(room)

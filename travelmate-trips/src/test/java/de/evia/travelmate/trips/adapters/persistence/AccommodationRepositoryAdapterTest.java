@@ -17,7 +17,6 @@ import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.trips.domain.accommodation.Accommodation;
 import de.evia.travelmate.trips.domain.accommodation.AccommodationRepository;
 import de.evia.travelmate.trips.domain.accommodation.Room;
-import de.evia.travelmate.trips.domain.accommodation.RoomType;
 import de.evia.travelmate.trips.domain.trip.TripId;
 
 @SpringBootTest
@@ -36,8 +35,8 @@ class AccommodationRepositoryAdapterTest {
             LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 5),
             new BigDecimal("3000.00"),
             List.of(
-                new Room("Zimmer 1", RoomType.DOUBLE, 2, new BigDecimal("80.00")),
-                new Room("Matratzenlager", RoomType.DORMITORY, 8, null)
+                new Room("Zimmer 1", 2, new BigDecimal("80.00")),
+                new Room("Matratzenlager", 8, null)
             )
         );
 
@@ -60,7 +59,7 @@ class AccommodationRepositoryAdapterTest {
         final Accommodation accommodation = Accommodation.create(
             new TenantId(UUID.randomUUID()), tripId, "Huette", null, null,
             null, null, null,
-            List.of(new Room("Zimmer 1", RoomType.SINGLE, 1, null))
+            List.of(new Room("Zimmer 1", 1, null))
         );
         repository.save(accommodation);
 
@@ -78,7 +77,7 @@ class AccommodationRepositoryAdapterTest {
         final Accommodation accommodation = Accommodation.create(
             new TenantId(UUID.randomUUID()), tripId, "Old Name", null, null,
             null, null, null,
-            List.of(new Room("Zimmer 1", RoomType.DOUBLE, 2, null))
+            List.of(new Room("Zimmer 1", 2, null))
         );
         repository.save(accommodation);
 
@@ -99,7 +98,7 @@ class AccommodationRepositoryAdapterTest {
         final Accommodation accommodation = Accommodation.create(
             new TenantId(UUID.randomUUID()), tripId, "Huette", null, null,
             null, null, null,
-            List.of(new Room("Zimmer 1", RoomType.SINGLE, 1, null))
+            List.of(new Room("Zimmer 1", 1, null))
         );
         repository.save(accommodation);
 
@@ -114,14 +113,13 @@ class AccommodationRepositoryAdapterTest {
         final Accommodation accommodation = Accommodation.create(
             new TenantId(UUID.randomUUID()), tripId, "Huette", null, null,
             null, null, null,
-            List.of(new Room("4-Bett-Zimmer", RoomType.QUAD, 4, new BigDecimal("120.00")))
+            List.of(new Room("4-Bett-Zimmer", 4, new BigDecimal("120.00")))
         );
         repository.save(accommodation);
 
         final Accommodation loaded = repository.findByTripId(tripId).orElseThrow();
         final Room room = loaded.rooms().getFirst();
         assertThat(room.name()).isEqualTo("4-Bett-Zimmer");
-        assertThat(room.roomType()).isEqualTo(RoomType.QUAD);
         assertThat(room.bedCount()).isEqualTo(4);
         assertThat(room.pricePerNight()).isEqualByComparingTo(new BigDecimal("120.00"));
     }
@@ -132,7 +130,7 @@ class AccommodationRepositoryAdapterTest {
         final Accommodation accommodation = Accommodation.create(
             new TenantId(UUID.randomUUID()), tripId, "Huette", null, null,
             null, null, null,
-            List.of(new Room("Zimmer 1", RoomType.DOUBLE, 2, null))
+            List.of(new Room("Zimmer 1", 2, null))
         );
         final UUID partyId = UUID.randomUUID();
         accommodation.assignPartyToRoom(
@@ -154,7 +152,7 @@ class AccommodationRepositoryAdapterTest {
         final Accommodation accommodation = Accommodation.create(
             new TenantId(UUID.randomUUID()), tripId, "Huette", null, null,
             null, null, null,
-            List.of(new Room("Matratzenlager", RoomType.DORMITORY, 10, null))
+            List.of(new Room("Matratzenlager", 10, null))
         );
         final var roomId = accommodation.rooms().getFirst().roomId();
         accommodation.assignPartyToRoom(roomId, UUID.randomUUID(), "Familie A", 3);
@@ -172,7 +170,7 @@ class AccommodationRepositoryAdapterTest {
         final Accommodation accommodation = Accommodation.create(
             new TenantId(UUID.randomUUID()), tripId, "Huette", null, null,
             null, null, null,
-            List.of(new Room("Zimmer 1", RoomType.DOUBLE, 2, null))
+            List.of(new Room("Zimmer 1", 2, null))
         );
         accommodation.assignPartyToRoom(
             accommodation.rooms().getFirst().roomId(), UUID.randomUUID(), "Familie Schmidt", 2

@@ -11,19 +11,16 @@ public class Room {
 
     private final RoomId roomId;
     private String name;
-    private RoomType roomType;
     private int bedCount;
     private BigDecimal pricePerNight;
 
     public Room(final RoomId roomId,
                 final String name,
-                final RoomType roomType,
                 final int bedCount,
                 final BigDecimal pricePerNight) {
         argumentIsNotNull(roomId, "roomId");
         argumentIsNotBlank(name, "room name");
         argumentIsTrue(name.length() <= 100, "Room name must not exceed 100 characters.");
-        argumentIsNotNull(roomType, "roomType");
         argumentIsTrue(bedCount >= 1, "Bed count must be at least 1.");
         if (pricePerNight != null) {
             argumentIsTrue(pricePerNight.compareTo(BigDecimal.ZERO) >= 0,
@@ -31,16 +28,22 @@ public class Room {
         }
         this.roomId = roomId;
         this.name = name;
-        this.roomType = roomType;
         this.bedCount = bedCount;
         this.pricePerNight = pricePerNight;
     }
 
     public Room(final String name,
-                final RoomType roomType,
                 final int bedCount,
                 final BigDecimal pricePerNight) {
-        this(new RoomId(UUID.randomUUID()), name, roomType, bedCount, pricePerNight);
+        this(new RoomId(UUID.randomUUID()), name, bedCount, pricePerNight);
+    }
+
+    public void update(final String name, final int bedCount) {
+        argumentIsNotBlank(name, "room name");
+        argumentIsTrue(name.length() <= 100, "Room name must not exceed 100 characters.");
+        argumentIsTrue(bedCount >= 1, "Bed count must be at least 1.");
+        this.name = name;
+        this.bedCount = bedCount;
     }
 
     public RoomId roomId() {
@@ -49,10 +52,6 @@ public class Room {
 
     public String name() {
         return name;
-    }
-
-    public RoomType roomType() {
-        return roomType;
     }
 
     public int bedCount() {

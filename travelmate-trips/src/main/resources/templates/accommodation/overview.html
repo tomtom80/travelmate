@@ -54,7 +54,6 @@
                 <thead>
                     <tr>
                         <th th:text="#{accommodation.room.name}">Bezeichnung</th>
-                        <th th:text="#{accommodation.room.type}">Typ</th>
                         <th th:text="#{accommodation.room.bedCount}">Betten</th>
                         <th th:text="#{accommodation.room.pricePerNight}">Preis/Nacht</th>
                         <th th:text="#{accommodation.room.assignment}">Belegung</th>
@@ -63,9 +62,20 @@
                 </thead>
                 <tbody>
                     <tr th:each="room : ${accommodation.rooms()}">
-                        <td th:text="${room.name()}"></td>
-                        <td th:text="#{${'roomType.' + room.roomType()}}"></td>
-                        <td th:text="${room.bedCount()}"></td>
+                        <td th:if="${!isEditable}" th:text="${room.name()}"></td>
+                        <td th:if="${!isEditable}" th:text="${room.bedCount()}"></td>
+                        <td th:if="${isEditable}" colspan="2" style="padding:0.25rem;">
+                            <form method="post"
+                                  th:action="@{/{tid}/accommodation/rooms/{rid}/update(tid=${trip.tripId()},rid=${room.roomId()})}"
+                                  style="display:flex; gap:0.5rem; align-items:center; margin:0;">
+                                <input type="text" name="name" th:value="${room.name()}" required maxlength="100"
+                                       style="margin:0; padding:0.25rem 0.5rem; flex:2;">
+                                <input type="number" name="bedCount" th:value="${room.bedCount()}" required min="1"
+                                       style="margin:0; padding:0.25rem 0.5rem; width:5rem; flex:0 0 auto;">
+                                <button type="submit" style="margin:0; padding:0.25rem 0.5rem; font-size:0.85rem; white-space:nowrap;"
+                                        th:text="#{common.save}">Speichern</button>
+                            </form>
+                        </td>
                         <td th:text="${room.pricePerNight()} ? ${room.pricePerNight()} + ' EUR' : '—'"></td>
                         <td>
                             <!-- Show assignments for this room -->
@@ -105,7 +115,6 @@
                 <tfoot>
                     <tr>
                         <td><strong th:text="#{accommodation.totalBeds}">Betten gesamt</strong></td>
-                        <td></td>
                         <td><strong th:text="${accommodation.totalBedCount()}"></strong></td>
                         <td></td>
                         <td><strong th:text="${accommodation.totalAssignedPersons() + ' ' + #messages.msg('accommodation.totalAssigned')}"></strong></td>
@@ -156,18 +165,6 @@
                         <span th:text="#{accommodation.room.name}">Bezeichnung</span>
                         <input type="text" name="name" required maxlength="100" th:placeholder="#{accommodation.room.name.placeholder}">
                     </label>
-                    <label>
-                        <span th:text="#{accommodation.room.type}">Typ</span>
-                        <select name="roomType" required>
-                            <option value="SINGLE" th:text="#{roomType.SINGLE}">Einzelzimmer</option>
-                            <option value="DOUBLE" th:text="#{roomType.DOUBLE}">Doppelzimmer</option>
-                            <option value="QUAD" th:text="#{roomType.QUAD}">4-Bett-Zimmer</option>
-                            <option value="DORMITORY" th:text="#{roomType.DORMITORY}">Matratzenlager</option>
-                            <option value="OTHER" th:text="#{roomType.OTHER}">Sonstiges</option>
-                        </select>
-                    </label>
-                </div>
-                <div class="grid">
                     <label>
                         <span th:text="#{accommodation.room.bedCount}">Betten</span>
                         <input type="number" name="bedCount" required min="1" value="2">
@@ -229,7 +226,6 @@
                     <!-- Preserve existing rooms -->
                     <th:block th:each="room : ${accommodation.rooms()}">
                         <input type="hidden" name="roomName" th:value="${room.name()}">
-                        <input type="hidden" name="roomType" th:value="${room.roomType()}">
                         <input type="hidden" name="roomBedCount" th:value="${room.bedCount()}">
                         <input type="hidden" name="roomPricePerNight" th:value="${room.pricePerNight()}">
                     </th:block>
@@ -333,18 +329,6 @@
                                 <input type="text" name="roomName" required maxlength="100" th:value="${room.name()}">
                             </label>
                             <label>
-                                <span th:text="#{accommodation.room.type}">Typ</span>
-                                <select name="roomType" required>
-                                    <option value="SINGLE" th:text="#{roomType.SINGLE}" th:selected="${room.roomType().name() == 'SINGLE'}">Einzelzimmer</option>
-                                    <option value="DOUBLE" th:text="#{roomType.DOUBLE}" th:selected="${room.roomType().name() == 'DOUBLE'}">Doppelzimmer</option>
-                                    <option value="QUAD" th:text="#{roomType.QUAD}" th:selected="${room.roomType().name() == 'QUAD'}">4-Bett-Zimmer</option>
-                                    <option value="DORMITORY" th:text="#{roomType.DORMITORY}" th:selected="${room.roomType().name() == 'DORMITORY'}">Matratzenlager</option>
-                                    <option value="OTHER" th:text="#{roomType.OTHER}" th:selected="${room.roomType().name() == 'OTHER'}">Sonstiges</option>
-                                </select>
-                            </label>
-                        </div>
-                        <div class="grid">
-                            <label>
                                 <span th:text="#{accommodation.room.bedCount}">Betten</span>
                                 <input type="number" name="roomBedCount" required min="1" th:value="${room.bedCount()}">
                             </label>
@@ -363,18 +347,6 @@
                                 <span th:text="#{accommodation.room.name}">Bezeichnung</span>
                                 <input type="text" name="roomName" required maxlength="100" th:placeholder="#{accommodation.room.name.placeholder}">
                             </label>
-                            <label>
-                                <span th:text="#{accommodation.room.type}">Typ</span>
-                                <select name="roomType" required>
-                                    <option value="SINGLE" th:text="#{roomType.SINGLE}">Einzelzimmer</option>
-                                    <option value="DOUBLE" th:text="#{roomType.DOUBLE}">Doppelzimmer</option>
-                                    <option value="QUAD" th:text="#{roomType.QUAD}">4-Bett-Zimmer</option>
-                                    <option value="DORMITORY" th:text="#{roomType.DORMITORY}">Matratzenlager</option>
-                                    <option value="OTHER" th:text="#{roomType.OTHER}">Sonstiges</option>
-                                </select>
-                            </label>
-                        </div>
-                        <div class="grid">
                             <label>
                                 <span th:text="#{accommodation.room.bedCount}">Betten</span>
                                 <input type="number" name="roomBedCount" required min="1" value="2">
@@ -446,18 +418,6 @@
                                 <input type="text" name="roomName" required maxlength="100" th:placeholder="#{accommodation.room.name.placeholder}">
                             </label>
                             <label>
-                                <span th:text="#{accommodation.room.type}">Typ</span>
-                                <select name="roomType" required>
-                                    <option value="SINGLE" th:text="#{roomType.SINGLE}">Einzelzimmer</option>
-                                    <option value="DOUBLE" th:text="#{roomType.DOUBLE}">Doppelzimmer</option>
-                                    <option value="QUAD" th:text="#{roomType.QUAD}">4-Bett-Zimmer</option>
-                                    <option value="DORMITORY" th:text="#{roomType.DORMITORY}">Matratzenlager</option>
-                                    <option value="OTHER" th:text="#{roomType.OTHER}">Sonstiges</option>
-                                </select>
-                            </label>
-                        </div>
-                        <div class="grid">
-                            <label>
                                 <span th:text="#{accommodation.room.bedCount}">Betten</span>
                                 <input type="number" name="roomBedCount" required min="1" value="2">
                             </label>
@@ -497,18 +457,6 @@
                     <span th:text="#{accommodation.room.name}">Bezeichnung</span>
                     <input type="text" name="roomName" required maxlength="100" data-placeholder="Schlafzimmer">
                 </label>
-                <label>
-                    <span th:text="#{accommodation.room.type}">Typ</span>
-                    <select name="roomType" required>
-                        <option value="SINGLE" th:text="#{roomType.SINGLE}">Einzelzimmer</option>
-                        <option value="DOUBLE" selected th:text="#{roomType.DOUBLE}">Doppelzimmer</option>
-                        <option value="QUAD" th:text="#{roomType.QUAD}">4-Bett-Zimmer</option>
-                        <option value="DORMITORY" th:text="#{roomType.DORMITORY}">Matratzenlager</option>
-                        <option value="OTHER" th:text="#{roomType.OTHER}">Sonstiges</option>
-                    </select>
-                </label>
-            </div>
-            <div class="grid">
                 <label>
                     <span th:text="#{accommodation.room.bedCount}">Betten</span>
                     <input type="number" name="roomBedCount" required min="1" value="2">

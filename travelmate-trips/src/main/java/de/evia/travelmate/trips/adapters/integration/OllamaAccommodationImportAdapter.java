@@ -23,7 +23,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.evia.travelmate.trips.domain.accommodation.AccommodationImportPort;
 import de.evia.travelmate.trips.domain.accommodation.AccommodationImportResult;
 import de.evia.travelmate.trips.domain.accommodation.ImportedRoom;
-import de.evia.travelmate.trips.domain.accommodation.RoomType;
 
 /**
  * LLM-based accommodation import adapter using Ollama with Qwen3-VL.
@@ -49,11 +48,9 @@ public class OllamaAccommodationImportAdapter implements AccommodationImportPort
         {"name": "Name der Unterkunft", "address": "Vollstaendige Adresse", \
         "checkIn": "YYYY-MM-DD oder null", "checkOut": "YYYY-MM-DD oder null", \
         "totalPrice": 1234.56, "maxGuests": 8, \
-        "rooms": [{"name": "Schlafzimmer 1", "bedCount": 2, "roomType": "DOUBLE"}], \
+        "rooms": [{"name": "Schlafzimmer 1", "bedCount": 2}], \
         "amenities": ["Sauna", "WLAN", "Garten"], \
         "notes": "Wichtige Zusatzinfos"}
-
-        roomType muss einer dieser Werte sein: SINGLE, DOUBLE, QUAD, DORMITORY, OTHER
 
         Antworte NUR mit dem JSON-Objekt, keine Erklaerungen.
 
@@ -259,22 +256,9 @@ public class OllamaAccommodationImportAdapter implements AccommodationImportPort
             final int bedCount = roomNode.has("bedCount") && roomNode.get("bedCount").isNumber()
                 ? roomNode.get("bedCount").asInt(2) : 2;
 
-            final RoomType roomType = parseRoomType(roomNode);
-
-            rooms.add(new ImportedRoom(name, roomType, bedCount, null));
+            rooms.add(new ImportedRoom(name, bedCount, null));
         }
         return rooms;
     }
 
-    private RoomType parseRoomType(final JsonNode roomNode) {
-        final String typeStr = textOrNull(roomNode, "roomType");
-        if (typeStr == null) {
-            return RoomType.OTHER;
-        }
-        try {
-            return RoomType.valueOf(typeStr.toUpperCase());
-        } catch (final IllegalArgumentException e) {
-            return RoomType.OTHER;
-        }
-    }
 }

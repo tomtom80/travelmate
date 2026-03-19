@@ -26,9 +26,6 @@ public class AccommodationRoomJpaEntity {
     @Column(name = "name", nullable = false, length = 100)
     private String name;
 
-    @Column(name = "room_type", nullable = false, length = 20)
-    private String roomType;
-
     @Column(name = "bed_count", nullable = false)
     private int bedCount;
 
@@ -39,12 +36,11 @@ public class AccommodationRoomJpaEntity {
     }
 
     public AccommodationRoomJpaEntity(final UUID roomId, final AccommodationJpaEntity accommodation,
-                                       final String name, final String roomType,
-                                       final int bedCount, final BigDecimal pricePerNight) {
+                                       final String name, final int bedCount,
+                                       final BigDecimal pricePerNight) {
         this.roomId = roomId;
         this.accommodation = accommodation;
         this.name = name;
-        this.roomType = roomType;
         this.bedCount = bedCount;
         this.pricePerNight = pricePerNight;
     }
@@ -52,8 +48,6 @@ public class AccommodationRoomJpaEntity {
     public UUID getRoomId() { return roomId; }
     public String getName() { return name; }
     public void setName(final String name) { this.name = name; }
-    public String getRoomType() { return roomType; }
-    public void setRoomType(final String roomType) { this.roomType = roomType; }
     public int getBedCount() { return bedCount; }
     public void setBedCount(final int bedCount) { this.bedCount = bedCount; }
     public BigDecimal getPricePerNight() { return pricePerNight; }

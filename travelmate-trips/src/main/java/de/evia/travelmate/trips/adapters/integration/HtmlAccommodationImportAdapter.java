@@ -22,7 +22,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import de.evia.travelmate.trips.domain.accommodation.AccommodationImportPort;
 import de.evia.travelmate.trips.domain.accommodation.AccommodationImportResult;
 import de.evia.travelmate.trips.domain.accommodation.ImportedRoom;
-import de.evia.travelmate.trips.domain.accommodation.RoomType;
 
 @Component
 @ConditionalOnProperty(name = "travelmate.llm.enabled", havingValue = "false", matchIfMissing = true)
@@ -248,8 +247,7 @@ public class HtmlAccommodationImportAdapter implements AccommodationImportPort {
                 continue;
             }
             final int bedCount = extractBedCount(roomNode);
-            final RoomType roomType = inferRoomType(roomNode, bedCount);
-            rooms.add(new ImportedRoom(name, roomType, bedCount, null));
+            rooms.add(new ImportedRoom(name, bedCount, null));
         }
         return rooms;
     }
@@ -286,8 +284,7 @@ public class HtmlAccommodationImportAdapter implements AccommodationImportPort {
         final List<ImportedRoom> rooms = new ArrayList<>();
         for (int i = 1; i <= roomCount; i++) {
             final int bedsPerRoom = estimateBedsPerRoom(roomCount, totalCapacity, i);
-            final RoomType roomType = inferRoomTypeFromBedCount(bedsPerRoom);
-            rooms.add(new ImportedRoom("Schlafzimmer " + i, roomType, bedsPerRoom, null));
+            rooms.add(new ImportedRoom("Schlafzimmer " + i, bedsPerRoom, null));
         }
         return rooms;
     }
@@ -311,46 +308,6 @@ public class HtmlAccommodationImportAdapter implements AccommodationImportPort {
             }
         }
         return 2;
-    }
-
-    private RoomType inferRoomType(final JsonNode roomNode, final int bedCount) {
-        final JsonNode bed = roomNode.get("bed");
-        if (bed != null && bedCount <= 2) {
-            final String typeOfBed = textOrNull(bed, "typeOfBed");
-            if (typeOfBed != null) {
-                final String lower = typeOfBed.toLowerCase();
-                if ((lower.contains("single") || lower.contains("einzel")) && bedCount == 1) {
-                    return RoomType.SINGLE;
-                }
-                if (lower.contains("double") || lower.contains("doppel") || lower.contains("queen") || lower.contains("king")) {
-                    return RoomType.DOUBLE;
-                }
-            }
-        }
-
-        if (bedCount == 1) {
-            return RoomType.SINGLE;
-        }
-        if (bedCount == 2) {
-            return RoomType.DOUBLE;
-        }
-        if (bedCount <= 4) {
-            return RoomType.QUAD;
-        }
-        return RoomType.DORMITORY;
-    }
-
-    private RoomType inferRoomTypeFromBedCount(final int bedCount) {
-        if (bedCount == 1) {
-            return RoomType.SINGLE;
-        }
-        if (bedCount == 2) {
-            return RoomType.DOUBLE;
-        }
-        if (bedCount <= 4) {
-            return RoomType.QUAD;
-        }
-        return RoomType.DORMITORY;
     }
 
     private Integer intOrNull(final JsonNode node, final String field) {

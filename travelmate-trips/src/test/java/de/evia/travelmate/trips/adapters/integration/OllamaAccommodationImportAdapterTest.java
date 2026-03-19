@@ -17,7 +17,6 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import de.evia.travelmate.trips.domain.accommodation.AccommodationImportResult;
-import de.evia.travelmate.trips.domain.accommodation.RoomType;
 
 @ExtendWith(MockitoExtension.class)
 class OllamaAccommodationImportAdapterTest {
@@ -64,9 +63,7 @@ class OllamaAccommodationImportAdapterTest {
         assertThat(data.bookingUrl()).isEqualTo("https://example.com/chalet");
         assertThat(data.rooms()).hasSize(2);
         assertThat(data.rooms().getFirst().name()).isEqualTo("Schlafzimmer 1");
-        assertThat(data.rooms().getFirst().roomType()).isEqualTo(RoomType.DOUBLE);
         assertThat(data.rooms().getFirst().bedCount()).isEqualTo(2);
-        assertThat(data.rooms().get(1).roomType()).isEqualTo(RoomType.QUAD);
         assertThat(data.notes()).contains("Haustiere erlaubt");
         assertThat(data.notes()).contains("Sauna");
         assertThat(data.notes()).contains("WLAN");
@@ -134,7 +131,7 @@ class OllamaAccommodationImportAdapterTest {
     }
 
     @Test
-    void handlesUnknownRoomTypeGracefully() {
+    void handlesUnknownRoomTypeFieldGracefully() {
         final String json = """
             {
                 "name": "Test Place",
@@ -148,7 +145,7 @@ class OllamaAccommodationImportAdapterTest {
 
         assertThat(result).isPresent();
         assertThat(result.get().rooms()).hasSize(1);
-        assertThat(result.get().rooms().getFirst().roomType()).isEqualTo(RoomType.OTHER);
+        assertThat(result.get().rooms().getFirst().bedCount()).isEqualTo(2);
     }
 
     @Test

@@ -79,7 +79,6 @@ public class AccommodationSteps {
 
         // Fill first room (required in add dialog)
         page.locator("dialog input[name=roomName]").fill("Standardzimmer");
-        page.locator("dialog select[name=roomType]").selectOption("DOUBLE");
         page.locator("dialog input[name=roomBedCount]").fill("2");
 
         // Submit
@@ -104,14 +103,13 @@ public class AccommodationSteps {
         }
     }
 
-    @Wenn("ich ein Zimmer mit Name {string} und Typ {string} und Betten {string} hinzufuege")
-    public void ichEinZimmerHinzufuege(final String name, final String type, final String beds) {
+    @Wenn("ich ein Zimmer mit Name {string} und Betten {string} hinzufuege")
+    public void ichEinZimmerHinzufuege(final String name, final String beds) {
         // Open "Zimmer hinzufuegen" details section
         page.locator("details summary:has-text('Zimmer hinzufuegen')").click();
 
         // Fill room form
         page.locator("details form[action$='/accommodation/rooms'] input[name=name]").fill(name);
-        page.locator("details form[action$='/accommodation/rooms'] select[name=roomType]").selectOption(type);
         page.locator("details form[action$='/accommodation/rooms'] input[name=bedCount]").fill(beds);
 
         // Submit

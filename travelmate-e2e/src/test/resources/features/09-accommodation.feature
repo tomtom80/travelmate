@@ -21,7 +21,7 @@ Funktionalität: Unterkunft
   # S9-A: Zimmer hinzufuegen
   Szenario: Zimmer hinzufuegen
     Angenommen eine Unterkunft wurde fuer die Reise erfasst
-    Wenn ich ein Zimmer mit Name "Familienzimmer" und Typ "QUAD" und Betten "4" hinzufuege
+    Wenn ich ein Zimmer mit Name "Familienzimmer" und Betten "4" hinzufuege
     Dann wird das Zimmer "Familienzimmer" in der Zimmerliste angezeigt
 
   # S9-A: I18n-Aufloesung

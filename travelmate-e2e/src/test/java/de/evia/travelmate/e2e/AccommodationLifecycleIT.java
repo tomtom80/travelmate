@@ -84,7 +84,6 @@ class AccommodationLifecycleIT extends E2ETestBase {
 
         // Fill in the first room (required in add dialog)
         page.locator("dialog input[name=roomName]").fill(ROOM_1_NAME);
-        page.locator("dialog select[name=roomType]").selectOption("QUAD");
         page.locator("dialog input[name=roomBedCount]").fill("4");
 
         // Submit the form
@@ -117,7 +116,6 @@ class AccommodationLifecycleIT extends E2ETestBase {
 
         // Fill in room form
         page.locator("details form[action$='/accommodation/rooms'] input[name=name]").fill(ROOM_2_NAME);
-        page.locator("details form[action$='/accommodation/rooms'] select[name=roomType]").selectOption("DOUBLE");
         page.locator("details form[action$='/accommodation/rooms'] input[name=bedCount]").fill("2");
 
         // Submit

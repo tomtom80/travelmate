@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.support.StaticMessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.test.web.servlet.MockMvc;
@@ -26,9 +27,12 @@ class GlobalExceptionHandlerTest {
 
     @BeforeEach
     void setUp() {
+        final StaticMessageSource messageSource = new StaticMessageSource();
+        messageSource.addMessage("error.fileTooLarge", java.util.Locale.getDefault(),
+            "File too large. Maximum 10 MB allowed.");
         mockMvc = MockMvcBuilders
             .standaloneSetup(new TestErrorController())
-            .setControllerAdvice(new GlobalExceptionHandler())
+            .setControllerAdvice(new GlobalExceptionHandler(messageSource))
             .build();
     }
 

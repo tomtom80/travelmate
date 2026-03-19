@@ -1,6 +1,8 @@
 package de.evia.travelmate.trips.adapters.web;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
@@ -39,7 +41,6 @@ import de.evia.travelmate.trips.application.representation.RoomRepresentation;
 import de.evia.travelmate.trips.application.representation.TripRepresentation;
 import de.evia.travelmate.trips.domain.accommodation.AccommodationImportResult;
 import de.evia.travelmate.trips.domain.accommodation.ImportedRoom;
-import de.evia.travelmate.trips.domain.accommodation.RoomType;
 import de.evia.travelmate.trips.domain.trip.TripId;
 import de.evia.travelmate.trips.domain.travelparty.TravelParty;
 import de.evia.travelmate.trips.domain.travelparty.TravelPartyRepository;
@@ -86,7 +87,7 @@ class AccommodationControllerTest {
         final AccommodationRepresentation accommodation = new AccommodationRepresentation(
             UUID.randomUUID(), TRIP_UUID, "Berghuette", "Alpweg 12", "https://booking.com",
             LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 5), new BigDecimal("3000.00"),
-            List.of(new RoomRepresentation(ROOM_UUID, "Zimmer 1", "DOUBLE", 2, new BigDecimal("80.00"))),
+            List.of(new RoomRepresentation(ROOM_UUID, "Zimmer 1", 2, new BigDecimal("80.00"))),
             2, List.of(), 0
         );
         when(accommodationService.findByTripId(new TripId(TRIP_UUID))).thenReturn(Optional.of(accommodation));
@@ -121,7 +122,6 @@ class AccommodationControllerTest {
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
                 .param("name", "Huette")
                 .param("roomName", "Zimmer 1")
-                .param("roomType", "DOUBLE")
                 .param("roomBedCount", "2")
                 .param("roomPricePerNight", ""))
             .andExpect(status().is3xxRedirection())
@@ -138,12 +138,26 @@ class AccommodationControllerTest {
         mockMvc.perform(post("/" + TRIP_UUID + "/accommodation/rooms")
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
                 .param("name", "Zimmer 2")
-                .param("roomType", "QUAD")
                 .param("bedCount", "4"))
             .andExpect(status().is3xxRedirection())
             .andExpect(redirectedUrl("/" + TRIP_UUID + "/accommodation"));
 
         verify(accommodationService).addRoom(any(AddRoomCommand.class));
+    }
+
+    @Test
+    void updateRoomRedirectsToOverview() throws Exception {
+        when(accommodationService.updateRoom(any(), any(UUID.class), any(UUID.class), anyString(), anyInt()))
+            .thenReturn(accommodationRepresentation());
+
+        mockMvc.perform(post("/" + TRIP_UUID + "/accommodation/rooms/" + ROOM_UUID + "/update")
+                .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
+                .param("name", "Grosses Zimmer")
+                .param("bedCount", "4"))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/" + TRIP_UUID + "/accommodation"));
+
+        verify(accommodationService).updateRoom(any(), any(UUID.class), any(UUID.class), anyString(), anyInt());
     }
 
     @Test
@@ -227,7 +241,6 @@ class AccommodationControllerTest {
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
                 .param("name", "Huette")
                 .param("roomName", "Zimmer 1")
-                .param("roomType", "DOUBLE")
                 .param("roomBedCount", "2")
                 .param("roomPricePerNight", ""))
             .andExpect(status().isForbidden());
@@ -245,7 +258,6 @@ class AccommodationControllerTest {
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
                 .param("name", "Huette")
                 .param("roomName", "Zimmer 1")
-                .param("roomType", "DOUBLE")
                 .param("roomBedCount", "2")
                 .param("roomPricePerNight", ""))
             .andExpect(status().isBadRequest());
@@ -289,7 +301,7 @@ class AccommodationControllerTest {
         final AccommodationImportResult importResult = new AccommodationImportResult(
             "Chalet am Kogl", "Kogl 32, 8551 Wies", "https://www.huetten.com/chalet",
             null, null, new BigDecimal("4025"), "Traumhafte Huette",
-            List.of(new ImportedRoom("Schlafzimmer 1", RoomType.DOUBLE, 2, null))
+            List.of(new ImportedRoom("Schlafzimmer 1", 2, null))
         );
         when(accommodationService.importFromUrl("https://www.huetten.com/chalet"))
             .thenReturn(Optional.of(importResult));
@@ -372,9 +384,6 @@ class AccommodationControllerTest {
                 .param("roomName", "Schlafzimmer 1")
                 .param("roomName", "Schlafzimmer 2")
                 .param("roomName", "Kinderzimmer")
-                .param("roomType", "DOUBLE")
-                .param("roomType", "DOUBLE")
-                .param("roomType", "QUAD")
                 .param("roomBedCount", "2")
                 .param("roomBedCount", "2")
                 .param("roomBedCount", "4")
@@ -391,7 +400,7 @@ class AccommodationControllerTest {
         return new AccommodationRepresentation(
             UUID.randomUUID(), TRIP_UUID, "Huette", null, null,
             null, null, null,
-            List.of(new RoomRepresentation(ROOM_UUID, "Zimmer 1", "DOUBLE", 2, null)),
+            List.of(new RoomRepresentation(ROOM_UUID, "Zimmer 1", 2, null)),
             2, List.of(), 0
         );
     }

@@ -1,13 +1,12 @@
 package de.evia.travelmate.trips.application.command;
 
-import java.math.BigDecimal;
 import java.util.UUID;
 
-public record AddRoomCommand(
+public record UpdateRoomCommand(
     UUID tenantId,
     UUID tripId,
+    UUID roomId,
     String name,
-    int bedCount,
-    BigDecimal pricePerNight
+    int bedCount
 ) {
 }

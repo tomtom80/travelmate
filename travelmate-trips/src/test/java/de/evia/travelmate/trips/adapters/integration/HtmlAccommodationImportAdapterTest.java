@@ -10,7 +10,6 @@ import org.junit.jupiter.api.Test;
 
 import de.evia.travelmate.trips.domain.accommodation.AccommodationImportResult;
 import de.evia.travelmate.trips.domain.accommodation.ImportedRoom;
-import de.evia.travelmate.trips.domain.accommodation.RoomType;
 
 class HtmlAccommodationImportAdapterTest {
 
@@ -179,12 +178,9 @@ class HtmlAccommodationImportAdapterTest {
         assertThat(data.maxGuests()).isEqualTo(13);
         assertThat(data.rooms()).hasSize(3);
         assertThat(data.rooms().getFirst().name()).isEqualTo("Schlafzimmer 1");
-        assertThat(data.rooms().getFirst().roomType()).isEqualTo(RoomType.DOUBLE);
         assertThat(data.rooms().getFirst().bedCount()).isEqualTo(2);
-        assertThat(data.rooms().get(1).roomType()).isEqualTo(RoomType.SINGLE);
         assertThat(data.rooms().get(1).bedCount()).isEqualTo(1);
         assertThat(data.rooms().get(2).bedCount()).isEqualTo(4);
-        assertThat(data.rooms().get(2).roomType()).isEqualTo(RoomType.QUAD);
     }
 
     @Test
@@ -320,9 +316,7 @@ class HtmlAccommodationImportAdapterTest {
         // 13 / 6 = 2 remainder 1, so first room gets 3 beds, rest get 2
         assertThat(data.rooms().getFirst().name()).isEqualTo("Schlafzimmer 1");
         assertThat(data.rooms().getFirst().bedCount()).isEqualTo(3);
-        assertThat(data.rooms().getFirst().roomType()).isEqualTo(RoomType.QUAD);
         assertThat(data.rooms().get(1).bedCount()).isEqualTo(2);
-        assertThat(data.rooms().get(1).roomType()).isEqualTo(RoomType.DOUBLE);
     }
 
     @Test
@@ -385,7 +379,6 @@ class HtmlAccommodationImportAdapterTest {
         // Without capacity, each room defaults to 2 beds
         for (final ImportedRoom room : data.rooms()) {
             assertThat(room.bedCount()).isEqualTo(2);
-            assertThat(room.roomType()).isEqualTo(RoomType.DOUBLE);
         }
     }
 

@@ -35,7 +35,6 @@ import de.evia.travelmate.trips.domain.accommodation.AccommodationImportResult;
 import de.evia.travelmate.trips.domain.accommodation.AccommodationRepository;
 import de.evia.travelmate.trips.domain.accommodation.ImportedRoom;
 import de.evia.travelmate.trips.domain.accommodation.Room;
-import de.evia.travelmate.trips.domain.accommodation.RoomType;
 import de.evia.travelmate.trips.domain.trip.TripId;
 
 @ExtendWith(MockitoExtension.class)
@@ -65,7 +64,7 @@ class AccommodationServiceTest {
             TENANT_UUID, TRIP_UUID, "Berghuette", "Alpweg 12", null,
             LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 5),
             new BigDecimal("3000.00"),
-            List.of(new RoomCommand("Zimmer 1", "DOUBLE", 2, new BigDecimal("80.00")))
+            List.of(new RoomCommand("Zimmer 1", 2, new BigDecimal("80.00")))
         );
 
         final AccommodationRepresentation result = accommodationService.setAccommodation(command);
@@ -82,7 +81,7 @@ class AccommodationServiceTest {
         final Accommodation existing = Accommodation.create(
             new TenantId(TENANT_UUID), new TripId(TRIP_UUID), "Old Name", null, null,
             null, null, null,
-            List.of(new Room("Old Room", RoomType.SINGLE, 1, null))
+            List.of(new Room("Old Room", 1, null))
         );
         existing.clearDomainEvents();
         when(accommodationRepository.findByTripId(new TripId(TRIP_UUID))).thenReturn(Optional.of(existing));
@@ -91,7 +90,7 @@ class AccommodationServiceTest {
         final SetAccommodationCommand command = new SetAccommodationCommand(
             TENANT_UUID, TRIP_UUID, "New Name", null, null,
             null, null, new BigDecimal("500.00"),
-            List.of(new RoomCommand("New Room", "DOUBLE", 2, null))
+            List.of(new RoomCommand("New Room", 2, null))
         );
 
         final AccommodationRepresentation result = accommodationService.setAccommodation(command);
@@ -106,13 +105,13 @@ class AccommodationServiceTest {
         final Accommodation existing = Accommodation.create(
             new TenantId(TENANT_UUID), new TripId(TRIP_UUID), "Huette", null, null,
             null, null, null,
-            List.of(new Room("Zimmer 1", RoomType.DOUBLE, 2, null))
+            List.of(new Room("Zimmer 1", 2, null))
         );
         when(accommodationRepository.findByTripId(new TripId(TRIP_UUID))).thenReturn(Optional.of(existing));
         when(accommodationRepository.save(any(Accommodation.class))).thenAnswer(inv -> inv.getArgument(0));
 
         final AddRoomCommand command = new AddRoomCommand(
-            TENANT_UUID, TRIP_UUID, "Zimmer 2", "QUAD", 4, null
+            TENANT_UUID, TRIP_UUID, "Zimmer 2", 4, null
         );
 
         final AccommodationRepresentation result = accommodationService.addRoom(command);
@@ -126,14 +125,14 @@ class AccommodationServiceTest {
         when(accommodationRepository.findByTripId(new TripId(TRIP_UUID))).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> accommodationService.addRoom(
-            new AddRoomCommand(TENANT_UUID, TRIP_UUID, "Zimmer", "SINGLE", 1, null)
+            new AddRoomCommand(TENANT_UUID, TRIP_UUID, "Zimmer", 1, null)
         )).isInstanceOf(EntityNotFoundException.class);
     }
 
     @Test
     void removeRoomFromAccommodation() {
-        final Room room1 = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
-        final Room room2 = new Room("Zimmer 2", RoomType.QUAD, 4, null);
+        final Room room1 = new Room("Zimmer 1", 2, null);
+        final Room room2 = new Room("Zimmer 2", 4, null);
         final Accommodation existing = Accommodation.create(
             new TenantId(TENANT_UUID), new TripId(TRIP_UUID), "Huette", null, null,
             null, null, null, List.of(room1, room2)
@@ -150,7 +149,7 @@ class AccommodationServiceTest {
 
     @Test
     void assignPartyToRoom() {
-        final Room room = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
+        final Room room = new Room("Zimmer 1", 2, null);
         final Accommodation existing = Accommodation.create(
             new TenantId(TENANT_UUID), new TripId(TRIP_UUID), "Huette", null, null,
             null, null, null, List.of(room)
@@ -181,7 +180,7 @@ class AccommodationServiceTest {
 
     @Test
     void removeRoomAssignment() {
-        final Room room = new Room("Zimmer 1", RoomType.DOUBLE, 2, null);
+        final Room room = new Room("Zimmer 1", 2, null);
         final Accommodation existing = Accommodation.create(
             new TenantId(TENANT_UUID), new TripId(TRIP_UUID), "Huette", null, null,
             null, null, null, List.of(room)
@@ -214,7 +213,7 @@ class AccommodationServiceTest {
         final Accommodation existing = Accommodation.create(
             new TenantId(TENANT_UUID), new TripId(TRIP_UUID), "Huette", null, null,
             null, null, null,
-            List.of(new Room("Zimmer 1", RoomType.DOUBLE, 2, null))
+            List.of(new Room("Zimmer 1", 2, null))
         );
         when(accommodationRepository.findByTripId(new TripId(TRIP_UUID))).thenReturn(Optional.of(existing));
 
@@ -246,7 +245,7 @@ class AccommodationServiceTest {
         final AccommodationImportResult importResult = new AccommodationImportResult(
             "Chalet am Kogl", "Kogl 32, 8551 Wies", url,
             null, null, new BigDecimal("4025"), null,
-            List.of(new ImportedRoom("Schlafzimmer 1", RoomType.DOUBLE, 2, null))
+            List.of(new ImportedRoom("Schlafzimmer 1", 2, null))
         );
         when(accommodationImportPort.importFromUrl(url)).thenReturn(Optional.of(importResult));
 

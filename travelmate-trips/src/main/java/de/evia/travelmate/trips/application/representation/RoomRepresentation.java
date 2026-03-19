@@ -8,7 +8,6 @@ import de.evia.travelmate.trips.domain.accommodation.Room;
 public record RoomRepresentation(
     UUID roomId,
     String name,
-    String roomType,
     int bedCount,
     BigDecimal pricePerNight
 ) {
@@ -17,7 +16,6 @@ public record RoomRepresentation(
         this(
             room.roomId().value(),
             room.name(),
-            room.roomType().name(),
             room.bedCount(),
             room.pricePerNight()
         );

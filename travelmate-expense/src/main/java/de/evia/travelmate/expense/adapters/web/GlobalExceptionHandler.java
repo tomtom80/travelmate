@@ -1,11 +1,15 @@
 package de.evia.travelmate.expense.adapters.web;
 
+import java.util.Locale;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
 import org.springframework.http.HttpStatus;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
 import org.springframework.web.server.ResponseStatusException;
 
 import de.evia.travelmate.common.domain.BusinessRuleViolationException;
@@ -20,6 +24,12 @@ public class GlobalExceptionHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     private static final String GENERIC_ERROR_MESSAGE = "Ein unerwarteter Fehler ist aufgetreten.";
+
+    private final MessageSource messageSource;
+
+    public GlobalExceptionHandler(final MessageSource messageSource) {
+        this.messageSource = messageSource;
+    }
 
     @ExceptionHandler(EntityNotFoundException.class)
     public String handleEntityNotFound(final EntityNotFoundException ex,
@@ -83,6 +93,23 @@ public class GlobalExceptionHandler {
         if (statusCode == HttpStatus.NOT_FOUND.value()) {
             return "error/404";
         }
+        return "error/error";
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public String handleMaxUploadSize(final MaxUploadSizeExceededException ex,
+                                       final HttpServletRequest request,
+                                       final HttpServletResponse response,
+                                       final Locale locale,
+                                       final Model model) {
+        LOG.info("File upload too large: {}", ex.getMessage());
+        response.setStatus(HttpStatus.PAYLOAD_TOO_LARGE.value());
+        final String message = messageSource.getMessage("error.fileTooLarge", null, locale);
+        if (isHtmxRequest(request)) {
+            triggerErrorToast(response, message);
+            return "fragments/empty :: empty";
+        }
+        model.addAttribute("message", message);
         return "error/error";
     }
 

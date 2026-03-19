@@ -13,7 +13,6 @@ import de.evia.travelmate.trips.domain.accommodation.Room;
 import de.evia.travelmate.trips.domain.accommodation.RoomAssignment;
 import de.evia.travelmate.trips.domain.accommodation.RoomAssignmentId;
 import de.evia.travelmate.trips.domain.accommodation.RoomId;
-import de.evia.travelmate.trips.domain.accommodation.RoomType;
 import de.evia.travelmate.trips.domain.trip.TripId;
 
 @Repository
@@ -70,8 +69,7 @@ public class AccommodationRepositoryAdapter implements AccommodationRepository {
         for (final Room room : accommodation.rooms()) {
             entity.getRooms().add(new AccommodationRoomJpaEntity(
                 room.roomId().value(), entity,
-                room.name(), room.roomType().name(),
-                room.bedCount(), room.pricePerNight()
+                room.name(), room.bedCount(), room.pricePerNight()
             ));
         }
         entity.getAssignments().clear();
@@ -92,7 +90,6 @@ public class AccommodationRepositoryAdapter implements AccommodationRepository {
             .map(r -> new Room(
                 new RoomId(r.getRoomId()),
                 r.getName(),
-                RoomType.valueOf(r.getRoomType()),
                 r.getBedCount(),
                 r.getPricePerNight()
             ))

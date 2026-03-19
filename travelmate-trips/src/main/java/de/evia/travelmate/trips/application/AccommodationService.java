@@ -2,6 +2,7 @@ package de.evia.travelmate.trips.application;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
@@ -23,7 +24,6 @@ import de.evia.travelmate.trips.domain.accommodation.AccommodationRepository;
 import de.evia.travelmate.trips.domain.accommodation.Room;
 import de.evia.travelmate.trips.domain.accommodation.RoomAssignmentId;
 import de.evia.travelmate.trips.domain.accommodation.RoomId;
-import de.evia.travelmate.trips.domain.accommodation.RoomType;
 import de.evia.travelmate.trips.domain.trip.TripId;
 
 @Service
@@ -81,11 +81,21 @@ public class AccommodationService {
         final Accommodation accommodation = findAccommodation(tripId);
         final Room room = new Room(
             command.name(),
-            RoomType.valueOf(command.roomType()),
             command.bedCount(),
             command.pricePerNight()
         );
         accommodation.addRoom(room);
+        accommodationRepository.save(accommodation);
+        return new AccommodationRepresentation(accommodation);
+    }
+
+    public AccommodationRepresentation updateRoom(final TenantId tenantId,
+                                                     final UUID tripId,
+                                                     final UUID roomId,
+                                                     final String name,
+                                                     final int bedCount) {
+        final Accommodation accommodation = findAccommodation(new TripId(tripId));
+        accommodation.updateRoom(new RoomId(roomId), name, bedCount);
         accommodationRepository.save(accommodation);
         return new AccommodationRepresentation(accommodation);
     }
@@ -158,7 +168,6 @@ public class AccommodationService {
     private Room toRoom(final RoomCommand command) {
         return new Room(
             command.name(),
-            RoomType.valueOf(command.roomType()),
             command.bedCount(),
             command.pricePerNight()
         );

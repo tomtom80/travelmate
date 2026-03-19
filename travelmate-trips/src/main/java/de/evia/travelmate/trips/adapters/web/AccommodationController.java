@@ -35,7 +35,6 @@ import de.evia.travelmate.trips.application.representation.PartyOption;
 import de.evia.travelmate.trips.application.representation.RoomAssignmentRepresentation;
 import de.evia.travelmate.trips.application.representation.TripRepresentation;
 import de.evia.travelmate.trips.domain.accommodation.AccommodationImportResult;
-import de.evia.travelmate.trips.domain.accommodation.ImportedRoom;
 import de.evia.travelmate.trips.domain.trip.TripId;
 import de.evia.travelmate.trips.domain.travelparty.TravelParty;
 import de.evia.travelmate.trips.domain.travelparty.TravelPartyRepository;
@@ -115,7 +114,6 @@ public class AccommodationController {
                                     @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate checkOut,
                                     @RequestParam(required = false) final BigDecimal totalPrice,
                                     @RequestParam(value = "roomName") final List<String> roomNames,
-                                    @RequestParam(value = "roomType") final List<String> roomTypes,
                                     @RequestParam(value = "roomBedCount") final List<Integer> roomBedCounts,
                                     @RequestParam(value = "roomPricePerNight", required = false) final List<String> roomPrices) {
         final ResolvedIdentity identity = requireIdentity(jwt);
@@ -128,7 +126,7 @@ public class AccommodationController {
                 && roomPrices.get(i) != null && !roomPrices.get(i).isBlank())
                 ? new BigDecimal(roomPrices.get(i))
                 : null;
-            rooms.add(new RoomCommand(roomNames.get(i), roomTypes.get(i), roomBedCounts.get(i), pricePerNight));
+            rooms.add(new RoomCommand(roomNames.get(i), roomBedCounts.get(i), pricePerNight));
         }
 
         final SetAccommodationCommand command = new SetAccommodationCommand(
@@ -143,7 +141,6 @@ public class AccommodationController {
     public String addRoom(@AuthenticationPrincipal final Jwt jwt,
                           @PathVariable final UUID tripId,
                           @RequestParam final String name,
-                          @RequestParam final String roomType,
                           @RequestParam final int bedCount,
                           @RequestParam(required = false) final BigDecimal pricePerNight) {
         final ResolvedIdentity identity = requireIdentity(jwt);
@@ -151,9 +148,23 @@ public class AccommodationController {
         validateEditable(tripId, identity);
 
         final AddRoomCommand command = new AddRoomCommand(
-            identity.tenantId().value(), tripId, name, roomType, bedCount, pricePerNight
+            identity.tenantId().value(), tripId, name, bedCount, pricePerNight
         );
         accommodationService.addRoom(command);
+        return "redirect:/" + tripId + "/accommodation";
+    }
+
+    @PostMapping("/{tripId}/accommodation/rooms/{roomId}/update")
+    public String updateRoom(@AuthenticationPrincipal final Jwt jwt,
+                             @PathVariable final UUID tripId,
+                             @PathVariable final UUID roomId,
+                             @RequestParam final String name,
+                             @RequestParam final int bedCount) {
+        final ResolvedIdentity identity = requireIdentity(jwt);
+        validateTripAccess(tripId, identity);
+        validateEditable(tripId, identity);
+
+        accommodationService.updateRoom(identity.tenantId(), tripId, roomId, name, bedCount);
         return "redirect:/" + tripId + "/accommodation";
     }
 

@@ -140,6 +140,16 @@ public class Accommodation extends AggregateRoot {
         rooms.add(room);
     }
 
+    public void updateRoom(final RoomId roomId, final String name, final int bedCount) {
+        argumentIsNotNull(roomId, "roomId");
+        final Room room = rooms.stream()
+            .filter(r -> r.roomId().equals(roomId))
+            .findFirst()
+            .orElseThrow(() -> new IllegalArgumentException(
+                "Room " + roomId.value() + " not found in this accommodation."));
+        room.update(name, bedCount);
+    }
+
     public void removeRoom(final RoomId roomId) {
         argumentIsNotNull(roomId, "roomId");
         argumentIsTrue(rooms.size() > 1,
