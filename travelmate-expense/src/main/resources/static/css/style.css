@@ -185,7 +185,14 @@ body > footer {
         gap: 0.5rem;
     }
 
-    /* 10. Figure overflow for remaining wide tables */
+    /* 10. Toast: full-width on mobile */
+    #toast-container {
+        right: 0.5rem;
+        left: 0.5rem;
+        max-width: none;
+    }
+
+    /* 11. Figure overflow for remaining wide tables */
     figure {
         overflow-x: auto;
         -webkit-overflow-scrolling: touch;

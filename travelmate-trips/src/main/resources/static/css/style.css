@@ -67,7 +67,8 @@ section:last-child h2 {
     position: fixed;
     top: 1rem;
     right: 1rem;
-    z-index: 1000;
+    left: auto;
+    z-index: 9999;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -183,6 +184,13 @@ body > footer {
 /* ========== Mobile Responsive (max-width: 767px) ========== */
 
 @media (max-width: 767px) {
+    /* Toast: full-width centered on mobile */
+    #toast-container {
+        right: 0.5rem;
+        left: 0.5rem;
+        max-width: none;
+    }
+
     /* Mealplan: show accordion, hide table */
     .mealplan-mobile { display: block; }
     .mealplan-desktop { display: none; }
