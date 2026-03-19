@@ -57,8 +57,12 @@ public class ExpenseLifecycleSteps {
 
     @When("I click the expense link on the trip detail page")
     public void iClickTheExpenseLinkOnTheTripDetailPage() {
-        // Wait for expense to be created (async via RabbitMQ)
-        for (int i = 0; i < 15; i++) {
+        // Wait for expense to be created (async via RabbitMQ — TripCompleted → Expense)
+        // Increased to 30 retries × 2s = 60s max to handle cold-start container scenarios
+        for (int i = 0; i < 30; i++) {
+            if (completedTripDetailUrl != null) {
+                navigateAndWait(completedTripDetailUrl.replace(BASE_URL, ""));
+            }
             final var expenseLink = page.locator("a[href*='/expense/']");
             if (expenseLink.count() > 0) {
                 expenseLink.first().click();
@@ -69,10 +73,7 @@ public class ExpenseLifecycleSteps {
                     return;
                 }
             }
-            page.waitForTimeout(1000);
-            if (completedTripDetailUrl != null) {
-                navigateAndWait(completedTripDetailUrl.replace(BASE_URL, ""));
-            }
+            page.waitForTimeout(2000);
         }
         expensePageUrl = page.url();
     }
@@ -190,5 +191,8 @@ public class ExpenseLifecycleSteps {
         page.waitForLoadState(LoadState.NETWORKIDLE);
         page.locator("form[action$='/complete'] button[type=submit]").click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
+
+        // Wait a moment for the TripCompleted event to propagate via RabbitMQ to Expense SCS
+        page.waitForTimeout(3000);
     }
 }
