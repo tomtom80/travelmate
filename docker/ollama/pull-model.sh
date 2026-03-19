@@ -2,7 +2,7 @@
 # Wait for Ollama to be ready, then pull the model if not already present
 set -e
 
-MODEL="${LLM_MODEL:-qwen3-vl:8b}"
+MODEL="${LLM_MODEL:-qwen3-vl:4b}"
 OLLAMA_URL="${OLLAMA_BASE_URL:-http://ollama:11434}"
 
 echo "Waiting for Ollama at $OLLAMA_URL..."

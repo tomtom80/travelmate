@@ -48,7 +48,7 @@ Beide Probleme haben dieselbe Wurzel: **Regelbasierte Extraktion ist fragil gege
 
 ### 1. Ollama als LLM-Runtime mit Qwen3-VL 8B als Modell
 
-**Empfohlenes Modell: `qwen3-vl:8b`** (Qwen3-VL-7B-Instruct, Q4_K_M Quantisierung)
+**Empfohlenes Modell: `qwen3-vl:4b`** (Qwen3-VL-7B-Instruct, Q4_K_M Quantisierung)
 
 Dieses Modell deckt beide Use Cases mit einem einzigen Deployment ab:
 
@@ -62,7 +62,7 @@ Dieses Modell deckt beide Use Cases mit einem einzigen Deployment ab:
 | OCRBench | >86% (32-Sprachen-OCR) |
 | Strukturierte Ausgabe | JSON-Mode via Ollama `format: json` |
 | Lizenz | Apache 2.0 |
-| Ollama-Verfuegbarkeit | `ollama pull qwen3-vl:8b` |
+| Ollama-Verfuegbarkeit | `ollama pull qwen3-vl:4b` |
 
 **Warum Qwen3-VL 8B?**
 
@@ -107,7 +107,7 @@ Das `profiles: [llm]` stellt sicher, dass Ollama nur bei explizitem `docker comp
 
 ```bash
 docker compose --profile llm up -d ollama
-docker exec travelmate-ollama ollama pull qwen3-vl:8b
+docker exec travelmate-ollama ollama pull qwen3-vl:4b
 ```
 
 Alternativ kann ein Init-Container oder ein Startup-Script das Modell automatisch laden.
@@ -212,7 +212,7 @@ travelmate:
   llm:
     enabled: true                          # Master-Schalter
     base-url: http://localhost:11434       # Ollama REST API
-    model: qwen3-vl:8b                   # Modellname
+    model: qwen3-vl:4b                   # Modellname
     timeout: 120s                          # Grosszuegig fuer CPU-Inferenz
     max-image-size: 10485760               # 10 MB (wie ADR-0017)
 ```
