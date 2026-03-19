@@ -64,7 +64,7 @@ public class AccommodationImportSteps {
 
     @Wenn("ich eine URL eingebe und auf Importieren klicke")
     public void ichEineUrlEingebeUndAufImportierenKlicke() {
-        page.locator("input[name=url]").fill("https://www.huetten.com/de/huette/chalet-am-kogl-rt53575.html");
+        page.locator("input[name=url][placeholder*='huetten']").fill("https://www.huetten.com/de/huette/chalet-am-kogl-rt53575.html");
         clickAndWaitForHtmx("button:has-text('Importieren')");
     }
 
