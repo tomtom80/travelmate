@@ -9,6 +9,7 @@ import java.util.Optional;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
@@ -50,9 +51,10 @@ public class OllamaReceiptScanAdapter implements ReceiptScanPort {
     private final OllamaClient ollamaClient;
     private final ObjectMapper objectMapper;
 
+    @Autowired
     public OllamaReceiptScanAdapter(
         @Value("${travelmate.llm.base-url:http://localhost:11434}") final String baseUrl,
-        @Value("${travelmate.llm.model:qwen3-vl:8b}") final String model,
+        @Value("${travelmate.llm.model:qwen3-vl}") final String model,
         @Value("${travelmate.llm.timeout:120}") final int timeoutSeconds
     ) {
         this.ollamaClient = new OllamaClient(baseUrl, model, timeoutSeconds);

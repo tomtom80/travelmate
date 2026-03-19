@@ -12,6 +12,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
@@ -64,9 +65,10 @@ public class OllamaAccommodationImportAdapter implements AccommodationImportPort
     private final ObjectMapper objectMapper;
     private final HtmlAccommodationImportAdapter fallbackAdapter;
 
+    @Autowired
     public OllamaAccommodationImportAdapter(
         @Value("${travelmate.llm.base-url:http://localhost:11434}") final String baseUrl,
-        @Value("${travelmate.llm.model:qwen3-vl:8b}") final String model,
+        @Value("${travelmate.llm.model:qwen3-vl}") final String model,
         @Value("${travelmate.llm.timeout:120}") final int timeoutSeconds
     ) {
         this.ollamaClient = new OllamaClient(baseUrl, model, timeoutSeconds);

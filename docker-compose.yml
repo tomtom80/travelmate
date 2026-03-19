@@ -205,6 +205,8 @@ services:
       KEYCLOAK_JWK_URI: http://keycloak:8080/realms/travelmate/protocol/openid-connect/certs
       MAIL_HOST: mailpit
       MAIL_PORT: 1025
+      LLM_ENABLED: "true"
+      LLM_BASE_URL: http://ollama:11434
     depends_on:
       postgres-trips:
         condition: service_healthy
@@ -213,6 +215,8 @@ services:
       keycloak:
         condition: service_healthy
       mailpit:
+        condition: service_healthy
+      ollama:
         condition: service_healthy
 
   expense:
@@ -232,6 +236,8 @@ services:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_PORT: 5672
       KEYCLOAK_JWK_URI: http://keycloak:8080/realms/travelmate/protocol/openid-connect/certs
+      LLM_ENABLED: "true"
+      LLM_BASE_URL: http://ollama:11434
     depends_on:
       postgres-expense:
         condition: service_healthy
@@ -239,8 +245,10 @@ services:
         condition: service_healthy
       keycloak:
         condition: service_healthy
+      ollama:
+        condition: service_healthy
 
-  # --- Ollama LLM (optional, activated with --profile llm) ---
+  # --- Ollama LLM (Vision Model for Accommodation Import + Receipt Scan) ---
 
   ollama:
     image: ollama/ollama:latest
@@ -257,9 +265,24 @@ services:
       test: ["CMD", "ollama", "list"]
       interval: 30s
       timeout: 10s
-      retries: 3
-    profiles:
-      - llm
+      retries: 5
+      start_period: 10s
+
+  # Init container: pulls the LLM model on first start
+  ollama-init:
+    image: alpine:latest
+    container_name: travelmate-ollama-init
+    entrypoint: /bin/sh
+    command: ["/scripts/pull-model.sh"]
+    environment:
+      LLM_MODEL: qwen3-vl:8b
+      OLLAMA_BASE_URL: http://ollama:11434
+    volumes:
+      - ./docker/ollama/pull-model.sh:/scripts/pull-model.sh:ro
+    depends_on:
+      ollama:
+        condition: service_healthy
+    restart: "no"
 
 volumes:
   postgres-iam-data:
