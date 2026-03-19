@@ -51,6 +51,11 @@ spring:
 
 travelmate:
   base-url: ${TRAVELMATE_BASE_URL:http://localhost:8080}
+  llm:
+    enabled: ${LLM_ENABLED:false}
+    base-url: ${LLM_BASE_URL:http://localhost:11434}
+    model: ${LLM_MODEL:qwen3-vl:8b}
+    timeout: ${LLM_TIMEOUT:120}
 
 management:
   endpoints:
@@ -86,3 +91,7 @@ spring:
   rabbitmq:
     host: localhost
     port: 0
+
+travelmate:
+  llm:
+    enabled: false

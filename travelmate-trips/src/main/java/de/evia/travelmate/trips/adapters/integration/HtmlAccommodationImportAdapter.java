@@ -13,6 +13,7 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -24,6 +25,7 @@ import de.evia.travelmate.trips.domain.accommodation.ImportedRoom;
 import de.evia.travelmate.trips.domain.accommodation.RoomType;
 
 @Component
+@ConditionalOnProperty(name = "travelmate.llm.enabled", havingValue = "false", matchIfMissing = true)
 public class HtmlAccommodationImportAdapter implements AccommodationImportPort {
 
     private static final Set<String> LODGING_TYPES = Set.of(
