@@ -45,8 +45,10 @@ class TripProjectionRepositoryAdapterTest {
         final UUID participantId1 = UUID.randomUUID();
         final UUID participantId2 = UUID.randomUUID();
         final TripProjection projection = TripProjection.create(tripId, tenantId, "Ski Trip");
-        projection.addParticipant(new TripParticipant(participantId1, "Alice"));
-        projection.addParticipant(new TripParticipant(participantId2, "Bob"));
+        projection.addParticipant(new TripParticipant(
+            participantId1, "Alice", null, null, UUID.randomUUID(), "Familie A", LocalDate.of(1987, 3, 4), true));
+        projection.addParticipant(new TripParticipant(
+            participantId2, "Bob", null, null, UUID.randomUUID(), "Familie B", LocalDate.of(2021, 6, 8), false));
 
         tripProjectionRepository.save(projection);
 
@@ -56,6 +58,12 @@ class TripProjectionRepositoryAdapterTest {
         assertThat(found.get().participants())
             .extracting(TripParticipant::name)
             .containsExactlyInAnyOrder("Alice", "Bob");
+        assertThat(found.get().participants())
+            .extracting(TripParticipant::dateOfBirth)
+            .containsExactlyInAnyOrder(LocalDate.of(1987, 3, 4), LocalDate.of(2021, 6, 8));
+        assertThat(found.get().participants())
+            .extracting(TripParticipant::accountHolder)
+            .containsExactlyInAnyOrder(true, false);
     }
 
     @Test
@@ -107,7 +115,8 @@ class TripProjectionRepositoryAdapterTest {
 
         final TripProjection updated = new TripProjection(
             tripId, tenantId, "Updated Road Trip",
-            java.util.List.of(new TripParticipant(participantId, "Charlie"))
+            java.util.List.of(new TripParticipant(
+                participantId, "Charlie", null, null, null, null, LocalDate.of(2018, 5, 1), false))
         );
         tripProjectionRepository.save(updated);
 
@@ -116,5 +125,6 @@ class TripProjectionRepositoryAdapterTest {
         assertThat(found.get().tripName()).isEqualTo("Updated Road Trip");
         assertThat(found.get().participants()).hasSize(1);
         assertThat(found.get().participants().getFirst().name()).isEqualTo("Charlie");
+        assertThat(found.get().participants().getFirst().dateOfBirth()).isEqualTo(LocalDate.of(2018, 5, 1));
     }
 }

@@ -40,6 +40,22 @@
     <!-- Participants Card -->
     <article>
         <h2 th:text="#{trip.participants}">Teilnehmer</h2>
+        <form method="post"
+              th:if="${!availableOwnPartyParticipants.isEmpty()}"
+              th:action="@{/{tid}/participants(tid=${trip.tripId()})}"
+              style="margin-bottom:1rem;">
+            <div class="grid" style="gap:0.5rem; align-items:end;">
+                <label style="margin-bottom:0;">
+                    <span th:text="#{trip.participants.addOwn}">Teilnehmer aus eigener Reisepartei hinzufuegen</span>
+                    <select name="participantId" required style="margin-bottom:0;">
+                        <option th:each="p : ${availableOwnPartyParticipants}"
+                                th:value="${p.participantId()}"
+                                th:text="${p.displayName()}"></option>
+                    </select>
+                </label>
+                <button type="submit" th:text="#{trip.participants.add}">Hinzufuegen</button>
+            </div>
+        </form>
         <figure class="table-cards" th:if="${!participants.isEmpty()}">
             <table>
                 <thead>
@@ -52,30 +68,56 @@
                 </thead>
                 <tbody>
                     <tr th:each="p : ${participants}">
-                        <td th:data-label="#{invitation.member}" th:text="${p.firstName() + ' ' + p.lastName()}"></td>
+                        <td th:data-label="#{invitation.member}">
+                            <span th:text="${p.firstName() + ' ' + p.lastName()}">Name</span>
+                            <small th:if="${trip.organizerIds().contains(p.participantId())}"
+                                   style="display:block;"
+                                   th:text="#{trip.organizer.role}">Organizer</small>
+                        </td>
                         <td th:data-label="#{trip.arrivalDate}" th:text="${p.arrivalDate()}"></td>
                         <td th:data-label="#{trip.departureDate}" th:text="${p.departureDate()}"></td>
-                        <td th:if="${p.participantId() == currentMemberId || isOrganizer}" data-label="">
+                        <td th:if="${p.manageableByCurrentParty() || isOrganizer}" th:data-label="#{invitation.actions}">
                             <form method="post"
                                   th:action="@{/{tid}/participants/{pid}/stay-period(tid=${trip.tripId()},pid=${p.participantId()})}"
-                                  style="margin-bottom:0;">
-                                <div class="grid" style="gap:0.5rem; align-items:end;">
-                                    <label style="margin-bottom:0;">
-                                        <span th:text="#{trip.arrivalDate}">Anreise</span>
+                                  class="participant-actions-form">
+                                <div class="participant-actions-grid">
+                                    <label class="participant-actions-field">
+                                        <span class="participant-actions-label" th:text="#{trip.arrivalDate}">Anreise</span>
                                         <input type="date" name="arrivalDate" th:value="${p.arrivalDate()}"
-                                               th:aria-label="#{trip.arrivalDate}" required style="margin-bottom:0;">
+                                               th:aria-label="#{trip.arrivalDate}" th:title="#{trip.arrivalDate}"
+                                               required class="participant-actions-input">
                                     </label>
-                                    <label style="margin-bottom:0;">
-                                        <span th:text="#{trip.departureDate}">Abreise</span>
+                                    <label class="participant-actions-field">
+                                        <span class="participant-actions-label" th:text="#{trip.departureDate}">Abreise</span>
                                         <input type="date" name="departureDate" th:value="${p.departureDate()}"
-                                               th:aria-label="#{trip.departureDate}" required style="margin-bottom:0;">
+                                               th:aria-label="#{trip.departureDate}" th:title="#{trip.departureDate}"
+                                               required class="participant-actions-input">
                                     </label>
-                                    <button type="submit" th:text="#{common.save}"
-                                            style="margin-bottom:0;">Speichern</button>
+                                    <div class="participant-actions-toolbar">
+                                        <button type="submit" th:text="#{common.save}"
+                                                class="participant-actions-primary">Speichern</button>
+                                        <details class="action-menu"
+                                                 th:if="${(isOrganizer && p.organizerEligible() && p.participantId() != currentMemberId && !trip.organizerIds().contains(p.participantId())) || p.participantId() != currentMemberId}">
+                                            <summary th:attr="aria-label=#{common.more},title=#{common.more}">
+                                                <span class="action-menu__dots" aria-hidden="true">...</span>
+                                                <span class="action-menu__chevron" aria-hidden="true">&gt;</span>
+                                            </summary>
+                                            <div class="action-menu__panel">
+                                                <button type="submit" class="outline"
+                                                        th:if="${isOrganizer && p.organizerEligible() && p.participantId() != currentMemberId && !trip.organizerIds().contains(p.participantId())}"
+                                                        th:formaction="@{/{tid}/organizers/{pid}(tid=${trip.tripId()},pid=${p.participantId()})}"
+                                                        th:text="#{trip.organizer.grant}">Zum Organizer machen</button>
+                                                <button type="submit" class="outline secondary"
+                                                        th:if="${p.participantId() != currentMemberId}"
+                                                        th:formaction="@{/{tid}/participants/{pid}/remove(tid=${trip.tripId()},pid=${p.participantId()})}"
+                                                        th:text="#{common.remove}">Entfernen</button>
+                                            </div>
+                                        </details>
+                                    </div>
                                 </div>
                             </form>
                         </td>
-                        <td th:if="${p.participantId() != currentMemberId && !isOrganizer}"></td>
+                        <td th:if="${!(p.manageableByCurrentParty() || isOrganizer)}"></td>
                     </tr>
                 </tbody>
             </table>
@@ -179,49 +221,81 @@
         </article>
     </dialog>
 
-    <!-- Accommodation Link -->
-    <article>
-        <h2 th:text="#{accommodation.title}">Unterkunft</h2>
-        <div th:if="${hasAccommodation}">
-            <a th:href="@{/{id}/accommodation(id=${trip.tripId()})}" role="button"
-               th:text="#{accommodation.view}">Unterkunft anzeigen</a>
+    <section class="feature-section">
+        <div class="feature-section__header">
+            <h2 th:text="#{trip.tools.title}">Reisewerkzeuge</h2>
+            <p th:text="#{trip.tools.hint}">Alle Reisefunktionen folgen demselben Karten- und Aktionsmuster.</p>
         </div>
-        <div th:if="${!hasAccommodation}">
-            <p th:text="#{accommodation.empty}">Noch keine Unterkunft hinterlegt.</p>
-            <a th:if="${isOrganizer && trip.status() != 'COMPLETED' && trip.status() != 'CANCELLED'}"
-               th:href="@{/{id}/accommodation(id=${trip.tripId()})}" role="button"
-               th:text="#{accommodation.add}">Unterkunft hinzufuegen</a>
-        </div>
-    </article>
+        <div class="feature-grid">
+            <article class="feature-card">
+                <div class="feature-card__body">
+                    <p class="feature-card__eyebrow" th:text="#{trip.tools.category.organize}">Organisation</p>
+                    <h3 th:text="#{accommodation.title}">Unterkunft</h3>
+                    <p th:if="${hasAccommodation}" th:text="#{accommodation.view}">Unterkunft anzeigen</p>
+                    <p th:if="${!hasAccommodation}" th:text="#{accommodation.empty}">Noch keine Unterkunft hinterlegt.</p>
+                </div>
+                <div class="feature-card__actions">
+                    <a th:if="${hasAccommodation}"
+                       th:href="@{/{id}/accommodation(id=${trip.tripId()})}"
+                       role="button"
+                       class="feature-card__cta"
+                       th:text="#{trip.tools.open}">Oeffnen</a>
+                    <a th:if="${!hasAccommodation && isOrganizer && trip.status() != 'COMPLETED' && trip.status() != 'CANCELLED'}"
+                       th:href="@{/{id}/accommodation(id=${trip.tripId()})}"
+                       role="button"
+                       class="feature-card__cta"
+                       th:text="#{trip.tools.create}">Erstellen</a>
+                </div>
+            </article>
 
-    <!-- Meal Plan Link -->
-    <article th:if="${trip.startDate() != null && trip.endDate() != null}">
-        <h2 th:text="#{mealplan.title}">Essensplan</h2>
-        <div th:if="${hasMealPlan}">
-            <a th:href="@{/{id}/mealplan(id=${trip.tripId()})}" role="button"
-               th:text="#{mealplan.view}">Essensplan anzeigen</a>
-        </div>
-        <div th:if="${!hasMealPlan}">
-            <form method="post" th:action="@{/{id}/mealplan/generate(id=${trip.tripId()})}">
-                <button type="submit" th:text="#{mealplan.generate}">Essensplan erstellen</button>
-            </form>
-        </div>
-    </article>
+            <article class="feature-card" th:if="${trip.startDate() != null && trip.endDate() != null}">
+                <div class="feature-card__body">
+                    <p class="feature-card__eyebrow" th:text="#{trip.tools.category.plan}">Planung</p>
+                    <h3 th:text="#{mealplan.title}">Essensplan</h3>
+                    <p th:if="${hasMealPlan}" th:text="#{mealplan.view}">Essensplan anzeigen</p>
+                    <p th:if="${!hasMealPlan}" th:text="#{mealplan.generate}">Essensplan erstellen</p>
+                </div>
+                <div class="feature-card__actions">
+                    <a th:if="${hasMealPlan}"
+                       th:href="@{/{id}/mealplan(id=${trip.tripId()})}"
+                       role="button"
+                       class="feature-card__cta"
+                       th:text="#{trip.tools.open}">Oeffnen</a>
+                    <form th:if="${!hasMealPlan}" method="post" th:action="@{/{id}/mealplan/generate(id=${trip.tripId()})}" class="feature-card__form">
+                        <button type="submit" class="feature-card__cta" th:text="#{trip.tools.create}">Erstellen</button>
+                    </form>
+                </div>
+            </article>
 
-    <!-- Shopping List Link -->
-    <article th:if="${trip.startDate() != null && trip.endDate() != null}">
-        <h2 th:text="#{shoppinglist.title}">Einkaufsliste</h2>
-        <p th:text="#{shoppinglist.hint}">Zutaten aus dem Essensplan und eigene Eintraege.</p>
-        <a th:href="@{/{id}/shoppinglist(id=${trip.tripId()})}" role="button"
-           th:text="#{shoppinglist.view}">Einkaufsliste anzeigen</a>
-    </article>
+            <article class="feature-card" th:if="${trip.startDate() != null && trip.endDate() != null}">
+                <div class="feature-card__body">
+                    <p class="feature-card__eyebrow" th:text="#{trip.tools.category.plan}">Planung</p>
+                    <h3 th:text="#{shoppinglist.title}">Einkaufsliste</h3>
+                    <p th:text="#{shoppinglist.hint}">Zutaten aus dem Essensplan und eigene Eintraege.</p>
+                </div>
+                <div class="feature-card__actions">
+                    <a th:href="@{/{id}/shoppinglist(id=${trip.tripId()})}"
+                       role="button"
+                       class="feature-card__cta"
+                       th:text="#{trip.tools.open}">Oeffnen</a>
+                </div>
+            </article>
 
-    <!-- Expense Link (COMPLETED trips only) -->
-    <article th:if="${trip.status() == 'COMPLETED'}">
-        <h2 th:text="#{trip.expense.title}">Abrechnung</h2>
-        <p th:text="#{trip.expense.hint}">Die Reise ist abgeschlossen. Verwalte die Abrechnung.</p>
-        <a th:href="|/expense/${trip.tripId()}|" role="button" th:text="#{trip.expense.action}">Zur Abrechnung</a>
-    </article>
+            <article class="feature-card" th:if="${trip.status() != 'CANCELLED'}">
+                <div class="feature-card__body">
+                    <p class="feature-card__eyebrow" th:text="#{trip.tools.category.finance}">Finanzen</p>
+                    <h3 th:text="#{trip.expense.title}">Abrechnung</h3>
+                    <p th:text="#{trip.expense.hint}">Verwalte die laufende Abrechnung fuer diese Reise.</p>
+                </div>
+                <div class="feature-card__actions">
+                    <a th:href="|/expense/${trip.tripId()}|"
+                       role="button"
+                       class="feature-card__cta"
+                       th:text="#{trip.tools.open}">Oeffnen</a>
+                </div>
+            </article>
+        </div>
+    </section>
 
     <a th:href="@{/}" th:text="#{common.back}">Zurueck</a>
 </div>

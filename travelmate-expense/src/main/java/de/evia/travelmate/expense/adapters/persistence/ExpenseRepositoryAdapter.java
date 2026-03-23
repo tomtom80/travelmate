@@ -119,6 +119,8 @@ public class ExpenseRepositoryAdapter implements ExpenseRepository {
                 .findFirst();
             if (existing.isPresent()) {
                 existing.get().setPaid(ap.paid());
+                existing.get().setPaidOn(ap.paidOn());
+                existing.get().setMarkedByParticipantId(ap.markedByParticipantId());
                 existing.get().setAmount(ap.amount());
                 existing.get().setPartyName(ap.partyName());
             } else {
@@ -128,7 +130,9 @@ public class ExpenseRepositoryAdapter implements ExpenseRepository {
                     ap.partyTenantId(),
                     ap.partyName(),
                     ap.amount(),
-                    ap.paid()
+                    ap.paid(),
+                    ap.paidOn(),
+                    ap.markedByParticipantId()
                 ));
             }
         }
@@ -160,7 +164,9 @@ public class ExpenseRepositoryAdapter implements ExpenseRepository {
                 ap.getPartyTenantId(),
                 ap.getPartyName(),
                 ap.getAmount(),
-                ap.isPaid()
+                ap.isPaid(),
+                ap.getPaidOn(),
+                ap.getMarkedByParticipantId()
             ))
             .toList();
 

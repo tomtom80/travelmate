@@ -1,7 +1,7 @@
 Feature: Expense Settlement Navigation and Lifecycle
   As a member of a travel party
   I want to navigate to the expense settlement from the trip detail page
-  So that I can track and settle shared costs after a trip is completed
+  So that I can track and settle shared costs before, during, and after a trip
 
   Background:
     Given the Travelmate application is running
@@ -16,22 +16,23 @@ Feature: Expense Settlement Navigation and Lifecycle
     Then the page contains a link to the expense page
 
   @navigation
-  Scenario: Planning trip does NOT show an expense link
+  Scenario: Planning trip already shows an expense link
     Given I am logged in and the Trips SCS is ready
     And I have created a trip "No-Expense BDD" from "2026-07-01" to "2026-07-14"
-    Then no expense link is visible on the trip detail page
+    Then the page contains a link to the expense page
 
   # ---------- Expense Detail: Full Journey ----------
 
   @happy-path @integration
-  Scenario: Organizer completes a trip and views the auto-created expense
+  Scenario: Organizer opens the current trip expense
     Given I am logged in and the Trips SCS is ready
-    And I have a completed trip "Expense-Full BDD"
-    When I click the expense link on the trip detail page
+    And I have created a trip "Expense-Full BDD" from "2026-07-01" to "2026-07-14"
+    When I am on the trip detail page
+    And I click the expense link on the trip detail page
     Then I am on the expense detail page
     And the page shows status "Offen"
     And the page shows the section "Belege"
-    And the page shows the section "Gewichtung"
+    And the page shows the section "Reisekonto nach Reisepartei"
 
   @happy-path @integration
   Scenario: Organizer adds a receipt on the expense page
@@ -39,6 +40,36 @@ Feature: Expense Settlement Navigation and Lifecycle
     And I am on the expense detail page for a completed trip
     When I add a receipt with description "Supermarkt", amount "38.90", date "2026-07-05"
     Then the receipt "Supermarkt" appears in the receipts list
+    And the page shows the account line "Belegguthaben"
+
+  @happy-path @integration
+  Scenario: Accommodation price and stay period change the party account
+    Given I am logged in as organizer of a new Reisepartei
+    And I am on the dashboard
+    And I have added a companion "Tim Tester" with date of birth "2018-01-01"
+    And I have created a trip "Expense-Accommodation BDD" from "2026-07-01" to "2026-07-05"
+    And I add own participant "Tim Tester" to the trip
+    And I set stay period for participant "Tim Tester" to arrival "2026-07-01" and departure "2026-07-03"
+    And I have added accommodation price "300"
+    When I open the expense page for the current trip
+    Then the page shows the section "Reisekonto nach Reisepartei"
+    And the page shows the section "Kontoverlauf"
+    And the page shows participant "Tim Tester" in the party account
+    Then the page shows the account line "Unterkunftsanteil"
+    And the page shows amount "300,00"
+
+  @happy-path @integration
+  Scenario: Advance payments are visible in the party account
+    Given I am logged in and the Trips SCS is ready
+    And I have created a trip "Expense-Advance BDD" from "2026-07-01" to "2026-07-05"
+    And I have added accommodation price "300"
+    When I open the expense page for the current trip
+    And I confirm advance payments amount "300"
+    Then the page shows the section "Kontoverlauf"
+    Then the page shows the account line "Offene Anzahlung"
+    And the page shows amount "300,00"
+    When I toggle the first advance payment as paid
+    Then the page shows the account line "Vorauszahlung"
 
   @happy-path @integration
   Scenario: Organizer settles the expense after adding receipts

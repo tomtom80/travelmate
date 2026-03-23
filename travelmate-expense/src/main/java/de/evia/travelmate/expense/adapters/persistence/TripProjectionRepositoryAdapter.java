@@ -64,6 +64,8 @@ public class TripProjectionRepositoryAdapter implements TripProjectionRepository
                 existing.get().setDepartureDate(participant.departureDate());
                 existing.get().setPartyTenantId(participant.partyTenantId());
                 existing.get().setPartyName(participant.partyName());
+                existing.get().setDateOfBirth(participant.dateOfBirth());
+                existing.get().setAccountHolder(participant.accountHolder());
             } else {
                 final TripParticipantJpaEntity newEntity = new TripParticipantJpaEntity(
                     entity, participant.participantId(), participant.name()
@@ -72,6 +74,8 @@ public class TripProjectionRepositoryAdapter implements TripProjectionRepository
                 newEntity.setDepartureDate(participant.departureDate());
                 newEntity.setPartyTenantId(participant.partyTenantId());
                 newEntity.setPartyName(participant.partyName());
+                newEntity.setDateOfBirth(participant.dateOfBirth());
+                newEntity.setAccountHolder(participant.accountHolder());
                 entity.getParticipants().add(newEntity);
             }
         }
@@ -81,7 +85,7 @@ public class TripProjectionRepositoryAdapter implements TripProjectionRepository
         final var participants = entity.getParticipants().stream()
             .map(p -> new TripParticipant(p.getParticipantId(), p.getName(),
                 p.getArrivalDate(), p.getDepartureDate(),
-                p.getPartyTenantId(), p.getPartyName()))
+                p.getPartyTenantId(), p.getPartyName(), p.getDateOfBirth(), p.isAccountHolder()))
             .toList();
         final TripProjection projection = new TripProjection(
             entity.getTripId(),

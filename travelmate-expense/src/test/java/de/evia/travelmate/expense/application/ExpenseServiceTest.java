@@ -126,7 +126,8 @@ class ExpenseServiceTest {
     void onParticipantJoinedStoresPartyInfo() {
         final UUID partyTenantId = UUID.randomUUID();
         final ParticipantJoinedTrip event = new ParticipantJoinedTrip(
-            TENANT_UUID, TRIP_ID, ALICE, "Alice", partyTenantId, "Familie Schmidt", LocalDate.now()
+            TENANT_UUID, TRIP_ID, ALICE, "Alice", partyTenantId, "Familie Schmidt",
+            LocalDate.of(1987, 4, 3), true, LocalDate.now()
         );
         final TripProjection projection = TripProjection.create(TRIP_ID, TENANT_ID, "Summer Vacation");
         when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.of(projection));
@@ -140,6 +141,93 @@ class ExpenseServiceTest {
         final TripParticipant saved = captor.getValue().participants().getFirst();
         assertThat(saved.partyTenantId()).isEqualTo(partyTenantId);
         assertThat(saved.partyName()).isEqualTo("Familie Schmidt");
+        assertThat(saved.dateOfBirth()).isEqualTo(LocalDate.of(1987, 4, 3));
+        assertThat(saved.accountHolder()).isTrue();
+    }
+
+    @Test
+    void onParticipantJoinedCreatesOpenExpenseWhenMissing() {
+        final ParticipantJoinedTrip event = new ParticipantJoinedTrip(
+            TENANT_UUID, TRIP_ID, ALICE, "Alice", LocalDate.now()
+        );
+        final TripProjection projection = TripProjection.create(TRIP_ID, TENANT_ID, "Summer Vacation");
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.of(projection));
+        when(tripProjectionRepository.save(any(TripProjection.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+        when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.empty());
+        when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        expenseService.onParticipantJoined(event);
+
+        final ArgumentCaptor<Expense> captor = ArgumentCaptor.forClass(Expense.class);
+        verify(expenseRepository).save(captor.capture());
+        final Expense saved = captor.getValue();
+        assertThat(saved.status()).isEqualTo(ExpenseStatus.OPEN);
+        assertThat(saved.weightings()).containsExactly(
+            new ParticipantWeighting(ALICE, BigDecimal.ONE)
+        );
+        final ArgumentCaptor<Object> eventCaptor = ArgumentCaptor.forClass(Object.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        assertThat(eventCaptor.getValue()).isInstanceOf(ExpenseCreated.class);
+    }
+
+    @Test
+    void onParticipantJoinedAddsDefaultWeightingToExistingExpense() {
+        final ParticipantJoinedTrip event = new ParticipantJoinedTrip(
+            TENANT_UUID, TRIP_ID, BOB, "Bob", LocalDate.now()
+        );
+        final TripProjection projection = TripProjection.create(TRIP_ID, TENANT_ID, "Summer Vacation");
+        projection.addParticipant(new TripParticipant(ALICE, "Alice"));
+        final Expense expense = Expense.create(
+            TENANT_ID, TRIP_ID, List.of(new ParticipantWeighting(ALICE, BigDecimal.ONE))
+        );
+        expense.clearDomainEvents();
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.of(projection));
+        when(tripProjectionRepository.save(any(TripProjection.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+        when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.of(expense));
+        when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        expenseService.onParticipantJoined(event);
+
+        final ArgumentCaptor<Expense> captor = ArgumentCaptor.forClass(Expense.class);
+        verify(expenseRepository).save(captor.capture());
+        assertThat(captor.getValue().weightings()).containsExactlyInAnyOrder(
+            new ParticipantWeighting(ALICE, BigDecimal.ONE),
+            new ParticipantWeighting(BOB, BigDecimal.ONE)
+        );
+        verify(eventPublisher, never()).publishEvent(any(DomainEvent.class));
+    }
+
+    @Test
+    void onParticipantJoinedDoesNotResetExistingWeighting() {
+        final ParticipantJoinedTrip event = new ParticipantJoinedTrip(
+            TENANT_UUID, TRIP_ID, BOB, "Bob", LocalDate.now()
+        );
+        final TripProjection projection = TripProjection.create(TRIP_ID, TENANT_ID, "Summer Vacation");
+        projection.addParticipant(new TripParticipant(ALICE, "Alice"));
+        projection.addParticipant(new TripParticipant(BOB, "Bob"));
+        final Expense expense = Expense.create(
+            TENANT_ID,
+            TRIP_ID,
+            List.of(
+                new ParticipantWeighting(ALICE, BigDecimal.ONE),
+                new ParticipantWeighting(BOB, new BigDecimal("0.5"))
+            )
+        );
+        expense.clearDomainEvents();
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.of(projection));
+        when(tripProjectionRepository.save(any(TripProjection.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+        when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.of(expense));
+
+        expenseService.onParticipantJoined(event);
+
+        verify(expenseRepository, never()).save(any(Expense.class));
+        assertThat(expense.weightings()).containsExactlyInAnyOrder(
+            new ParticipantWeighting(ALICE, BigDecimal.ONE),
+            new ParticipantWeighting(BOB, new BigDecimal("0.5"))
+        );
     }
 
     @Test
@@ -150,6 +238,8 @@ class ExpenseServiceTest {
         when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.empty());
         when(tripProjectionRepository.save(any(TripProjection.class)))
             .thenAnswer(inv -> inv.getArgument(0));
+        when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.empty());
+        when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
 
         expenseService.onParticipantJoined(event);
 
@@ -158,6 +248,7 @@ class ExpenseServiceTest {
         final TripProjection saved = captor.getValue();
         assertThat(saved.tripName()).isEqualTo("Unknown Trip");
         assertThat(saved.participants()).hasSize(1);
+        verify(expenseRepository).save(any(Expense.class));
     }
 
     // --- onStayPeriodUpdated ---
@@ -202,7 +293,17 @@ class ExpenseServiceTest {
     @Test
     void onTripCompletedCreatesExpenseWithDefaultWeightings() {
         final TripCompleted event = new TripCompleted(TENANT_UUID, TRIP_ID, LocalDate.now());
-        final TripProjection projection = projectionWithParticipants();
+        final TripProjection projection = new TripProjection(
+            TRIP_ID,
+            TENANT_ID,
+            "Summer Vacation",
+            LocalDate.of(2026, 7, 1),
+            LocalDate.of(2026, 7, 14),
+            List.of(
+                new TripParticipant(ALICE, "Alice", null, null, null, null, LocalDate.of(1987, 1, 1), true),
+                new TripParticipant(BOB, "Bob", null, null, null, null, LocalDate.of(2021, 7, 15), false)
+            )
+        );
         when(expenseRepository.existsByTripId(TRIP_ID)).thenReturn(false);
         when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.of(projection));
         when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -214,12 +315,42 @@ class ExpenseServiceTest {
         final Expense saved = captor.getValue();
         assertThat(saved.status()).isEqualTo(ExpenseStatus.OPEN);
         assertThat(saved.weightings()).hasSize(2);
-        assertThat(saved.weightings()).allSatisfy(
-            w -> assertThat(w.weight()).isEqualByComparingTo(BigDecimal.ONE)
+        assertThat(saved.weightings()).containsExactlyInAnyOrder(
+            new ParticipantWeighting(ALICE, BigDecimal.ONE),
+            new ParticipantWeighting(BOB, new BigDecimal("0.5"))
         );
         final ArgumentCaptor<Object> eventCaptor = ArgumentCaptor.forClass(Object.class);
         verify(eventPublisher).publishEvent(eventCaptor.capture());
         assertThat(eventCaptor.getValue()).isInstanceOf(ExpenseCreated.class);
+    }
+
+    @Test
+    void onParticipantJoinedCreatesAgeBasedDefaultWeighting() {
+        final ParticipantJoinedTrip event = new ParticipantJoinedTrip(
+            TENANT_UUID, TRIP_ID, ALICE, "Alice", UUID.randomUUID(), "Familie Test",
+            LocalDate.of(2024, 8, 1), false, LocalDate.now()
+        );
+        final TripProjection projection = new TripProjection(
+            TRIP_ID,
+            TENANT_ID,
+            "Summer Vacation",
+            LocalDate.of(2026, 7, 1),
+            LocalDate.of(2026, 7, 14),
+            List.of()
+        );
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.of(projection));
+        when(tripProjectionRepository.save(any(TripProjection.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+        when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.empty());
+        when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        expenseService.onParticipantJoined(event);
+
+        final ArgumentCaptor<Expense> captor = ArgumentCaptor.forClass(Expense.class);
+        verify(expenseRepository).save(captor.capture());
+        assertThat(captor.getValue().weightings()).containsExactly(
+            new ParticipantWeighting(ALICE, BigDecimal.ZERO)
+        );
     }
 
     @Test
@@ -279,19 +410,31 @@ class ExpenseServiceTest {
     // --- updateWeighting ---
 
     @Test
-    void updateWeightingChangesParticipantWeight() {
-        final Expense expense = createOpenExpense();
-        when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.of(expense));
-        when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
+    void updateWeightingUpdatesParticipantWeighting() {
         final UpdateWeightingCommand command = new UpdateWeightingCommand(
             TRIP_ID, BOB, new BigDecimal("0.5")
         );
+        final Expense expense = createOpenExpense();
+        final TripProjection tripProjection = new TripProjection(
+            TRIP_ID,
+            TENANT_ID,
+            "Sommerurlaub",
+            LocalDate.of(2026, 7, 1),
+            LocalDate.of(2026, 7, 14),
+            List.of(
+                new de.evia.travelmate.expense.domain.trip.TripParticipant(ALICE, "Alice"),
+                new de.evia.travelmate.expense.domain.trip.TripParticipant(BOB, "Bob")
+            )
+        );
+        when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.of(expense));
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.of(tripProjection));
+        when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
 
         final ExpenseRepresentation result = expenseService.updateWeighting(TENANT_ID, command);
 
-        assertThat(result.weightings()).anySatisfy(w -> {
-            assertThat(w.participantId()).isEqualTo(BOB);
-            assertThat(w.weight()).isEqualByComparingTo(new BigDecimal("0.5"));
+        assertThat(result.weightings()).anySatisfy(weighting -> {
+            assertThat(weighting.participantId()).isEqualTo(BOB);
+            assertThat(weighting.weight()).isEqualByComparingTo("0.5");
         });
     }
 
@@ -351,8 +494,25 @@ class ExpenseServiceTest {
     }
 
     @Test
+    void findByTripIdCreatesExpenseOnDemandFromProjection() {
+        final TripProjection projection = projectionWithParticipants();
+        when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.empty());
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.of(projection));
+        when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        final ExpenseRepresentation result = expenseService.findByTripId(TENANT_ID, TRIP_ID, true);
+
+        assertThat(result.tripId()).isEqualTo(TRIP_ID);
+        assertThat(result.status()).isEqualTo(ExpenseStatus.OPEN);
+        assertThat(result.weightings()).hasSize(2);
+        verify(expenseRepository).save(any(Expense.class));
+        verify(eventPublisher).publishEvent(any(ExpenseCreated.class));
+    }
+
+    @Test
     void findByTripIdThrowsWhenNotFound() {
         when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.empty());
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.empty());
 
         assertThatThrownBy(() -> expenseService.findByTripId(TENANT_ID, TRIP_ID, true))
             .isInstanceOf(EntityNotFoundException.class);
@@ -471,38 +631,53 @@ class ExpenseServiceTest {
         assertThat(result.advancePayments()).hasSize(2);
         assertThat(result.advancePayments()).allSatisfy(
             ap -> assertThat(ap.amount()).isEqualByComparingTo("500.00"));
+        assertThat(result.partyAccounts()).allSatisfy(
+            account -> assertThat(account.advancePaymentsPlanned()).isEqualByComparingTo("500.00"));
     }
 
     // --- removeAdvancePayments ---
 
     @Test
     void removeAdvancePaymentsClearsAll() {
+        final UUID partyId = UUID.randomUUID();
         final Expense expense = createOpenExpense();
         expense.confirmAdvancePayments(new BigDecimal("500.00"), List.of(
-            new de.evia.travelmate.expense.domain.expense.Expense.PartyInfo(UUID.randomUUID(), "Test")));
+            new de.evia.travelmate.expense.domain.expense.Expense.PartyInfo(partyId, "Test")));
+        final TripProjection projection = TripProjection.create(TRIP_ID, TENANT_ID, "Summer Vacation");
+        projection.addParticipant(new TripParticipant(ALICE, "Alice", null, null, partyId, "Test"));
         when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.of(expense));
         when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.of(projection));
 
         final ExpenseRepresentation result = expenseService.removeAdvancePayments(TENANT_ID, TRIP_ID);
 
         assertThat(result.advancePayments()).isEmpty();
+        assertThat(result.partyAccounts().getFirst().advancePaymentsPlanned()).isEqualByComparingTo("0.00");
     }
 
     // --- toggleAdvancePaymentPaid ---
 
     @Test
     void toggleAdvancePaymentPaidTogglesPaidStatus() {
+        final UUID partyId = UUID.randomUUID();
         final Expense expense = createOpenExpense();
         expense.confirmAdvancePayments(new BigDecimal("500.00"), List.of(
-            new de.evia.travelmate.expense.domain.expense.Expense.PartyInfo(UUID.randomUUID(), "Test")));
+            new de.evia.travelmate.expense.domain.expense.Expense.PartyInfo(partyId, "Test")));
         final UUID apId = expense.advancePayments().getFirst().advancePaymentId().value();
+        final TripProjection projection = TripProjection.create(TRIP_ID, TENANT_ID, "Summer Vacation");
+        projection.addParticipant(new TripParticipant(ALICE, "Alice", null, null, partyId, "Test"));
         when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.of(expense));
         when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.of(projection));
 
         final ExpenseRepresentation result = expenseService.toggleAdvancePaymentPaid(
-            TENANT_ID, new ToggleAdvancePaymentPaidCommand(TRIP_ID, apId));
+            TENANT_ID, new ToggleAdvancePaymentPaidCommand(TRIP_ID, apId, ALICE));
 
         assertThat(result.advancePayments().getFirst().paid()).isTrue();
+        assertThat(result.advancePayments().getFirst().paidOn()).isEqualTo(LocalDate.now());
+        assertThat(result.advancePayments().getFirst().markedByParticipantId()).isEqualTo(ALICE);
+        assertThat(result.partyAccounts().getFirst().advancePaymentsPaid()).isEqualByComparingTo("500.00");
+        assertThat(result.partyAccounts().getFirst().advancePaymentsOutstanding()).isEqualByComparingTo("0.00");
     }
 
     // --- helpers ---

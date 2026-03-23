@@ -1,6 +1,7 @@
 package de.evia.travelmate.expense.application;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.UUID;
@@ -75,8 +76,9 @@ public class ExpenseService {
             });
         projection.addParticipant(new TripParticipant(
             event.participantId(), event.username(), null, null,
-            event.participantTenantId(), event.partyName()));
+            event.participantTenantId(), event.partyName(), event.dateOfBirth(), event.accountHolder()));
         tripProjectionRepository.save(projection);
+        synchronizeExpenseForParticipantJoin(projection, event.participantId());
     }
 
     public void onStayPeriodUpdated(final StayPeriodUpdated event) {
@@ -98,7 +100,7 @@ public class ExpenseService {
             .orElseThrow(() -> new EntityNotFoundException("TripProjection", event.tripId().toString()));
 
         final List<ParticipantWeighting> weightings = projection.participants().stream()
-            .map(p -> new ParticipantWeighting(p.participantId(), BigDecimal.ONE))
+            .map(p -> new ParticipantWeighting(p.participantId(), defaultWeightingFor(p, projection.startDate())))
             .toList();
 
         final Expense expense = Expense.create(
@@ -151,9 +153,11 @@ public class ExpenseService {
 
     public ExpenseRepresentation updateWeighting(final TenantId tenantId, final UpdateWeightingCommand command) {
         final Expense expense = findByTripId(tenantId, command.tripId());
+        final TripProjection projection = tripProjectionRepository.findByTripId(command.tripId())
+            .orElseThrow(() -> new EntityNotFoundException("TripProjection", command.tripId().toString()));
         expense.updateWeighting(command.participantId(), command.weight());
         expenseRepository.save(expense);
-        return ExpenseRepresentation.from(expense);
+        return toRepresentation(expense, projection);
     }
 
     public void onAccommodationPriceSet(final AccommodationPriceSet event) {
@@ -179,22 +183,29 @@ public class ExpenseService {
         final List<Expense.PartyInfo> parties = buildPartyInfos(projection);
         expense.confirmAdvancePayments(command.amount(), parties);
         expenseRepository.save(expense);
-        return ExpenseRepresentation.from(expense);
+        return toRepresentation(expense, projection);
     }
 
     public ExpenseRepresentation removeAdvancePayments(final TenantId tenantId, final UUID tripId) {
         final Expense expense = findByTripId(tenantId, tripId);
+        final TripProjection projection = tripProjectionRepository.findByTripId(tripId)
+            .orElseThrow(() -> new EntityNotFoundException("TripProjection", tripId.toString()));
         expense.removeAdvancePayments();
         expenseRepository.save(expense);
-        return ExpenseRepresentation.from(expense);
+        return toRepresentation(expense, projection);
     }
 
     public ExpenseRepresentation toggleAdvancePaymentPaid(final TenantId tenantId,
                                                            final ToggleAdvancePaymentPaidCommand command) {
         final Expense expense = findByTripId(tenantId, command.tripId());
-        expense.toggleAdvancePaymentPaid(new AdvancePaymentId(command.advancePaymentId()));
+        final TripProjection projection = tripProjectionRepository.findByTripId(command.tripId())
+            .orElseThrow(() -> new EntityNotFoundException("TripProjection", command.tripId().toString()));
+        expense.toggleAdvancePaymentPaid(
+            new AdvancePaymentId(command.advancePaymentId()),
+            command.markedByParticipantId()
+        );
         expenseRepository.save(expense);
-        return ExpenseRepresentation.from(expense);
+        return toRepresentation(expense, projection);
     }
 
     public ExpenseRepresentation settle(final TenantId tenantId, final UUID tripId) {
@@ -212,14 +223,30 @@ public class ExpenseService {
         final TripProjection projection = tripProjectionRepository.findByTripId(tripId).orElse(null);
         if (projection != null) {
             return ExpenseRepresentation.from(expense, projection.startDate(), projection.endDate(),
-                projection.participants());
+                projection.accommodationTotalPrice(), projection.participants());
         }
         return ExpenseRepresentation.from(expense);
     }
 
     private Expense findByTripId(final TenantId tenantId, final UUID tripId) {
         return expenseRepository.findByTripId(tenantId, tripId)
+            .orElseGet(() -> createExpenseFromProjection(tenantId, tripId));
+    }
+
+    private Expense createExpenseFromProjection(final TenantId tenantId, final UUID tripId) {
+        final TripProjection projection = tripProjectionRepository.findByTripId(tripId)
             .orElseThrow(() -> new EntityNotFoundException("Expense", tripId.toString()));
+        final List<ParticipantWeighting> weightings = projection.participants().stream()
+            .map(p -> new ParticipantWeighting(p.participantId(), defaultWeightingFor(p, projection.startDate())))
+            .toList();
+        if (weightings.isEmpty()) {
+            throw new EntityNotFoundException("Expense", tripId.toString());
+        }
+        final Expense expense = Expense.create(tenantId, tripId, weightings);
+        expenseRepository.save(expense);
+        publishEvents(expense);
+        LOG.info("Created expense {} on demand for trip {}", expense.expenseId().value(), tripId);
+        return expense;
     }
 
     private List<Expense.PartyInfo> buildPartyInfos(final TripProjection projection) {
@@ -232,6 +259,58 @@ public class ExpenseService {
         return partyMap.entrySet().stream()
             .map(e -> new Expense.PartyInfo(e.getKey(), e.getValue()))
             .toList();
+    }
+
+    private ExpenseRepresentation toRepresentation(final Expense expense, final TripProjection projection) {
+        return ExpenseRepresentation.from(
+            expense,
+            projection.startDate(),
+            projection.endDate(),
+            projection.accommodationTotalPrice(),
+            projection.participants()
+        );
+    }
+
+    private void synchronizeExpenseForParticipantJoin(final TripProjection projection,
+                                                      final UUID participantId) {
+        expenseRepository.findByTripId(projection.tenantId(), projection.tripId())
+            .ifPresentOrElse(expense -> {
+                final boolean alreadyPresent = expense.weightings().stream()
+                    .anyMatch(weighting -> weighting.participantId().equals(participantId));
+                if (!alreadyPresent) {
+                    final TripParticipant participant = projection.participants().stream()
+                        .filter(candidate -> candidate.participantId().equals(participantId))
+                        .findFirst()
+                        .orElseThrow(() -> new EntityNotFoundException("TripParticipant", participantId.toString()));
+                    expense.updateWeighting(participantId, defaultWeightingFor(participant, projection.startDate()));
+                    expenseRepository.save(expense);
+                    LOG.info("Added default weighting for participant {} in trip {}", participantId, projection.tripId());
+                }
+            }, () -> {
+                final List<ParticipantWeighting> weightings = projection.participants().stream()
+                    .map(p -> new ParticipantWeighting(p.participantId(), defaultWeightingFor(p, projection.startDate())))
+                    .toList();
+                final Expense expense = Expense.create(
+                    projection.tenantId(), projection.tripId(), weightings
+                );
+                expenseRepository.save(expense);
+                publishEvents(expense);
+                LOG.info("Created expense {} for active trip {}", expense.expenseId().value(), projection.tripId());
+            });
+    }
+
+    private BigDecimal defaultWeightingFor(final TripParticipant participant, final LocalDate tripStartDate) {
+        final Integer age = participant.ageOn(tripStartDate);
+        if (age == null) {
+            return BigDecimal.ONE;
+        }
+        if (age < 3) {
+            return BigDecimal.ZERO;
+        }
+        if (age <= 16) {
+            return new BigDecimal("0.5");
+        }
+        return BigDecimal.ONE;
     }
 
     private void publishEvents(final Expense expense) {

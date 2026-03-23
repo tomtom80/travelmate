@@ -27,11 +27,15 @@ import de.evia.travelmate.trips.application.InvitationService;
 import de.evia.travelmate.trips.application.MealPlanService;
 import de.evia.travelmate.trips.application.TripService;
 import de.evia.travelmate.trips.application.command.CreateTripCommand;
+import de.evia.travelmate.trips.application.command.AddParticipantToTripCommand;
+import de.evia.travelmate.trips.application.command.GrantTripOrganizerCommand;
 import de.evia.travelmate.trips.application.command.InviteExternalCommand;
 import de.evia.travelmate.trips.application.command.InviteParticipantCommand;
+import de.evia.travelmate.trips.application.command.RemoveParticipantFromTripCommand;
 import de.evia.travelmate.trips.application.command.SetStayPeriodCommand;
 import de.evia.travelmate.trips.application.representation.InvitationRepresentation;
 import de.evia.travelmate.trips.application.representation.InvitationView;
+import de.evia.travelmate.trips.application.representation.PartyParticipantOption;
 import de.evia.travelmate.trips.application.representation.ParticipantView;
 import de.evia.travelmate.trips.application.representation.PendingInvitationView;
 import de.evia.travelmate.trips.application.representation.TripRepresentation;
@@ -102,14 +106,16 @@ public class TripController {
             .toList();
 
         final List<ParticipantView> participantViews = toParticipantViews(trip, party);
+        final List<PartyParticipantOption> availableOwnPartyParticipants = toAvailableOwnPartyParticipants(trip, party);
 
         model.addAttribute("view", "trip/detail");
         model.addAttribute("trip", trip);
         model.addAttribute("participants", participantViews);
+        model.addAttribute("availableOwnPartyParticipants", availableOwnPartyParticipants);
         model.addAttribute("invitations", invitationViews);
         model.addAttribute("invitableMembers", invitableMembers);
         model.addAttribute("currentMemberId", identity.memberId());
-        model.addAttribute("isOrganizer", trip.organizerId().equals(identity.memberId()));
+        model.addAttribute("isOrganizer", trip.isOrganizer(identity.memberId()));
         model.addAttribute("hasMealPlan", mealPlanService.existsByTripId(new TripId(tripId)));
         model.addAttribute("hasAccommodation", accommodationService.existsByTripId(new TripId(tripId)));
         return "layout/default";
@@ -232,8 +238,43 @@ public class TripController {
                                 @PathVariable final UUID participantId,
                                 @RequestParam final LocalDate arrivalDate,
                                 @RequestParam final LocalDate departureDate) {
-        requireIdentity(jwt);
-        tripService.setStayPeriod(new SetStayPeriodCommand(tripId, participantId, arrivalDate, departureDate));
+        final ResolvedIdentity identity = requireIdentity(jwt);
+        tripService.setStayPeriod(new SetStayPeriodCommand(
+            tripId, participantId, identity.memberId(), identity.tenantId().value(), arrivalDate, departureDate
+        ));
+        return "redirect:/" + tripId;
+    }
+
+    @PostMapping("/{tripId}/participants")
+    public String addOwnParticipant(@AuthenticationPrincipal final Jwt jwt,
+                                    @PathVariable final UUID tripId,
+                                    @RequestParam final UUID participantId) {
+        final ResolvedIdentity identity = requireIdentity(jwt);
+        tripService.addParticipantToTrip(new AddParticipantToTripCommand(
+            tripId, participantId, identity.memberId(), identity.tenantId().value()
+        ));
+        return "redirect:/" + tripId;
+    }
+
+    @PostMapping("/{tripId}/participants/{participantId}/remove")
+    public String removeOwnParticipant(@AuthenticationPrincipal final Jwt jwt,
+                                       @PathVariable final UUID tripId,
+                                       @PathVariable final UUID participantId) {
+        final ResolvedIdentity identity = requireIdentity(jwt);
+        tripService.removeParticipantFromTrip(new RemoveParticipantFromTripCommand(
+            tripId, participantId, identity.memberId(), identity.tenantId().value()
+        ));
+        return "redirect:/" + tripId;
+    }
+
+    @PostMapping("/{tripId}/organizers/{participantId}")
+    public String grantOrganizer(@AuthenticationPrincipal final Jwt jwt,
+                                 @PathVariable final UUID tripId,
+                                 @PathVariable final UUID participantId) {
+        final ResolvedIdentity identity = requireIdentity(jwt);
+        tripService.grantTripOrganizer(new GrantTripOrganizerCommand(
+            tripId, participantId, identity.memberId()
+        ));
         return "redirect:/" + tripId;
     }
 
@@ -288,11 +329,17 @@ public class TripController {
 
     private List<ParticipantView> toParticipantViews(final TripRepresentation trip,
                                                     final TravelParty party) {
+        final java.util.Set<UUID> accountHolderIds = travelPartyRepository.findAll().stream()
+            .flatMap(tp -> tp.members().stream())
+            .map(Member::memberId)
+            .collect(java.util.stream.Collectors.toSet());
         return trip.participantDetails().stream()
             .map(pd -> {
+                final boolean manageableByCurrentParty = party.hasParticipant(pd.participantId());
+                final boolean organizerEligible = accountHolderIds.contains(pd.participantId());
                 if (pd.firstName() != null) {
                     return new ParticipantView(pd.participantId(), pd.firstName(), pd.lastName(),
-                        pd.arrivalDate(), pd.departureDate());
+                        pd.arrivalDate(), pd.departureDate(), manageableByCurrentParty, organizerEligible);
                 }
                 final Member member = party.members().stream()
                     .filter(m -> m.memberId().equals(pd.participantId()))
@@ -300,7 +347,7 @@ public class TripController {
                     .orElse(null);
                 if (member != null) {
                     return new ParticipantView(pd.participantId(), member.firstName(), member.lastName(),
-                        pd.arrivalDate(), pd.departureDate());
+                        pd.arrivalDate(), pd.departureDate(), true, true);
                 }
                 final TravelPartyDependent dependent = party.dependents().stream()
                     .filter(d -> d.dependentId().equals(pd.participantId()))
@@ -309,9 +356,26 @@ public class TripController {
                 final String firstName = dependent != null ? dependent.firstName() : "Unknown";
                 final String lastName = dependent != null ? dependent.lastName() : "";
                 return new ParticipantView(pd.participantId(), firstName, lastName,
-                    pd.arrivalDate(), pd.departureDate());
+                    pd.arrivalDate(), pd.departureDate(), manageableByCurrentParty, organizerEligible);
             })
             .toList();
+    }
+
+    private List<PartyParticipantOption> toAvailableOwnPartyParticipants(final TripRepresentation trip,
+                                                                         final TravelParty party) {
+        final java.util.Set<UUID> currentParticipants = new java.util.HashSet<>(trip.participantIds());
+        final List<PartyParticipantOption> options = new java.util.ArrayList<>();
+        party.members().stream()
+            .filter(m -> !currentParticipants.contains(m.memberId()))
+            .forEach(m -> options.add(new PartyParticipantOption(
+                m.memberId(), m.firstName() + " " + m.lastName()
+            )));
+        party.dependents().stream()
+            .filter(d -> !currentParticipants.contains(d.dependentId()))
+            .forEach(d -> options.add(new PartyParticipantOption(
+                d.dependentId(), d.firstName() + " " + d.lastName()
+            )));
+        return options;
     }
 
     private List<InvitationView> toInvitationViews(final List<InvitationRepresentation> invitations,

@@ -12,6 +12,8 @@ public record ParticipantJoinedTrip(
     String username,
     UUID participantTenantId,
     String partyName,
+    LocalDate dateOfBirth,
+    boolean accountHolder,
     LocalDate occurredOn
 ) implements DomainEvent {
 
@@ -21,6 +23,13 @@ public record ParticipantJoinedTrip(
     public ParticipantJoinedTrip(final UUID tenantId, final UUID tripId,
                                   final UUID participantId, final String username,
                                   final LocalDate occurredOn) {
-        this(tenantId, tripId, participantId, username, null, null, occurredOn);
+        this(tenantId, tripId, participantId, username, null, null, null, false, occurredOn);
+    }
+
+    public ParticipantJoinedTrip(final UUID tenantId, final UUID tripId,
+                                 final UUID participantId, final String username,
+                                 final UUID participantTenantId, final String partyName,
+                                 final LocalDate occurredOn) {
+        this(tenantId, tripId, participantId, username, participantTenantId, partyName, null, false, occurredOn);
     }
 }

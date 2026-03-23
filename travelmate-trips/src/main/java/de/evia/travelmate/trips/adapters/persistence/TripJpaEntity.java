@@ -6,10 +6,13 @@ import java.util.List;
 import java.util.UUID;
 
 import jakarta.persistence.CascadeType;
+import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
+import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Entity;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
+import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 
@@ -42,6 +45,11 @@ public class TripJpaEntity {
     @Column(name = "organizer_id", nullable = false)
     private UUID organizerId;
 
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(name = "trip_organizer", joinColumns = @JoinColumn(name = "trip_id"))
+    @Column(name = "organizer_id", nullable = false)
+    private List<UUID> organizerIds = new ArrayList<>();
+
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<ParticipantJpaEntity> participants = new ArrayList<>();
 
@@ -50,7 +58,7 @@ public class TripJpaEntity {
 
     public TripJpaEntity(final UUID tripId, final UUID tenantId, final String name,
                          final String description, final LocalDate startDate, final LocalDate endDate,
-                         final String status, final UUID organizerId) {
+                         final String status, final UUID organizerId, final List<UUID> organizerIds) {
         this.tripId = tripId;
         this.tenantId = tenantId;
         this.name = name;
@@ -59,6 +67,7 @@ public class TripJpaEntity {
         this.endDate = endDate;
         this.status = status;
         this.organizerId = organizerId;
+        this.organizerIds = new ArrayList<>(organizerIds);
     }
 
     public UUID getTripId() { return tripId; }
@@ -70,5 +79,6 @@ public class TripJpaEntity {
     public String getStatus() { return status; }
     public void setStatus(final String status) { this.status = status; }
     public UUID getOrganizerId() { return organizerId; }
+    public List<UUID> getOrganizerIds() { return organizerIds; }
     public List<ParticipantJpaEntity> getParticipants() { return participants; }
 }

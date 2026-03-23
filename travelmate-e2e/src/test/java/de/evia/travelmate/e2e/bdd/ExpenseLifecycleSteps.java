@@ -57,8 +57,7 @@ public class ExpenseLifecycleSteps {
 
     @When("I click the expense link on the trip detail page")
     public void iClickTheExpenseLinkOnTheTripDetailPage() {
-        // Wait for expense to be created (async via RabbitMQ — TripCompleted → Expense)
-        // Increased to 30 retries × 2s = 60s max to handle cold-start container scenarios
+        // Wait for expense availability because trip events are consumed asynchronously.
         for (int i = 0; i < 30; i++) {
             if (completedTripDetailUrl != null) {
                 navigateAndWait(completedTripDetailUrl.replace(BASE_URL, ""));
@@ -91,7 +90,7 @@ public class ExpenseLifecycleSteps {
 
     @Then("the page shows the section {string}")
     public void thePageShowsTheSection(final String section) {
-        assertThat(page.content()).contains(section);
+        assertPageEventuallyContains(section);
     }
 
     @Given("I am on the expense detail page for a completed trip")
@@ -131,17 +130,164 @@ public class ExpenseLifecycleSteps {
         assertThat(page.content()).contains(description);
     }
 
+    @Then("the page shows the account line {string}")
+    public void thePageShowsTheAccountLine(final String label) {
+        assertPageEventuallyContains(label);
+    }
+
+    @Then("the page shows participant {string} in the party account")
+    public void thePageShowsParticipantInThePartyAccount(final String participantName) {
+        assertPageEventuallyContains(participantName);
+    }
+
+    @And("I set stay period for participant {string} to arrival {string} and departure {string}")
+    public void iSetStayPeriodForParticipant(final String participantName,
+                                             final String arrival,
+                                             final String departure) {
+        final String tripDetailUrl = TripPlanningSteps.getCurrentTripDetailUrl();
+        for (int i = 0; i < 30; i++) {
+            final var participantRow = page.locator("tr:has(form.participant-actions-form)", new com.microsoft.playwright.Page.LocatorOptions()
+                .setHasText(participantName)).first();
+            if (participantRow.locator("input[name=arrivalDate]").count() > 0) {
+                participantRow.locator("input[name=arrivalDate]").fill(arrival);
+                participantRow.locator("input[name=departureDate]").fill(departure);
+                participantRow.locator("button[type=submit]").first().click();
+                page.waitForLoadState(LoadState.NETWORKIDLE);
+                return;
+            }
+            page.waitForTimeout(500);
+            if (tripDetailUrl != null) {
+                navigateAndWait(tripDetailUrl.replace(BASE_URL, ""));
+            }
+        }
+        final var participantRow = page.locator("tr:has(form.participant-actions-form)", new com.microsoft.playwright.Page.LocatorOptions()
+            .setHasText(participantName)).first();
+        participantRow.locator("input[name=arrivalDate]").fill(arrival);
+        participantRow.locator("input[name=departureDate]").fill(departure);
+        participantRow.locator("button[type=submit]").first().click();
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+    }
+
+    @And("I have added accommodation price {string}")
+    public void iHaveAddedAccommodationPrice(final String totalPrice) {
+        final String tripId = extractTripIdFromCurrentTrip();
+        navigateAndWait("/trips/" + tripId + "/accommodation");
+        if (page.locator("button:has-text('Unterkunft hinzufuegen')").count() > 0) {
+            page.locator("button:has-text('Unterkunft hinzufuegen')").click();
+            page.waitForSelector("dialog[open]");
+            page.locator("dialog input[name=name]").fill("BDD Expense Unterkunft");
+            page.locator("dialog input[name=address]").fill("Testweg 5");
+            page.locator("dialog input[name=totalPrice]").fill(totalPrice);
+            page.locator("dialog input[name=roomName]").fill("Zimmer 1");
+            page.locator("dialog input[name=roomBedCount]").fill("2");
+            page.locator("dialog button[type=submit]").click();
+            page.waitForLoadState(LoadState.NETWORKIDLE);
+        }
+        for (int i = 0; i < 20; i++) {
+            final String content = page.content();
+            if (content.contains("BDD Expense Unterkunft")
+                || content.contains(totalPrice)
+                || content.contains("300,00")) {
+                return;
+            }
+            page.waitForTimeout(500);
+            navigateAndWait("/trips/" + tripId + "/accommodation");
+        }
+        assertThat(page.content()).contains("BDD Expense Unterkunft");
+    }
+
+    @When("I open the expense page for the current trip")
+    public void iOpenTheExpensePageForTheCurrentTrip() {
+        final String tripId = extractTripIdFromCurrentTrip();
+        navigateAndWait("/expense/" + tripId);
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+        expensePageUrl = page.url();
+    }
+
+    @Then("the page shows amount {string}")
+    public void thePageShowsAmount(final String amount) {
+        assertPageEventuallyContains(amount);
+    }
+
+    @When("I confirm advance payments amount {string}")
+    public void iConfirmAdvancePaymentsAmount(final String amount) {
+        final String tripId = extractTripIdFromCurrentTrip();
+        page.evaluate("""
+            ([tripId, amount]) => fetch(`/expense/${tripId}/advance-payments`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+                body: `amount=${encodeURIComponent(amount)}`
+            })
+            """, new Object[] {tripId, amount});
+        for (int i = 0; i < 20; i++) {
+            navigateAndWait("/expense/" + tripId);
+            if (page.content().contains("Kontoverlauf") || page.content().contains("Offene Anzahlung")) {
+                expensePageUrl = page.url();
+                return;
+            }
+            page.waitForTimeout(500);
+        }
+        expensePageUrl = page.url();
+    }
+
+    private void assertPageEventuallyContains(final String expectedText) {
+        for (int i = 0; i < 20; i++) {
+            if (page.content().contains(expectedText)) {
+                return;
+            }
+            page.waitForTimeout(500);
+            if (expensePageUrl != null) {
+                navigateAndWait(expensePageUrl.replace(BASE_URL, ""));
+            } else if (page.url().contains("/expense/")) {
+                page.reload(new com.microsoft.playwright.Page.ReloadOptions()
+                    .setWaitUntil(com.microsoft.playwright.options.WaitUntilState.NETWORKIDLE));
+            }
+        }
+        assertThat(page.content()).contains(expectedText);
+    }
+
+    @When("I toggle the first advance payment as paid")
+    public void iToggleTheFirstAdvancePaymentAsPaid() {
+        final String action = page.locator("form[action*='/advance-payments/'][action$='/toggle-paid']")
+            .first()
+            .getAttribute("action");
+        page.evaluate("""
+            action => fetch(action, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/x-www-form-urlencoded'}
+            })
+            """, action);
+        page.reload(new com.microsoft.playwright.Page.ReloadOptions()
+            .setWaitUntil(com.microsoft.playwright.options.WaitUntilState.NETWORKIDLE));
+    }
+
     @Given("I am on the expense detail page with at least one receipt")
     public void iAmOnTheExpenseDetailPageWithAtLeastOneReceipt() {
-        iAmOnTheExpenseDetailPageForACompletedTrip();
-        if (!receiptAdded) {
-            iAddAReceipt("BDD-Beleg", "25.00", "2026-07-05");
-        }
+        iHaveACompletedTrip("Expense-Settle-BDD");
+        expensePageUrl = null;
+        iClickTheExpenseLinkOnTheTripDetailPage();
+        receiptAdded = false;
+        iAddAReceipt("BDD-Beleg", "25.00", "2026-07-05");
     }
 
     @When("I click the settle expense button")
     public void iClickTheSettleExpenseButton() {
-        page.locator("form[action$='/settle'] button[type=submit]").click();
+        for (int i = 0; i < 20; i++) {
+            final var settleButton = page.locator("form[action$='/settle'] button[type=submit]").first();
+            if (settleButton.count() > 0) {
+                settleButton.click();
+                page.waitForLoadState(LoadState.NETWORKIDLE);
+                return;
+            }
+            page.waitForTimeout(500);
+            if (expensePageUrl != null) {
+                navigateAndWait(expensePageUrl.replace(BASE_URL, ""));
+            } else if (page.url().contains("/expense/")) {
+                page.reload(new com.microsoft.playwright.Page.ReloadOptions()
+                    .setWaitUntil(com.microsoft.playwright.options.WaitUntilState.NETWORKIDLE));
+            }
+        }
+        page.locator("form[action$='/settle'] button[type=submit]").first().click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
     }
 
@@ -194,5 +340,19 @@ public class ExpenseLifecycleSteps {
 
         // Wait a moment for the TripCompleted event to propagate via RabbitMQ to Expense SCS
         page.waitForTimeout(3000);
+    }
+
+    private String extractTripIdFromCurrentTrip() {
+        final String currentUrl = page.url();
+        final String url;
+        if (currentUrl.contains("/trips/") || currentUrl.contains("/expense/")) {
+            url = currentUrl;
+        } else if (TripPlanningSteps.getCurrentTripDetailUrl() != null) {
+            url = TripPlanningSteps.getCurrentTripDetailUrl();
+        } else {
+            url = completedTripDetailUrl;
+        }
+        final String path = url.replaceFirst(".*/(trips|expense)/", "");
+        return path.replaceAll("[/?#].*", "");
     }
 }

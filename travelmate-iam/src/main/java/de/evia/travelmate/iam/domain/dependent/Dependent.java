@@ -55,6 +55,7 @@ public class Dependent extends AggregateRoot {
             guardianAccountId.value(),
             fullName.firstName(),
             fullName.lastName(),
+            dateOfBirth.value(),
             LocalDate.now()
         ));
         return dependent;

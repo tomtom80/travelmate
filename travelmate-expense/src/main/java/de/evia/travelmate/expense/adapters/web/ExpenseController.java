@@ -91,6 +91,13 @@ public class ExpenseController {
         final Map<UUID, String> participantNames = buildParticipantNames(projection);
 
         final ExpenseRepresentation expense = expenseService.findByTripId(tenantId, tripId, true);
+        final BigDecimal advancePaidTotal = expense.advancePayments().stream()
+            .filter(ap -> ap.paid())
+            .map(ap -> ap.amount())
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+        final BigDecimal advanceTotalExpected = expense.advancePayments().stream()
+            .map(ap -> ap.amount())
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         final BigDecimal accommodationPrice = projection.accommodationTotalPrice();
         final long partyCount = countDistinctParties(projection);
@@ -109,6 +116,8 @@ public class ExpenseController {
         model.addAttribute("accommodationPrice", accommodationPrice);
         model.addAttribute("partyCount", partyCount);
         model.addAttribute("suggestedAdvance", suggestedAdvance);
+        model.addAttribute("advancePaidTotal", advancePaidTotal);
+        model.addAttribute("advanceTotalExpected", advanceTotalExpected);
         return "layout/default";
     }
 
@@ -272,9 +281,10 @@ public class ExpenseController {
         requireAuthentication(jwt);
         final TripProjection projection = findProjection(tripId);
         final TenantId tenantId = projection.tenantId();
+        final UUID markerId = resolveParticipantId(jwt, projection);
 
         expenseService.toggleAdvancePaymentPaid(
-            tenantId, new ToggleAdvancePaymentPaidCommand(tripId, advancePaymentId));
+            tenantId, new ToggleAdvancePaymentPaidCommand(tripId, advancePaymentId, markerId));
 
         triggerSuccessToast(response, messageSource.getMessage("advance.toggledPaid", null, locale));
         return "redirect:/" + tripId;

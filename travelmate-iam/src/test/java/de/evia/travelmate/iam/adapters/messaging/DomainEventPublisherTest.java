@@ -47,7 +47,7 @@ class DomainEventPublisherTest {
     void publishesAccountRegisteredEvent() {
         final AccountRegistered event = new AccountRegistered(
             UUID.randomUUID(), UUID.randomUUID(), "testuser",
-            "Max", "Mustermann", "test@example.com", LocalDate.now()
+            "Max", "Mustermann", "test@example.com", LocalDate.of(1988, 6, 3), LocalDate.now()
         );
 
         publisher.onAccountRegistered(event);
@@ -60,7 +60,7 @@ class DomainEventPublisherTest {
     void publishesDependentAddedToTenantEvent() {
         final DependentAddedToTenant event = new DependentAddedToTenant(
             UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID(),
-            "Lena", "Mustermann", LocalDate.now()
+            "Lena", "Mustermann", LocalDate.of(2020, 10, 8), LocalDate.now()
         );
 
         publisher.onDependentAddedToTenant(event);

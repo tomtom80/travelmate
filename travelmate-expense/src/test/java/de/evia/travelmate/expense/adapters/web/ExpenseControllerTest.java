@@ -51,10 +51,11 @@ import de.evia.travelmate.expense.application.representation.ReceiptRepresentati
 import de.evia.travelmate.expense.application.representation.CategoryBreakdownRepresentation;
 import de.evia.travelmate.expense.application.representation.DailyCostRepresentation;
 import de.evia.travelmate.expense.application.representation.ParticipantSummaryRepresentation;
-import de.evia.travelmate.expense.application.representation.PartySettlementRepresentation;
-import de.evia.travelmate.expense.application.representation.PartyTransferRepresentation;
+import de.evia.travelmate.expense.application.representation.PartyAccountEntryRepresentation;
+import de.evia.travelmate.expense.application.representation.PartyAccountRepresentation;
 import de.evia.travelmate.expense.application.representation.TransferRepresentation;
 import de.evia.travelmate.expense.application.representation.WeightingRepresentation;
+import de.evia.travelmate.expense.domain.expense.PartyAccountEntryType;
 import de.evia.travelmate.expense.domain.expense.ExpenseStatus;
 import de.evia.travelmate.expense.domain.expense.ReviewStatus;
 import de.evia.travelmate.expense.domain.trip.TripParticipant;
@@ -112,8 +113,8 @@ class ExpenseControllerTest {
                 LocalDate.of(2026, 3, 10), null, ReviewStatus.APPROVED, null, null
             )),
             List.of(
-                new WeightingRepresentation(PARTICIPANT_A, BigDecimal.ONE),
-                new WeightingRepresentation(PARTICIPANT_B, BigDecimal.ONE)
+                new WeightingRepresentation(PARTICIPANT_A, BigDecimal.ONE, BigDecimal.ONE, 34, "ADULT"),
+                new WeightingRepresentation(PARTICIPANT_B, BigDecimal.ONE, BigDecimal.ONE, 33, "ADULT")
             ),
             Map.of(PARTICIPANT_A, new BigDecimal("21.25"), PARTICIPANT_B, new BigDecimal("-21.25")),
             List.of(new TransferRepresentation(PARTICIPANT_B, PARTICIPANT_A, new BigDecimal("21.25"))),
@@ -124,6 +125,12 @@ class ExpenseControllerTest {
             ),
             List.of(new DailyCostRepresentation(LocalDate.of(2026, 3, 10), new BigDecimal("42.50"), 1)),
             new BigDecimal("42.50"),
+            List.of(
+                new PartyAccountRepresentation(UUID.randomUUID(), "Familie Mustermann", List.of("Max Mustermann"),
+                    List.of(new PartyAccountEntryRepresentation(PartyAccountEntryType.RECEIPT_CREDIT, "Receipt credit", new BigDecimal("42.50"), new BigDecimal("42.50"))),
+                    new BigDecimal("42.50"), BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+                    new BigDecimal("21.25"), new BigDecimal("21.25"), BigDecimal.ZERO, new BigDecimal("21.25"))
+            ),
             List.of(),
             List.of(),
             List.of()
@@ -203,8 +210,6 @@ class ExpenseControllerTest {
                 .param("weight", "0.5"))
             .andExpect(status().isOk())
             .andExpect(view().name("expense/weightings :: weightingList"))
-            .andExpect(model().attributeExists("expense"))
-            .andExpect(model().attributeExists("participantNames"))
             .andExpect(header().exists("HX-Trigger"));
 
         verify(expenseService).updateWeighting(eq(new TenantId(TENANT_UUID)), any(UpdateWeightingCommand.class));

@@ -1,5 +1,6 @@
 package de.evia.travelmate.trips.adapters.persistence;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -31,16 +32,21 @@ public class DependentJpaEntity {
     @Column(name = "last_name", nullable = false)
     private String lastName;
 
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
+
     protected DependentJpaEntity() {
     }
 
     public DependentJpaEntity(final UUID dependentId, final TravelPartyJpaEntity travelParty,
-                              final UUID guardianMemberId, final String firstName, final String lastName) {
+                              final UUID guardianMemberId, final String firstName, final String lastName,
+                              final LocalDate dateOfBirth) {
         this.dependentId = dependentId;
         this.travelParty = travelParty;
         this.guardianMemberId = guardianMemberId;
         this.firstName = firstName;
         this.lastName = lastName;
+        this.dateOfBirth = dateOfBirth;
     }
 
     public UUID getDependentId() {
@@ -57,5 +63,9 @@ public class DependentJpaEntity {
 
     public String getLastName() {
         return lastName;
+    }
+
+    public LocalDate getDateOfBirth() {
+        return dateOfBirth;
     }
 }

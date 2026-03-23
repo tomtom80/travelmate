@@ -82,6 +82,64 @@ class TripTest {
     }
 
     @Test
+    void removeParticipant() {
+        final UUID participantId = UUID.randomUUID();
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID, List.of(ORGANIZER_ID, participantId));
+
+        trip.removeParticipant(participantId);
+
+        assertThat(trip.hasParticipant(participantId)).isFalse();
+        assertThat(trip.participants()).hasSize(1);
+    }
+
+    @Test
+    void removeParticipantRejectsUnknownParticipant() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+
+        assertThatThrownBy(() -> trip.removeParticipant(UUID.randomUUID()))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("not found");
+    }
+
+    @Test
+    void removeParticipantRejectsOrganizer() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+
+        assertThatThrownBy(() -> trip.removeParticipant(ORGANIZER_ID))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("organizer");
+    }
+
+    @Test
+    void grantOrganizerRightsAddsAdditionalOrganizer() {
+        final UUID participantId = UUID.randomUUID();
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID, List.of(ORGANIZER_ID, participantId));
+
+        trip.grantOrganizerRights(participantId);
+
+        assertThat(trip.isOrganizer(participantId)).isTrue();
+        assertThat(trip.organizerIds()).containsExactlyInAnyOrder(ORGANIZER_ID, participantId);
+    }
+
+    @Test
+    void grantOrganizerRightsIsIdempotent() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+
+        trip.grantOrganizerRights(ORGANIZER_ID);
+
+        assertThat(trip.organizerIds()).containsExactly(ORGANIZER_ID);
+    }
+
+    @Test
+    void grantOrganizerRightsRejectsUnknownParticipant() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+
+        assertThatThrownBy(() -> trip.grantOrganizerRights(UUID.randomUUID()))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("not found");
+    }
+
+    @Test
     void confirmTransitionsFromPlanning() {
         final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
 

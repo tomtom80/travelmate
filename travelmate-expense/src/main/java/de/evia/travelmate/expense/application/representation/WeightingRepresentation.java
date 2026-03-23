@@ -5,6 +5,9 @@ import java.util.UUID;
 
 public record WeightingRepresentation(
     UUID participantId,
-    BigDecimal weight
+    BigDecimal weight,
+    BigDecimal recommendedWeight,
+    Integer ageOnTripStart,
+    String recommendationType
 ) {
 }

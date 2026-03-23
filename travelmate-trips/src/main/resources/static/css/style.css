@@ -4,6 +4,9 @@
     --tm-danger: #dc2626;
     --tm-danger-bg: #fef2f2;
     --tm-danger-border: #fecaca;
+    --tm-surface-muted: #f8fafc;
+    --tm-border-strong: #d8dee9;
+    --tm-text-soft: #526071;
 }
 
 /* Nav — brand emphasis */
@@ -181,6 +184,217 @@ body > footer {
     font-size: 0.85rem;
 }
 
+/* ========== Trip detail actions ========== */
+.participant-actions-form {
+    margin-bottom: 0;
+}
+
+.participant-actions-grid {
+    display: grid;
+    grid-template-columns: minmax(10rem, 11.5rem) minmax(10rem, 11.5rem) auto;
+    gap: 0.625rem;
+    align-items: center;
+    justify-content: end;
+}
+
+.participant-actions-field {
+    margin-bottom: 0;
+}
+
+.participant-actions-label {
+    display: none;
+}
+
+.participant-actions-input {
+    margin-bottom: 0;
+    min-width: 0;
+    width: 100%;
+    height: 2.85rem;
+    padding-inline: 0.85rem;
+}
+
+.participant-actions-toolbar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.375rem;
+    white-space: nowrap;
+}
+
+.participant-actions-primary {
+    margin-bottom: 0;
+    white-space: nowrap;
+    min-width: 7rem;
+    height: 2.85rem;
+    padding-inline: 1rem;
+}
+
+.action-menu {
+    position: relative;
+}
+
+.action-menu summary {
+    list-style: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.25rem;
+    width: 3rem;
+    min-width: 3rem;
+    height: 2.85rem;
+    border: 1px solid var(--tm-border-strong);
+    border-radius: var(--pico-border-radius);
+    background: #fff;
+    cursor: pointer;
+    color: var(--tm-text-soft);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, color 0.18s ease, background 0.18s ease;
+}
+
+.action-menu summary::-webkit-details-marker {
+    display: none;
+}
+
+.action-menu summary:hover {
+    border-color: var(--pico-primary);
+    color: var(--pico-primary);
+    background: var(--tm-surface-muted);
+}
+
+.action-menu[open] summary {
+    border-color: var(--pico-primary);
+    color: var(--pico-primary);
+    box-shadow: 0 0 0 0.18rem rgba(59, 130, 246, 0.12);
+}
+
+.action-menu__panel {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 0.45rem);
+    z-index: 20;
+    min-width: 12.5rem;
+    padding: 0.45rem;
+    border: 1px solid var(--tm-border-strong);
+    border-radius: calc(var(--pico-border-radius) + 0.1rem);
+    background: var(--pico-card-background-color);
+    box-shadow: 0 18px 38px rgba(15, 23, 42, 0.14);
+    display: grid;
+    gap: 0.35rem;
+}
+
+.action-menu__panel button {
+    width: 100%;
+    margin-bottom: 0;
+    text-align: left;
+    justify-content: flex-start;
+    min-height: 2.75rem;
+    padding-inline: 0.8rem;
+    border-color: transparent;
+    background: transparent;
+    color: var(--pico-color);
+}
+
+.action-menu__panel button:hover,
+.action-menu__panel button:focus {
+    border-color: transparent;
+    background: #eef5ff;
+    color: var(--pico-primary);
+}
+
+.action-menu__dots {
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    line-height: 1;
+    transform: translateY(-0.05rem);
+}
+
+.action-menu__chevron {
+    font-size: 0.75rem;
+    line-height: 1;
+    opacity: 0.72;
+    transition: transform 0.18s ease;
+}
+
+.action-menu[open] .action-menu__chevron {
+    transform: rotate(90deg);
+}
+
+.table-cards td {
+    vertical-align: middle;
+}
+
+.table-cards td:last-child {
+    min-width: 32rem;
+}
+
+/* ========== Trip feature cards ========== */
+.feature-section {
+    margin-block: 2rem;
+}
+
+.feature-section__header {
+    margin-bottom: 1rem;
+}
+
+.feature-section__header p {
+    color: var(--tm-text-soft);
+    margin-bottom: 0;
+}
+
+.feature-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+    gap: 1rem;
+}
+
+.feature-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-height: 14rem;
+    border: 1px solid var(--tm-border-strong);
+    background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.88), rgba(248, 250, 252, 0.96)),
+        var(--tm-surface-muted);
+}
+
+.feature-card__body {
+    display: grid;
+    gap: 0.55rem;
+}
+
+.feature-card__body h3 {
+    margin-bottom: 0;
+}
+
+.feature-card__body p {
+    margin-bottom: 0;
+    color: var(--tm-text-soft);
+}
+
+.feature-card__eyebrow {
+    margin-bottom: 0;
+    color: var(--pico-primary);
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+}
+
+.feature-card__actions,
+.feature-card__form {
+    margin-top: 1rem;
+}
+
+.feature-card__form {
+    margin-bottom: 0;
+}
+
+.feature-card__cta {
+    width: 100%;
+    margin-bottom: 0;
+    justify-content: center;
+}
+
 /* ========== Mobile Responsive (max-width: 767px) ========== */
 
 @media (max-width: 767px) {
@@ -302,6 +516,49 @@ body > footer {
     footer > div[style*="display:flex"] {
         flex-direction: column;
         gap: 0.5rem;
+    }
+
+    .participant-actions-grid {
+        grid-template-columns: 1fr;
+        justify-content: stretch;
+        gap: 0.85rem;
+    }
+
+    .participant-actions-toolbar {
+        justify-content: stretch;
+        width: 100%;
+    }
+
+    .participant-actions-primary {
+        width: 100%;
+    }
+
+    .participant-actions-label {
+        display: inline-block;
+        margin-bottom: 0.35rem;
+        font-weight: 600;
+        color: var(--tm-text-soft);
+    }
+
+    .action-menu {
+        width: 100%;
+    }
+
+    .action-menu summary {
+        width: 100%;
+        justify-content: space-between;
+        padding-inline: 0.9rem;
+    }
+
+    .action-menu__panel {
+        position: static;
+        min-width: 0;
+        margin-top: 0.5rem;
+        box-shadow: none;
+    }
+
+    .table-cards td:last-child {
+        min-width: 0;
     }
 
     /* 10. Meal plan: make table scrollable with fixed first column */

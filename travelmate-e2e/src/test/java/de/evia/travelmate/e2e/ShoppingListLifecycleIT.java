@@ -134,6 +134,7 @@ class ShoppingListLifecycleIT extends E2ETestBase {
         page.locator("tfoot input[name=quantity]").fill(MANUAL_ITEM_QUANTITY);
         page.locator("tfoot input[name=unit]").fill(MANUAL_ITEM_UNIT);
         clickAndWaitForHtmx("tfoot button[type=submit]");
+        page.waitForSelector("#manual-items-tbody td:has-text('" + MANUAL_ITEM_NAME + "')");
 
         final String content = page.content();
         assertThat(content).contains(MANUAL_ITEM_NAME);

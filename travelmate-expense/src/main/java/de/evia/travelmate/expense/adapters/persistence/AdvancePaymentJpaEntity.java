@@ -1,6 +1,7 @@
 package de.evia.travelmate.expense.adapters.persistence;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import jakarta.persistence.Column;
@@ -35,6 +36,12 @@ public class AdvancePaymentJpaEntity {
     @Column(name = "paid", nullable = false)
     private boolean paid;
 
+    @Column(name = "paid_on")
+    private LocalDate paidOn;
+
+    @Column(name = "marked_by_participant_id")
+    private UUID markedByParticipantId;
+
     protected AdvancePaymentJpaEntity() {
     }
 
@@ -43,13 +50,17 @@ public class AdvancePaymentJpaEntity {
                                    final UUID partyTenantId,
                                    final String partyName,
                                    final BigDecimal amount,
-                                   final boolean paid) {
+                                   final boolean paid,
+                                   final LocalDate paidOn,
+                                   final UUID markedByParticipantId) {
         this.advancePaymentId = advancePaymentId;
         this.expense = expense;
         this.partyTenantId = partyTenantId;
         this.partyName = partyName;
         this.amount = amount;
         this.paid = paid;
+        this.paidOn = paidOn;
+        this.markedByParticipantId = markedByParticipantId;
     }
 
     public UUID getAdvancePaymentId() { return advancePaymentId; }
@@ -59,6 +70,10 @@ public class AdvancePaymentJpaEntity {
     public BigDecimal getAmount() { return amount; }
     public boolean isPaid() { return paid; }
     public void setPaid(final boolean paid) { this.paid = paid; }
+    public LocalDate getPaidOn() { return paidOn; }
+    public void setPaidOn(final LocalDate paidOn) { this.paidOn = paidOn; }
+    public UUID getMarkedByParticipantId() { return markedByParticipantId; }
+    public void setMarkedByParticipantId(final UUID markedByParticipantId) { this.markedByParticipantId = markedByParticipantId; }
     public void setAmount(final BigDecimal amount) { this.amount = amount; }
     public void setPartyName(final String partyName) { this.partyName = partyName; }
 }

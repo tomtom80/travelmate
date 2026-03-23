@@ -26,6 +26,9 @@ import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.common.events.trips.ParticipantJoinedTrip;
 import de.evia.travelmate.common.events.trips.TripCompleted;
 import de.evia.travelmate.trips.application.command.CreateTripCommand;
+import de.evia.travelmate.trips.application.command.AddParticipantToTripCommand;
+import de.evia.travelmate.trips.application.command.GrantTripOrganizerCommand;
+import de.evia.travelmate.trips.application.command.RemoveParticipantFromTripCommand;
 import de.evia.travelmate.trips.application.command.SetStayPeriodCommand;
 import de.evia.travelmate.trips.application.representation.TripRepresentation;
 import de.evia.travelmate.trips.domain.travelparty.TravelParty;
@@ -40,6 +43,8 @@ class TripServiceTest {
 
     private static final UUID TENANT_UUID = UUID.randomUUID();
     private static final UUID ORGANIZER_ID = UUID.randomUUID();
+    private static final UUID PARTY_MEMBER_ID = UUID.randomUUID();
+    private static final UUID OTHER_PARTY_PARTICIPANT_ID = UUID.randomUUID();
 
     @Mock
     private TripRepository tripRepository;
@@ -76,7 +81,7 @@ class TripServiceTest {
     }
 
     @Test
-    void createTripAddsAllTravelPartyMembers() {
+    void createTripAddsOnlyTravelPartyMembersByDefault() {
         final UUID member2Id = UUID.randomUUID();
         final UUID dependentId = UUID.randomUUID();
         final TravelParty party = TravelParty.create(new TenantId(TENANT_UUID), "Familie Test");
@@ -98,18 +103,18 @@ class TripServiceTest {
         final ArgumentCaptor<Trip> tripCaptor = ArgumentCaptor.forClass(Trip.class);
         verify(tripRepository).save(tripCaptor.capture());
         final Trip savedTrip = tripCaptor.getValue();
-        assertThat(savedTrip.participants()).hasSize(3);
+        assertThat(savedTrip.participants()).hasSize(2);
         assertThat(savedTrip.hasParticipant(ORGANIZER_ID)).isTrue();
         assertThat(savedTrip.hasParticipant(member2Id)).isTrue();
-        assertThat(savedTrip.hasParticipant(dependentId)).isTrue();
+        assertThat(savedTrip.hasParticipant(dependentId)).isFalse();
     }
 
     @Test
     void createTripPublishesParticipantJoinedEventsForAllMembers() {
         final UUID member2Id = UUID.randomUUID();
         final TravelParty party = TravelParty.create(new TenantId(TENANT_UUID), "Test");
-        party.addMember(ORGANIZER_ID, "max@example.com", "Max", "Mustermann");
-        party.addMember(member2Id, "lisa@example.com", "Lisa", "Mustermann");
+        party.addMember(ORGANIZER_ID, "max@example.com", "Max", "Mustermann", LocalDate.of(1985, 5, 1));
+        party.addMember(member2Id, "lisa@example.com", "Lisa", "Mustermann", LocalDate.of(1988, 7, 2));
         when(travelPartyRepository.findByTenantId(new TenantId(TENANT_UUID)))
             .thenReturn(Optional.of(party));
         when(tripRepository.save(any(Trip.class))).thenAnswer(inv -> inv.getArgument(0));
@@ -131,6 +136,9 @@ class TripServiceTest {
         assertThat(joinedEvents).hasSize(2);
         assertThat(joinedEvents).extracting(ParticipantJoinedTrip::participantId)
             .containsExactlyInAnyOrder(ORGANIZER_ID, member2Id);
+        assertThat(joinedEvents).allSatisfy(event -> assertThat(event.accountHolder()).isTrue());
+        assertThat(joinedEvents).extracting(ParticipantJoinedTrip::dateOfBirth)
+            .containsExactlyInAnyOrder(LocalDate.of(1985, 5, 1), LocalDate.of(1988, 7, 2));
     }
 
     @Test
@@ -179,13 +187,218 @@ class TripServiceTest {
     void setStayPeriodUpdatesParticipant() {
         final Trip trip = createTrip();
         when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+        final TravelParty party = TravelParty.create(new TenantId(TENANT_UUID), "Familie Test");
+        party.addMember(ORGANIZER_ID, "max@example.com", "Max", "Mustermann");
+        when(travelPartyRepository.findByTenantId(new TenantId(TENANT_UUID))).thenReturn(Optional.of(party));
 
         tripService.setStayPeriod(new SetStayPeriodCommand(
             trip.tripId().value(), ORGANIZER_ID,
+            ORGANIZER_ID, TENANT_UUID,
             LocalDate.of(2026, 3, 16), LocalDate.of(2026, 3, 20)
         ));
 
         assertThat(trip.participants().getFirst().stayPeriod()).isNotNull();
+        verify(tripRepository).save(trip);
+    }
+
+    @Test
+    void setStayPeriodAllowsPartyMemberToUpdateOwnPartyParticipant() {
+        final TravelParty party = TravelParty.create(new TenantId(TENANT_UUID), "Familie Test");
+        party.addMember(ORGANIZER_ID, "max@example.com", "Max", "Mustermann");
+        party.addMember(PARTY_MEMBER_ID, "lisa@example.com", "Lisa", "Mustermann");
+        when(travelPartyRepository.findByTenantId(new TenantId(TENANT_UUID))).thenReturn(Optional.of(party));
+
+        final Trip trip = Trip.planWithParticipants(
+            new TenantId(TENANT_UUID),
+            new TripName("Skiurlaub"),
+            null,
+            new DateRange(LocalDate.of(2026, 3, 15), LocalDate.of(2026, 3, 22)),
+            ORGANIZER_ID,
+            List.of(
+                new de.evia.travelmate.trips.domain.trip.Participant(ORGANIZER_ID, "Max", "Mustermann"),
+                new de.evia.travelmate.trips.domain.trip.Participant(PARTY_MEMBER_ID, "Lisa", "Mustermann")
+            )
+        );
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+
+        tripService.setStayPeriod(new SetStayPeriodCommand(
+            trip.tripId().value(), ORGANIZER_ID,
+            PARTY_MEMBER_ID, TENANT_UUID,
+            LocalDate.of(2026, 3, 16), LocalDate.of(2026, 3, 20)
+        ));
+
+        assertThat(trip.participants().getFirst().stayPeriod()).isNotNull();
+    }
+
+    @Test
+    void setStayPeriodRejectsPartyMemberForParticipantOutsideOwnParty() {
+        final TravelParty ownParty = TravelParty.create(new TenantId(TENANT_UUID), "Familie Test");
+        ownParty.addMember(ORGANIZER_ID, "max@example.com", "Max", "Mustermann");
+        ownParty.addMember(PARTY_MEMBER_ID, "lisa@example.com", "Lisa", "Mustermann");
+        when(travelPartyRepository.findByTenantId(new TenantId(TENANT_UUID))).thenReturn(Optional.of(ownParty));
+
+        final Trip trip = Trip.planWithParticipants(
+            new TenantId(TENANT_UUID),
+            new TripName("Skiurlaub"),
+            null,
+            new DateRange(LocalDate.of(2026, 3, 15), LocalDate.of(2026, 3, 22)),
+            ORGANIZER_ID,
+            List.of(
+                new de.evia.travelmate.trips.domain.trip.Participant(ORGANIZER_ID, "Max", "Mustermann"),
+                new de.evia.travelmate.trips.domain.trip.Participant(OTHER_PARTY_PARTICIPANT_ID, "Tom", "Anders")
+            )
+        );
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+
+        assertThatThrownBy(() -> tripService.setStayPeriod(new SetStayPeriodCommand(
+            trip.tripId().value(), OTHER_PARTY_PARTICIPANT_ID,
+            PARTY_MEMBER_ID, TENANT_UUID,
+            LocalDate.of(2026, 3, 16), LocalDate.of(2026, 3, 20)
+        )))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("own travel party");
+    }
+
+    @Test
+    void grantTripOrganizerAllowsExistingOrganizerToPromoteParticipant() {
+        final TravelParty party = TravelParty.create(new TenantId(TENANT_UUID), "Familie Test");
+        party.addMember(ORGANIZER_ID, "max@example.com", "Max", "Mustermann");
+        party.addMember(PARTY_MEMBER_ID, "lisa@example.com", "Lisa", "Mustermann");
+        when(travelPartyRepository.findAll()).thenReturn(List.of(party));
+        final Trip trip = Trip.planWithParticipants(
+            new TenantId(TENANT_UUID),
+            new TripName("Skiurlaub"),
+            null,
+            new DateRange(LocalDate.of(2026, 3, 15), LocalDate.of(2026, 3, 22)),
+            ORGANIZER_ID,
+            List.of(
+                new de.evia.travelmate.trips.domain.trip.Participant(ORGANIZER_ID, "Max", "Mustermann"),
+                new de.evia.travelmate.trips.domain.trip.Participant(PARTY_MEMBER_ID, "Lisa", "Mustermann")
+            )
+        );
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+
+        tripService.grantTripOrganizer(new GrantTripOrganizerCommand(
+            trip.tripId().value(), PARTY_MEMBER_ID, ORGANIZER_ID
+        ));
+
+        assertThat(trip.isOrganizer(PARTY_MEMBER_ID)).isTrue();
+        verify(tripRepository).save(trip);
+    }
+
+    @Test
+    void grantTripOrganizerRejectsNonOrganizerActor() {
+        final Trip trip = Trip.planWithParticipants(
+            new TenantId(TENANT_UUID),
+            new TripName("Skiurlaub"),
+            null,
+            new DateRange(LocalDate.of(2026, 3, 15), LocalDate.of(2026, 3, 22)),
+            ORGANIZER_ID,
+            List.of(
+                new de.evia.travelmate.trips.domain.trip.Participant(ORGANIZER_ID, "Max", "Mustermann"),
+                new de.evia.travelmate.trips.domain.trip.Participant(PARTY_MEMBER_ID, "Lisa", "Mustermann")
+            )
+        );
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+
+        assertThatThrownBy(() -> tripService.grantTripOrganizer(new GrantTripOrganizerCommand(
+            trip.tripId().value(), ORGANIZER_ID, PARTY_MEMBER_ID
+        )))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("existing trip organizer");
+    }
+
+    @Test
+    void grantTripOrganizerRejectsParticipantWithoutAccount() {
+        final UUID dependentId = UUID.randomUUID();
+        final TravelParty party = TravelParty.create(new TenantId(TENANT_UUID), "Familie Test");
+        party.addMember(ORGANIZER_ID, "max@example.com", "Max", "Mustermann");
+        party.addDependent(dependentId, ORGANIZER_ID, "Tim", "Mustermann");
+        when(travelPartyRepository.findAll()).thenReturn(List.of(party));
+
+        final Trip trip = Trip.planWithParticipants(
+            new TenantId(TENANT_UUID),
+            new TripName("Skiurlaub"),
+            null,
+            new DateRange(LocalDate.of(2026, 3, 15), LocalDate.of(2026, 3, 22)),
+            ORGANIZER_ID,
+            List.of(
+                new de.evia.travelmate.trips.domain.trip.Participant(ORGANIZER_ID, "Max", "Mustermann"),
+                new de.evia.travelmate.trips.domain.trip.Participant(dependentId, "Tim", "Mustermann")
+            )
+        );
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+
+        assertThatThrownBy(() -> tripService.grantTripOrganizer(new GrantTripOrganizerCommand(
+            trip.tripId().value(), dependentId, ORGANIZER_ID
+        )))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("with an account");
+    }
+
+    @Test
+    void addParticipantToTripAllowsOwnPartyMember() {
+        final UUID dependentId = UUID.randomUUID();
+        final TravelParty party = TravelParty.create(new TenantId(TENANT_UUID), "Familie Test");
+        party.addMember(ORGANIZER_ID, "max@example.com", "Max", "Mustermann");
+        party.addDependent(dependentId, ORGANIZER_ID, "Tim", "Mustermann", LocalDate.of(2023, 1, 15));
+        when(travelPartyRepository.findByTenantId(new TenantId(TENANT_UUID))).thenReturn(Optional.of(party));
+
+        final Trip trip = createTrip();
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+
+        tripService.addParticipantToTrip(new AddParticipantToTripCommand(
+            trip.tripId().value(), dependentId, ORGANIZER_ID, TENANT_UUID
+        ));
+
+        assertThat(trip.hasParticipant(dependentId)).isTrue();
+        verify(tripRepository).save(trip);
+        final ArgumentCaptor<Object> eventCaptor = ArgumentCaptor.forClass(Object.class);
+        verify(eventPublisher, atLeastOnce()).publishEvent(eventCaptor.capture());
+        final ParticipantJoinedTrip joinedEvent = eventCaptor.getAllValues().stream()
+            .filter(ParticipantJoinedTrip.class::isInstance)
+            .map(ParticipantJoinedTrip.class::cast)
+            .findFirst()
+            .orElseThrow();
+        assertThat(joinedEvent.accountHolder()).isFalse();
+        assertThat(joinedEvent.dateOfBirth()).isEqualTo(LocalDate.of(2023, 1, 15));
+    }
+
+    @Test
+    void addParticipantToTripRejectsParticipantOutsideOwnParty() {
+        final UUID outsiderId = UUID.randomUUID();
+        final TravelParty party = TravelParty.create(new TenantId(TENANT_UUID), "Familie Test");
+        party.addMember(ORGANIZER_ID, "max@example.com", "Max", "Mustermann");
+        when(travelPartyRepository.findByTenantId(new TenantId(TENANT_UUID))).thenReturn(Optional.of(party));
+
+        final Trip trip = createTrip();
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+
+        assertThatThrownBy(() -> tripService.addParticipantToTrip(new AddParticipantToTripCommand(
+            trip.tripId().value(), outsiderId, ORGANIZER_ID, TENANT_UUID
+        )))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("own travel party");
+    }
+
+    @Test
+    void removeParticipantFromTripAllowsOwnPartyMember() {
+        final UUID dependentId = UUID.randomUUID();
+        final TravelParty party = TravelParty.create(new TenantId(TENANT_UUID), "Familie Test");
+        party.addMember(ORGANIZER_ID, "max@example.com", "Max", "Mustermann");
+        party.addDependent(dependentId, ORGANIZER_ID, "Tim", "Mustermann");
+        when(travelPartyRepository.findByTenantId(new TenantId(TENANT_UUID))).thenReturn(Optional.of(party));
+
+        final Trip trip = Trip.plan(new TenantId(TENANT_UUID), new TripName("Skiurlaub"), null, new DateRange(
+            LocalDate.of(2026, 3, 15), LocalDate.of(2026, 3, 22)
+        ), ORGANIZER_ID, List.of(ORGANIZER_ID, dependentId));
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+
+        tripService.removeParticipantFromTrip(new RemoveParticipantFromTripCommand(
+            trip.tripId().value(), dependentId, ORGANIZER_ID, TENANT_UUID
+        ));
+
+        assertThat(trip.hasParticipant(dependentId)).isFalse();
         verify(tripRepository).save(trip);
     }
 

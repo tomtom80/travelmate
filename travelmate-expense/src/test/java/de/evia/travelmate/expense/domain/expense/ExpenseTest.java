@@ -575,17 +575,19 @@ class ExpenseTest {
             new Expense.PartyInfo(UUID.randomUUID(), "Familie Mueller")
         ));
         final AdvancePaymentId apId = expense.advancePayments().getFirst().advancePaymentId();
+        final UUID markerId = UUID.randomUUID();
 
-        expense.toggleAdvancePaymentPaid(apId);
+        expense.toggleAdvancePaymentPaid(apId, markerId);
 
         assertThat(expense.advancePayments().getFirst().paid()).isTrue();
+        assertThat(expense.advancePayments().getFirst().markedByParticipantId()).isEqualTo(markerId);
     }
 
     @Test
     void toggleAdvancePaymentPaidThrowsForUnknownId() {
         final Expense expense = createExpenseForTwoAdults();
 
-        assertThatThrownBy(() -> expense.toggleAdvancePaymentPaid(new AdvancePaymentId(UUID.randomUUID())))
+        assertThatThrownBy(() -> expense.toggleAdvancePaymentPaid(new AdvancePaymentId(UUID.randomUUID()), UUID.randomUUID()))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("not found");
     }

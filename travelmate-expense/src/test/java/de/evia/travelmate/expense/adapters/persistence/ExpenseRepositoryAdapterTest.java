@@ -242,11 +242,13 @@ class ExpenseRepositoryAdapterTest {
         expenseRepository.save(expense);
 
         final Expense loaded = expenseRepository.findById(expense.expenseId()).orElseThrow();
-        loaded.toggleAdvancePaymentPaid(loaded.advancePayments().getFirst().advancePaymentId());
+        loaded.toggleAdvancePaymentPaid(loaded.advancePayments().getFirst().advancePaymentId(), participantId);
         expenseRepository.save(loaded);
 
         final Expense reloaded = expenseRepository.findById(expense.expenseId()).orElseThrow();
         assertThat(reloaded.advancePayments().getFirst().paid()).isTrue();
+        assertThat(reloaded.advancePayments().getFirst().paidOn()).isEqualTo(LocalDate.now());
+        assertThat(reloaded.advancePayments().getFirst().markedByParticipantId()).isEqualTo(participantId);
     }
 
     @Test

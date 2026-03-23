@@ -32,9 +32,10 @@ public class TripRepositoryAdapter implements TripRepository {
                 trip.tripId().value(), trip.tenantId().value(),
                 trip.name().value(), trip.description(),
                 trip.dateRange().startDate(), trip.dateRange().endDate(),
-                trip.status().name(), trip.organizerId()
+                trip.status().name(), trip.organizerId(), trip.organizerIds()
             ));
         entity.setStatus(trip.status().name());
+        syncOrganizerIds(entity, trip);
         syncParticipants(entity, trip);
         jpaRepository.save(entity);
         return trip;
@@ -80,6 +81,13 @@ public class TripRepositoryAdapter implements TripRepository {
                 ));
             }
         }
+        entity.getParticipants().removeIf(existing ->
+            trip.participants().stream().noneMatch(p -> p.participantId().equals(existing.getParticipantId())));
+    }
+
+    private void syncOrganizerIds(final TripJpaEntity entity, final Trip trip) {
+        entity.getOrganizerIds().clear();
+        entity.getOrganizerIds().addAll(trip.organizerIds());
     }
 
     private Trip toDomain(final TripJpaEntity entity) {
@@ -97,6 +105,7 @@ public class TripRepositoryAdapter implements TripRepository {
             entity.getDescription(),
             new DateRange(entity.getStartDate(), entity.getEndDate()),
             entity.getOrganizerId(),
+            entity.getOrganizerIds().isEmpty() ? List.of(entity.getOrganizerId()) : entity.getOrganizerIds(),
             TripStatus.valueOf(entity.getStatus()),
             participants
         );

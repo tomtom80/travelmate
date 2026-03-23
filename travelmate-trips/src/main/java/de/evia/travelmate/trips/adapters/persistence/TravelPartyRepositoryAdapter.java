@@ -49,12 +49,19 @@ public class TravelPartyRepositoryAdapter implements TravelPartyRepository {
 
     private void syncMembers(final TravelPartyJpaEntity entity, final TravelParty domain) {
         for (final Member member : domain.members()) {
-            final boolean exists = entity.getMembers().stream()
-                .anyMatch(m -> m.getMemberId().equals(member.memberId()));
-            if (!exists) {
+            final var existing = entity.getMembers().stream()
+                .filter(m -> m.getMemberId().equals(member.memberId()))
+                .findFirst();
+            if (existing.isPresent()) {
+                entity.getMembers().remove(existing.get());
                 entity.getMembers().add(new MemberJpaEntity(
                     member.memberId(), entity,
-                    member.email(), member.firstName(), member.lastName()
+                    member.email(), member.firstName(), member.lastName(), member.dateOfBirth()
+                ));
+            } else {
+                entity.getMembers().add(new MemberJpaEntity(
+                    member.memberId(), entity,
+                    member.email(), member.firstName(), member.lastName(), member.dateOfBirth()
                 ));
             }
         }
@@ -62,12 +69,19 @@ public class TravelPartyRepositoryAdapter implements TravelPartyRepository {
 
     private void syncDependents(final TravelPartyJpaEntity entity, final TravelParty domain) {
         for (final TravelPartyDependent dep : domain.dependents()) {
-            final boolean exists = entity.getDependents().stream()
-                .anyMatch(d -> d.getDependentId().equals(dep.dependentId()));
-            if (!exists) {
+            final var existing = entity.getDependents().stream()
+                .filter(d -> d.getDependentId().equals(dep.dependentId()))
+                .findFirst();
+            if (existing.isPresent()) {
+                entity.getDependents().remove(existing.get());
                 entity.getDependents().add(new DependentJpaEntity(
                     dep.dependentId(), entity,
-                    dep.guardianMemberId(), dep.firstName(), dep.lastName()
+                    dep.guardianMemberId(), dep.firstName(), dep.lastName(), dep.dateOfBirth()
+                ));
+            } else {
+                entity.getDependents().add(new DependentJpaEntity(
+                    dep.dependentId(), entity,
+                    dep.guardianMemberId(), dep.firstName(), dep.lastName(), dep.dateOfBirth()
                 ));
             }
         }
@@ -75,11 +89,11 @@ public class TravelPartyRepositoryAdapter implements TravelPartyRepository {
 
     private TravelParty toDomain(final TravelPartyJpaEntity entity) {
         final var members = entity.getMembers().stream()
-            .map(m -> new Member(m.getMemberId(), m.getEmail(), m.getFirstName(), m.getLastName()))
+            .map(m -> new Member(m.getMemberId(), m.getEmail(), m.getFirstName(), m.getLastName(), m.getDateOfBirth()))
             .toList();
         final var dependents = entity.getDependents().stream()
             .map(d -> new TravelPartyDependent(d.getDependentId(), d.getGuardianMemberId(),
-                d.getFirstName(), d.getLastName()))
+                d.getFirstName(), d.getLastName(), d.getDateOfBirth()))
             .toList();
         return new TravelParty(
             new TenantId(entity.getTenantId()),

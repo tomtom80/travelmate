@@ -43,6 +43,12 @@ public class TripParticipantJpaEntity {
     @Column(name = "party_name")
     private String partyName;
 
+    @Column(name = "date_of_birth")
+    private LocalDate dateOfBirth;
+
+    @Column(name = "account_holder", nullable = false)
+    private boolean accountHolder;
+
     protected TripParticipantJpaEntity() {
     }
 
@@ -65,6 +71,10 @@ public class TripParticipantJpaEntity {
     public void setPartyTenantId(final UUID partyTenantId) { this.partyTenantId = partyTenantId; }
     public String getPartyName() { return partyName; }
     public void setPartyName(final String partyName) { this.partyName = partyName; }
+    public LocalDate getDateOfBirth() { return dateOfBirth; }
+    public void setDateOfBirth(final LocalDate dateOfBirth) { this.dateOfBirth = dateOfBirth; }
+    public boolean isAccountHolder() { return accountHolder; }
+    public void setAccountHolder(final boolean accountHolder) { this.accountHolder = accountHolder; }
 
     public static class TripParticipantId implements Serializable {
         private UUID tripProjection;

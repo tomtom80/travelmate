@@ -8,6 +8,8 @@ public record ParticipantView(
     String firstName,
     String lastName,
     LocalDate arrivalDate,
-    LocalDate departureDate
+    LocalDate departureDate,
+    boolean manageableByCurrentParty,
+    boolean organizerEligible
 ) {
 }

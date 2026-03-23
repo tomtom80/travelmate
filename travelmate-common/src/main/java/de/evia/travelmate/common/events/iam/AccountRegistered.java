@@ -12,6 +12,7 @@ public record AccountRegistered(
     String firstName,
     String lastName,
     String email,
+    LocalDate dateOfBirth,
     LocalDate occurredOn
 ) implements DomainEvent {
 }

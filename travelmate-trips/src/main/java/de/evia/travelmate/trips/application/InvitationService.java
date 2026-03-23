@@ -123,6 +123,8 @@ public class InvitationService {
             member.email(),
             party.tenantId().value(),
             party.name(),
+            member.dateOfBirth(),
+            true,
             LocalDate.now()
         ));
     }
@@ -218,6 +220,10 @@ public class InvitationService {
                 email,
                 partyTenantId,
                 partyName,
+                memberParty != null
+                    ? memberParty.findMember(memberId).map(Member::dateOfBirth).orElse(null)
+                    : null,
+                true,
                 LocalDate.now()
             ));
         }

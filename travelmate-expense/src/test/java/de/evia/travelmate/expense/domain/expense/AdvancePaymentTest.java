@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -23,6 +24,7 @@ class AdvancePaymentTest {
         assertThat(payment.partyName()).isEqualTo("Familie Mueller");
         assertThat(payment.amount()).isEqualByComparingTo("500.00");
         assertThat(payment.paid()).isFalse();
+        assertThat(payment.paidOn()).isNull();
     }
 
     @Test
@@ -31,11 +33,16 @@ class AdvancePaymentTest {
             new AdvancePaymentId(UUID.randomUUID()), UUID.randomUUID(),
             "Familie Mueller", new BigDecimal("500.00"), false);
 
-        payment.togglePaid();
+        final UUID markerId = UUID.randomUUID();
+        payment.togglePaid(markerId);
         assertThat(payment.paid()).isTrue();
+        assertThat(payment.paidOn()).isEqualTo(LocalDate.now());
+        assertThat(payment.markedByParticipantId()).isEqualTo(markerId);
 
-        payment.togglePaid();
+        payment.togglePaid(markerId);
         assertThat(payment.paid()).isFalse();
+        assertThat(payment.paidOn()).isNull();
+        assertThat(payment.markedByParticipantId()).isNull();
     }
 
     @Test

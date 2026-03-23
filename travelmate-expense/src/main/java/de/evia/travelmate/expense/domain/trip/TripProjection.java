@@ -71,7 +71,7 @@ public class TripProjection {
             if (p.participantId().equals(participantId)) {
                 participants.set(i, new TripParticipant(
                     p.participantId(), p.name(), arrivalDate, departureDate,
-                    p.partyTenantId(), p.partyName()));
+                    p.partyTenantId(), p.partyName(), p.dateOfBirth(), p.accountHolder()));
                 return;
             }
         }

@@ -10,11 +10,14 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 import de.evia.travelmate.expense.domain.expense.AdvancePayment;
+import de.evia.travelmate.expense.domain.expense.CategoryBreakdown;
 import de.evia.travelmate.expense.domain.expense.Expense;
-import de.evia.travelmate.expense.domain.expense.ExpenseCategory;
 import de.evia.travelmate.expense.domain.expense.ExpenseStatus;
+import de.evia.travelmate.expense.domain.expense.PartyAccounting;
+import de.evia.travelmate.expense.domain.expense.PartyAccount;
 import de.evia.travelmate.expense.domain.expense.ParticipantWeighting;
 import de.evia.travelmate.expense.domain.expense.PartySettlement;
 import de.evia.travelmate.expense.domain.expense.Receipt;
@@ -34,24 +37,26 @@ public record ExpenseRepresentation(
     List<ParticipantSummaryRepresentation> participantSummaries,
     List<DailyCostRepresentation> dailyCosts,
     BigDecimal totalAmount,
+    List<PartyAccountRepresentation> partyAccounts,
     List<PartySettlementRepresentation> partySettlements,
     List<PartyTransferRepresentation> partyTransfers,
     List<AdvancePaymentRepresentation> advancePayments
 ) {
 
     public static ExpenseRepresentation from(final Expense expense) {
-        return from(expense, null, null, List.of());
+        return from(expense, null, null, null, List.of());
     }
 
     public static ExpenseRepresentation from(final Expense expense,
                                               final LocalDate tripStartDate,
                                               final LocalDate tripEndDate) {
-        return from(expense, tripStartDate, tripEndDate, List.of());
+        return from(expense, tripStartDate, tripEndDate, null, List.of());
     }
 
     public static ExpenseRepresentation from(final Expense expense,
                                               final LocalDate tripStartDate,
                                               final LocalDate tripEndDate,
+                                              final BigDecimal accommodationTotalPrice,
                                               final List<TripParticipant> participants) {
         final List<ReceiptRepresentation> receipts = expense.receipts().stream()
             .map(r -> new ReceiptRepresentation(
@@ -69,12 +74,16 @@ public record ExpenseRepresentation(
             .toList();
 
         final List<WeightingRepresentation> weightings = expense.weightings().stream()
-            .map(w -> new WeightingRepresentation(w.participantId(), w.weight()))
+            .map(w -> toWeightingRepresentation(w, participants, tripStartDate))
             .toList();
 
-        final BigDecimal totalAmount = expense.receipts().stream()
+        final BigDecimal receiptTotal = expense.receipts().stream()
             .map(r -> r.amount().value())
             .reduce(BigDecimal.ZERO, BigDecimal::add);
+        final BigDecimal accommodationTotal = accommodationTotalPrice != null
+            ? accommodationTotalPrice
+            : BigDecimal.ZERO;
+        final BigDecimal totalAmount = receiptTotal.add(accommodationTotal);
 
         final SettlementPlan plan = expense.calculateSettlementPlan();
         final List<TransferRepresentation> transfers = plan.transfers().stream()
@@ -82,15 +91,18 @@ public record ExpenseRepresentation(
             .toList();
 
         final List<CategoryBreakdownRepresentation> categoryBreakdown =
-            buildCategoryBreakdown(expense.receipts());
+            buildCategoryBreakdown(expense.receipts(), accommodationTotalPrice);
 
         final Map<UUID, BigDecimal> balances = expense.calculateBalances();
         final List<ParticipantSummaryRepresentation> participantSummaries =
-            buildParticipantSummaries(expense.receipts(), expense.weightings(), balances, totalAmount);
+            buildParticipantSummaries(expense.receipts(), expense.weightings(), balances, receiptTotal);
 
         final List<DailyCostRepresentation> dailyCosts =
             buildDailyCosts(expense.receipts(), tripStartDate, tripEndDate);
 
+        final List<PartyAccountRepresentation> partyAccounts =
+            buildPartyAccounts(expense.weightings(), expense.receipts(), expense.advancePayments(),
+                participants, tripStartDate, tripEndDate, accommodationTotalPrice);
         final List<PartySettlementRepresentation> partySettlements =
             buildPartySettlements(balances, expense.weightings(), expense.receipts(), participants);
         final List<PartyTransferRepresentation> partyTransfers =
@@ -102,7 +114,9 @@ public record ExpenseRepresentation(
                 ap.partyTenantId(),
                 ap.partyName(),
                 ap.amount(),
-                ap.paid()
+                ap.paid(),
+                ap.paidOn(),
+                ap.markedByParticipantId()
             ))
             .toList();
 
@@ -119,6 +133,7 @@ public record ExpenseRepresentation(
             participantSummaries,
             dailyCosts,
             totalAmount,
+            partyAccounts,
             partySettlements,
             partyTransfers,
             advancePayments
@@ -127,28 +142,68 @@ public record ExpenseRepresentation(
 
     private static List<CategoryBreakdownRepresentation> buildCategoryBreakdown(
             final List<Receipt> receipts) {
-        final Map<ExpenseCategory, BigDecimal> totals = new HashMap<>();
-        final Map<ExpenseCategory, Integer> counts = new HashMap<>();
+        return buildCategoryBreakdown(receipts, null);
+    }
 
-        for (final Receipt receipt : receipts) {
-            final ExpenseCategory cat = receipt.category();
-            totals.merge(cat, receipt.amount().value(), BigDecimal::add);
-            counts.merge(cat, 1, Integer::sum);
+    private static WeightingRepresentation toWeightingRepresentation(final ParticipantWeighting weighting,
+                                                                     final List<TripParticipant> participants,
+                                                                     final LocalDate tripStartDate) {
+        final TripParticipant participant = participants.stream()
+            .filter(candidate -> candidate.participantId().equals(weighting.participantId()))
+            .findFirst()
+            .orElse(null);
+        final Integer ageOnTripStart = participant != null
+            ? participant.ageOn(tripStartDate)
+            : null;
+        final String recommendationType = recommendationTypeFor(ageOnTripStart);
+        return new WeightingRepresentation(
+            weighting.participantId(),
+            weighting.weight(),
+            recommendedWeightFor(ageOnTripStart),
+            ageOnTripStart,
+            recommendationType
+        );
+    }
+
+    private static String recommendationTypeFor(final Integer ageOnTripStart) {
+        if (ageOnTripStart == null) {
+            return "UNKNOWN";
         }
+        if (ageOnTripStart < 3) {
+            return "INFANT";
+        }
+        if (ageOnTripStart <= 16) {
+            return "CHILD";
+        }
+        return "ADULT";
+    }
 
-        final BigDecimal grandTotal = totals.values().stream()
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    private static BigDecimal recommendedWeightFor(final Integer ageOnTripStart) {
+        if (ageOnTripStart == null) {
+            return BigDecimal.ONE;
+        }
+        if (ageOnTripStart < 3) {
+            return BigDecimal.ZERO;
+        }
+        if (ageOnTripStart <= 16) {
+            return new BigDecimal("0.5");
+        }
+        return BigDecimal.ONE;
+    }
 
-        return totals.entrySet().stream()
-            .sorted(Comparator.comparing(Map.Entry<ExpenseCategory, BigDecimal>::getValue).reversed())
-            .map(e -> {
-                final BigDecimal pct = grandTotal.signum() > 0
-                    ? e.getValue().multiply(new BigDecimal("100"))
-                        .divide(grandTotal, 1, RoundingMode.HALF_UP)
-                    : BigDecimal.ZERO;
-                return new CategoryBreakdownRepresentation(
-                    e.getKey(), e.getValue(), pct, counts.get(e.getKey()));
-            })
+    private static List<CategoryBreakdownRepresentation> buildCategoryBreakdown(
+            final List<Receipt> receipts,
+            final BigDecimal accommodationTotal) {
+        final CategoryBreakdown categoryBreakdown = accommodationTotal != null
+            ? CategoryBreakdown.fromReceipts(receipts, accommodationTotal)
+            : CategoryBreakdown.fromReceipts(receipts);
+        return categoryBreakdown.categories().stream()
+            .map(category -> new CategoryBreakdownRepresentation(
+                category.category(),
+                category.amount(),
+                category.percentage(),
+                category.receiptCount()
+            ))
             .toList();
     }
 
@@ -275,6 +330,44 @@ public record ExpenseRepresentation(
                 partyMembers.getOrDefault(e.getKey(), List.of())
             ))
             .toList();
+    }
+
+    private static List<PartyAccountRepresentation> buildPartyAccounts(
+            final List<ParticipantWeighting> weightings,
+            final List<Receipt> receipts,
+            final List<AdvancePayment> advancePayments,
+            final List<TripParticipant> participants,
+            final LocalDate tripStartDate,
+            final LocalDate tripEndDate,
+            final BigDecimal accommodationTotalPrice) {
+        return PartyAccounting.calculate(
+                weightings, receipts, advancePayments, participants, tripStartDate, tripEndDate, accommodationTotalPrice
+            ).stream()
+            .map(ExpenseRepresentation::toPartyAccountRepresentation)
+            .toList();
+    }
+
+    private static PartyAccountRepresentation toPartyAccountRepresentation(final PartyAccount account) {
+        final AtomicReference<BigDecimal> runningBalance = new AtomicReference<>(BigDecimal.ZERO);
+        return new PartyAccountRepresentation(
+            account.partyTenantId(),
+            account.partyName(),
+            account.memberNames(),
+            account.entries().stream()
+                .map(entry -> {
+                    final BigDecimal nextBalance = runningBalance.updateAndGet(balance -> balance.add(entry.amount()));
+                    return new PartyAccountEntryRepresentation(entry.type(), entry.label(), entry.amount(), nextBalance);
+                })
+                .toList(),
+            account.receiptCredits(),
+            account.advancePaymentsPlanned(),
+            account.advancePaymentsPaid(),
+            account.advancePaymentsOutstanding(),
+            account.fairShare(),
+            account.currentBalance(),
+            account.outstandingAmount(),
+            account.creditAmount()
+        );
     }
 
     private static List<PartyTransferRepresentation> buildPartyTransfers(

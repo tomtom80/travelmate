@@ -65,6 +65,7 @@ IAM ──(U)──→ D. Conformist ──→ Trips ──→ Partnership ─�
 | E-TRIPS-05 | Trips | Recipe Management (Rezepte) | TODO |
 | E-TRIPS-06 | Trips | Shopping List (Einkaufsliste) | TODO |
 | E-TRIPS-07 | Trips | Location & Accommodation | TODO |
+| E-TRIPS-08 | Trips | Collaborative Trip Decision Making | TODO |
 | E-EXP-01 | Expense | Receipt Management (Kassenzettel) | TODO |
 | E-EXP-02 | Expense | Expense Tracking & Categories | TODO |
 | E-EXP-03 | Expense | Weighting & Splitting | TODO |
@@ -779,6 +780,26 @@ IAM ──(U)──→ D. Conformist ──→ Trips ──→ Partnership ─�
 
 ---
 
+#### US-TRIPS-035: Assign Kitchen Duty to Travel Parties
+**Epic**: E-TRIPS-04
+**Priority**: Should
+**Size**: M
+**As an** Organizer, **I want** to assign one or more travel parties as kitchen duty for an executed meal, **so that** cooking and dishwashing responsibility is transparent.
+
+##### Acceptance Criteria
+- **Given** a MealSlot was actually carried out, **When** I assign one or more travel parties as kitchen duty, **Then** the assignment is saved for that meal.
+- **Given** a MealSlot is marked as SKIP or EATING_OUT, **When** I try to assign kitchen duty, **Then** the system rejects the action.
+- **Given** kitchen duty was assigned, **When** participants view the meal plan, **Then** they can see which travel parties were responsible for cooking / dishwashing.
+- **Given** I need to correct the assignment, **When** I update the responsible travel parties, **Then** the previous assignment is replaced.
+
+##### Technical Notes
+- Bounded Context: Trips
+- Extend `MealSlot` or add supporting entity for `KitchenDutyAssignment`
+- Organizer-only command on executed meals
+- Useful later for fairness analytics and retrospective planning
+
+---
+
 ### E-TRIPS-05: Recipe Management (Rezepte)
 
 > Managing recipes for meal planning: manual entry and import from URLs.
@@ -1018,6 +1039,107 @@ IAM ──(U)──→ D. Conformist ──→ Trips ──→ Partnership ─�
 ##### Technical Notes
 - New Aggregate: LocationPoll (pollId, tripId, options[], votes[])
 - Each Participant gets one vote (or ranked choice)
+
+---
+
+### E-TRIPS-08: Collaborative Trip Decision Making
+
+> Early-trip collaboration: collect date options, vote on the best travel period, gather accommodation candidates, vote transparently, and let the organizer finalize the decision.
+
+---
+
+#### US-TRIPS-080: Create Date Poll for Trip Initialization
+**Epic**: E-TRIPS-08
+**Priority**: Must
+**Size**: L
+**As an** Organizer, **I want** to create a date poll with multiple candidate trip periods, **so that** all invited travel parties can coordinate around school holidays and closure periods.
+
+##### Acceptance Criteria
+- **Given** I am organizing a trip in early planning, **When** I define two or more candidate date ranges, **Then** a date poll is created for the trip.
+- **Given** a date poll exists, **When** participants open the trip planning area, **Then** they can see all candidate date ranges in a clear poll view.
+- **Given** I need to adjust the options before a final decision, **When** I add or remove a candidate date range, **Then** the poll is updated and existing votes on unchanged options remain visible.
+
+##### Technical Notes
+- Bounded Context: Trips
+- New Aggregate candidate: `DatePoll`
+- Poll should start in parallel with invitations and participant onboarding
+
+---
+
+#### US-TRIPS-081: Vote in Date Poll as Adult Party Member
+**Epic**: E-TRIPS-08
+**Priority**: Must
+**Size**: L
+**As an** adult member with an account, **I want** to mark which candidate date ranges work for my travel party, **so that** the group can find the best travel period.
+
+##### Acceptance Criteria
+- **Given** a date poll is open, **When** I view the poll, **Then** I can mark one or more candidate date ranges as suitable in a simple, doodle-like selection UI.
+- **Given** I already voted, **When** I change my availability marks, **Then** my previous vote is replaced by the new selection.
+- **Given** I am a dependent without an account, **When** I open the trip, **Then** I cannot cast a vote.
+- **Given** votes exist, **When** any participant views the poll results, **Then** the current vote totals per date option are visible at any time.
+
+##### Technical Notes
+- Voting right is per adult/member account, not per dependent
+- Read model should expose both individual availability marks and aggregated result counts
+- UI should optimize for fast multi-select rather than ranked voting
+
+---
+
+#### US-TRIPS-082: Confirm Winning Travel Period from Date Poll
+**Epic**: E-TRIPS-08
+**Priority**: Must
+**Size**: M
+**As an** Organizer, **I want** to select the final travel period from the date poll result, **so that** the trip can move from open scheduling into concrete booking.
+
+##### Acceptance Criteria
+- **Given** a date poll has votes, **When** I review the results, **Then** I can see which option currently has the most support.
+- **Given** I am the organizer, **When** I confirm one of the poll options as final, **Then** the trip date range is updated to that selected period.
+- **Given** a final period was selected, **When** participants open the trip, **Then** they see the chosen trip period and the historical poll result.
+
+##### Technical Notes
+- Connects poll outcome back into the `Trip` aggregate
+- Tie situations stay organizer-decidable; the organizer is not forced to auto-pick the numerical winner
+- Requires validation against existing stay-period editing rules
+
+---
+
+#### US-TRIPS-083: Collect Accommodation Candidates Collaboratively
+**Epic**: E-TRIPS-08
+**Priority**: Must
+**Size**: L
+**As a** participant with an account, **I want** to submit accommodation suggestions for a trip, **so that** the group can build a shared shortlist before booking.
+
+##### Acceptance Criteria
+- **Given** a trip is in planning, **When** I submit accommodation details or a booking link, **Then** the candidate is added to the accommodation shortlist.
+- **Given** accommodation candidates exist, **When** participants open the trip planning area, **Then** they can see the full shortlist and the current status of each candidate.
+- **Given** an accommodation was not selected, **When** the organizer books another option, **Then** the losing candidates remain archived for fallback use.
+- **Given** an accommodation candidate is no longer relevant, **When** the organizer archives it before booking, **Then** it disappears from the active vote but stays in history.
+
+##### Technical Notes
+- Reuses and extends `E-TRIPS-07` accommodation data
+- Candidate lifecycle should distinguish active shortlist entries from archived fallback entries
+- This story prepares, but does not yet finalize, the booking decision
+
+---
+
+#### US-TRIPS-084: Vote and Re-Vote for Accommodation Candidate
+**Epic**: E-TRIPS-08
+**Priority**: Must
+**Size**: L
+**As a** participant with an account, **I want** to give exactly one active vote to my preferred accommodation and move it later if needed, **so that** the group can converge on a fair decision.
+
+##### Acceptance Criteria
+- **Given** active accommodation candidates exist, **When** I cast my vote, **Then** exactly one active vote is assigned to my chosen accommodation.
+- **Given** I already voted, **When** I choose another accommodation, **Then** my vote is removed from the previous candidate and moved to the new one.
+- **Given** the vote result is tied, **When** I reconsider my choice, **Then** I can change my vote at any time while the poll remains open.
+- **Given** participants vote, **When** anyone views the shortlist, **Then** the current result visualization is visible at any time.
+- **Given** I am the organizer, **When** I decide to book one accommodation, **Then** I can mark that candidate as selected even if the vote result is tied.
+
+##### Technical Notes
+- Voting right is one active vote per account-holding participant
+- Organizer retains final booking decision after the poll
+- Optional add-on later: show availability for the selected date range directly on the candidate
+- Could supersede the older generic `US-TRIPS-062` once implemented in detail
 
 ---
 
@@ -1836,15 +1958,35 @@ Items from `docs/arc42/11-risks-and-technical-debt.md`:
 
 ---
 
+### Important Next Step After Iteration 12
+
+The next high-value Trips slice after Iteration 12 should focus on collaborative trip initialization and decision-making, not on more accounting polish.
+
+| Story | Epic | Priority | Size |
+|-------|------|----------|------|
+| US-TRIPS-080 | E-TRIPS-08 | Must | L |
+| US-TRIPS-081 | E-TRIPS-08 | Must | L |
+| US-TRIPS-082 | E-TRIPS-08 | Must | M |
+| US-TRIPS-083 | E-TRIPS-08 | Must | L |
+| US-TRIPS-084 | E-TRIPS-08 | Must | L |
+| US-TRIPS-035 | E-TRIPS-04 | Should | M |
+
+Rationale:
+- Once party self-management and live party accounts are in place, the next domain bottleneck is the planning start of a trip.
+- Date discovery and accommodation selection both happen before or alongside booking and invitations.
+- Kitchen duty extends the existing meal-plan domain with a concrete fairness and responsibility feature.
+
+---
+
 ## Story Count Summary
 
 | Bounded Context | Total | Done | Remaining |
 |----------------|-------|------|-----------|
 | IAM | 18 | 10 | 8 |
-| Trips | 24 | 8 | 16 |
+| Trips | 30 | 8 | 22 |
 | Expense | 16 | 0 | 16 |
 | Infrastructure | 15 | 4 | 11 |
-| **Total** | **73** | **22** | **51** |
+| **Total** | **79** | **22** | **57** |
 
 ---
 

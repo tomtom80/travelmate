@@ -184,7 +184,8 @@ public class Expense extends AggregateRoot {
         advancePayments.clear();
     }
 
-    public void toggleAdvancePaymentPaid(final AdvancePaymentId advancePaymentId) {
+    public void toggleAdvancePaymentPaid(final AdvancePaymentId advancePaymentId,
+                                         final UUID markedByParticipantId) {
         assertNotSettled();
         argumentIsNotNull(advancePaymentId, "advancePaymentId");
         final AdvancePayment payment = advancePayments.stream()
@@ -192,7 +193,7 @@ public class Expense extends AggregateRoot {
             .findFirst()
             .orElseThrow(() -> new IllegalArgumentException(
                 "AdvancePayment " + advancePaymentId.value() + " not found."));
-        payment.togglePaid();
+        payment.togglePaid(markedByParticipantId);
     }
 
     /**

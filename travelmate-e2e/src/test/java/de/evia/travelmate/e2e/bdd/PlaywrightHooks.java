@@ -4,8 +4,10 @@ import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
 import com.microsoft.playwright.Browser;
 import com.microsoft.playwright.BrowserContext;
@@ -132,5 +134,99 @@ public class PlaywrightHooks {
             () -> page.click(formSelector + " button[type=submit]")
         );
         page.waitForLoadState(LoadState.NETWORKIDLE);
+    }
+
+    static void waitForTripsDependentProjection(final String tenantName, final String firstName, final String lastName) {
+        waitForTripsProjectionCount("""
+            select count(*)
+            from travel_party_dependent d
+            join travel_party t on t.tenant_id = d.tenant_id
+            where t.name = '%s' and d.first_name = '%s' and d.last_name = '%s'
+            """.formatted(sqlLiteral(tenantName), sqlLiteral(firstName), sqlLiteral(lastName)));
+    }
+
+    static void waitForTripsMemberProjection(final String tenantName, final String firstName, final String lastName) {
+        waitForTripsProjectionCount("""
+            select count(*)
+            from travel_party_member m
+            join travel_party t on t.tenant_id = m.tenant_id
+            where t.name = '%s' and m.first_name = '%s' and m.last_name = '%s'
+            """.formatted(sqlLiteral(tenantName), sqlLiteral(firstName), sqlLiteral(lastName)));
+    }
+
+    static void waitForTripParticipant(final String tripId, final String firstName, final String lastName) {
+        waitForTripsProjectionCount("""
+            select count(*)
+            from trip_participant p
+            where p.trip_id = '%s'::uuid and p.first_name = '%s' and p.last_name = '%s'
+            """.formatted(sqlLiteral(tripId), sqlLiteral(firstName), sqlLiteral(lastName)));
+    }
+
+    static boolean tripParticipantExists(final String tripId, final String firstName, final String lastName) {
+        return queryTripsCount("""
+            select count(*)
+            from trip_participant p
+            where p.trip_id = '%s'::uuid and p.first_name = '%s' and p.last_name = '%s'
+            """.formatted(sqlLiteral(tripId), sqlLiteral(firstName), sqlLiteral(lastName))) > 0;
+    }
+
+    static void waitForExpenseAccommodationPrice(final String tripId) {
+        waitForExpenseProjectionCount("""
+            select count(*)
+            from trip_projection
+            where trip_id = '%s'::uuid and accommodation_total_price is not null and accommodation_total_price > 0
+            """.formatted(sqlLiteral(tripId)));
+    }
+
+    private static void waitForTripsProjectionCount(final String sql) {
+        for (int i = 0; i < 60; i++) {
+            if (queryTripsCount(sql) > 0) {
+                return;
+            }
+            page.waitForTimeout(500);
+        }
+        throw new AssertionError("Trips projection did not contain expected row for SQL: " + sql);
+    }
+
+    private static void waitForExpenseProjectionCount(final String sql) {
+        for (int i = 0; i < 60; i++) {
+            if (queryExpenseCount(sql) > 0) {
+                return;
+            }
+            page.waitForTimeout(500);
+        }
+        throw new AssertionError("Expense projection did not contain expected row for SQL: " + sql);
+    }
+
+    private static long queryTripsCount(final String sql) {
+        return queryComposePsqlCount("postgres-trips", "travelmate_trips", sql);
+    }
+
+    private static long queryExpenseCount(final String sql) {
+        return queryComposePsqlCount("postgres-expense", "travelmate_expense", sql);
+    }
+
+    private static long queryComposePsqlCount(final String service, final String database, final String sql) {
+        try {
+            final Process process = new ProcessBuilder(
+                "docker", "compose", "exec", "-T", service,
+                "psql", "-U", "travelmate", "-d", database, "-tAc", sql
+            ).start();
+            if (!process.waitFor(10, TimeUnit.SECONDS)) {
+                process.destroyForcibly();
+                return 0L;
+            }
+            final String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
+            if (process.exitValue() != 0 || output.isBlank()) {
+                return 0L;
+            }
+            return Long.parseLong(output);
+        } catch (final Exception e) {
+            return 0L;
+        }
+    }
+
+    private static String sqlLiteral(final String value) {
+        return value.replace("'", "''");
     }
 }

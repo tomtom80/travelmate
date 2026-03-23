@@ -65,6 +65,7 @@ public class Account extends AggregateRoot {
             fullName.firstName(),
             fullName.lastName(),
             email.value(),
+            dateOfBirth.value(),
             LocalDate.now()
         ));
         return account;

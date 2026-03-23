@@ -18,6 +18,7 @@ public class DashboardManagementSteps {
 
     private static final String PASSWORD = "Test1234!";
     private static int scenarioCounter = 0;
+    private static String currentTenantName;
 
     @Given("I am logged in as organizer of a new Reisepartei")
     public void iAmLoggedInAsOrganizerOfANewReisepartei() {
@@ -27,6 +28,7 @@ public class DashboardManagementSteps {
         final String suffix = RUN_ID + "-" + scenarioCounter;
         final String tenantName = "BDD-Dashboard " + suffix;
         final String email = "bdd-dash-" + suffix + "@e2e.test";
+        currentTenantName = tenantName;
         signUpAndLogin(tenantName, "Orga", "Tester", email, PASSWORD);
     }
 
@@ -62,6 +64,15 @@ public class DashboardManagementSteps {
         final String[] parts = name.split(" ", 2);
         iFillInTheAddCompanionForm(parts[0], parts.length > 1 ? parts[1] : "", dob);
         iSubmitTheAddCompanionForm();
+        for (int i = 0; i < 20; i++) {
+            final String html = page.locator("#companions").innerHTML();
+            if (html.contains(parts[0]) && (parts.length == 1 || html.contains(parts[1]))) {
+                return;
+            }
+            page.waitForTimeout(500);
+            navigateAndWait("/iam/dashboard");
+        }
+        theCompanionListShows(name);
     }
 
     @When("I click the delete button for companion {string}")
@@ -132,5 +143,9 @@ public class DashboardManagementSteps {
             u -> assertThat(u).doesNotContain("/dashboard"),
             u -> assertThat(u).contains("realms/travelmate")
         );
+    }
+
+    static String currentTenantName() {
+        return currentTenantName;
     }
 }

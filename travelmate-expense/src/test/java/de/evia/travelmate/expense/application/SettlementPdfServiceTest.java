@@ -26,11 +26,14 @@ import de.evia.travelmate.expense.application.representation.CategoryBreakdownRe
 import de.evia.travelmate.expense.application.representation.DailyCostRepresentation;
 import de.evia.travelmate.expense.application.representation.ExpenseRepresentation;
 import de.evia.travelmate.expense.application.representation.ParticipantSummaryRepresentation;
+import de.evia.travelmate.expense.application.representation.PartyAccountEntryRepresentation;
+import de.evia.travelmate.expense.application.representation.PartyAccountRepresentation;
 import de.evia.travelmate.expense.application.representation.PartySettlementRepresentation;
 import de.evia.travelmate.expense.application.representation.PartyTransferRepresentation;
 import de.evia.travelmate.expense.application.representation.ReceiptRepresentation;
 import de.evia.travelmate.expense.application.representation.TransferRepresentation;
 import de.evia.travelmate.expense.application.representation.WeightingRepresentation;
+import de.evia.travelmate.expense.domain.expense.PartyAccountEntryType;
 import de.evia.travelmate.expense.domain.expense.ExpenseStatus;
 import de.evia.travelmate.expense.domain.trip.TripProjection;
 
@@ -54,7 +57,12 @@ class SettlementPdfServiceTest {
             UUID.randomUUID(), tripId, ExpenseStatus.SETTLED, false,
             List.of(), List.of(), Map.of(), List.of(),
             List.of(new CategoryBreakdownRepresentation(null, BigDecimal.TEN, new BigDecimal("100.0"), 1)),
-            List.of(), List.of(), BigDecimal.TEN, List.of(), List.of(), List.of()
+            List.of(), List.of(), BigDecimal.TEN,
+            List.of(new PartyAccountRepresentation(UUID.randomUUID(), "Familie A", List.of("Alice"),
+                List.of(new PartyAccountEntryRepresentation(PartyAccountEntryType.ACCOMMODATION_SHARE, "Accommodation share", new BigDecimal("-10.00"), new BigDecimal("-10.00"))),
+                BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO, BigDecimal.ZERO,
+                BigDecimal.TEN, new BigDecimal("-10.00"), BigDecimal.TEN, BigDecimal.ZERO)),
+            List.of(), List.of(), List.of()
         );
 
         // Return valid XHTML that Flying Saucer can parse

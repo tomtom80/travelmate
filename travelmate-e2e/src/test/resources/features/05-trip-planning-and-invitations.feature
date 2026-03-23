@@ -63,6 +63,24 @@ Feature: Trip Planning and Invitations
     And I save the stay period
     Then the participant entry shows arrival "2026-07-02" and departure "2026-07-13"
 
+  @happy-path
+  Scenario: Travel party member adds own companion to the trip
+    Given I am logged in as organizer of a new Reisepartei
+    And I am on the dashboard
+    And I have added a companion "Tim Tester" with date of birth "2018-01-01"
+    When I navigate to the new trip page
+    And I fill in trip name "Own Party Participant BDD", start date "2026-07-01", end date "2026-07-14"
+    And I submit the create-trip form
+    When I add own participant "Tim Tester" to the trip
+    Then the participant list shows "Tim Tester"
+
+  @happy-path
+  Scenario: Organizer grants organizer rights to another participant
+    Given I am logged in and the Trips SCS is ready
+    And I have created a trip "Organizer Rights BDD" from "2026-07-01" to "2026-07-14"
+    When I grant organizer rights to participant "Lisa Mueller"
+    Then the participant "Lisa Mueller" is marked as organizer
+
   # ---------- External Invitation Form ----------
 
   @happy-path

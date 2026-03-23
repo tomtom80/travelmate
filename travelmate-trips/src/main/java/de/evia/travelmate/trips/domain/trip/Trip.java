@@ -22,6 +22,7 @@ public class Trip extends AggregateRoot {
     private final String description;
     private final DateRange dateRange;
     private final UUID organizerId;
+    private final List<UUID> organizerIds;
     private final List<Participant> participants;
     private TripStatus status;
 
@@ -31,6 +32,7 @@ public class Trip extends AggregateRoot {
                 final String description,
                 final DateRange dateRange,
                 final UUID organizerId,
+                final List<UUID> organizerIds,
                 final TripStatus status,
                 final List<Participant> participants) {
         argumentIsNotNull(tripId, "tripId");
@@ -38,6 +40,7 @@ public class Trip extends AggregateRoot {
         argumentIsNotNull(name, "name");
         argumentIsNotNull(dateRange, "dateRange");
         argumentIsNotNull(organizerId, "organizerId");
+        argumentIsNotNull(organizerIds, "organizerIds");
         argumentIsNotNull(status, "status");
         this.tripId = tripId;
         this.tenantId = tenantId;
@@ -45,6 +48,7 @@ public class Trip extends AggregateRoot {
         this.description = description;
         this.dateRange = dateRange;
         this.organizerId = organizerId;
+        this.organizerIds = new ArrayList<>(organizerIds);
         this.status = status;
         this.participants = new ArrayList<>(participants);
     }
@@ -78,7 +82,7 @@ public class Trip extends AggregateRoot {
         final Trip trip = new Trip(
             new TripId(UUID.randomUUID()),
             tenantId, name, description, dateRange,
-            organizerId, TripStatus.PLANNING,
+            organizerId, List.of(organizerId), TripStatus.PLANNING,
             participants
         );
         trip.registerEvent(new TripCreated(
@@ -104,6 +108,25 @@ public class Trip extends AggregateRoot {
         participants.add(new Participant(participantId, firstName, lastName));
     }
 
+    public void removeParticipant(final UUID participantId) {
+        if (isOrganizer(participantId)) {
+            throw new IllegalArgumentException("Trip organizer cannot be removed from the trip.");
+        }
+        final boolean removed = participants.removeIf(p -> p.participantId().equals(participantId));
+        if (!removed) {
+            throw new IllegalArgumentException("Participant " + participantId + " not found in this trip.");
+        }
+    }
+
+    public void grantOrganizerRights(final UUID participantId) {
+        if (!hasParticipant(participantId)) {
+            throw new IllegalArgumentException("Participant " + participantId + " not found in this trip.");
+        }
+        if (!organizerIds.contains(participantId)) {
+            organizerIds.add(participantId);
+        }
+    }
+
     public void setParticipantStayPeriod(final UUID participantId, final StayPeriod stayPeriod) {
         argumentIsNotNull(stayPeriod, "stayPeriod");
         if (!stayPeriod.isWithin(dateRange)) {
@@ -125,6 +148,10 @@ public class Trip extends AggregateRoot {
     public boolean hasParticipant(final UUID participantId) {
         return participants.stream()
             .anyMatch(p -> p.participantId().equals(participantId));
+    }
+
+    public boolean isOrganizer(final UUID participantId) {
+        return organizerIds.contains(participantId);
     }
 
     public void confirm() {
@@ -180,6 +207,10 @@ public class Trip extends AggregateRoot {
 
     public UUID organizerId() {
         return organizerId;
+    }
+
+    public List<UUID> organizerIds() {
+        return Collections.unmodifiableList(organizerIds);
     }
 
     public TripStatus status() {

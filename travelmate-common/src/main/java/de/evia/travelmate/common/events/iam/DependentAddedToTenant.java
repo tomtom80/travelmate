@@ -11,6 +11,7 @@ public record DependentAddedToTenant(
     UUID guardianAccountId,
     String firstName,
     String lastName,
+    LocalDate dateOfBirth,
     LocalDate occurredOn
 ) implements DomainEvent {
 }

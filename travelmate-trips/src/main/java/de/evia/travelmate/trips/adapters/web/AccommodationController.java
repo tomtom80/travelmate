@@ -63,7 +63,7 @@ public class AccommodationController {
         final TripRepresentation trip = tripService.findById(new TripId(tripId));
         final Optional<AccommodationRepresentation> accommodation =
             accommodationService.findByTripId(new TripId(tripId));
-        final boolean isOrganizer = trip.organizerId().equals(identity.memberId());
+        final boolean isOrganizer = trip.isOrganizer(identity.memberId());
         final boolean isEditable = isOrganizer
             && !"COMPLETED".equals(trip.status())
             && !"CANCELLED".equals(trip.status());
@@ -317,7 +317,7 @@ public class AccommodationController {
 
     private void validateEditable(final UUID tripId, final ResolvedIdentity identity) {
         final TripRepresentation trip = tripService.findById(new TripId(tripId));
-        if (!trip.organizerId().equals(identity.memberId())) {
+        if (!trip.isOrganizer(identity.memberId())) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only the organizer can modify accommodation");
         }
         if ("COMPLETED".equals(trip.status()) || "CANCELLED".equals(trip.status())) {

@@ -39,7 +39,7 @@ public class TravelPartyService {
         final TenantId tenantId = new TenantId(event.tenantId());
         final TravelParty party = findOrCreateParty(tenantId);
         if (!party.hasMember(event.accountId())) {
-            party.addMember(event.accountId(), event.email(), event.firstName(), event.lastName());
+            party.addMember(event.accountId(), event.email(), event.firstName(), event.lastName(), event.dateOfBirth());
         }
         repository.save(party);
 
@@ -52,7 +52,7 @@ public class TravelPartyService {
         final TenantId tenantId = new TenantId(event.tenantId());
         final TravelParty party = findOrCreateParty(tenantId);
         party.addDependent(event.dependentId(), event.guardianAccountId(),
-            event.firstName(), event.lastName());
+            event.firstName(), event.lastName(), event.dateOfBirth());
         repository.save(party);
     }
 

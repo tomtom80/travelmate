@@ -31,6 +31,9 @@ import de.evia.travelmate.trips.application.InvitationService;
 import de.evia.travelmate.trips.application.MealPlanService;
 import de.evia.travelmate.trips.application.TripService;
 import de.evia.travelmate.trips.application.command.InviteParticipantCommand;
+import de.evia.travelmate.trips.application.command.AddParticipantToTripCommand;
+import de.evia.travelmate.trips.application.command.GrantTripOrganizerCommand;
+import de.evia.travelmate.trips.application.command.RemoveParticipantFromTripCommand;
 import de.evia.travelmate.trips.application.command.SetStayPeriodCommand;
 import de.evia.travelmate.trips.application.representation.InvitationRepresentation;
 import de.evia.travelmate.trips.application.representation.TripRepresentation;
@@ -48,6 +51,7 @@ class TripControllerTest {
     private static final UUID TRIP_UUID = UUID.randomUUID();
     private static final UUID ORGANIZER_UUID = UUID.randomUUID();
     private static final UUID INVITEE_UUID = UUID.randomUUID();
+    private static final UUID DEPENDENT_UUID = UUID.randomUUID();
     private static final String ORGANIZER_EMAIL = "org@test.de";
     private static final String INVITEE_EMAIL = "inv@test.de";
 
@@ -76,6 +80,7 @@ class TripControllerTest {
         party = TravelParty.create(new TenantId(TENANT_UUID), "Familie Test");
         party.addMember(ORGANIZER_UUID, ORGANIZER_EMAIL, "Max", "Org");
         party.addMember(INVITEE_UUID, INVITEE_EMAIL, "Lisa", "Inv");
+        party.addDependent(DEPENDENT_UUID, ORGANIZER_UUID, "Tim", "Org");
         when(travelPartyRepository.findByMemberEmail(ORGANIZER_EMAIL)).thenReturn(Optional.of(party));
         when(travelPartyRepository.findByMemberEmail(INVITEE_EMAIL)).thenReturn(Optional.of(party));
         when(travelPartyRepository.findByTenantId(new TenantId(TENANT_UUID))).thenReturn(Optional.of(party));
@@ -229,6 +234,44 @@ class TripControllerTest {
             .andExpect(status().is3xxRedirection());
 
         verify(tripService).setStayPeriod(new SetStayPeriodCommand(
-            TRIP_UUID, ORGANIZER_UUID, LocalDate.of(2026, 3, 16), LocalDate.of(2026, 3, 20)));
+            TRIP_UUID, ORGANIZER_UUID, ORGANIZER_UUID, TENANT_UUID,
+            LocalDate.of(2026, 3, 16), LocalDate.of(2026, 3, 20)));
+    }
+
+    @Test
+    void addOwnParticipantRedirectsToDetail() throws Exception {
+        mockMvc.perform(post("/" + TRIP_UUID + "/participants")
+                .with(jwt().jwt(j -> j.claim("email", ORGANIZER_EMAIL)))
+                .param("participantId", DEPENDENT_UUID.toString()))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/" + TRIP_UUID));
+
+        verify(tripService).addParticipantToTrip(new AddParticipantToTripCommand(
+            TRIP_UUID, DEPENDENT_UUID, ORGANIZER_UUID, TENANT_UUID
+        ));
+    }
+
+    @Test
+    void removeOwnParticipantRedirectsToDetail() throws Exception {
+        mockMvc.perform(post("/" + TRIP_UUID + "/participants/" + DEPENDENT_UUID + "/remove")
+                .with(jwt().jwt(j -> j.claim("email", ORGANIZER_EMAIL))))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/" + TRIP_UUID));
+
+        verify(tripService).removeParticipantFromTrip(new RemoveParticipantFromTripCommand(
+            TRIP_UUID, DEPENDENT_UUID, ORGANIZER_UUID, TENANT_UUID
+        ));
+    }
+
+    @Test
+    void grantOrganizerRedirectsToDetail() throws Exception {
+        mockMvc.perform(post("/" + TRIP_UUID + "/organizers/" + INVITEE_UUID)
+                .with(jwt().jwt(j -> j.claim("email", ORGANIZER_EMAIL))))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/" + TRIP_UUID));
+
+        verify(tripService).grantTripOrganizer(new GrantTripOrganizerCommand(
+            TRIP_UUID, INVITEE_UUID, ORGANIZER_UUID
+        ));
     }
 }

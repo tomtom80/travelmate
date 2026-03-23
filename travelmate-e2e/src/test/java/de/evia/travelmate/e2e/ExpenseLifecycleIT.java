@@ -135,7 +135,7 @@ class ExpenseLifecycleIT extends E2ETestBase {
         navigateAndWait("/expense/" + tripId);
 
         final String content = page.content();
-        assertThat(content).contains("Saldo");
+        assertThat(content).contains("Aktueller Stand");
         assertThat(content).contains("42,50");
     }
 

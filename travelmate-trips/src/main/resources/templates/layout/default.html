@@ -68,6 +68,34 @@
             }, 4000);
         }
     });
+    document.addEventListener('toggle', function(e) {
+        if (!(e.target instanceof HTMLDetailsElement) || !e.target.classList.contains('action-menu')) {
+            return;
+        }
+        if (!e.target.open) {
+            return;
+        }
+        document.querySelectorAll('details.action-menu[open]').forEach(function(menu) {
+            if (menu !== e.target) {
+                menu.open = false;
+            }
+        });
+    });
+    document.addEventListener('click', function(e) {
+        document.querySelectorAll('details.action-menu[open]').forEach(function(menu) {
+            if (!menu.contains(e.target)) {
+                menu.open = false;
+            }
+        });
+    });
+    document.addEventListener('keydown', function(e) {
+        if (e.key !== 'Escape') {
+            return;
+        }
+        document.querySelectorAll('details.action-menu[open]').forEach(function(menu) {
+            menu.open = false;
+        });
+    });
     </script>
 </body>
 </html>

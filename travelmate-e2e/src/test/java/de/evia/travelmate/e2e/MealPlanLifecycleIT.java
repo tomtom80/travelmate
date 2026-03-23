@@ -99,7 +99,7 @@ class MealPlanLifecycleIT extends E2ETestBase {
     @Test
     @Order(14)
     void mealPlanOverviewShowsStatusDropdowns() {
-        final int statusDropdowns = page.locator("select[name=status]").count();
+        final int statusDropdowns = statusSelects().count();
 
         // 3 days × 3 meals = 9 status dropdowns
         assertThat(statusDropdowns).isEqualTo(9);
@@ -108,7 +108,7 @@ class MealPlanLifecycleIT extends E2ETestBase {
     @Test
     @Order(15)
     void allSlotsAreInitiallyPlanned() {
-        final var statusSelects = page.locator("select[name=status]");
+        final var statusSelects = statusSelects();
         final int count = statusSelects.count();
 
         for (int i = 0; i < count; i++) {
@@ -119,7 +119,7 @@ class MealPlanLifecycleIT extends E2ETestBase {
     @Test
     @Order(16)
     void plannedSlotsShowRecipePicker() {
-        final int recipePickers = page.locator("select[name=recipeId]").count();
+        final int recipePickers = recipePickers().count();
 
         // All 9 slots are PLANNED → all should have recipe picker
         assertThat(recipePickers).isEqualTo(9);
@@ -128,10 +128,10 @@ class MealPlanLifecycleIT extends E2ETestBase {
     @Test
     @Order(20)
     void markSlotAsSkip() {
-        final var firstStatus = page.locator("select[name=status]").first();
+        final var firstStatus = statusSelects().first();
         selectAndSubmit(firstStatus, "SKIP");
 
-        final var firstStatusAfter = page.locator("select[name=status]").first();
+        final var firstStatusAfter = statusSelects().first();
         assertThat(firstStatusAfter.inputValue()).isEqualTo("SKIP");
     }
 
@@ -146,17 +146,17 @@ class MealPlanLifecycleIT extends E2ETestBase {
     void skipSlotDoesNotShowRecipePicker() {
         // SKIP slot should not have a recipe picker
         // Count recipe pickers — should be 8 (one slot is SKIP)
-        final int recipePickers = page.locator("select[name=recipeId]").count();
+        final int recipePickers = recipePickers().count();
         assertThat(recipePickers).isEqualTo(8);
     }
 
     @Test
     @Order(30)
     void markSlotAsEatingOut() {
-        final var secondStatus = page.locator("select[name=status]").nth(1);
+        final var secondStatus = statusSelects().nth(1);
         selectAndSubmit(secondStatus, "EATING_OUT");
 
-        final var secondStatusAfter = page.locator("select[name=status]").nth(1);
+        final var secondStatusAfter = statusSelects().nth(1);
         assertThat(secondStatusAfter.inputValue()).isEqualTo("EATING_OUT");
     }
 
@@ -169,10 +169,10 @@ class MealPlanLifecycleIT extends E2ETestBase {
     @Test
     @Order(40)
     void revertSlotBackToPlanned() {
-        final var firstStatus = page.locator("select[name=status]").first();
+        final var firstStatus = statusSelects().first();
         selectAndSubmit(firstStatus, "PLANNED");
 
-        final var firstStatusAfter = page.locator("select[name=status]").first();
+        final var firstStatusAfter = statusSelects().first();
         assertThat(firstStatusAfter.inputValue()).isEqualTo("PLANNED");
     }
 
@@ -180,7 +180,7 @@ class MealPlanLifecycleIT extends E2ETestBase {
     @Order(50)
     void assignRecipeToSlot() {
         // Find a recipe picker for a PLANNED slot and select the recipe
-        final var recipePicker = page.locator("select[name=recipeId]").first();
+        final var recipePicker = recipePickers().first();
         final var options = recipePicker.locator("option");
         final int optionCount = options.count();
 
@@ -243,6 +243,14 @@ class MealPlanLifecycleIT extends E2ETestBase {
             "}).then(r => r.ok); " +
             "}", value);
         navigateAndWait(currentPath);
+    }
+
+    private com.microsoft.playwright.Locator statusSelects() {
+        return page.locator(".mealplan-desktop select[name=status]");
+    }
+
+    private com.microsoft.playwright.Locator recipePickers() {
+        return page.locator(".mealplan-desktop select[name=recipeId]");
     }
 
     private String extractTripId() {

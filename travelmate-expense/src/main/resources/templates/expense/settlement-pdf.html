@@ -39,50 +39,52 @@
         <span th:text="${#numbers.formatDecimal(expense.totalAmount(), 1, 'POINT', 2, 'COMMA')}">0,00</span> EUR
     </p>
 
-    <!-- Party Settlement -->
-    <div th:if="${!expense.partySettlements().isEmpty()}">
-        <h2 th:text="#{expense.partySettlement}">Abrechnung nach Reisepartei</h2>
+    <div th:if="${!expense.partyAccounts().isEmpty()}">
+        <h2 th:text="#{expense.partyAccount}">Reisekonto nach Reisepartei</h2>
         <table>
             <thead>
                 <tr>
-                    <th th:text="#{expense.partySettlement.party}">Reisepartei</th>
-                    <th th:text="#{expense.partySettlement.members}">Mitglieder</th>
-                    <th class="amount" th:text="#{expense.partySettlement.totalPaid}">Bezahlt</th>
-                    <th class="amount" th:text="#{expense.partySettlement.totalOwed}">Anteil</th>
-                    <th class="amount" th:text="#{expense.partySettlement.balance}">Saldo</th>
+                    <th th:text="#{expense.partyAccount.party}">Reisepartei</th>
+                    <th th:text="#{expense.partyAccount.members}">Mitglieder</th>
+                    <th th:text="#{expense.partyAccount.entries}">Kontozeilen</th>
+                    <th class="amount" th:text="#{expense.partyAccount.receiptCredits}">Belegguthaben</th>
+                    <th class="amount" th:text="#{expense.partyAccount.advancePlanned}">Geplante Anzahlung</th>
+                    <th class="amount" th:text="#{expense.partyAccount.advancePaid}">Vorauszahlungen</th>
+                    <th class="amount" th:text="#{expense.partyAccount.advanceOutstanding}">Noch einzahlen</th>
+                    <th class="amount" th:text="#{expense.partyAccount.fairShare}">Aktueller Anteil</th>
+                    <th class="amount" th:text="#{expense.partyAccount.currentBalance}">Aktueller Stand</th>
                 </tr>
             </thead>
             <tbody>
-                <tr th:each="ps : ${expense.partySettlements()}">
-                    <td th:text="${ps.partyName()}"></td>
+                <tr th:each="account : ${expense.partyAccounts()}">
+                    <td th:text="${account.partyName()}"></td>
                     <td>
-                        <span th:each="name, iter : ${ps.memberNames()}" th:text="${name + (iter.last ? '' : ', ')}"></span>
+                        <span th:each="name, iter : ${account.memberNames()}" th:text="${name + (iter.last ? '' : ', ')}"></span>
                     </td>
-                    <td class="amount" th:text="${#numbers.formatDecimal(ps.totalPaid(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
-                    <td class="amount" th:text="${#numbers.formatDecimal(ps.totalOwed(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
+                    <td>
+                        <span th:each="entry, iter : ${account.entries()}">
+                            <span th:text="#{${'expense.partyAccount.entry.' + entry.type()}}">Kontozeile</span><span>: </span>
+                            <span th:if="${!entry.label().isBlank()}" th:text="${entry.label()}"></span>
+                            <span th:if="${!entry.label().isBlank()}"> </span>
+                            <span th:text="${#numbers.formatDecimal(entry.amount(), 1, 'POINT', 2, 'COMMA')} + ' EUR'"></span>
+                            <span> -> </span>
+                            <span th:text="${#numbers.formatDecimal(entry.runningBalance(), 1, 'POINT', 2, 'COMMA')} + ' EUR'"></span>
+                            <span th:if="${!iter.last}"> | </span>
+                        </span>
+                    </td>
+                    <td class="amount" th:text="${#numbers.formatDecimal(account.receiptCredits(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
+                    <td class="amount" th:text="${#numbers.formatDecimal(account.advancePaymentsPlanned(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
+                    <td class="amount" th:text="${#numbers.formatDecimal(account.advancePaymentsPaid(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
+                    <td class="amount" th:text="${#numbers.formatDecimal(account.advancePaymentsOutstanding(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
+                    <td class="amount" th:text="${#numbers.formatDecimal(account.fairShare(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
                     <td class="amount">
-                        <span th:if="${ps.balance().signum() > 0}" class="positive"
-                              th:text="'+' + ${#numbers.formatDecimal(ps.balance(), 1, 'POINT', 2, 'COMMA')} + ' EUR'"></span>
-                        <span th:if="${ps.balance().signum() < 0}" class="negative"
-                              th:text="${#numbers.formatDecimal(ps.balance(), 1, 'POINT', 2, 'COMMA')} + ' EUR'"></span>
-                        <span th:if="${ps.balance().signum() == 0}"
-                              th:text="${#numbers.formatDecimal(ps.balance(), 1, 'POINT', 2, 'COMMA')} + ' EUR'"></span>
+                        <span th:if="${account.creditAmount().signum() > 0}" class="positive"
+                              th:text="'+' + ${#numbers.formatDecimal(account.creditAmount(), 1, 'POINT', 2, 'COMMA')} + ' EUR'"></span>
+                        <span th:if="${account.outstandingAmount().signum() > 0}" class="negative"
+                              th:text="'-' + ${#numbers.formatDecimal(account.outstandingAmount(), 1, 'POINT', 2, 'COMMA')} + ' EUR'"></span>
+                        <span th:if="${account.currentBalance().signum() == 0}"
+                              th:text="${#numbers.formatDecimal(account.currentBalance(), 1, 'POINT', 2, 'COMMA')} + ' EUR'"></span>
                     </td>
-                </tr>
-            </tbody>
-        </table>
-    </div>
-
-    <!-- Party Transfers -->
-    <div th:if="${!expense.partyTransfers().isEmpty()}">
-        <h2 th:text="#{expense.partyTransfers}">Ausgleichszahlungen</h2>
-        <table>
-            <tbody>
-                <tr th:each="t : ${expense.partyTransfers()}" class="transfer-row">
-                    <td th:text="${t.fromPartyName()}"></td>
-                    <td th:text="#{expense.pdf.transferArrow}">&#x2192; zahlt an</td>
-                    <td th:text="${t.toPartyName()}"></td>
-                    <td class="amount" th:text="${#numbers.formatDecimal(t.amount(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
                 </tr>
             </tbody>
         </table>
@@ -129,6 +131,10 @@
                     <td>
                         <span th:if="${ap.paid()}" th:text="#{advance.paid}">Bezahlt</span>
                         <span th:if="${!ap.paid()}" th:text="#{advance.unpaid}">Offen</span>
+                        <span th:if="${ap.paidOn() != null}"
+                              th:text="${' (' + (ap.markedByParticipantId() != null && participantNames[ap.markedByParticipantId()] != null
+                                  ? #messages.msg('advance.paidOnBy', ap.paidOn(), participantNames[ap.markedByParticipantId()])
+                                  : #messages.msg('advance.paidOn', ap.paidOn())) + ')'}"></span>
                     </td>
                 </tr>
             </tbody>

@@ -39,4 +39,15 @@ class TripParticipantTest {
 
         assertThat(participant.nights()).isEqualTo(1);
     }
+
+    @Test
+    void ageOnTripStartIsDerivedFromDateOfBirth() {
+        final TripParticipant participant = new TripParticipant(
+            PARTICIPANT_ID, "Lena",
+            null, null, null, null,
+            LocalDate.of(2020, 8, 10), false
+        );
+
+        assertThat(participant.ageOn(LocalDate.of(2026, 7, 1))).isEqualTo(5);
+    }
 }

@@ -15,6 +15,7 @@ public record TripRepresentation(
     LocalDate endDate,
     String status,
     UUID organizerId,
+    List<UUID> organizerIds,
     List<UUID> participantIds,
     List<ParticipantDetail> participantDetails
 ) {
@@ -33,6 +34,7 @@ public record TripRepresentation(
             trip.dateRange().endDate(),
             trip.status().name(),
             trip.organizerId(),
+            trip.organizerIds(),
             trip.participants().stream().map(p -> p.participantId()).toList(),
             trip.participants().stream().map(p -> new ParticipantDetail(
                 p.participantId(),
@@ -47,7 +49,11 @@ public record TripRepresentation(
     public TripRepresentation(final UUID tripId, final UUID tenantId, final String name,
                               final String description, final LocalDate startDate, final LocalDate endDate,
                               final String status, final UUID organizerId, final List<UUID> participantIds) {
-        this(tripId, tenantId, name, description, startDate, endDate, status, organizerId,
+        this(tripId, tenantId, name, description, startDate, endDate, status, organizerId, List.of(organizerId),
             participantIds, participantIds.stream().map(id -> new ParticipantDetail(id, null, null, null, null)).toList());
+    }
+
+    public boolean isOrganizer(final UUID participantId) {
+        return organizerIds.contains(participantId);
     }
 }

@@ -108,7 +108,7 @@ public class MealPlanSteps {
         final String optionValue = mapStatusToOption(status);
 
         final String currentPath = page.url().replace(BASE_URL, "");
-        final var statusSelect = page.locator("select[name=status]").first();
+        final var statusSelect = statusSelects().first();
         statusSelect.evaluate("(el, val) => { " +
             "el.value = val; " +
             "const form = el.form; " +
@@ -127,7 +127,7 @@ public class MealPlanSteps {
     @Dann("wird der Slot als {string} angezeigt")
     public void wirdDerSlotAlsAngezeigt(final String status) {
         final String expectedValue = mapStatusToOption(status);
-        final var firstStatus = page.locator("select[name=status]").first();
+        final var firstStatus = statusSelects().first();
         assertThat(firstStatus.inputValue()).isEqualTo(expectedValue);
     }
 
@@ -143,7 +143,7 @@ public class MealPlanSteps {
 
     @Und("ich sehe eine Rezeptauswahl fuer diesen Slot")
     public void ichSeheEineRezeptauswahlFuerDiesenSlot() {
-        assertThat(page.locator("select[name=recipeId]").count()).isPositive();
+        assertThat(recipePickers().count()).isPositive();
     }
 
     @Und("es existiert ein Rezept in meiner Rezeptsammlung")
@@ -166,7 +166,7 @@ public class MealPlanSteps {
 
     @Wenn("ich fuer einen geplanten Slot ein Rezept auswaehle")
     public void ichFuerEinenGeplantenSlotEinRezeptAuswaehle() {
-        final var recipePicker = page.locator("select[name=recipeId]").first();
+        final var recipePicker = recipePickers().first();
         final var options = recipePicker.locator("option");
         final int optionCount = options.count();
 
@@ -212,13 +212,13 @@ public class MealPlanSteps {
 
     @Und("jeder Slot hat ein Status-Dropdown")
     public void jederSlotHatEinStatusDropdown() {
-        final int statusDropdowns = page.locator("select[name=status]").count();
+        final int statusDropdowns = statusSelects().count();
         assertThat(statusDropdowns).isEqualTo(9);
     }
 
     @Und("geplante Slots haben eine Rezeptauswahl")
     public void geplanteSlotsHabenEineRezeptauswahl() {
-        assertThat(page.locator("select[name=recipeId]").count()).isPositive();
+        assertThat(recipePickers().count()).isPositive();
     }
 
     @Dann("werde ich zur Reisedetailseite weitergeleitet")
@@ -240,5 +240,13 @@ public class MealPlanSteps {
             case "Geplant" -> "PLANNED";
             default -> displayStatus;
         };
+    }
+
+    private com.microsoft.playwright.Locator statusSelects() {
+        return page.locator(".mealplan-desktop select[name=status]");
+    }
+
+    private com.microsoft.playwright.Locator recipePickers() {
+        return page.locator(".mealplan-desktop select[name=recipeId]");
     }
 }

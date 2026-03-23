@@ -76,13 +76,14 @@ class TravelPartyServiceTest {
 
         final AccountRegistered event = new AccountRegistered(
             tenantId, accountId, "max@example.com", "Max", "Mustermann",
-            "max@example.com", LocalDate.now()
+            "max@example.com", LocalDate.of(1990, 5, 12), LocalDate.now()
         );
 
         service.onAccountRegistered(event);
 
         assertThat(party.members()).hasSize(1);
         assertThat(party.members().getFirst().memberId()).isEqualTo(accountId);
+        assertThat(party.members().getFirst().dateOfBirth()).isEqualTo(LocalDate.of(1990, 5, 12));
         verify(repository).save(party);
     }
 
@@ -95,7 +96,7 @@ class TravelPartyServiceTest {
 
         final AccountRegistered event = new AccountRegistered(
             tenantId, accountId, "max@example.com", "Max", "Mustermann",
-            "max@example.com", LocalDate.now()
+            "max@example.com", LocalDate.of(1990, 5, 12), LocalDate.now()
         );
 
         service.onAccountRegistered(event);
@@ -118,7 +119,7 @@ class TravelPartyServiceTest {
 
         final AccountRegistered event = new AccountRegistered(
             tenantId, accountId, "invited@example.com", "Invited", "User",
-            "invited@example.com", LocalDate.now()
+            "invited@example.com", LocalDate.of(1985, 4, 18), LocalDate.now()
         );
 
         service.onAccountRegistered(event);
@@ -138,13 +139,14 @@ class TravelPartyServiceTest {
         when(repository.save(any(TravelParty.class))).thenAnswer(inv -> inv.getArgument(0));
 
         final DependentAddedToTenant event = new DependentAddedToTenant(
-            tenantId, dependentId, guardianId, "Lena", "Mustermann", LocalDate.now()
+            tenantId, dependentId, guardianId, "Lena", "Mustermann", LocalDate.of(2020, 8, 10), LocalDate.now()
         );
 
         service.onDependentAdded(event);
 
         assertThat(party.dependents()).hasSize(1);
         assertThat(party.dependents().getFirst().dependentId()).isEqualTo(dependentId);
+        assertThat(party.dependents().getFirst().dateOfBirth()).isEqualTo(LocalDate.of(2020, 8, 10));
         verify(repository).save(party);
     }
 }

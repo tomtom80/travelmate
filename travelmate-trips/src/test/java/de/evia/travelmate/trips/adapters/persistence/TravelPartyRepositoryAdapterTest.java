@@ -2,6 +2,7 @@ package de.evia.travelmate.trips.adapters.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.time.LocalDate;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -38,8 +39,8 @@ class TravelPartyRepositoryAdapterTest {
         final TenantId tenantId = new TenantId(UUID.randomUUID());
         final TravelParty party = TravelParty.create(tenantId, "Skiurlaub");
         final UUID memberId = UUID.randomUUID();
-        party.addMember(memberId, "max@example.com", "Max", "Mustermann");
-        party.addDependent(UUID.randomUUID(), memberId, "Lena", "Mustermann");
+        party.addMember(memberId, "max@example.com", "Max", "Mustermann", LocalDate.of(1988, 2, 4));
+        party.addDependent(UUID.randomUUID(), memberId, "Lena", "Mustermann", LocalDate.of(2021, 9, 14));
 
         repository.save(party);
 
@@ -47,7 +48,9 @@ class TravelPartyRepositoryAdapterTest {
         assertThat(found.members()).hasSize(1);
         assertThat(found.dependents()).hasSize(1);
         assertThat(found.members().getFirst().email()).isEqualTo("max@example.com");
+        assertThat(found.members().getFirst().dateOfBirth()).isEqualTo(LocalDate.of(1988, 2, 4));
         assertThat(found.dependents().getFirst().firstName()).isEqualTo("Lena");
+        assertThat(found.dependents().getFirst().dateOfBirth()).isEqualTo(LocalDate.of(2021, 9, 14));
     }
 
     @Test
