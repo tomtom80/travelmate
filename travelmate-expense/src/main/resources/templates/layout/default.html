@@ -9,13 +9,19 @@
     <link rel="apple-touch-icon" href="/iam/images/icon-192.png">
     <title th:text="${title} ? ${title} + ' — Travelmate' : 'Travelmate'">Travelmate</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
-    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" href="/assets/css/style.css">
     <script src="https://unpkg.com/htmx.org@2.0.8"></script>
+    <script src="/assets/js/scripts.js" defer></script>
 </head>
 <body>
     <nav class="container">
         <ul>
-            <li><a href="/iam/dashboard"><strong th:text="#{nav.brand}">Travelmate</strong></a></li>
+            <li>
+                <a href="/iam/dashboard">
+                    <img src="/assets/images/logo.svg" alt="Travelmate Logo" class="brand-logo">
+                    <strong th:text="#{nav.brand}">Travelmate</strong>
+                </a>
+            </li>
         </ul>
         <ul>
             <li><a href="/iam/dashboard" th:text="#{nav.travelParty}">Reisepartei</a></li>
@@ -33,6 +39,7 @@
     </nav>
     <main class="container" th:insert="~{${view} :: content}">
     </main>
+    <div id="dropdown-backdrop"></div>
     <div id="toast-container" aria-live="polite"></div>
     <footer class="container">
         <small>Travelmate</small>

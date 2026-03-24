@@ -6,14 +6,14 @@
         <p th:text="#{${memberError}}"></p>
     </div>
     <figure class="table-cards">
-        <table th:if="${!members.isEmpty()}">
+        <table class="responsive-card-table" th:if="${!members.isEmpty()}">
             <thead>
                 <tr>
                     <th th:text="#{member.firstName}">Vorname</th>
                     <th th:text="#{member.lastName}">Nachname</th>
                     <th th:text="#{member.email}">E-Mail</th>
                     <th th:text="#{common.dateOfBirth}">Geburtsdatum</th>
-                    <th></th>
+                    <th th:text="#{invitation.actions}">Aktionen</th>
                 </tr>
             </thead>
             <tbody>
@@ -22,15 +22,18 @@
                     <td th:data-label="#{member.lastName}" th:text="${m.lastName()}"></td>
                     <td th:data-label="#{member.email}" th:text="${m.email()}"></td>
                     <td th:data-label="#{common.dateOfBirth}" th:text="${m.dateOfBirth()}"></td>
-                    <td>
-                        <button th:if="${currentAccount != null and m.accountId() != currentAccount.accountId().value()}"
-                                hx-delete th:hx-delete="@{'/dashboard/members/' + ${m.accountId()}}"
-                                hx-target="#members"
-                                hx-swap="innerHTML"
-                                hx-confirm th:hx-confirm="#{member.deleteConfirm}"
-                                hx-disabled-elt="this"
-                                class="outline secondary"
-                                th:text="#{common.delete}">Loeschen</button>
+                    <td th:data-label="#{invitation.actions}">
+                        <div style="display:flex; gap:0.5rem; justify-content: flex-end; align-items: center;">
+                            <button th:if="${currentAccount != null and m.accountId() != currentAccount.accountId().value()}"
+                                    hx-delete th:hx-delete="@{'/dashboard/members/' + ${m.accountId()}}"
+                                    hx-target="#members"
+                                    hx-swap="innerHTML"
+                                    hx-confirm th:hx-confirm="#{member.deleteConfirm}"
+                                    hx-disabled-elt="this"
+                                    class="outline secondary"
+                                    style="padding: 0.5rem 0.8rem;"
+                                    th:text="#{common.delete}">Loeschen</button>
+                        </div>
                     </td>
                 </tr>
             </tbody>

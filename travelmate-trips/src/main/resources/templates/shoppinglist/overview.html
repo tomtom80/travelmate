@@ -43,6 +43,39 @@
             </ul>
         </nav>
 
+        <!-- Form outside the polled container -->
+        <article>
+            <form th:hx-post="@{/{tid}/shoppinglist/items(tid=${trip.tripId()})}"
+                  hx-target="#shopping-list-content"
+                  hx-swap="innerHTML"
+                  hx-disabled-elt="find [type=submit]"
+                  hx-on::after-request="if(event.detail.successful) { this.reset(); }"
+                  style="margin:0;">
+                <div style="display:flex; gap:0.5rem; align-items:end; flex-wrap:wrap;">
+                    <label style="margin-bottom:0; flex:2;">
+                        <span th:text="#{shoppinglist.item.name}">Name</span>
+                        <input type="text" name="name" required
+                               th:placeholder="#{shoppinglist.item.name.placeholder}"
+                               style="margin-bottom:0;">
+                    </label>
+                    <label style="margin-bottom:0; flex:1;">
+                        <span th:text="#{shoppinglist.item.quantity}">Menge</span>
+                        <input type="number" name="quantity" step="any" min="0.01" required
+                               th:placeholder="#{shoppinglist.item.quantity.placeholder}"
+                               style="margin-bottom:0;">
+                    </label>
+                    <label style="margin-bottom:0; flex:1;">
+                        <span th:text="#{shoppinglist.item.unit}">Einheit</span>
+                        <input type="text" name="unit" required
+                               th:placeholder="#{shoppinglist.item.unit.placeholder}"
+                               style="margin-bottom:0;">
+                    </label>
+                    <button type="submit" style="margin-bottom:0; white-space:nowrap; width:auto;"
+                            th:text="#{shoppinglist.item.add}">Eintrag hinzufuegen</button>
+                </div>
+            </form>
+        </article>
+
         <!-- Polling container -->
         <div id="shopping-list-content"
              th:hx-get="@{/{tid}/shoppinglist/items(tid=${trip.tripId()}, filter=${filter})}"
@@ -79,13 +112,13 @@
             </div>
         </header>
         <figure class="table-cards" th:if="${!recipeItems.isEmpty()}">
-            <table>
+            <table class="responsive-card-table">
                 <thead>
                     <tr>
                         <th th:text="#{shoppinglist.item.name}">Name</th>
                         <th th:text="#{shoppinglist.item.quantity}">Menge</th>
                         <th th:text="#{shoppinglist.item.unit}">Einheit</th>
-                        <th>Assignee</th>
+                        <th th:text="#{shoppinglist.item.assignee}">Assignee</th>
                         <th th:text="#{trip.status}">Status</th>
                         <th th:text="#{invitation.actions}">Aktionen</th>
                     </tr>
@@ -97,7 +130,7 @@
                         <td th:data-label="#{shoppinglist.item.name}" th:text="${item.name()}"></td>
                         <td th:data-label="#{shoppinglist.item.quantity}" th:text="${item.quantity()}"></td>
                         <td th:data-label="#{shoppinglist.item.unit}" th:text="${item.unit()}"></td>
-                        <td data-label="Assignee">
+                        <td th:data-label="#{shoppinglist.item.assignee}">
                             <span th:if="${item.assigneeName() != null && item.assignedToCurrentUser()}"
                                   th:text="#{shoppinglist.item.you}">Du</span>
                             <span th:if="${item.assigneeName() != null && !item.assignedToCurrentUser()}"
@@ -108,8 +141,10 @@
                             <span th:class="'status-' + ${item.status().name().toLowerCase()}"
                                   th:text="#{${'shoppinglist.item.status.' + item.status().name()}}"></span>
                         </td>
-                        <td>
-                            <div th:replace="~{shoppinglist/overview :: itemActions(${item})}"></div>
+                        <td th:data-label="#{invitation.actions}">
+                            <div style="display:flex; gap:0.5rem; justify-content: flex-end; align-items: center; min-height: 2.75rem;">
+                                <div th:replace="~{shoppinglist/overview :: itemActions(${item})}"></div>
+                            </div>
                         </td>
                     </tr>
                 </tbody>

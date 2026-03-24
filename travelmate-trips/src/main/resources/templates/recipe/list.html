@@ -10,7 +10,7 @@
     <a th:href="@{/recipes/new}" role="button" th:text="#{recipe.create}">Neues Rezept</a>
 
     <figure class="table-cards" th:if="${!recipes.isEmpty()}">
-        <table>
+        <table class="responsive-card-table">
             <thead>
                 <tr>
                     <th th:text="#{recipe.name}">Name</th>
@@ -24,19 +24,19 @@
                     <td th:data-label="#{recipe.name}" th:text="${r.name()}"></td>
                     <td th:data-label="#{recipe.servings}" th:text="${r.servings()}"></td>
                     <td th:data-label="#{recipe.ingredients}" th:text="${r.ingredients().size()}"></td>
-                    <td data-label="">
-                        <div style="display:flex; gap:0.5rem; align-items:stretch;">
+                    <td th:data-label="#{invitation.actions}">
+                        <div style="display:flex; gap:0.5rem; justify-content: flex-end; align-items: center;">
                             <a th:href="@{/recipes/{id}/edit(id=${r.recipeId()})}"
                                role="button" class="outline"
-                               style="display:inline-flex; align-items:center; justify-content:center; padding:0.5rem 1rem; font-size:0.875rem; text-decoration:none;"
-                               th:text="#{common.edit}">Bearbeiten</a>
+                               style="padding:0.5rem 0.8rem;"
+                               th:attr="aria-label=#{common.edit},title=#{common.edit}">✎</a>
                             <form method="post" th:action="@{/recipes/{id}/delete(id=${r.recipeId()})}"
                                   onsubmit="return confirm(this.dataset.confirmMsg);"
                                   th:data-confirm-msg="#{recipe.delete.confirm}"
-                                  style="margin:0; display:flex;">
+                                  style="margin:0;">
                                 <button type="submit" class="outline secondary"
-                                        style="display:inline-flex; align-items:center; justify-content:center; padding:0.5rem 1rem; font-size:0.875rem;"
-                                        th:text="#{common.delete}">Loeschen</button>
+                                        style="padding:0.5rem 0.8rem;"
+                                        th:attr="aria-label=#{common.delete},title=#{common.delete}">&times;</button>
                             </form>
                         </div>
                     </td>

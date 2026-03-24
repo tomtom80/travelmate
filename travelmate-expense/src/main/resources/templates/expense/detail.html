@@ -22,7 +22,7 @@
     <article th:if="${!expense.categoryBreakdown().isEmpty()}">
         <h2 th:text="#{expense.categoryBreakdown}">Ausgaben nach Kategorie</h2>
         <figure class="table-cards">
-            <table>
+            <table class="responsive-card-table">
                 <thead>
                     <tr>
                         <th th:text="#{expense.receipt.category}">Kategorie</th>
@@ -53,7 +53,7 @@
     <article th:if="${!expense.dailyCosts().isEmpty()}">
         <h2 th:text="#{expense.dailyCosts}">Tageskosten</h2>
         <figure class="table-cards">
-            <table>
+            <table class="responsive-card-table">
                 <thead>
                     <tr>
                         <th th:text="#{expense.dailyCosts.date}">Datum</th>
@@ -97,8 +97,8 @@
 
     <article th:if="${!expense.partyAccounts().isEmpty()}">
         <h2 th:text="#{expense.partyAccount}">Reisekonto nach Reisepartei</h2>
-        <figure class="table-cards">
-            <table>
+        <figure>
+            <table class="responsive-card-table stacked-card-table">
                 <thead>
                     <tr>
                         <th th:text="#{expense.partyAccount.party}">Reisepartei</th>

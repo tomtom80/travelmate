@@ -3,7 +3,7 @@
 <body>
 <div th:fragment="receiptList">
     <figure class="table-cards" th:if="${!expense.receipts().isEmpty()}">
-        <table>
+        <table class="responsive-card-table">
             <thead>
                 <tr>
                     <th th:text="#{expense.receipt.description}">Beschreibung</th>
@@ -18,7 +18,7 @@
             <tbody>
                 <tr th:each="receipt : ${expense.receipts()}">
                     <td th:data-label="#{expense.receipt.description}" th:text="${receipt.description()}"></td>
-                    <td th:data-label="#{expense.receipt.amount}" th:text="${#numbers.formatDecimal(receipt.amount(), 1, 2)}"></td>
+                    <td th:data-label="#{expense.receipt.amount}" th:text="${#numbers.formatDecimal(receipt.amount(), 1, 2) + ' EUR'}"></td>
                     <td th:data-label="#{expense.receipt.paidBy}" th:text="${participantNames[receipt.paidBy()] != null ? participantNames[receipt.paidBy()] : receipt.paidBy()}"></td>
                     <td th:data-label="#{expense.receipt.date}" th:text="${receipt.date()}"></td>
                     <td th:data-label="#{expense.receipt.category}" th:text="#{${'expense.category.' + receipt.category()}}">Sonstiges</td>
@@ -27,8 +27,8 @@
                         <small th:if="${receipt.rejectionReason() != null}"
                                th:text="${receipt.rejectionReason()}" style="display:block; color:red;"></small>
                     </td>
-                    <td th:if="${expense.status().name() != 'SETTLED'}">
-                        <div style="display:flex; gap:0.25rem; flex-wrap:wrap;">
+                    <td th:if="${expense.status().name() != 'SETTLED'}" th:data-label="#{common.edit}">
+                        <div style="display:flex; gap:0.25rem; flex-wrap:wrap; justify-content: flex-end;">
                             <!-- Approve/Reject for SUBMITTED receipts in review mode -->
                             <button th:if="${expense.reviewRequired() && receipt.reviewStatus().name() == 'SUBMITTED'}"
                                     class="outline"

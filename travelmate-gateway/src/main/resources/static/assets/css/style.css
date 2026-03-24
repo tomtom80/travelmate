@@ -1,0 +1,276 @@
+:root {
+  /* Corporate Design - Brand Colors */
+  --pico-font-family: system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --pico-primary: #2563eb;
+  --pico-primary-background: #2563eb;
+  --pico-primary-hover: #1d4ed8;
+  --pico-primary-underline: rgba(37, 99, 235, 0.5);
+  
+  /* Layout Spacing */
+  --pico-block-spacing-vertical: 2rem;
+}
+
+/* Global Navigation Improvements */
+nav.container {
+  padding: 0.5rem 1rem;
+}
+
+nav ul {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+@media (max-width: 768px) {
+  nav {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  nav ul:first-child {
+    width: 100%;
+    margin-bottom: 0.5rem;
+  }
+  
+  nav ul:last-child {
+    width: 100%;
+    justify-content: space-between;
+    font-size: 0.85rem;
+  }
+
+  nav ul li {
+    padding: 0.25rem 0;
+  }
+
+  /* Specific fix for logout button on mobile */
+  nav ul li form button {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.75rem;
+    min-height: auto;
+  }
+}
+
+/* Global Alignment & Height Consistency */
+button, 
+select, 
+input:not([type="checkbox"]):not([type="radio"]) {
+  min-height: 2.75rem;
+  margin-bottom: 0 !important;
+  vertical-align: middle;
+}
+
+.grid > * {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+
+figure {
+  width: 100%;
+  overflow-x: auto;
+  margin-bottom: var(--pico-spacing);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+table td {
+  vertical-align: middle;
+}
+
+/* Styled Dropdown (Kebab Menu) */
+details.dropdown {
+  position: relative;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+details.dropdown > summary {
+  list-style: none;
+  cursor: pointer;
+  padding: 0;
+  margin: 0;
+  border-radius: var(--pico-border-radius);
+  transition: background-color 0.2s;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+}
+
+/* Edit Icon Button Alignment */
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  margin: 0;
+  width: 2.75rem;
+  height: 2.75rem;
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  border-radius: var(--pico-border-radius);
+}
+
+details.dropdown > summary::after {
+  display: none !important;
+}
+
+details.dropdown > summary:hover,
+details.dropdown[open] > summary {
+  background-color: var(--pico-muted-border-color);
+}
+
+details.dropdown > .dropdown-menu {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 99;
+  min-width: 200px;
+  padding: 0.5rem;
+  margin-top: 0.25rem;
+  background-color: var(--pico-background-color);
+  border: 1px solid var(--pico-muted-border-color);
+  border-radius: var(--pico-border-radius);
+  box-shadow: var(--pico-card-box-shadow);
+}
+
+details.dropdown > .dropdown-menu button,
+details.dropdown > .dropdown-menu a {
+  width: 100%;
+  text-align: left;
+  margin-bottom: 0.25rem;
+  font-size: 0.875rem;
+}
+
+details.dropdown > .dropdown-menu button:last-child,
+details.dropdown > .dropdown-menu a:last-child {
+  margin-bottom: 0;
+}
+
+/* Mobile-First Responsive Tables (Card View) */
+@media (max-width: 768px) {
+  .responsive-card-table {
+    display: block;
+    width: 100%;
+  }
+  
+  .responsive-card-table thead {
+    display: none;
+  }
+  
+  .responsive-card-table tbody {
+    display: block;
+    width: 100%;
+  }
+  
+  .responsive-card-table tr {
+    display: block;
+    width: 100% !important;
+    margin-bottom: 1.5rem;
+    border: 1px solid var(--pico-muted-border-color);
+    border-radius: var(--pico-border-radius);
+    padding: 1rem;
+    background-color: var(--pico-card-background-color);
+    box-shadow: var(--pico-card-box-shadow);
+    box-sizing: border-box;
+  }
+  
+  .responsive-card-table td {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    border-bottom: 1px solid var(--pico-muted-border-color);
+    padding: 0.75rem 0;
+    text-align: right;
+    word-break: break-word;
+  }
+  
+  .responsive-card-table td:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+  }
+  
+  .responsive-card-table td::before {
+    content: attr(data-label);
+    font-weight: bold;
+    text-align: left;
+    margin-right: 1rem;
+    color: var(--pico-h6-color);
+    flex-shrink: 0;
+  }
+
+  /* Stacked Card Table for extra data-heavy views */
+  .stacked-card-table td {
+    flex-direction: column;
+    align-items: flex-start;
+    text-align: left;
+  }
+  
+  .stacked-card-table td::before {
+    margin-bottom: 0.25rem;
+  }
+
+  /* Dropdowns on Mobile: Bottom Sheet style fix */
+  details.dropdown[open] > .dropdown-menu {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    top: auto;
+    width: 100%;
+    border-radius: 1.25rem 1.25rem 0 0;
+    padding: 1.5rem 1rem calc(1rem + env(safe-area-inset-bottom));
+    z-index: 1001;
+    animation: slideUp 0.3s cubic-bezier(0, 0, 0.2, 1);
+  }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+/* Backdrop for open dropdowns on mobile */
+#dropdown-backdrop {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 1000;
+}
+
+body.dropdown-open {
+  overflow: hidden;
+}
+
+/* Logo in Nav */
+nav ul li img.brand-logo {
+  height: 32px;
+  width: auto;
+  vertical-align: middle;
+  margin-right: 0.5rem;
+}
+
+@media (min-width: 769px) {
+  nav ul li img.brand-logo {
+    height: 40px;
+  }
+}
+
+/* Dialog Styles */
+dialog > article {
+  max-width: 600px;
+  width: 90%;
+}

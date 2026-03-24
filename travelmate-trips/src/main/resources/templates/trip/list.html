@@ -34,7 +34,7 @@
     <h1 th:text="#{trip.title}">Reisen</h1>
 
     <figure class="table-cards">
-        <table th:if="${!trips.isEmpty()}">
+        <table class="responsive-card-table" th:if="${!trips.isEmpty()}">
             <thead>
                 <tr>
                     <th th:text="#{trip.name}">Name</th>
@@ -53,10 +53,13 @@
                     <td th:data-label="#{trip.startDate}" th:text="${trip.startDate()}"></td>
                     <td th:data-label="#{trip.endDate}" th:text="${trip.endDate()}"></td>
                     <td th:data-label="#{trip.status}"><mark th:text="#{${'trip.status.' + trip.status()}}"></mark></td>
-                    <td>
-                        <a th:if="${trip.status() == 'COMPLETED'}"
-                           th:href="|/expense/${trip.tripId()}|"
-                           th:text="#{trip.expense.action}">Abrechnung</a>
+                    <td th:data-label="#{invitation.actions}">
+                        <div style="display:flex; gap:0.5rem; justify-content: flex-end;">
+                            <a th:if="${trip.status() == 'COMPLETED'}"
+                               th:href="|/expense/${trip.tripId()}|"
+                               role="button" class="outline" style="padding: 0.5rem 0.8rem;"
+                               th:text="#{trip.expense.action}">Abrechnung</a>
+                        </div>
                     </td>
                 </tr>
             </tbody>

@@ -3,7 +3,7 @@
 <body>
 <div th:fragment="weightingList">
     <figure class="table-cards" th:if="${!expense.weightings().isEmpty()}">
-        <table>
+        <table class="responsive-card-table">
             <thead>
                 <tr>
                     <th th:text="#{expense.weighting.participant}">Teilnehmer</th>
@@ -18,17 +18,17 @@
                     <td th:data-label="#{expense.weighting.weight}">
                         <form method="post" th:action="@{/{tripId}/weightings(tripId=${tripId})}" style="margin:0;">
                             <input type="hidden" name="participantId" th:value="${weighting.participantId()}">
-                            <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                            <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap; justify-content: flex-end;">
                                 <input type="number" name="weight" min="0" step="0.1"
                                        th:value="${#numbers.formatDecimal(weighting.weight(), 1, 1)}"
-                                       style="margin-bottom:0; max-width:7rem;">
-                                <button type="submit" class="outline" th:text="#{expense.weighting.update}"
-                                        style="margin-bottom:0;">Aktualisieren</button>
+                                       style="margin-bottom:0; max-width:6rem;">
+                                <button type="submit" class="outline" th:text="#{common.save}"
+                                        style="margin-bottom:0; padding: 0.5rem 0.8rem;">✎</button>
                             </div>
                         </form>
                     </td>
                     <td th:data-label="#{expense.weighting.recommendation}">
-                        <div style="display:flex; flex-direction:column; gap:0.2rem;">
+                        <div style="display:flex; flex-direction:column; gap:0.2rem; align-items: flex-end;">
                             <strong th:text="${#numbers.formatDecimal(weighting.recommendedWeight(), 1, 1)}">1.0</strong>
                             <small th:if="${weighting.recommendationType() == 'INFANT'}" th:text="#{expense.weighting.recommendationInfant}">Kleinkind unter 3</small>
                             <small th:if="${weighting.recommendationType() == 'CHILD'}" th:text="#{expense.weighting.recommendationChild}">Kind 3-16</small>

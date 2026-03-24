@@ -5,12 +5,18 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="#{landing.title}">Travelmate — Gemeinsam Reisen planen</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
-    <link rel="stylesheet" th:href="@{/css/landing.css}">
+    <link rel="stylesheet" href="/assets/css/style.css">
+    <script src="/assets/js/scripts.js" defer></script>
 </head>
 <body>
     <nav class="container">
         <ul>
-            <li><a th:href="@{/}"><strong th:text="#{nav.brand}">Travelmate</strong></a></li>
+            <li>
+                <a th:href="@{/}" style="display: flex; align-items: center; text-decoration: none;">
+                    <img th:src="@{/assets/images/logo.svg}" alt="Travelmate Logo" class="brand-logo" style="width: 40px; height: 40px; vertical-align: middle; margin-right: 0.5rem;">
+                    <strong th:text="#{nav.brand}">Travelmate</strong>
+                </a>
+            </li>
         </ul>
         <ul>
             <li>

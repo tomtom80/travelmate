@@ -3,7 +3,7 @@
 <body>
 <div th:fragment="invitationList">
     <figure class="table-cards">
-        <table th:if="${!invitations.isEmpty()}">
+        <table class="responsive-card-table" th:if="${!invitations.isEmpty()}">
             <thead>
                 <tr>
                     <th th:text="#{invitation.member}">Mitglied</th>
@@ -18,19 +18,19 @@
                         <small th:if="${inv.invitationType() == 'EXTERNAL'}" th:text="#{invitation.statusExternal}"> (extern)</small>
                     </td>
                     <td th:data-label="#{trip.status}"><mark th:text="#{${'invitation.status.' + inv.status()}}"></mark></td>
-                    <td th:if="${inv.status() == 'PENDING' && inv.inviteeId() == currentMemberId}">
-                        <div class="grid">
+                    <td th:if="${inv.status() == 'PENDING' && inv.inviteeId() == currentMemberId}" th:data-label="#{invitation.actions}">
+                        <div style="display:flex; gap:0.5rem; justify-content: flex-end; align-items: center;">
                             <form hx-post th:hx-post="@{/{tid}/invitations/{iid}/accept(tid=${inv.tripId()},iid=${inv.invitationId()})}"
                                   hx-target="#invitations"
                                   hx-swap="innerHTML"
                                   hx-disabled-elt="find [type=submit]">
-                                <button type="submit" th:text="#{invitation.accept}">Annehmen</button>
+                                <button type="submit" class="outline" style="padding:0.5rem 0.8rem;" th:attr="aria-label=#{invitation.accept},title=#{invitation.accept}">✓</button>
                             </form>
                             <form hx-post th:hx-post="@{/{tid}/invitations/{iid}/decline(tid=${inv.tripId()},iid=${inv.invitationId()})}"
                                   hx-target="#invitations"
                                   hx-swap="innerHTML"
                                   hx-disabled-elt="find [type=submit]">
-                                <button type="submit" class="outline secondary" th:text="#{invitation.decline}">Ablehnen</button>
+                                <button type="submit" class="outline secondary" style="padding:0.5rem 0.8rem;" th:attr="aria-label=#{invitation.decline},title=#{invitation.decline}">&times;</button>
                             </form>
                         </div>
                     </td>

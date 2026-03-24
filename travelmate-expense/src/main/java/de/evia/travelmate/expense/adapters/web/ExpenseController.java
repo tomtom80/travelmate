@@ -227,17 +227,16 @@ public class ExpenseController {
                                   @RequestParam final UUID participantId,
                                   @RequestParam final BigDecimal weight,
                                   final HttpServletResponse response,
-                                  final Locale locale,
-                                  final Model model) {
+                                  final Locale locale) {
         requireAuthentication(jwt);
         final TripProjection projection = findProjection(tripId);
         final TenantId tenantId = projection.tenantId();
 
-        final ExpenseRepresentation expense = expenseService.updateWeighting(
+        expenseService.updateWeighting(
             tenantId, new UpdateWeightingCommand(tripId, participantId, weight));
 
         triggerSuccessToast(response, messageSource.getMessage("expense.weightingUpdated", null, locale));
-        return populateWeightingFragment(expense, projection, model);
+        return "redirect:/expense/" + tripId;
     }
 
     @PostMapping("/{tripId}/advance-payments")

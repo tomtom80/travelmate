@@ -4,7 +4,7 @@
 <div th:fragment="content">
     <h1 th:text="#{travelParty.title}">Reisepartei</h1>
     <p><a th:href="@{/tenants/new}" th:text="#{travelParty.create}">Neue Reisepartei anlegen</a></p>
-    <table th:if="${!tenants.isEmpty()}">
+    <table class="responsive-card-table" th:if="${!tenants.isEmpty()}">
         <thead>
             <tr>
                 <th th:text="#{travelParty.name}">Name</th>
@@ -14,9 +14,13 @@
         </thead>
         <tbody>
             <tr th:each="tenant : ${tenants}">
-                <td th:text="${tenant.name}"></td>
-                <td th:text="${tenant.description}"></td>
-                <td><a th:href="@{/tenants/{id}(id=${tenant.tenantId})}" th:text="#{travelParty.detail}">Details</a></td>
+                <td th:data-label="#{travelParty.name}" th:text="${tenant.name}"></td>
+                <td th:data-label="#{travelParty.description}" th:text="${tenant.description}"></td>
+                <td th:data-label="#{invitation.actions}">
+                    <div style="display:flex; gap:0.5rem; justify-content: flex-end;">
+                        <a th:href="@{/tenants/{id}(id=${tenant.tenantId})}" role="button" class="outline" style="padding: 0.5rem 0.8rem;" th:text="#{travelParty.detail}">Details</a>
+                    </div>
+                </td>
             </tr>
         </tbody>
     </table>

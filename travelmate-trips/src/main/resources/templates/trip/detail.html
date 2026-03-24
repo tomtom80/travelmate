@@ -43,21 +43,34 @@
         <form method="post"
               th:if="${!availableOwnPartyParticipants.isEmpty()}"
               th:action="@{/{tid}/participants(tid=${trip.tripId()})}"
+              id="add-participant-form"
               style="margin-bottom:1rem;">
             <div class="grid" style="gap:0.5rem; align-items:end;">
                 <label style="margin-bottom:0;">
                     <span th:text="#{trip.participants.addOwn}">Teilnehmer aus eigener Reisepartei hinzufuegen</span>
-                    <select name="participantId" required style="margin-bottom:0;">
+                    <select name="participantId" id="participant-select" required style="margin-bottom:0;">
                         <option th:each="p : ${availableOwnPartyParticipants}"
                                 th:value="${p.participantId()}"
+                                th:data-id="${p.participantId()}"
                                 th:text="${p.displayName()}"></option>
                     </select>
                 </label>
                 <button type="submit" th:text="#{trip.participants.add}">Hinzufuegen</button>
             </div>
         </form>
+
+        <script th:inline="javascript">
+            // Filter already present participants
+            const presentIds = /*[[${participants.![participantId()]}]]*/ [];
+            const select = document.getElementById('participant-select');
+            Array.from(select.options).forEach(opt => {
+                if (presentIds.includes(opt.getAttribute('data-id'))) {
+                    opt.disabled = true;
+                }
+            });
+        </script>
         <figure class="table-cards" th:if="${!participants.isEmpty()}">
-            <table>
+            <table class="responsive-card-table">
                 <thead>
                     <tr>
                         <th th:text="#{invitation.member}">Mitglied</th>
@@ -76,100 +89,125 @@
                         </td>
                         <td th:data-label="#{trip.arrivalDate}" th:text="${p.arrivalDate()}"></td>
                         <td th:data-label="#{trip.departureDate}" th:text="${p.departureDate()}"></td>
-                        <td th:if="${p.manageableByCurrentParty() || isOrganizer}" th:data-label="#{invitation.actions}">
-                            <form method="post"
-                                  th:action="@{/{tid}/participants/{pid}/stay-period(tid=${trip.tripId()},pid=${p.participantId()})}"
-                                  class="participant-actions-form">
-                                <div class="participant-actions-grid">
-                                    <label class="participant-actions-field">
-                                        <span class="participant-actions-label" th:text="#{trip.arrivalDate}">Anreise</span>
-                                        <input type="date" name="arrivalDate" th:value="${p.arrivalDate()}"
-                                               th:aria-label="#{trip.arrivalDate}" th:title="#{trip.arrivalDate}"
-                                               required class="participant-actions-input">
-                                    </label>
-                                    <label class="participant-actions-field">
-                                        <span class="participant-actions-label" th:text="#{trip.departureDate}">Abreise</span>
-                                        <input type="date" name="departureDate" th:value="${p.departureDate()}"
-                                               th:aria-label="#{trip.departureDate}" th:title="#{trip.departureDate}"
-                                               required class="participant-actions-input">
-                                    </label>
-                                    <div class="participant-actions-toolbar">
-                                        <button type="submit" th:text="#{common.save}"
-                                                class="participant-actions-primary">Speichern</button>
-                                        <details class="action-menu"
-                                                 th:if="${(isOrganizer && p.organizerEligible() && p.participantId() != currentMemberId && !trip.organizerIds().contains(p.participantId())) || p.participantId() != currentMemberId}">
-                                            <summary th:attr="aria-label=#{common.more},title=#{common.more}">
-                                                <span class="action-menu__dots" aria-hidden="true">...</span>
-                                                <span class="action-menu__chevron" aria-hidden="true">&gt;</span>
-                                            </summary>
-                                            <div class="action-menu__panel">
-                                                <button type="submit" class="outline"
-                                                        th:if="${isOrganizer && p.organizerEligible() && p.participantId() != currentMemberId && !trip.organizerIds().contains(p.participantId())}"
-                                                        th:formaction="@{/{tid}/organizers/{pid}(tid=${trip.tripId()},pid=${p.participantId()})}"
-                                                        th:text="#{trip.organizer.grant}">Zum Organizer machen</button>
-                                                <button type="submit" class="outline secondary"
-                                                        th:if="${p.participantId() != currentMemberId}"
-                                                        th:formaction="@{/{tid}/participants/{pid}/remove(tid=${trip.tripId()},pid=${p.participantId()})}"
-                                                        th:text="#{common.remove}">Entfernen</button>
-                                            </div>
-                                        </details>
+                        <td th:data-label="#{invitation.actions}">
+                            <div style="display:flex; gap:0.5rem; justify-content: flex-end; align-items: center;">
+                                <button th:if="${p.manageableByCurrentParty() || isOrganizer}"
+                                        type="button" class="outline action-btn"
+                                        th:data-modal-id="'edit-stay-' + ${p.participantId()}"
+                                        onclick="openModal(this.getAttribute('data-modal-id'))"
+                                        th:attr="aria-label=#{trip.participants.editStay},title=#{trip.participants.editStay}">
+                                    ✎
+                                </button>
+                                
+                                <details class="dropdown"
+                                         th:if="${(isOrganizer && p.organizerEligible() && p.participantId() != currentMemberId && !trip.organizerIds().contains(p.participantId())) || p.participantId() != currentMemberId}">
+                                    <summary role="button" class="outline secondary" th:attr="aria-label=#{common.more},title=#{common.more}">
+                                        ⋮
+                                    </summary>
+                                    <div class="dropdown-menu">
+                                        <form method="post" style="margin:0;">
+                                            <button type="submit" class="outline"
+                                                    th:if="${isOrganizer && p.organizerEligible() && p.participantId() != currentMemberId && !trip.organizerIds().contains(p.participantId())}"
+                                                    th:formaction="@{/{tid}/organizers/{pid}(tid=${trip.tripId()},pid=${p.participantId()})}"
+                                                    th:text="#{trip.organizer.grant}">Zum Organizer machen</button>
+                                            <button type="submit" class="outline secondary"
+                                                    th:if="${p.participantId() != currentMemberId}"
+                                                    th:formaction="@{/{tid}/participants/{pid}/remove(tid=${trip.tripId()},pid=${p.participantId()})}"
+                                                    th:text="#{common.remove}">Entfernen</button>
+                                        </form>
                                     </div>
-                                </div>
-                            </form>
-                        </td>
-                        <td th:if="${!(p.manageableByCurrentParty() || isOrganizer)}"></td>
-                    </tr>
-                </tbody>
-            </table>
-        </figure>
-        <p th:if="${participants.isEmpty()}" th:text="#{trip.participants.empty}">Noch keine Teilnehmer.</p>
-    </article>
+                                </details>
+                            </div>
 
-    <!-- Invitations Card -->
-    <article>
-        <h2 th:text="#{invitation.title}">Einladungen</h2>
-        <div id="invitations">
-            <div th:replace="~{trip/invitations :: invitationList}"></div>
-        </div>
+                            <!-- Modal for editing stay period -->
+                            <dialog th:id="'edit-stay-' + ${p.participantId()}" th:if="${p.manageableByCurrentParty() || isOrganizer}">
+                                <article>
+                                    <header>
+                                        <button aria-label="Close" rel="prev" 
+                                                th:data-modal-id="'edit-stay-' + ${p.participantId()}"
+                                                onclick="closeModal(this.getAttribute('data-modal-id'))"></button>
+                                        <h3 th:text="#{trip.participants.editStay.title}">Reisezeitraum anpassen</h3>
+                                    </header>
+                                    <form method="post" th:action="@{/{tid}/participants/{pid}/stay-period(tid=${trip.tripId()},pid=${p.participantId()})}">
+                                        <p><strong th:text="${p.firstName() + ' ' + p.lastName()}"></strong></p>
+                                        <div class="grid">
+                                            <label>
+                                                <span th:text="#{trip.arrivalDate}">Anreise</span>
+                                                <input type="date" name="arrivalDate" th:value="${p.arrivalDate()}" required>
+                                            </label>
+                                            <label>
+                                                <span th:text="#{trip.departureDate}">Abreise</span>
+                                                <input type="date" name="departureDate" th:value="${p.departureDate()}" required>
+                                            </label>
+                                        </div>
+                                        <footer>
+                                            <div style="display:flex; gap:0.5rem; justify-content: flex-end;">
+                                                <button type="button" class="secondary outline" 
+                                                        th:data-modal-id="'edit-stay-' + ${p.participantId()}"
+                                                        onclick="closeModal(this.getAttribute('data-modal-id'))" 
+                                                        th:text="#{common.cancel}">Abbrechen</button>
+                                                <button type="submit" th:text="#{common.save}">Speichern</button>
+                                                </div>
+                                                </footer>
+                                                </form>
+                                                </article>
+                                                </dialog>
+                                                </td>
+                                                </tr>
+                                                </tbody>
+                                                </table>
+                                                </figure>
+                                                <p th:if="${participants.isEmpty()}" th:text="#{trip.participants.empty}">Noch keine Teilnehmer.</p>
+                                                </article>
 
-        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1rem;">
-            <button th:if="${!invitableMembers.isEmpty()}"
-                    onclick="document.getElementById('invite-member-dialog').showModal()"
-                    th:text="#{invitation.invite}">Mitglied einladen</button>
-            <button th:if="${isOrganizer}"
-                    class="outline"
-                    onclick="document.getElementById('invite-external-dialog').showModal()"
-                    th:text="#{invitation.inviteByEmail}">Per E-Mail einladen</button>
-        </div>
-        <p th:if="${invitableMembers.isEmpty() && !isOrganizer}" th:text="#{invitation.allInvited}">Alle Mitglieder bereits eingeladen.</p>
-    </article>
+                                                <!-- Invitations Card -->
+                                                <article>
+                                                <h2 th:text="#{invitation.title}">Einladungen</h2>
+                                                <div id="invitations">
+                                                <div th:replace="~{trip/invitations :: invitationList}"></div>
+                                                </div>
 
-    <!-- Dialog: Invite Member -->
-    <dialog id="invite-member-dialog" th:if="${!invitableMembers.isEmpty()}">
-        <article>
-            <header>
-                <button aria-label="Close" rel="prev"
-                        onclick="document.getElementById('invite-member-dialog').close()"></button>
-                <h3 th:text="#{invitation.invite}">Mitglied einladen</h3>
-            </header>
-            <form hx-post th:hx-post="@{/{id}/invitations(id=${trip.tripId()})}"
-                  hx-target="#invitations"
-                  hx-swap="innerHTML"
-                  hx-disabled-elt="find [type=submit]"
-                  hx-on::after-request="if(event.detail.successful) { this.reset(); document.getElementById('invite-member-dialog').close(); }">
-                <label for="inviteeId" th:text="#{invitation.member}">Mitglied</label>
-                <select id="inviteeId" name="inviteeId" required>
-                    <option th:each="m : ${invitableMembers}"
-                            th:value="${m.memberId()}"
-                            th:text="${m.firstName() + ' ' + m.lastName()}">
-                    </option>
-                </select>
-                <footer>
-                    <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
-                        <button type="button" class="secondary"
-                                onclick="document.getElementById('invite-member-dialog').close()"
-                                th:text="#{common.cancel}">Abbrechen</button>
-                        <button type="submit" th:text="#{invitation.send}">Einladung senden</button>
+                                                <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1rem;">
+                                                <button th:if="${!invitableMembers.isEmpty()}"
+                                                th:data-modal-id="invite-member-dialog"
+                                                onclick="openModal(this.getAttribute('data-modal-id'))"
+                                                th:text="#{invitation.invite}">Mitglied einladen</button>
+                                                <button th:if="${isOrganizer}"
+                                                class="outline"
+                                                th:data-modal-id="invite-external-dialog"
+                                                onclick="openModal(this.getAttribute('data-modal-id'))"
+                                                th:text="#{invitation.inviteByEmail}">Per E-Mail einladen</button>
+                                                </div>
+                                                <p th:if="${invitableMembers.isEmpty() && !isOrganizer}" th:text="#{invitation.allInvited}">Alle Mitglieder bereits eingeladen.</p>
+                                                </article>
+
+                                                <!-- Dialog: Invite Member -->
+                                                <dialog id="invite-member-dialog" th:if="${!invitableMembers.isEmpty()}">
+                                                <article>
+                                                <header>
+                                                <button aria-label="Close" rel="prev" 
+                                                        th:data-modal-id="invite-member-dialog"
+                                                        onclick="closeModal(this.getAttribute('data-modal-id'))"></button>
+                                                <h3 th:text="#{invitation.invite}">Mitglied einladen</h3>
+                                                </header>
+                                                <form hx-post th:hx-post="@{/{id}/invitations(id=${trip.tripId()})}"
+                                                  hx-target="#invitations"
+                                                  hx-swap="innerHTML"
+                                                  hx-disabled-elt="find [type=submit]"
+                                                  hx-on::after-request="if(event.detail.successful) { this.reset(); closeModal('invite-member-dialog'); }">
+                                                <label for="inviteeId" th:text="#{invitation.member}">Mitglied</label>
+                                                <select id="inviteeId" name="inviteeId" required>
+                                                    <option th:each="m : ${invitableMembers}"
+                                                            th:value="${m.memberId()}"
+                                                            th:text="${m.firstName() + ' ' + m.lastName()}">
+                                                    </option>
+                                                </select>
+                                                <footer>
+                                                    <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
+                                                        <button type="button" class="secondary"
+                                                                th:data-modal-id="invite-member-dialog"
+                                                                onclick="closeModal(this.getAttribute('data-modal-id'))"
+                                                                th:text="#{common.cancel}">Abbrechen</button>                        <button type="submit" th:text="#{invitation.send}">Einladung senden</button>
                     </div>
                 </footer>
             </form>

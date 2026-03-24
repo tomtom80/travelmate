@@ -50,7 +50,7 @@
         <!-- Room Table -->
         <h3 th:text="#{accommodation.rooms}">Zimmer</h3>
         <figure>
-            <table>
+            <table class="responsive-card-table">
                 <thead>
                     <tr>
                         <th th:text="#{accommodation.room.name}">Bezeichnung</th>
@@ -62,34 +62,22 @@
                 </thead>
                 <tbody>
                     <tr th:each="room : ${accommodation.rooms()}">
-                        <td th:if="${!isEditable}" th:text="${room.name()}"></td>
-                        <td th:if="${!isEditable}" th:text="${room.bedCount()}"></td>
-                        <td th:if="${isEditable}" colspan="2" style="padding:0.25rem;">
-                            <form method="post"
-                                  th:action="@{/{tid}/accommodation/rooms/{rid}/update(tid=${trip.tripId()},rid=${room.roomId()})}"
-                                  style="display:flex; gap:0.5rem; align-items:center; margin:0;">
-                                <input type="text" name="name" th:value="${room.name()}" required maxlength="100"
-                                       style="margin:0; padding:0.25rem 0.5rem; flex:2;">
-                                <input type="number" name="bedCount" th:value="${room.bedCount()}" required min="1"
-                                       style="margin:0; padding:0.25rem 0.5rem; width:5rem; flex:0 0 auto;">
-                                <button type="submit" style="margin:0; padding:0.25rem 0.5rem; font-size:0.85rem; white-space:nowrap;"
-                                        th:text="#{common.save}">Speichern</button>
-                            </form>
-                        </td>
-                        <td th:text="${room.pricePerNight()} ? ${room.pricePerNight()} + ' EUR' : '—'"></td>
-                        <td>
+                        <td th:data-label="#{accommodation.room.name}" th:text="${room.name()}"></td>
+                        <td th:data-label="#{accommodation.room.bedCount}" th:text="${room.bedCount()}"></td>
+                        <td th:data-label="#{accommodation.room.pricePerNight}" th:text="${room.pricePerNight()} ? ${room.pricePerNight()} + ' EUR' : '—'"></td>
+                        <td th:data-label="#{accommodation.room.assignment}">
                             <!-- Show assignments for this room -->
                             <th:block th:with="roomAssignments=${assignmentsByRoom != null ? assignmentsByRoom.get(room.roomId()) : null}, totalAssigned=${assignedCountByRoom != null ? assignedCountByRoom.get(room.roomId()) : 0}">
                                 <div th:if="${roomAssignments == null || roomAssignments.isEmpty()}" style="color:var(--pico-muted-color, gray);">
                                     <em th:text="#{accommodation.room.unassigned}">Frei</em>
                                 </div>
-                                <div th:each="assignment : ${roomAssignments}" style="margin-bottom:0.25rem;">
+                                <div th:each="assignment : ${roomAssignments}" style="margin-bottom:0.25rem; display:flex; justify-content: space-between; align-items: center;">
                                     <span th:text="${assignment.partyName() + ' — ' + assignment.personCount() + ' Pers.'}"></span>
                                     <form th:if="${isEditable}" method="post"
                                           th:action="@{/{tid}/accommodation/assignments/{aid}/delete(tid=${trip.tripId()},aid=${assignment.assignmentId()})}"
                                           style="display:inline; margin:0;"
                                           onsubmit="return confirm(/*[[#{accommodation.room.unassign.confirm}]]*/ 'Zuweisung wirklich entfernen?')">
-                                        <button type="submit" class="outline secondary" style="padding:0.1rem 0.3rem; font-size:0.75rem; margin:0;">
+                                        <button type="submit" class="outline secondary" style="padding:0.1rem 0.3rem; font-size:0.75rem; margin:0; min-height: auto;">
                                             &times;
                                         </button>
                                     </form>
@@ -101,14 +89,53 @@
                                 </small>
                             </th:block>
                         </td>
-                        <td th:if="${isEditable}">
-                            <form method="post"
-                                  th:action="@{/{tid}/accommodation/rooms/{rid}/delete(tid=${trip.tripId()},rid=${room.roomId()})}"
-                                  style="margin:0;"
-                                  onsubmit="return confirm(/*[[#{accommodation.room.delete.confirm}]]*/ 'Zimmer wirklich entfernen?')">
-                                <button type="submit" class="outline secondary" style="padding:0.25rem 0.5rem; font-size:0.85rem;"
-                                        th:text="#{common.remove}">Entfernen</button>
-                            </form>
+                        <td th:if="${isEditable}" th:data-label="#{invitation.actions}">
+                            <div style="display:flex; gap:0.5rem; justify-content: flex-end;">
+                                <button type="button" class="outline" style="padding: 0.5rem 0.8rem;"
+                                        th:data-modal-id="'edit-room-' + ${room.roomId()}"
+                                        onclick="openModal(this.getAttribute('data-modal-id'))"
+                                        th:attr="aria-label=#{common.edit},title=#{common.edit}">✎</button>
+                                <form method="post"
+                                      th:action="@{/{tid}/accommodation/rooms/{rid}/delete(tid=${trip.tripId()},rid=${room.roomId()})}"
+                                      style="margin:0;"
+                                      onsubmit="return confirm(/*[[#{accommodation.room.delete.confirm}]]*/ 'Zimmer wirklich entfernen?')">
+                                    <button type="submit" class="outline secondary" style="padding:0.5rem 0.8rem;"
+                                            th:attr="aria-label=#{common.remove},title=#{common.remove}">&times;</button>
+                                </form>
+                            </div>
+
+                            <!-- Modal for editing room -->
+                            <dialog th:id="'edit-room-' + ${room.roomId()}" th:if="${isEditable}">
+                                <article>
+                                    <header>
+                                        <button aria-label="Close" rel="prev" 
+                                                th:data-modal-id="'edit-room-' + ${room.roomId()}"
+                                                onclick="closeModal(this.getAttribute('data-modal-id'))"></button>
+                                        <h3 th:text="#{accommodation.room.edit}">Zimmer bearbeiten</h3>
+                                    </header>
+                                    <form method="post" th:action="@{/{tid}/accommodation/rooms/{rid}/update(tid=${trip.tripId()},rid=${room.roomId()})}">
+                                        <div class="grid">
+                                            <label>
+                                                <span th:text="#{accommodation.room.name}">Bezeichnung</span>
+                                                <input type="text" name="name" th:value="${room.name()}" required maxlength="100">
+                                            </label>
+                                            <label>
+                                                <span th:text="#{accommodation.room.bedCount}">Betten</span>
+                                                <input type="number" name="bedCount" th:value="${room.bedCount()}" required min="1">
+                                            </label>
+                                        </div>
+                                        <footer>
+                                            <div style="display:flex; gap:0.5rem; justify-content: flex-end;">
+                                                <button type="button" class="secondary outline" 
+                                                        th:data-modal-id="'edit-room-' + ${room.roomId()}"
+                                                        onclick="closeModal(this.getAttribute('data-modal-id'))" 
+                                                        th:text="#{common.cancel}">Abbrechen</button>
+                                                <button type="submit" th:text="#{common.save}">Speichern</button>
+                                            </div>
+                                        </footer>
+                                    </form>
+                                </article>
+                            </dialog>
                         </td>
                     </tr>
                 </tbody>
