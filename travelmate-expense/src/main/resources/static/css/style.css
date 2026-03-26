@@ -230,6 +230,12 @@ a.btn-icon.btn-icon--danger:hover {
 }
 .nav-lang a {
     white-space: nowrap;
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 0.875rem;
+}
+.nav-lang a:hover {
+    color: #374151;
 }
 
 @media (max-width: 767px) {

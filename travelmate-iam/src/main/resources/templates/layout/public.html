@@ -8,23 +8,33 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
 <body>
-    <nav class="container">
-        <ul>
-            <li><a th:href="@{/}"><strong th:text="#{nav.brand}">Travelmate</strong></a></li>
-        </ul>
+    <nav class="container nav-bar">
         <ul>
             <li>
+                <a th:href="@{/}" class="nav-brand">
+                    <img th:src="@{/images/logo.svg}" alt="Travelmate" class="nav-logo">
+                </a>
+            </li>
+            <li class="nav-toggle">
+                <button type="button" aria-label="Menu" aria-expanded="false"
+                        onclick="var n=this.closest('nav');n.classList.toggle('nav-open');this.setAttribute('aria-expanded',n.classList.contains('nav-open'))">
+                    <svg width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+            </li>
+        </ul>
+        <ul class="nav-links">
+            <li><a th:href="@{/signup}" th:text="#{landing.register}">Registrieren</a></li>
+            <li class="nav-lang">
                 <a th:href="@{''(lang='de')}" th:text="#{common.german}">DE</a> /
                 <a th:href="@{''(lang='en')}" th:text="#{common.english}">EN</a>
             </li>
-            <li><a th:href="@{/signup}" role="button" class="outline" th:text="#{landing.register}">Registrieren</a></li>
-            <li><a href="/oauth2/authorization/keycloak" role="button" th:text="#{landing.login}">Anmelden</a></li>
+            <li><a href="/oauth2/authorization/keycloak" th:text="#{landing.login}">Anmelden</a></li>
         </ul>
     </nav>
     <main class="container" th:insert="~{${view} :: content}">
     </main>
     <footer class="container">
-        <small>Travelmate</small>
+        <small>&copy; Travelmate</small>
     </footer>
 </body>
 </html>
