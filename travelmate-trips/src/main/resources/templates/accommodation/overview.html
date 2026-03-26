@@ -40,7 +40,7 @@
 
         <!-- Unassigned parties warning -->
         <div th:if="${isOrganizer && unassignedParties != null && !unassignedParties.isEmpty()}"
-             role="alert" style="padding:0.75rem 1rem; border-left:4px solid var(--pico-color-amber-500, orange); background:var(--pico-color-amber-50, #fff8e1); margin-bottom:1rem;">
+             class="alert alert-warning">
             <strong th:text="#{accommodation.unassignedParties}">Nicht alle Reiseparteien haben eine Zimmeraufteilung</strong>
             <ul style="margin:0.25rem 0 0 0; padding-left:1.25rem;">
                 <li th:each="party : ${unassignedParties}" th:text="${party.partyName() + ' (' + party.memberCount() + ' Pers.)'}"></li>
@@ -49,7 +49,7 @@
 
         <!-- Room Table -->
         <h3 th:text="#{accommodation.rooms}">Zimmer</h3>
-        <figure>
+        <figure class="table-cards">
             <table>
                 <thead>
                     <tr>
@@ -57,30 +57,17 @@
                         <th th:text="#{accommodation.room.bedCount}">Betten</th>
                         <th th:text="#{accommodation.room.pricePerNight}">Preis/Nacht</th>
                         <th th:text="#{accommodation.room.assignment}">Belegung</th>
-                        <th th:if="${isEditable}" th:text="#{invitation.actions}">Aktionen</th>
+                        <th th:if="${isEditable}" class="table-actions-header" th:text="#{common.actions}">Aktionen</th>
                     </tr>
                 </thead>
                 <tbody>
                     <tr th:each="room : ${accommodation.rooms()}">
-                        <td th:if="${!isEditable}" th:text="${room.name()}"></td>
-                        <td th:if="${!isEditable}" th:text="${room.bedCount()}"></td>
-                        <td th:if="${isEditable}" colspan="2" style="padding:0.25rem;">
-                            <form method="post"
-                                  th:action="@{/{tid}/accommodation/rooms/{rid}/update(tid=${trip.tripId()},rid=${room.roomId()})}"
-                                  style="display:flex; gap:0.5rem; align-items:center; margin:0;">
-                                <input type="text" name="name" th:value="${room.name()}" required maxlength="100"
-                                       style="margin:0; padding:0.25rem 0.5rem; flex:2;">
-                                <input type="number" name="bedCount" th:value="${room.bedCount()}" required min="1"
-                                       style="margin:0; padding:0.25rem 0.5rem; width:5rem; flex:0 0 auto;">
-                                <button type="submit" style="margin:0; padding:0.25rem 0.5rem; font-size:0.85rem; white-space:nowrap;"
-                                        th:text="#{common.save}">Speichern</button>
-                            </form>
-                        </td>
-                        <td th:text="${room.pricePerNight()} ? ${room.pricePerNight()} + ' EUR' : '—'"></td>
-                        <td>
-                            <!-- Show assignments for this room -->
+                        <td th:data-label="#{accommodation.room.name}" th:text="${room.name()}"></td>
+                        <td th:data-label="#{accommodation.room.bedCount}" th:text="${room.bedCount()}"></td>
+                        <td th:data-label="#{accommodation.room.pricePerNight}" th:text="${room.pricePerNight()} ? ${room.pricePerNight()} + ' EUR' : '—'"></td>
+                        <td th:data-label="#{accommodation.room.assignment}">
                             <th:block th:with="roomAssignments=${assignmentsByRoom != null ? assignmentsByRoom.get(room.roomId()) : null}, totalAssigned=${assignedCountByRoom != null ? assignedCountByRoom.get(room.roomId()) : 0}">
-                                <div th:if="${roomAssignments == null || roomAssignments.isEmpty()}" style="color:var(--pico-muted-color, gray);">
+                                <div th:if="${roomAssignments == null || roomAssignments.isEmpty()}" style="color:#6b7280;">
                                     <em th:text="#{accommodation.room.unassigned}">Frei</em>
                                 </div>
                                 <div th:each="assignment : ${roomAssignments}" style="margin-bottom:0.25rem;">
@@ -89,32 +76,41 @@
                                           th:action="@{/{tid}/accommodation/assignments/{aid}/delete(tid=${trip.tripId()},aid=${assignment.assignmentId()})}"
                                           style="display:inline; margin:0;"
                                           onsubmit="return confirm(/*[[#{accommodation.room.unassign.confirm}]]*/ 'Zuweisung wirklich entfernen?')">
-                                        <button type="submit" class="outline secondary" style="padding:0.1rem 0.3rem; font-size:0.75rem; margin:0;">
-                                            &times;
+                                        <button type="submit" class="btn-icon btn-icon--danger" style="width:1.25rem; height:1.25rem; min-width:1.25rem; min-height:1.25rem; max-width:1.25rem; max-height:1.25rem;">
+                                            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
                                         </button>
                                     </form>
                                 </div>
-                                <!-- Capacity indicator -->
                                 <small th:if="${totalAssigned != null && totalAssigned > 0}"
                                        th:text="#{accommodation.room.capacityInfo(${totalAssigned}, ${room.bedCount()})}"
-                                       th:style="${totalAssigned > room.bedCount()} ? 'color:var(--pico-color-red-500, red); font-weight:bold;' : ''">
+                                       th:classappend="${totalAssigned > room.bedCount()} ? 'text-danger'">
                                 </small>
                             </th:block>
                         </td>
-                        <td th:if="${isEditable}">
-                            <form method="post"
-                                  th:action="@{/{tid}/accommodation/rooms/{rid}/delete(tid=${trip.tripId()},rid=${room.roomId()})}"
-                                  style="margin:0;"
-                                  onsubmit="return confirm(/*[[#{accommodation.room.delete.confirm}]]*/ 'Zimmer wirklich entfernen?')">
-                                <button type="submit" class="outline secondary" style="padding:0.25rem 0.5rem; font-size:0.85rem;"
-                                        th:text="#{common.remove}">Entfernen</button>
-                            </form>
+                        <td th:if="${isEditable}" th:data-label="#{common.actions}">
+                            <div class="action-col">
+                                <button type="button" class="btn-icon"
+                                        th:data-dialog-id="'edit-room-dialog-' + ${room.roomId()}"
+                                        onclick="document.getElementById(this.dataset.dialogId).showModal()"
+                                        th:title="#{common.edit}" th:aria-label="#{common.edit}">
+                                    <svg viewBox="0 0 24 24"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                                </button>
+                                <form method="post"
+                                      th:action="@{/{tid}/accommodation/rooms/{rid}/delete(tid=${trip.tripId()},rid=${room.roomId()})}"
+                                      style="margin:0;"
+                                      onsubmit="return confirm(/*[[#{accommodation.room.delete.confirm}]]*/ 'Zimmer wirklich entfernen?')">
+                                    <button type="submit" class="btn-icon btn-icon--danger"
+                                            th:title="#{common.delete}" th:aria-label="#{common.delete}">
+                                        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                    </button>
+                                </form>
+                            </div>
                         </td>
                     </tr>
                 </tbody>
                 <tfoot>
                     <tr>
-                        <td><strong th:text="#{accommodation.totalBeds}">Betten gesamt</strong></td>
+                        <td th:data-label="#{accommodation.totalBeds}"><strong th:text="#{accommodation.totalBeds}">Betten gesamt</strong></td>
                         <td><strong th:text="${accommodation.totalBedCount()}"></strong></td>
                         <td></td>
                         <td><strong th:text="${accommodation.totalAssignedPersons() + ' ' + #messages.msg('accommodation.totalAssigned')}"></strong></td>
@@ -124,12 +120,44 @@
             </table>
         </figure>
 
+        <!-- Edit Room Dialogs (one per room) -->
+        <th:block th:if="${isEditable}" th:each="room : ${accommodation.rooms()}">
+            <dialog th:id="'edit-room-dialog-' + ${room.roomId()}">
+                <article>
+                    <h3 th:text="#{accommodation.room.edit}">Zimmer bearbeiten</h3>
+                    <form method="post"
+                          th:action="@{/{tid}/accommodation/rooms/{rid}/update(tid=${trip.tripId()},rid=${room.roomId()})}">
+                        <label>
+                            <span th:text="#{accommodation.room.name}">Bezeichnung</span>
+                            <input type="text" name="name" th:value="${room.name()}" required maxlength="100">
+                        </label>
+                        <div class="grid">
+                            <label>
+                                <span th:text="#{accommodation.room.bedCount}">Betten</span>
+                                <input type="number" name="bedCount" th:value="${room.bedCount()}" required min="1">
+                            </label>
+                            <label>
+                                <span th:text="#{accommodation.room.pricePerNight}">Preis/Nacht</span>
+                                <input type="number" name="pricePerNight" step="0.01" min="0" th:value="${room.pricePerNight()}">
+                            </label>
+                        </div>
+                        <div class="grid">
+                            <button type="button" class="outline"
+                                    onclick="this.closest('dialog').close()"
+                                    th:text="#{common.cancel}">Abbrechen</button>
+                            <button type="submit" th:text="#{common.save}">Speichern</button>
+                        </div>
+                    </form>
+                </article>
+            </dialog>
+        </th:block>
+
         <!-- Room Assignment Form -->
         <details th:if="${isEditable && partyOptions != null && !partyOptions.isEmpty()}">
             <summary th:text="#{accommodation.room.assign}">Zuweisen</summary>
             <th:block th:each="room : ${accommodation.rooms()}">
                 <form method="post" th:action="@{/{tid}/accommodation/rooms/{rid}/assign(tid=${trip.tripId()},rid=${room.roomId()})}"
-                      style="margin-bottom:1rem; padding:0.75rem; border:1px solid var(--pico-muted-border-color, #ccc); border-radius:0.25rem;">
+                      style="margin-bottom:1rem; padding:0.75rem; border:1px solid #d1d5db; border-radius:0.5rem;">
                     <strong th:text="${room.name()}">Zimmer 1</strong>
                     <span>(<span th:text="${room.bedCount()}"></span> <span th:text="#{accommodation.room.bedCount}"></span>)</span>
                     <div class="grid" style="margin-top:0.5rem;">
@@ -150,8 +178,7 @@
                         </label>
                     </div>
                     <input type="hidden" name="partyName" value="">
-                    <button type="submit" style="padding:0.25rem 0.75rem; font-size:0.85rem;"
-                            th:text="#{accommodation.room.assign}">Zuweisen</button>
+                    <button type="submit" th:text="#{accommodation.room.assign}">Zuweisen</button>
                 </form>
             </th:block>
         </details>
@@ -188,14 +215,10 @@
             </form>
         </div>
 
-        <!-- Edit Dialog -->
+        <!-- Edit Accommodation Dialog -->
         <dialog id="edit-accommodation-dialog" th:if="${isEditable}">
             <article>
-                <header>
-                    <button aria-label="Close" rel="prev"
-                            onclick="document.getElementById('edit-accommodation-dialog').close()"></button>
-                    <h3 th:text="#{accommodation.edit}">Unterkunft bearbeiten</h3>
-                </header>
+                <h3 th:text="#{accommodation.edit}">Unterkunft bearbeiten</h3>
                 <form method="post" th:action="@{/{tid}/accommodation(tid=${trip.tripId()})}">
                     <label>
                         <span th:text="#{accommodation.name}">Name</span>
@@ -229,14 +252,12 @@
                         <input type="hidden" name="roomBedCount" th:value="${room.bedCount()}">
                         <input type="hidden" name="roomPricePerNight" th:value="${room.pricePerNight()}">
                     </th:block>
-                    <footer>
-                        <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
-                            <button type="button" class="secondary"
-                                    onclick="document.getElementById('edit-accommodation-dialog').close()"
-                                    th:text="#{common.cancel}">Abbrechen</button>
-                            <button type="submit" th:text="#{common.save}">Speichern</button>
-                        </div>
-                    </footer>
+                    <div class="grid">
+                        <button type="button" class="outline"
+                                onclick="document.getElementById('edit-accommodation-dialog').close()"
+                                th:text="#{common.cancel}">Abbrechen</button>
+                        <button type="submit" th:text="#{common.save}">Speichern</button>
+                    </div>
                 </form>
             </article>
         </dialog>
@@ -265,8 +286,7 @@
             </details>
 
             <!-- Import error message -->
-            <div th:if="${importError}" role="alert"
-                 style="padding:0.75rem 1rem; border-left:4px solid var(--pico-color-red-500, red); background:var(--pico-color-red-50, #ffebee); margin-bottom:1rem;">
+            <div th:if="${importError}" class="alert alert-error">
                 <span th:text="#{${importError}}">Fehler</span>
             </div>
 
@@ -277,10 +297,8 @@
 
     <!-- Import success: pre-filled form -->
     <article th:if="${importSuccess}">
-        <header>
-            <h3 th:text="#{accommodation.add}">Unterkunft hinzufuegen</h3>
-        </header>
-        <div role="alert" style="padding:0.75rem 1rem; border-left:4px solid var(--pico-color-green-500, green); background:var(--pico-color-green-50, #e8f5e9); margin-bottom:1rem;">
+        <h3 th:text="#{accommodation.add}">Unterkunft hinzufuegen</h3>
+        <div class="alert alert-success">
             <span th:text="#{accommodation.import.success}">Daten importiert.</span>
         </div>
         <form method="post" th:action="@{/{tid}/accommodation(tid=${trip.tripId()})}">
@@ -313,16 +331,18 @@
 
             <h4 th:text="#{accommodation.rooms}">Zimmer</h4>
             <div th:if="${importResult != null && importResult.maxGuests() != null}"
-                 style="margin-bottom:0.5rem; color:var(--pico-muted-color, gray);">
+                 style="margin-bottom:0.5rem; color:#6b7280;">
                 <small th:text="'Max. ' + ${importResult.maxGuests()} + ' Personen'"></small>
             </div>
             <div id="import-room-rows">
                 <!-- Pre-filled rooms from import -->
                 <th:block th:if="${prefillRooms != null && !prefillRooms.isEmpty()}" th:each="room : ${prefillRooms}">
-                    <div class="room-row" style="border:1px solid var(--pico-muted-border-color, #ccc); border-radius:0.25rem; padding:0.5rem; margin-bottom:0.5rem; position:relative;">
-                        <button type="button" class="outline secondary remove-room-btn"
-                                style="position:absolute; top:0.25rem; right:0.25rem; padding:0.1rem 0.4rem; font-size:0.75rem; margin:0;"
-                                onclick="removeRoomRow(this)">&times;</button>
+                    <div class="room-row" style="border:1px solid #d1d5db; border-radius:0.5rem; padding:0.75rem; margin-bottom:0.5rem; position:relative;">
+                        <button type="button" class="btn-icon btn-icon--danger"
+                                style="position:absolute; top:0.5rem; right:0.5rem;"
+                                onclick="removeRoomRow(this)">
+                            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
                         <div class="grid">
                             <label>
                                 <span th:text="#{accommodation.room.name}">Bezeichnung</span>
@@ -341,7 +361,7 @@
                 </th:block>
                 <!-- Default empty room if no rooms imported -->
                 <th:block th:if="${prefillRooms == null || prefillRooms.isEmpty()}">
-                    <div class="room-row" style="border:1px solid var(--pico-muted-border-color, #ccc); border-radius:0.25rem; padding:0.5rem; margin-bottom:0.5rem;">
+                    <div class="room-row" style="border:1px solid #d1d5db; border-radius:0.5rem; padding:0.75rem; margin-bottom:0.5rem;">
                         <div class="grid">
                             <label>
                                 <span th:text="#{accommodation.room.name}">Bezeichnung</span>
@@ -359,28 +379,22 @@
                     </div>
                 </th:block>
             </div>
-            <button type="button" class="outline" style="margin-bottom:1rem;"
+            <button type="button" class="outline" style="margin-bottom:1.5rem;"
                     onclick="addRoomRow('import-room-rows')"
                     th:text="#{accommodation.room.addMore}">+ Zimmer hinzufuegen</button>
 
-            <footer>
-                <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
-                    <a th:href="@{/{tid}/accommodation(tid=${trip.tripId()})}" role="button" class="secondary"
-                       th:text="#{common.cancel}">Abbrechen</a>
-                    <button type="submit" th:text="#{accommodation.save}">Speichern</button>
-                </div>
-            </footer>
+            <div class="grid">
+                <a th:href="@{/{tid}/accommodation(tid=${trip.tripId()})}" class="outline" role="button" style="text-align:center;"
+                   th:text="#{common.cancel}">Abbrechen</a>
+                <button type="submit" th:text="#{accommodation.save}">Speichern</button>
+            </div>
         </form>
     </article>
 
     <!-- Add Accommodation Dialog -->
     <dialog id="add-accommodation-dialog" th:if="${accommodation == null && isEditable}">
         <article>
-            <header>
-                <button aria-label="Close" rel="prev"
-                        onclick="document.getElementById('add-accommodation-dialog').close()"></button>
-                <h3 th:text="#{accommodation.add}">Unterkunft hinzufuegen</h3>
-            </header>
+            <h3 th:text="#{accommodation.add}">Unterkunft hinzufuegen</h3>
             <form method="post" th:action="@{/{tid}/accommodation(tid=${trip.tripId()})}">
                 <label>
                     <span th:text="#{accommodation.name}">Name</span>
@@ -411,7 +425,7 @@
 
                 <h4 th:text="#{accommodation.rooms}">Zimmer</h4>
                 <div id="dialog-room-rows">
-                    <div class="room-row" style="border:1px solid var(--pico-muted-border-color, #ccc); border-radius:0.25rem; padding:0.5rem; margin-bottom:0.5rem;">
+                    <div class="room-row" style="border:1px solid #d1d5db; border-radius:0.5rem; padding:0.75rem; margin-bottom:0.5rem;">
                         <div class="grid">
                             <label>
                                 <span th:text="#{accommodation.room.name}">Bezeichnung</span>
@@ -428,18 +442,16 @@
                         </div>
                     </div>
                 </div>
-                <button type="button" class="outline" style="margin-bottom:1rem;"
+                <button type="button" class="outline" style="margin-bottom:1.5rem;"
                         onclick="addRoomRow('dialog-room-rows')"
                         th:text="#{accommodation.room.addMore}">+ Zimmer hinzufuegen</button>
 
-                <footer>
-                    <div style="display:flex; gap:0.5rem; justify-content:flex-end;">
-                        <button type="button" class="secondary"
-                                onclick="document.getElementById('add-accommodation-dialog').close()"
-                                th:text="#{common.cancel}">Abbrechen</button>
-                        <button type="submit" th:text="#{accommodation.save}">Speichern</button>
-                    </div>
-                </footer>
+                <div class="grid">
+                    <button type="button" class="outline"
+                            onclick="document.getElementById('add-accommodation-dialog').close()"
+                            th:text="#{common.cancel}">Abbrechen</button>
+                    <button type="submit" th:text="#{accommodation.save}">Speichern</button>
+                </div>
             </form>
         </article>
     </dialog>
@@ -448,10 +460,12 @@
 
     <!-- Hidden template for room row cloning -->
     <template id="room-row-template">
-        <div class="room-row" style="border:1px solid var(--pico-muted-border-color, #ccc); border-radius:0.25rem; padding:0.5rem; margin-bottom:0.5rem; position:relative;">
-            <button type="button" class="outline secondary remove-room-btn"
-                    style="position:absolute; top:0.25rem; right:0.25rem; padding:0.1rem 0.4rem; font-size:0.75rem; margin:0;"
-                    onclick="removeRoomRow(this)">&times;</button>
+        <div class="room-row" style="border:1px solid #d1d5db; border-radius:0.5rem; padding:0.75rem; margin-bottom:0.5rem; position:relative;">
+            <button type="button" class="btn-icon btn-icon--danger"
+                    style="position:absolute; top:0.5rem; right:0.5rem;"
+                    onclick="removeRoomRow(this)">
+                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
             <div class="grid">
                 <label>
                     <span th:text="#{accommodation.room.name}">Bezeichnung</span>
