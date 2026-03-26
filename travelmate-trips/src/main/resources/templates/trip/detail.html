@@ -264,6 +264,20 @@
                 </div>
             </article>
 
+            <article class="feature-card">
+                <div class="feature-card__body">
+                    <p class="feature-card__eyebrow" th:text="#{trip.tools.category.plan}">Planung</p>
+                    <h3 th:text="#{recipe.trip.link}">Rezepte</h3>
+                    <p th:text="#{recipe.trip.title}">Reise-Rezepte</p>
+                </div>
+                <div class="feature-card__actions">
+                    <a th:href="@{/{id}/recipes(id=${trip.tripId()})}"
+                       role="button"
+                       class="feature-card__cta"
+                       th:text="#{trip.tools.open}">Oeffnen</a>
+                </div>
+            </article>
+
             <article class="feature-card" th:if="${trip.startDate() != null && trip.endDate() != null}">
                 <div class="feature-card__body">
                     <p class="feature-card__eyebrow" th:text="#{trip.tools.category.plan}">Planung</p>
