@@ -65,12 +65,15 @@
 /* ── Language Dropdown ─────────────────────────────── */
 .nav-lang-dropdown {
     position: relative;
+    margin: 0;
 }
 .nav-lang-dropdown > summary {
     all: unset;
     cursor: pointer;
     color: #374151;
     list-style: none;
+    display: inline;
+    vertical-align: baseline;
 }
 .nav-lang-dropdown > summary::marker { content: ""; }
 .nav-lang-dropdown > summary::-webkit-details-marker { display: none; }
