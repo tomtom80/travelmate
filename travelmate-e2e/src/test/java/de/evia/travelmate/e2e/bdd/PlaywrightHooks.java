@@ -113,7 +113,7 @@ public class PlaywrightHooks {
 
     static void ensureLoggedOut() {
         navigateAndWait("/iam/dashboard");
-        final var logoutButton = page.locator("form[action='/logout'] button[type=submit]");
+        final var logoutButton = page.locator("a.nav-logout-btn");
         if (logoutButton.isVisible()) {
             logoutButton.click();
             page.waitForLoadState();

@@ -32,16 +32,15 @@ class AuthenticationFlowIT extends E2ETestBase {
         final String content = page.content();
 
         assertThat(content).contains("Travelmate");
-        assertThat(page.locator("nav strong").textContent()).contains("Travelmate");
+        assertThat(page.locator("nav .nav-brand img").isVisible()).isTrue();
         assertThat(page.locator("footer").textContent()).contains("Travelmate");
     }
 
     @Test
     @Order(3)
     void keycloakLoginPageHasLocaleSwitcher() {
-        assertThat(page.locator("nav a:has-text('Deutsch')").isVisible()
-            || page.locator("nav a:has-text('Englisch')").isVisible()
-            || page.locator("nav a:has-text('English')").isVisible()).isTrue();
+        assertThat(page.locator("nav summary:has-text('Sprache')").isVisible()
+            || page.locator("nav summary:has-text('Language')").isVisible()).isTrue();
     }
 
     @Test
@@ -104,7 +103,7 @@ class AuthenticationFlowIT extends E2ETestBase {
     @Test
     @Order(22)
     void forgotPasswordPageShowsTravelmateBranding() {
-        assertThat(page.locator("nav strong").textContent()).contains("Travelmate");
+        assertThat(page.locator("nav .nav-brand img").isVisible()).isTrue();
         assertThat(page.locator("footer").textContent()).contains("Travelmate");
     }
 
@@ -134,7 +133,7 @@ class AuthenticationFlowIT extends E2ETestBase {
     @Order(31)
     void logoutRedirectsToLandingPage() {
         navigateAndWait("/iam/dashboard");
-        page.locator("form[action='/logout'] button[type=submit]").click();
+        page.locator("a.nav-logout-btn").click();
         page.waitForURL(url -> url.contains(BASE_URL) && !url.contains("/dashboard"), new com.microsoft.playwright.Page.WaitForURLOptions().setTimeout(10000));
         page.waitForLoadState();
 

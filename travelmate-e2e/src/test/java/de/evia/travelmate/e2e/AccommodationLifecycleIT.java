@@ -111,15 +111,15 @@ class AccommodationLifecycleIT extends E2ETestBase {
     @Test
     @Order(20)
     void addSecondRoomViaForm() {
-        // Open the "Zimmer hinzufuegen" details section
-        page.locator("details summary:has-text('Zimmer hinzufuegen')").click();
+        // Open the "Zimmer hinzufuegen" dialog
+        page.locator("button[onclick*='add-room-dialog'][onclick*='showModal']").click();
 
-        // Fill in room form
-        page.locator("details form[action$='/accommodation/rooms'] input[name=name]").fill(ROOM_2_NAME);
-        page.locator("details form[action$='/accommodation/rooms'] input[name=bedCount]").fill("2");
+        // Fill in room form in dialog
+        page.locator("dialog[open] input[name=name]").fill(ROOM_2_NAME);
+        page.locator("dialog[open] input[name=bedCount]").fill("2");
 
         // Submit
-        page.locator("details form[action$='/accommodation/rooms'] button[type=submit]").click();
+        page.locator("dialog[open] button[type=submit]").click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
     }
 

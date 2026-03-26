@@ -76,9 +76,9 @@ class RecipeLifecycleIT extends E2ETestBase {
     void addIngredientRowDynamically() {
         navigateAndWait("/trips/recipes/new");
 
-        final int initialRows = page.locator(".ingredient-row").count();
+        final int initialRows = page.locator(".ingredient-card").count();
         page.click("#add-ingredient-btn");
-        final int afterRows = page.locator(".ingredient-row").count();
+        final int afterRows = page.locator(".ingredient-card").count();
 
         assertThat(afterRows).isEqualTo(initialRows + 1);
     }
@@ -149,7 +149,7 @@ class RecipeLifecycleIT extends E2ETestBase {
         assertThat(page.locator("input[name=name]").inputValue()).isEqualTo(RECIPE_NAME);
         assertThat(page.locator("input[name=servings]").inputValue()).isEqualTo("4");
 
-        final int ingredientRows = page.locator(".ingredient-row").count();
+        final int ingredientRows = page.locator(".ingredient-card").count();
         assertThat(ingredientRows).isEqualTo(2);
     }
 

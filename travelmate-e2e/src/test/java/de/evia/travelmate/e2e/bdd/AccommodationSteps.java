@@ -105,15 +105,15 @@ public class AccommodationSteps {
 
     @Wenn("ich ein Zimmer mit Name {string} und Betten {string} hinzufuege")
     public void ichEinZimmerHinzufuege(final String name, final String beds) {
-        // Open "Zimmer hinzufuegen" details section
-        page.locator("details summary:has-text('Zimmer hinzufuegen')").click();
+        // Open "Zimmer hinzufuegen" dialog
+        page.locator("button[onclick*='add-room-dialog'][onclick*='showModal']").click();
 
-        // Fill room form
-        page.locator("details form[action$='/accommodation/rooms'] input[name=name]").fill(name);
-        page.locator("details form[action$='/accommodation/rooms'] input[name=bedCount]").fill(beds);
+        // Fill room form in dialog
+        page.locator("dialog[open] input[name=name]").fill(name);
+        page.locator("dialog[open] input[name=bedCount]").fill(beds);
 
         // Submit
-        page.locator("details form[action$='/accommodation/rooms'] button[type=submit]").click();
+        page.locator("dialog[open] button[type=submit]").click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
     }
 

@@ -49,7 +49,7 @@ public class RecipeSteps {
 
     @Und("es gibt eine leere Zutatenzeile")
     public void esGibtEineLeereZutatenzeile() {
-        assertThat(page.locator(".ingredient-row").count()).isPositive();
+        assertThat(page.locator(".ingredient-card").count()).isPositive();
     }
 
     @Und("es gibt einen Button {string}")
@@ -175,7 +175,7 @@ public class RecipeSteps {
 
     @Dann("sehe ich eine zusaetzliche Zutatenzeile")
     public void seheIchEineZusaetzlicheZutatenzeile() {
-        assertThat(page.locator(".ingredient-row").count()).isGreaterThanOrEqualTo(2);
+        assertThat(page.locator(".ingredient-card").count()).isGreaterThanOrEqualTo(2);
     }
 
     private static String extractTripIdFromPage() {

@@ -115,7 +115,7 @@ public class RegistrationLoginSteps {
 
     @When("I click the logout button")
     public void iClickTheLogoutButton() {
-        page.locator("form[action='/logout'] button[type=submit]").click();
+        page.locator("a.nav-logout-btn").click();
         page.waitForLoadState();
     }
 
