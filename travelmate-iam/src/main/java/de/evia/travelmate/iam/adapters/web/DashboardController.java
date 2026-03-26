@@ -30,6 +30,7 @@ import de.evia.travelmate.iam.application.AccountService;
 import de.evia.travelmate.iam.application.TenantService;
 import de.evia.travelmate.iam.application.command.AddDependentCommand;
 import de.evia.travelmate.iam.application.command.InviteMemberCommand;
+import de.evia.travelmate.iam.application.command.RenameTenantCommand;
 import de.evia.travelmate.iam.application.representation.InviteMemberResult;
 import de.evia.travelmate.iam.domain.account.Account;
 import de.evia.travelmate.iam.domain.account.AccountId;
@@ -152,6 +153,19 @@ public class DashboardController {
         model.addAttribute("members", accountService.findAllByTenantId(account.tenantId()));
         model.addAttribute("currentAccount", account);
         return "dashboard/members :: memberList";
+    }
+
+    @PostMapping("/tenant/rename")
+    public String renameTenant(@AuthenticationPrincipal final Jwt jwt,
+                               @RequestParam final String name,
+                               final HttpServletResponse response,
+                               final Locale locale,
+                               final Model model) {
+        final Account account = resolveAccount(jwt);
+        tenantService.renameTenant(new RenameTenantCommand(account.tenantId().value(), name));
+        triggerSuccessToast(response, messageSource.getMessage("travelParty.renamed", null, locale));
+        model.addAttribute("tenant", tenantService.findById(account.tenantId()));
+        return "dashboard/index :: tenantHeader";
     }
 
     @DeleteMapping("/tenant")

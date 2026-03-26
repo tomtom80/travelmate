@@ -14,6 +14,7 @@ public final class RoutingKeys {
     public static final String DEPENDENT_ADDED = "iam.dependent-added";
     public static final String MEMBER_REMOVED = "iam.member-removed";
     public static final String DEPENDENT_REMOVED = "iam.dependent-removed";
+    public static final String TENANT_RENAMED = "iam.tenant-renamed";
     public static final String TENANT_DELETED = "iam.tenant-deleted";
 
     public static final String TRIP_CREATED = "trips.trip-created";

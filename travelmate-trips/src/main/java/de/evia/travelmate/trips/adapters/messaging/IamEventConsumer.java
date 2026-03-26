@@ -13,6 +13,7 @@ import org.springframework.stereotype.Component;
 import de.evia.travelmate.common.events.iam.AccountRegistered;
 import de.evia.travelmate.common.events.iam.DependentAddedToTenant;
 import de.evia.travelmate.common.events.iam.TenantCreated;
+import de.evia.travelmate.common.events.iam.TenantRenamed;
 import de.evia.travelmate.trips.application.TravelPartyService;
 
 @Component
@@ -27,12 +28,14 @@ public class IamEventConsumer {
     private final Timer tenantCreatedTimer;
     private final Timer accountRegisteredTimer;
     private final Timer dependentAddedTimer;
+    private final Timer tenantRenamedTimer;
 
     public IamEventConsumer(final TravelPartyService travelPartyService, final MeterRegistry meterRegistry) {
         this.travelPartyService = travelPartyService;
         this.tenantCreatedTimer = eventTimer(meterRegistry, "TenantCreated");
         this.accountRegisteredTimer = eventTimer(meterRegistry, "AccountRegistered");
         this.dependentAddedTimer = eventTimer(meterRegistry, "DependentAddedToTenant");
+        this.tenantRenamedTimer = eventTimer(meterRegistry, "TenantRenamed");
     }
 
     @RabbitListener(queues = RabbitMqConfig.QUEUE_TENANT_CREATED)
@@ -45,6 +48,12 @@ public class IamEventConsumer {
     public void onAccountRegistered(final AccountRegistered event) {
         accountRegisteredTimer.record(() ->
             executeWithRetry(() -> travelPartyService.onAccountRegistered(event), "AccountRegistered", event.tenantId().toString()));
+    }
+
+    @RabbitListener(queues = RabbitMqConfig.QUEUE_TENANT_RENAMED)
+    public void onTenantRenamed(final TenantRenamed event) {
+        tenantRenamedTimer.record(() ->
+            executeWithRetry(() -> travelPartyService.onTenantRenamed(event), "TenantRenamed", event.tenantId().toString()));
     }
 
     @RabbitListener(queues = RabbitMqConfig.QUEUE_DEPENDENT_ADDED)

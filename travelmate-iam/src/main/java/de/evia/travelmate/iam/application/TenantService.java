@@ -11,6 +11,7 @@ import de.evia.travelmate.common.domain.DuplicateEntityException;
 import de.evia.travelmate.common.domain.EntityNotFoundException;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.iam.application.command.CreateTenantCommand;
+import de.evia.travelmate.iam.application.command.RenameTenantCommand;
 import de.evia.travelmate.iam.application.representation.TenantRepresentation;
 import de.evia.travelmate.iam.domain.account.Account;
 import de.evia.travelmate.iam.domain.account.AccountRepository;
@@ -68,6 +69,19 @@ public class TenantService {
         return tenantRepository.findAll().stream()
             .map(TenantRepresentation::new)
             .toList();
+    }
+
+    public TenantRepresentation renameTenant(final RenameTenantCommand command) {
+        final TenantId tenantId = new TenantId(command.tenantId());
+        final Tenant tenant = tenantRepository.findById(tenantId)
+            .orElseThrow(() -> new EntityNotFoundException("Tenant", tenantId.value().toString()));
+        tenant.rename(new TenantName(command.newName()));
+        final Tenant saved = tenantRepository.save(tenant);
+        for (final DomainEvent event : saved.domainEvents()) {
+            eventPublisher.publishEvent(event);
+        }
+        saved.clearDomainEvents();
+        return new TenantRepresentation(saved);
     }
 
     public void deleteTenant(final TenantId tenantId) {

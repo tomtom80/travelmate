@@ -7,6 +7,7 @@ import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.common.events.iam.AccountRegistered;
 import de.evia.travelmate.common.events.iam.DependentAddedToTenant;
 import de.evia.travelmate.common.events.iam.TenantCreated;
+import de.evia.travelmate.common.events.iam.TenantRenamed;
 import de.evia.travelmate.trips.domain.travelparty.TravelParty;
 import de.evia.travelmate.trips.domain.travelparty.TravelPartyRepository;
 
@@ -32,6 +33,15 @@ public class TravelPartyService {
             })
             .orElseGet(() -> TravelParty.create(tenantId, event.tenantName()));
         repository.save(party);
+    }
+
+    @Transactional
+    public void onTenantRenamed(final TenantRenamed event) {
+        final TenantId tenantId = new TenantId(event.tenantId());
+        repository.findByTenantId(tenantId).ifPresent(party -> {
+            party.updateName(event.newName());
+            repository.save(party);
+        });
     }
 
     @Transactional

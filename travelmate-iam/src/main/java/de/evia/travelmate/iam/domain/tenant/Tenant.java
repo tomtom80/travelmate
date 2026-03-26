@@ -9,11 +9,12 @@ import de.evia.travelmate.common.domain.AggregateRoot;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.common.events.iam.TenantCreated;
 import de.evia.travelmate.common.events.iam.TenantDeleted;
+import de.evia.travelmate.common.events.iam.TenantRenamed;
 
 public class Tenant extends AggregateRoot {
 
     private final TenantId tenantId;
-    private final TenantName name;
+    private TenantName name;
     private final Description description;
 
     public Tenant(final TenantId tenantId, final TenantName name, final Description description) {
@@ -32,6 +33,16 @@ public class Tenant extends AggregateRoot {
             LocalDate.now()
         ));
         return tenant;
+    }
+
+    public void rename(final TenantName newName) {
+        argumentIsNotNull(newName, "newName");
+        this.name = newName;
+        registerEvent(new TenantRenamed(
+            tenantId.value(),
+            newName.value(),
+            LocalDate.now()
+        ));
     }
 
     public void markForDeletion() {

@@ -15,6 +15,7 @@ import de.evia.travelmate.common.events.iam.MemberAddedToTenant;
 import de.evia.travelmate.common.events.iam.MemberRemovedFromTenant;
 import de.evia.travelmate.common.events.iam.TenantCreated;
 import de.evia.travelmate.common.events.iam.TenantDeleted;
+import de.evia.travelmate.common.events.iam.TenantRenamed;
 import de.evia.travelmate.common.messaging.RoutingKeys;
 
 @Component
@@ -57,6 +58,11 @@ public class DomainEventPublisher {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onDependentRemovedFromTenant(final DependentRemovedFromTenant event) {
         publishSafely(RoutingKeys.DEPENDENT_REMOVED, event);
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onTenantRenamed(final TenantRenamed event) {
+        publishSafely(RoutingKeys.TENANT_RENAMED, event);
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)

@@ -7,6 +7,7 @@ import org.junit.jupiter.api.Test;
 
 import de.evia.travelmate.common.events.iam.TenantCreated;
 import de.evia.travelmate.common.events.iam.TenantDeleted;
+import de.evia.travelmate.common.events.iam.TenantRenamed;
 import de.evia.travelmate.iam.domain.IamTestFixtures;
 
 class TenantTest {
@@ -56,6 +57,31 @@ class TenantTest {
     void allowsNullDescription() {
         final Tenant tenant = new Tenant(IamTestFixtures.TENANT_ID, IamTestFixtures.tenantName(), null);
         assertThat(tenant.description()).isNull();
+    }
+
+    @Test
+    void renameChangesNameAndRegistersEvent() {
+        final Tenant tenant = IamTestFixtures.tenant();
+        final TenantName newName = new TenantName("Neuer Name");
+
+        tenant.rename(newName);
+
+        assertThat(tenant.name()).isEqualTo(newName);
+        assertThat(tenant.domainEvents()).hasSize(1);
+        assertThat(tenant.domainEvents().getFirst()).isInstanceOf(TenantRenamed.class);
+
+        final TenantRenamed event = (TenantRenamed) tenant.domainEvents().getFirst();
+        assertThat(event.tenantId()).isEqualTo(IamTestFixtures.TENANT_ID.value());
+        assertThat(event.newName()).isEqualTo("Neuer Name");
+        assertThat(event.occurredOn()).isNotNull();
+    }
+
+    @Test
+    void renameThrowsForNullName() {
+        final Tenant tenant = IamTestFixtures.tenant();
+        assertThatIllegalArgumentException()
+            .isThrownBy(() -> tenant.rename(null))
+            .withMessageContaining("newName");
     }
 
     @Test

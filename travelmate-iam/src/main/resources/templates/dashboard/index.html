@@ -2,12 +2,43 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="content">
-    <hgroup>
-        <h1 th:text="#{dashboard.title}">Meine Reisepartei</h1>
-        <p th:text="${tenant.name()}">Reisepartei-Name</p>
-    </hgroup>
-    <p th:if="${tenant.description() != null and !tenant.description().isEmpty()}"
-       th:text="${tenant.description()}"></p>
+    <div id="tenant-header" th:fragment="tenantHeader">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
+            <hgroup style="margin-bottom:0;">
+                <h1 style="margin-bottom:0;" th:text="#{dashboard.title}">Meine Reisepartei</h1>
+                <p th:text="${tenant.name()}">Reisepartei-Name</p>
+            </hgroup>
+            <button type="button" class="btn-icon"
+                    onclick="document.getElementById('rename-tenant-dialog').showModal()"
+                    th:title="#{travelParty.rename}" th:aria-label="#{travelParty.rename}">
+                <svg viewBox="0 0 24 24"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+            </button>
+        </div>
+        <p th:if="${tenant.description() != null and !tenant.description().isEmpty()}"
+           th:text="${tenant.description()}"></p>
+    </div>
+
+    <!-- Rename Tenant Dialog -->
+    <dialog id="rename-tenant-dialog">
+        <article>
+            <h3 th:text="#{travelParty.rename}">Reisepartei umbenennen</h3>
+            <form hx-post th:hx-post="@{/dashboard/tenant/rename}"
+                  hx-target="#tenant-header"
+                  hx-swap="outerHTML"
+                  hx-on::after-request="if(event.detail.successful) document.getElementById('rename-tenant-dialog').close()">
+                <label>
+                    <span th:text="#{travelParty.name}">Name</span>
+                    <input type="text" name="name" required th:value="${tenant.name()}">
+                </label>
+                <div class="grid">
+                    <button type="button" class="outline"
+                            onclick="document.getElementById('rename-tenant-dialog').close()"
+                            th:text="#{common.cancel}">Abbrechen</button>
+                    <button type="submit" th:text="#{common.save}">Speichern</button>
+                </div>
+            </form>
+        </article>
+    </dialog>
 
     <section>
         <h2 th:text="#{dashboard.members}">Mitglieder</h2>

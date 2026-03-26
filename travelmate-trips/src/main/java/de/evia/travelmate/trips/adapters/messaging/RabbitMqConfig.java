@@ -25,10 +25,12 @@ public class RabbitMqConfig {
     public static final String QUEUE_TENANT_CREATED = "trips.tenant-created";
     public static final String QUEUE_ACCOUNT_REGISTERED = "trips.account-registered";
     public static final String QUEUE_DEPENDENT_ADDED = "trips.dependent-added";
+    public static final String QUEUE_TENANT_RENAMED = "trips.tenant-renamed";
 
     public static final String QUEUE_TENANT_CREATED_DLQ = QUEUE_TENANT_CREATED + ".dlq";
     public static final String QUEUE_ACCOUNT_REGISTERED_DLQ = QUEUE_ACCOUNT_REGISTERED + ".dlq";
     public static final String QUEUE_DEPENDENT_ADDED_DLQ = QUEUE_DEPENDENT_ADDED + ".dlq";
+    public static final String QUEUE_TENANT_RENAMED_DLQ = QUEUE_TENANT_RENAMED + ".dlq";
 
     @Bean
     public TopicExchange topicExchange() {
@@ -74,6 +76,14 @@ public class RabbitMqConfig {
             .build();
     }
 
+    @Bean
+    public Queue tenantRenamedQueue() {
+        return QueueBuilder.durable(QUEUE_TENANT_RENAMED)
+            .withArgument("x-dead-letter-exchange", RoutingKeys.DLX_EXCHANGE)
+            .withArgument("x-dead-letter-routing-key", QUEUE_TENANT_RENAMED_DLQ)
+            .build();
+    }
+
     // --- Main queue bindings ---
 
     @Bean
@@ -89,6 +99,11 @@ public class RabbitMqConfig {
     @Bean
     public Binding dependentAddedBinding(final Queue dependentAddedQueue, final TopicExchange topicExchange) {
         return BindingBuilder.bind(dependentAddedQueue).to(topicExchange).with(RoutingKeys.DEPENDENT_ADDED);
+    }
+
+    @Bean
+    public Binding tenantRenamedBinding(final Queue tenantRenamedQueue, final TopicExchange topicExchange) {
+        return BindingBuilder.bind(tenantRenamedQueue).to(topicExchange).with(RoutingKeys.TENANT_RENAMED);
     }
 
     // --- Dead letter queues ---
@@ -108,6 +123,11 @@ public class RabbitMqConfig {
         return QueueBuilder.durable(QUEUE_DEPENDENT_ADDED_DLQ).build();
     }
 
+    @Bean
+    public Queue tenantRenamedDlq() {
+        return QueueBuilder.durable(QUEUE_TENANT_RENAMED_DLQ).build();
+    }
+
     // --- Dead letter queue bindings ---
 
     @Bean
@@ -125,5 +145,11 @@ public class RabbitMqConfig {
     public Binding dependentAddedDlqBinding(final Queue dependentAddedDlq,
                                              final DirectExchange deadLetterExchange) {
         return BindingBuilder.bind(dependentAddedDlq).to(deadLetterExchange).with(QUEUE_DEPENDENT_ADDED_DLQ);
+    }
+
+    @Bean
+    public Binding tenantRenamedDlqBinding(final Queue tenantRenamedDlq,
+                                            final DirectExchange deadLetterExchange) {
+        return BindingBuilder.bind(tenantRenamedDlq).to(deadLetterExchange).with(QUEUE_TENANT_RENAMED_DLQ);
     }
 }
