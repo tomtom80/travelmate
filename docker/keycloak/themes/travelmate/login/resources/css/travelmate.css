@@ -75,8 +75,8 @@
 }
 
 .nav-lang a.current-locale {
-    font-weight: 700;
-    color: #374151;
+    font-weight: normal;
+    color: #6b7280;
 }
 
 .nav-links a {
@@ -348,12 +348,18 @@ footer {
         color: #111827;
     }
     .nav-lang {
-        padding: 0.75rem 1rem;
-        justify-content: flex-start;
+        display: block;
+        padding: 0;
     }
     .nav-lang a {
+        display: inline;
         font-size: 1rem;
         color: #374151;
         padding: 0 !important;
+        font-weight: normal !important;
+    }
+    li.nav-lang {
+        padding: 0.75rem 1rem;
+        text-align: left;
     }
 }

@@ -312,13 +312,17 @@ a.btn-icon.btn-icon--danger:hover {
         color: #111827;
     }
     .nav-lang {
-        gap: 0.5rem;
-        padding: 0.75rem 1rem;
+        display: block;
+        padding: 0;
     }
     .nav-lang a {
+        display: inline;
         font-size: 1rem;
         color: #374151;
         padding: 0 !important;
+    }
+    li.nav-lang {
+        padding: 0.75rem 1rem;
     }
 }
 
