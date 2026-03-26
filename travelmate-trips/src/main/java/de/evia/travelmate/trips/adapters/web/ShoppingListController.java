@@ -257,7 +257,9 @@ public class ShoppingListController {
 
     private void validateTripAccess(final UUID tripId, final ResolvedIdentity identity) {
         final TripRepresentation trip = tripService.findById(new TripId(tripId));
-        if (!trip.tenantId().equals(identity.tenantId().value())) {
+        final boolean isTenantMember = trip.tenantId().equals(identity.tenantId().value());
+        final boolean isParticipant = trip.participantIds().contains(identity.memberId());
+        if (!isTenantMember && !isParticipant) {
             throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
         }
     }

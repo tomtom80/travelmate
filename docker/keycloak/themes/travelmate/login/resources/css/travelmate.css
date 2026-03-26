@@ -25,6 +25,7 @@
 
 /* ── Navigation ────────────────────────────────────── */
 .nav-bar {
+    position: relative;
     padding-top: 0.75rem;
     padding-bottom: 0.75rem;
     border-bottom: 1px solid var(--tm-border);
@@ -42,6 +43,25 @@
     width: auto;
 }
 
+.nav-toggle {
+    display: none;
+}
+.nav-toggle button {
+    all: unset;
+    box-sizing: border-box;
+    background: none;
+    border: 1px solid var(--tm-border);
+    border-radius: 0.375rem;
+    padding: 0.375rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    color: var(--tm-text);
+}
+.nav-toggle button:hover {
+    background: var(--tm-bg-light);
+}
+
 .nav-lang {
     display: flex;
     gap: 0.5rem;
@@ -57,6 +77,14 @@
 .nav-lang a.current-locale {
     font-weight: 700;
     color: var(--tm-text);
+}
+
+.nav-links a {
+    color: var(--tm-text);
+    text-decoration: none;
+}
+.nav-links a:hover {
+    color: var(--tm-primary);
 }
 
 /* ── Login Card ────────────────────────────────────── */
@@ -251,7 +279,7 @@ footer {
 }
 
 /* ── Mobile ────────────────────────────────────────── */
-@media (max-width: 576px) {
+@media (max-width: 767px) {
     .kc-card {
         margin: 1.5rem auto;
         padding: 1.5rem;
@@ -260,7 +288,58 @@ footer {
     }
 
     .nav-bar {
+        flex-wrap: wrap;
         padding-top: 0.5rem;
         padding-bottom: 0.5rem;
+    }
+    .nav-bar > ul:first-child {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    .nav-toggle {
+        display: block;
+    }
+    .nav-toggle button {
+        background: var(--tm-primary);
+        border-color: var(--tm-primary);
+        color: #fff;
+        padding: 0.5rem;
+        border-radius: 0.5rem;
+    }
+    .nav-toggle button:hover {
+        background: var(--tm-primary-hover);
+    }
+    .nav-links {
+        display: none;
+        flex-direction: column;
+        width: 100%;
+        background: #fff;
+        border-top: 1px solid #e5e7eb;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        padding: 0.5rem 0;
+        margin: 0.5rem 0 0 0;
+    }
+    .nav-open .nav-links {
+        display: flex;
+    }
+    .nav-links li {
+        padding: 0;
+        border-bottom: 1px solid #f3f4f6;
+    }
+    .nav-links li:last-child {
+        border-bottom: none;
+    }
+    .nav-links li a {
+        display: block;
+        font-size: 1rem;
+        padding: 0.75rem 1rem;
+        color: var(--tm-text);
+        text-decoration: none;
+    }
+    .nav-links li a:hover {
+        background: #f3f4f6;
+        color: var(--tm-primary);
     }
 }

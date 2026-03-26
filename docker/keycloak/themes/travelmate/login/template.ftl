@@ -44,8 +44,14 @@
                     <img src="${url.resourcesPath}/img/logo.svg" alt="Travelmate" class="nav-logo">
                 </a>
             </li>
+            <li class="nav-toggle">
+                <button type="button" aria-label="Menu" aria-expanded="false"
+                        onclick="var n=this.closest('nav');n.classList.toggle('nav-open');this.setAttribute('aria-expanded',n.classList.contains('nav-open'))">
+                    <svg width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+            </li>
         </ul>
-        <ul>
+        <ul class="nav-links">
             <#if locale?? && locale.supported?size gt 1>
                 <li class="nav-lang">
                     <#list locale.supported as l>
@@ -53,6 +59,8 @@
                     </#list>
                 </li>
             </#if>
+            <li><a href="http://localhost:8080/iam/signup">${msg("doRegister")}</a></li>
+            <li><a href="http://localhost:8080/oauth2/authorization/keycloak">${msg("doLogIn")}</a></li>
         </ul>
     </nav>
 
