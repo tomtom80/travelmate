@@ -18,43 +18,51 @@
         <div id="ingredient-list">
             <!-- Existing ingredients (edit mode) -->
             <th:block th:if="${recipe != null}">
-                <div th:each="ing : ${recipe.ingredients()}" class="ingredient-row" style="display:flex; gap:0.5rem; align-items:end; margin-bottom:0.5rem;">
-                    <label style="flex:3; margin-bottom:0;">
+                <div th:each="ing : ${recipe.ingredients()}" class="ingredient-card">
+                    <label>
+                        <span th:text="#{recipe.ingredient.name}">Name</span>
                         <input type="text" name="ingredientName" th:value="${ing.name()}"
-                               th:placeholder="#{recipe.ingredient.name}" required style="margin-bottom:0;">
+                               th:placeholder="#{recipe.ingredient.name}" required>
                     </label>
-                    <label style="flex:1; margin-bottom:0;">
-                        <input type="number" name="ingredientQuantity" step="0.001" min="0.001"
-                               th:value="${ing.quantity()}" th:placeholder="#{recipe.ingredient.quantity}" required style="margin-bottom:0;">
-                    </label>
-                    <label style="flex:1; margin-bottom:0;">
-                        <input type="text" name="ingredientUnit" th:value="${ing.unit()}"
-                               th:placeholder="#{recipe.ingredient.unit}" required style="margin-bottom:0;">
-                    </label>
-                    <button type="button" class="btn-icon btn-icon--danger" onclick="this.closest('.ingredient-row').remove()"
-                            th:title="#{common.remove}" th:aria-label="#{common.remove}">
-                        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                    </button>
+                    <div class="grid">
+                        <label>
+                            <span th:text="#{recipe.ingredient.quantity}">Menge</span>
+                            <input type="number" name="ingredientQuantity" step="0.001" min="0.001"
+                                   th:value="${ing.quantity()}" th:placeholder="#{recipe.ingredient.quantity}" required>
+                        </label>
+                        <label>
+                            <span th:text="#{recipe.ingredient.unit}">Einheit</span>
+                            <input type="text" name="ingredientUnit" th:value="${ing.unit()}"
+                                   th:placeholder="#{recipe.ingredient.unit}" required>
+                        </label>
+                    </div>
+                    <button type="button" class="outline btn-icon--danger-text" onclick="this.closest('.ingredient-card').remove()"
+                            style="width:100%; padding:0.25rem; font-size:0.85rem;"
+                            th:text="#{common.remove}">Entfernen</button>
                 </div>
             </th:block>
             <!-- Default empty row (create mode) -->
-            <div th:if="${recipe == null}" class="ingredient-row" style="display:flex; gap:0.5rem; align-items:end; margin-bottom:0.5rem;">
-                <label style="flex:3; margin-bottom:0;">
+            <div th:if="${recipe == null}" class="ingredient-card">
+                <label>
+                    <span th:text="#{recipe.ingredient.name}">Name</span>
                     <input type="text" name="ingredientName"
-                           th:placeholder="#{recipe.ingredient.name}" required style="margin-bottom:0;">
+                           th:placeholder="#{recipe.ingredient.name}" required>
                 </label>
-                <label style="flex:1; margin-bottom:0;">
-                    <input type="number" name="ingredientQuantity" step="0.001" min="0.001"
-                           th:placeholder="#{recipe.ingredient.quantity}" required style="margin-bottom:0;">
-                </label>
-                <label style="flex:1; margin-bottom:0;">
-                    <input type="text" name="ingredientUnit"
-                           th:placeholder="#{recipe.ingredient.unit}" required style="margin-bottom:0;">
-                </label>
-                <button type="button" class="btn-icon btn-icon--danger" onclick="this.closest('.ingredient-row').remove()"
-                        th:title="#{common.remove}" th:aria-label="#{common.remove}">
-                    <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                </button>
+                <div class="grid">
+                    <label>
+                        <span th:text="#{recipe.ingredient.quantity}">Menge</span>
+                        <input type="number" name="ingredientQuantity" step="0.001" min="0.001"
+                               th:placeholder="#{recipe.ingredient.quantity}" required>
+                    </label>
+                    <label>
+                        <span th:text="#{recipe.ingredient.unit}">Einheit</span>
+                        <input type="text" name="ingredientUnit"
+                               th:placeholder="#{recipe.ingredient.unit}" required>
+                    </label>
+                </div>
+                <button type="button" class="outline btn-icon--danger-text" onclick="this.closest('.ingredient-card').remove()"
+                        style="width:100%; padding:0.25rem; font-size:0.85rem;"
+                        th:text="#{common.remove}">Entfernen</button>
             </div>
         </div>
         <button type="button" class="outline" id="add-ingredient-btn" style="margin-bottom:1.5rem;"
@@ -67,23 +75,27 @@
     </form>
 
     <template id="ingredient-template">
-        <div class="ingredient-row" style="display:flex; gap:0.5rem; align-items:end; margin-bottom:0.5rem;">
-            <label style="flex:3; margin-bottom:0;">
+        <div class="ingredient-card">
+            <label>
+                <span th:text="#{recipe.ingredient.name}">Name</span>
                 <input type="text" name="ingredientName"
-                       th:placeholder="#{recipe.ingredient.name}" required style="margin-bottom:0;">
+                       th:placeholder="#{recipe.ingredient.name}" required>
             </label>
-            <label style="flex:1; margin-bottom:0;">
-                <input type="number" name="ingredientQuantity" step="0.001" min="0.001"
-                       th:placeholder="#{recipe.ingredient.quantity}" required style="margin-bottom:0;">
-            </label>
-            <label style="flex:1; margin-bottom:0;">
-                <input type="text" name="ingredientUnit"
-                       th:placeholder="#{recipe.ingredient.unit}" required style="margin-bottom:0;">
-            </label>
-            <button type="button" class="btn-icon btn-icon--danger" onclick="this.closest('.ingredient-row').remove()"
-                    th:title="#{common.remove}" th:aria-label="#{common.remove}">
-                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-            </button>
+            <div class="grid">
+                <label>
+                    <span th:text="#{recipe.ingredient.quantity}">Menge</span>
+                    <input type="number" name="ingredientQuantity" step="0.001" min="0.001"
+                           th:placeholder="#{recipe.ingredient.quantity}" required>
+                </label>
+                <label>
+                    <span th:text="#{recipe.ingredient.unit}">Einheit</span>
+                    <input type="text" name="ingredientUnit"
+                           th:placeholder="#{recipe.ingredient.unit}" required>
+                </label>
+            </div>
+            <button type="button" class="outline btn-icon--danger-text" onclick="this.closest('.ingredient-card').remove()"
+                    style="width:100%; padding:0.25rem; font-size:0.85rem;"
+                    th:text="#{common.remove}">Entfernen</button>
         </div>
     </template>
 

@@ -9,7 +9,24 @@
 
     <!-- Accommodation exists: show details -->
     <article th:if="${accommodation != null}">
-        <h2 th:text="${accommodation.name()}">Unterkunftsname</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem;">
+            <h2 style="margin-bottom:0;" th:text="${accommodation.name()}">Unterkunftsname</h2>
+            <div th:if="${isEditable}" class="action-col">
+                <button type="button" class="btn-icon"
+                        onclick="document.getElementById('edit-accommodation-dialog').showModal()"
+                        th:title="#{common.edit}" th:aria-label="#{common.edit}">
+                    <svg viewBox="0 0 24 24"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                </button>
+                <form method="post" th:action="@{/{tid}/accommodation/delete(tid=${trip.tripId()})}"
+                      style="margin:0;"
+                      onsubmit="return confirm(/*[[#{accommodation.remove.confirm}]]*/ 'Unterkunft wirklich entfernen?')">
+                    <button type="submit" class="btn-icon btn-icon--danger"
+                            th:title="#{accommodation.remove}" th:aria-label="#{accommodation.remove}">
+                        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                    </button>
+                </form>
+            </div>
+        </div>
 
         <div class="grid">
             <div>
@@ -48,7 +65,12 @@
         </div>
 
         <!-- Room Table -->
-        <h3 th:text="#{accommodation.rooms}">Zimmer</h3>
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:0.5rem;">
+            <h3 style="margin-bottom:0;" th:text="#{accommodation.rooms}">Zimmer</h3>
+            <button th:if="${isEditable}" type="button" class="outline" style="padding:0.25rem 0.75rem; font-size:0.85rem; margin:0;"
+                    onclick="document.getElementById('add-room-dialog').showModal()"
+                    th:text="#{accommodation.room.add}">Zimmer hinzufuegen</button>
+        </div>
         <figure class="table-cards">
             <table>
                 <thead>
@@ -89,21 +111,32 @@
                         </td>
                         <td th:if="${isEditable}" th:data-label="#{common.actions}">
                             <div class="action-col">
+                                <!-- Edit room -->
                                 <button type="button" class="btn-icon"
                                         th:data-dialog-id="'edit-room-dialog-' + ${room.roomId()}"
                                         onclick="document.getElementById(this.dataset.dialogId).showModal()"
                                         th:title="#{common.edit}" th:aria-label="#{common.edit}">
                                     <svg viewBox="0 0 24 24"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
                                 </button>
-                                <form method="post"
-                                      th:action="@{/{tid}/accommodation/rooms/{rid}/delete(tid=${trip.tripId()},rid=${room.roomId()})}"
-                                      style="margin:0;"
-                                      onsubmit="return confirm(/*[[#{accommodation.room.delete.confirm}]]*/ 'Zimmer wirklich entfernen?')">
-                                    <button type="submit" class="btn-icon btn-icon--danger"
-                                            th:title="#{common.delete}" th:aria-label="#{common.delete}">
-                                        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                                    </button>
-                                </form>
+                                <!-- Kebab menu: assign + delete -->
+                                <details class="kebab-menu">
+                                    <summary th:title="#{common.actions}" th:aria-label="#{common.actions}">
+                                        <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="12" cy="19" r="1.5"/></svg>
+                                    </summary>
+                                    <div class="kebab-menu__panel">
+                                        <button th:if="${partyOptions != null && !partyOptions.isEmpty()}" type="button"
+                                                th:data-dialog-id="'assign-room-dialog-' + ${room.roomId()}"
+                                                onclick="document.getElementById(this.dataset.dialogId).showModal(); this.closest('details').open=false;"
+                                                th:text="#{accommodation.room.assign}">Zuweisen</button>
+                                        <form method="post"
+                                              th:action="@{/{tid}/accommodation/rooms/{rid}/delete(tid=${trip.tripId()},rid=${room.roomId()})}"
+                                              style="margin:0;"
+                                              onsubmit="return confirm(/*[[#{accommodation.room.delete.confirm}]]*/ 'Zimmer wirklich entfernen?')">
+                                            <button type="submit" class="kebab-menu__danger"
+                                                    th:text="#{common.delete}">Loeschen</button>
+                                        </form>
+                                    </div>
+                                </details>
                             </div>
                         </td>
                     </tr>
@@ -152,16 +185,18 @@
             </dialog>
         </th:block>
 
-        <!-- Room Assignment Form -->
-        <details th:if="${isEditable && partyOptions != null && !partyOptions.isEmpty()}">
-            <summary th:text="#{accommodation.room.assign}">Zuweisen</summary>
-            <th:block th:each="room : ${accommodation.rooms()}">
-                <form method="post" th:action="@{/{tid}/accommodation/rooms/{rid}/assign(tid=${trip.tripId()},rid=${room.roomId()})}"
-                      style="margin-bottom:1rem; padding:0.75rem; border:1px solid #d1d5db; border-radius:0.5rem;">
-                    <strong th:text="${room.name()}">Zimmer 1</strong>
-                    <span>(<span th:text="${room.bedCount()}"></span> <span th:text="#{accommodation.room.bedCount}"></span>)</span>
-                    <div class="grid" style="margin-top:0.5rem;">
+        <!-- Assign Room Dialogs (one per room) -->
+        <th:block th:if="${isEditable && partyOptions != null && !partyOptions.isEmpty()}" th:each="room : ${accommodation.rooms()}">
+            <dialog th:id="'assign-room-dialog-' + ${room.roomId()}">
+                <article>
+                    <h3>
+                        <span th:text="#{accommodation.room.assign}">Zuweisen</span>:
+                        <span th:text="${room.name()}">Zimmer</span>
+                        (<span th:text="${room.bedCount()}"></span> <span th:text="#{accommodation.room.bedCount}"></span>)
+                    </h3>
+                    <form method="post" th:action="@{/{tid}/accommodation/rooms/{rid}/assign(tid=${trip.tripId()},rid=${room.roomId()})}">
                         <label>
+                            <span th:text="#{accommodation.room.selectParty}">Reisepartei</span>
                             <select name="partyTenantId" required
                                     onchange="this.form.partyName.value = this.options[this.selectedIndex].dataset.name || ''">
                                 <option value="" th:text="#{accommodation.room.selectParty}">-- Reisepartei waehlen --</option>
@@ -176,44 +211,46 @@
                             <span th:text="#{accommodation.room.personCount}">Personen</span>
                             <input type="number" name="personCount" required min="1" value="1">
                         </label>
-                    </div>
-                    <input type="hidden" name="partyName" value="">
-                    <button type="submit" th:text="#{accommodation.room.assign}">Zuweisen</button>
-                </form>
-            </th:block>
-        </details>
+                        <input type="hidden" name="partyName" value="">
+                        <div class="grid">
+                            <button type="button" class="outline"
+                                    onclick="this.closest('dialog').close()"
+                                    th:text="#{common.cancel}">Abbrechen</button>
+                            <button type="submit" th:text="#{accommodation.room.assign}">Zuweisen</button>
+                        </div>
+                    </form>
+                </article>
+            </dialog>
+        </th:block>
 
-        <!-- Add Room Form -->
-        <details th:if="${isEditable}">
-            <summary th:text="#{accommodation.room.add}">Zimmer hinzufuegen</summary>
-            <form method="post" th:action="@{/{tid}/accommodation/rooms(tid=${trip.tripId()})}">
-                <div class="grid">
+        <!-- Add Room Dialog -->
+        <dialog id="add-room-dialog" th:if="${isEditable}">
+            <article>
+                <h3 th:text="#{accommodation.room.add}">Zimmer hinzufuegen</h3>
+                <form method="post" th:action="@{/{tid}/accommodation/rooms(tid=${trip.tripId()})}">
                     <label>
                         <span th:text="#{accommodation.room.name}">Bezeichnung</span>
                         <input type="text" name="name" required maxlength="100" th:placeholder="#{accommodation.room.name.placeholder}">
                     </label>
-                    <label>
-                        <span th:text="#{accommodation.room.bedCount}">Betten</span>
-                        <input type="number" name="bedCount" required min="1" value="2">
-                    </label>
-                    <label>
-                        <span th:text="#{accommodation.room.pricePerNight}">Preis/Nacht</span>
-                        <input type="number" name="pricePerNight" step="0.01" min="0" th:placeholder="#{accommodation.room.pricePerNight.placeholder}">
-                    </label>
-                </div>
-                <button type="submit" th:text="#{accommodation.room.add}">Zimmer hinzufuegen</button>
-            </form>
-        </details>
-
-        <!-- Edit / Remove Accommodation -->
-        <div th:if="${isEditable}" style="display:flex; gap:0.5rem; margin-top:1rem;">
-            <button onclick="document.getElementById('edit-accommodation-dialog').showModal()"
-                    th:text="#{common.edit}">Bearbeiten</button>
-            <form method="post" th:action="@{/{tid}/accommodation/delete(tid=${trip.tripId()})}"
-                  onsubmit="return confirm(/*[[#{accommodation.remove.confirm}]]*/ 'Unterkunft wirklich entfernen?')">
-                <button type="submit" class="outline secondary" th:text="#{accommodation.remove}">Entfernen</button>
-            </form>
-        </div>
+                    <div class="grid">
+                        <label>
+                            <span th:text="#{accommodation.room.bedCount}">Betten</span>
+                            <input type="number" name="bedCount" required min="1" value="2">
+                        </label>
+                        <label>
+                            <span th:text="#{accommodation.room.pricePerNight}">Preis/Nacht</span>
+                            <input type="number" name="pricePerNight" step="0.01" min="0" th:placeholder="#{accommodation.room.pricePerNight.placeholder}">
+                        </label>
+                    </div>
+                    <div class="grid">
+                        <button type="button" class="outline"
+                                onclick="document.getElementById('add-room-dialog').close()"
+                                th:text="#{common.cancel}">Abbrechen</button>
+                        <button type="submit" th:text="#{accommodation.room.add}">Zimmer hinzufuegen</button>
+                    </div>
+                </form>
+            </article>
+        </dialog>
 
         <!-- Edit Accommodation Dialog -->
         <dialog id="edit-accommodation-dialog" th:if="${isEditable}">
@@ -246,7 +283,6 @@
                         <span th:text="#{accommodation.totalPrice}">Gesamtpreis</span>
                         <input type="number" name="totalPrice" step="0.01" min="0" th:value="${accommodation.totalPrice()}">
                     </label>
-                    <!-- Preserve existing rooms -->
                     <th:block th:each="room : ${accommodation.rooms()}">
                         <input type="hidden" name="roomName" th:value="${room.name()}">
                         <input type="hidden" name="roomBedCount" th:value="${room.bedCount()}">
@@ -270,7 +306,6 @@
         <div th:if="${isEditable}">
             <p th:text="#{accommodation.empty}">Noch keine Unterkunft hinterlegt.</p>
 
-            <!-- Import from URL -->
             <details style="margin-bottom:1rem;">
                 <summary th:text="#{accommodation.import}">URL importieren</summary>
                 <form method="post" th:action="@{/{tid}/accommodation/import(tid=${trip.tripId()})}">
@@ -285,7 +320,6 @@
                 </form>
             </details>
 
-            <!-- Import error message -->
             <div th:if="${importError}" class="alert alert-error">
                 <span th:text="#{${importError}}">Fehler</span>
             </div>
@@ -335,7 +369,6 @@
                 <small th:text="'Max. ' + ${importResult.maxGuests()} + ' Personen'"></small>
             </div>
             <div id="import-room-rows">
-                <!-- Pre-filled rooms from import -->
                 <th:block th:if="${prefillRooms != null && !prefillRooms.isEmpty()}" th:each="room : ${prefillRooms}">
                     <div class="room-row" style="border:1px solid #d1d5db; border-radius:0.5rem; padding:0.75rem; margin-bottom:0.5rem; position:relative;">
                         <button type="button" class="btn-icon btn-icon--danger"
@@ -359,7 +392,6 @@
                         </div>
                     </div>
                 </th:block>
-                <!-- Default empty room if no rooms imported -->
                 <th:block th:if="${prefillRooms == null || prefillRooms.isEmpty()}">
                     <div class="room-row" style="border:1px solid #d1d5db; border-radius:0.5rem; padding:0.75rem; margin-bottom:0.5rem;">
                         <div class="grid">
@@ -458,7 +490,6 @@
 
     <a th:href="@{/{id}(id=${trip.tripId()})}" role="button" class="outline" th:text="#{common.back}">Zurueck</a>
 
-    <!-- Hidden template for room row cloning -->
     <template id="room-row-template">
         <div class="room-row" style="border:1px solid #d1d5db; border-radius:0.5rem; padding:0.75rem; margin-bottom:0.5rem; position:relative;">
             <button type="button" class="btn-icon btn-icon--danger"
