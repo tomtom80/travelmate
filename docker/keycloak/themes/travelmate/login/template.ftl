@@ -37,20 +37,22 @@
     </#if>
 </head>
 <body>
-    <nav class="container">
+    <nav class="container nav-bar">
         <ul>
-            <li><a href="http://localhost:8080/"><strong>Travelmate</strong></a></li>
+            <li>
+                <a href="http://localhost:8080/" class="nav-brand">
+                    <img src="${url.resourcesPath}/img/logo.svg" alt="Travelmate" class="nav-logo">
+                </a>
+            </li>
         </ul>
         <ul>
             <#if locale?? && locale.supported?size gt 1>
-                <li>
+                <li class="nav-lang">
                     <#list locale.supported as l>
                         <a href="${l.url}"<#if locale.currentLanguageTag == l.languageTag> class="current-locale"</#if>>${l.label}</a><#if l_has_next> / </#if>
                     </#list>
                 </li>
             </#if>
-            <li><a href="http://localhost:8080/oauth2/authorization/keycloak" role="button">${msg("doLogIn")}</a></li>
-            <li><a href="http://localhost:8080/iam/signup" role="button" class="outline">${msg("doRegister")}</a></li>
         </ul>
     </nav>
 
@@ -58,6 +60,7 @@
         <article class="kc-card">
             <#if !(auth?has_content && auth.showUsername() && !auth.showResetCredentials())>
                 <header>
+                    <img src="${url.resourcesPath}/img/logo-mark.svg" alt="" class="kc-card-logo">
                     <h2><#nested "header"></h2>
                 </header>
             <#else>
@@ -96,7 +99,7 @@
     </main>
 
     <footer class="container">
-        <small>Travelmate</small>
+        <small>&copy; Travelmate</small>
     </footer>
 </body>
 </html>

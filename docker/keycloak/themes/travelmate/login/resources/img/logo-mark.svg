@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40" fill="none">
+  <g transform="translate(2,2)">
+    <!-- Outer compass circle -->
+    <circle cx="18" cy="18" r="16" stroke="#3366CC" stroke-width="2" fill="none"/>
+    <!-- Compass needle north (blue) -->
+    <polygon points="18,4 14,18 18,16 22,18" fill="#3366CC"/>
+    <!-- Compass needle south (light) -->
+    <polygon points="18,32 14,18 18,20 22,18" fill="#99BBEE"/>
+    <!-- Center dot -->
+    <circle cx="18" cy="18" r="2.5" fill="#3366CC"/>
+    <!-- Route pin at NE -->
+    <circle cx="28" cy="8" r="4" fill="#3366CC"/>
+    <circle cx="28" cy="8" r="1.8" fill="white"/>
+  </g>
+</svg>
