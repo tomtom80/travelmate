@@ -56,7 +56,7 @@
             <#if locale?? && locale.supported?size gt 1>
                 <li class="nav-lang">
                     <#list locale.supported as l>
-                        <a href="${l.url}"<#if locale.currentLanguageTag == l.languageTag> class="current-locale"</#if>>${l.label}</a><#if l_has_next> / </#if>
+                        <a href="${l.url}"<#if locale.currentLanguageTag == l.languageTag> class="current-locale"</#if>><#if l.languageTag == "de">Deutsch<#elseif l.languageTag == "en">English<#else>${l.label}</#if></a><#if l_has_next> / </#if>
                     </#list>
                 </li>
             </#if>

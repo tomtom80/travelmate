@@ -311,6 +311,7 @@ a.btn-icon.btn-icon--danger:hover {
     .nav-lang a {
         font-size: 1rem;
         color: #374151;
+        padding: 0 !important;
     }
 }
 
