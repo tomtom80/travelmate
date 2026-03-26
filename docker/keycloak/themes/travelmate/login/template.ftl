@@ -52,6 +52,7 @@
             </li>
         </ul>
         <ul class="nav-links">
+            <li><a href="http://localhost:8080/iam/signup">${msg("doRegister")}</a></li>
             <#if locale?? && locale.supported?size gt 1>
                 <li class="nav-lang">
                     <#list locale.supported as l>
@@ -59,7 +60,6 @@
                     </#list>
                 </li>
             </#if>
-            <li><a href="http://localhost:8080/iam/signup">${msg("doRegister")}</a></li>
             <li><a href="http://localhost:8080/oauth2/authorization/keycloak">${msg("doLogIn")}</a></li>
         </ul>
     </nav>
