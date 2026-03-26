@@ -54,10 +54,15 @@
         <ul class="nav-links">
             <li><a href="http://localhost:8080/iam/signup">${msg("doRegister")}</a></li>
             <#if locale?? && locale.supported?size gt 1>
-                <li class="nav-lang">
-                    <#list locale.supported as l>
-                        <a href="${l.url}"<#if locale.currentLanguageTag == l.languageTag> class="current-locale"</#if>><#if l.languageTag == "de">Deutsch<#elseif l.languageTag == "en">English<#else>${l.label}</#if></a><#if l_has_next> / </#if>
-                    </#list>
+                <li class="nav-lang-item">
+                    <details class="nav-lang-dropdown">
+                        <summary>${msg("languages")}</summary>
+                        <div class="nav-lang-panel">
+                            <#list locale.supported as l>
+                                <a href="${l.url}"><#if l.languageTag == "de">Deutsch<#elseif l.languageTag == "en">English<#else>${l.label}</#if></a>
+                            </#list>
+                        </div>
+                    </details>
                 </li>
             </#if>
             <li><a href="http://localhost:8080/oauth2/authorization/keycloak">${msg("doLogIn")}</a></li>

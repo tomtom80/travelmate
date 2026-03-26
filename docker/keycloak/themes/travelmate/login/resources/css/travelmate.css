@@ -62,21 +62,45 @@
     background: var(--tm-bg-light);
 }
 
-.nav-lang {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
+/* ── Language Dropdown ─────────────────────────────── */
+.nav-lang-dropdown {
+    position: relative;
 }
-
-.nav-lang a {
-    font-size: 0.875rem;
+.nav-lang-dropdown > summary {
+    all: unset;
+    cursor: pointer;
+    color: #374151;
+    list-style: none;
+}
+.nav-lang-dropdown > summary::marker { content: ""; }
+.nav-lang-dropdown > summary::-webkit-details-marker { display: none; }
+.nav-lang-dropdown > summary::after { content: none; }
+.nav-lang-dropdown > summary:hover {
+    color: var(--tm-primary);
+}
+.nav-lang-panel {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    z-index: 100;
+    min-width: 8rem;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 0.25rem 0;
+    margin-top: 0.25rem;
+}
+.nav-lang-panel a {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    color: #374151;
     text-decoration: none;
-    color: #6b7280;
+    font-size: 0.875rem;
 }
-
-.nav-lang a.current-locale {
-    font-weight: normal;
-    color: #6b7280;
+.nav-lang-panel a:hover {
+    background: #f3f4f6;
+    color: var(--tm-primary);
 }
 
 .nav-links a {
@@ -84,7 +108,7 @@
     text-decoration: none;
 }
 .nav-links a:hover {
-    color: #111827;
+    color: var(--tm-primary);
 }
 
 /* ── Login Card ────────────────────────────────────── */
@@ -345,21 +369,35 @@ footer {
     }
     .nav-links li a:hover {
         background: #f3f4f6;
-        color: #111827;
+        color: var(--tm-primary);
     }
-    .nav-lang {
+    .nav-lang-dropdown > summary {
         display: block;
-        padding: 0;
-    }
-    .nav-lang a {
-        display: inline;
         font-size: 1rem;
-        color: #374151;
-        padding: 0 !important;
-        font-weight: normal !important;
-    }
-    li.nav-lang {
         padding: 0.75rem 1rem;
+        color: #374151;
+        text-align: left;
+    }
+    .nav-lang-dropdown > summary:hover {
+        background: #f3f4f6;
+        color: var(--tm-primary);
+    }
+    .nav-lang-panel {
+        position: static;
+        border: none;
+        box-shadow: none;
+        border-radius: 0;
+        margin: 0;
+        padding: 0;
+        background: #f9fafb;
+    }
+    .nav-lang-panel a {
+        padding: 0.75rem 1rem 0.75rem 2rem;
+        font-size: 1rem;
+        text-align: left;
+    }
+    .nav-lang-panel a:hover {
+        color: var(--tm-primary);
         text-align: left;
     }
 }

@@ -24,9 +24,14 @@
         </ul>
         <ul class="nav-links">
             <li><a th:href="@{/signup}" th:text="#{landing.register}">Registrieren</a></li>
-            <li class="nav-lang">
-                <a th:href="@{''(lang='de')}" th:text="#{common.german}">DE</a> /
-                <a th:href="@{''(lang='en')}" th:text="#{common.english}">EN</a>
+            <li class="nav-lang-item">
+                <details class="nav-lang-dropdown">
+                    <summary th:text="#{nav.language}">Sprache</summary>
+                    <div class="nav-lang-panel">
+                        <a th:href="@{''(lang='de')}" th:text="#{common.german}">Deutsch</a>
+                        <a th:href="@{''(lang='en')}" th:text="#{common.english}">English</a>
+                    </div>
+                </details>
             </li>
             <li><a href="/oauth2/authorization/keycloak" th:text="#{landing.login}">Anmelden</a></li>
         </ul>

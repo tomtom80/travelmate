@@ -223,26 +223,47 @@ a.btn-icon.btn-icon--danger:hover {
     text-decoration: none;
 }
 .nav-logout-btn:hover {
-    text-decoration: underline;
-    color: #111827;
+    color: var(--tm-primary, #3366CC);
 }
-.nav-lang {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
+/* ── Language Dropdown ─────────────────────────────── */
+.nav-lang-dropdown {
+    position: relative;
 }
-.nav-lang a {
-    white-space: nowrap;
-    color: #6b7280;
+.nav-lang-dropdown > summary {
+    all: unset;
+    cursor: pointer;
+    color: #374151;
+    list-style: none;
+}
+.nav-lang-dropdown > summary::marker { content: ""; }
+.nav-lang-dropdown > summary::-webkit-details-marker { display: none; }
+.nav-lang-dropdown > summary::after { content: none; }
+.nav-lang-dropdown > summary:hover {
+    color: var(--tm-primary, #3366CC);
+}
+.nav-lang-panel {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    z-index: 100;
+    min-width: 8rem;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 0.25rem 0;
+    margin-top: 0.25rem;
+}
+.nav-lang-panel a {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    color: #374151;
     text-decoration: none;
     font-size: 0.875rem;
 }
-.nav-lang a:hover {
-    color: #374151;
-}
-.nav-lang a.current-locale {
-    font-weight: 700;
-    color: #374151;
+.nav-lang-panel a:hover {
+    background: #f3f4f6;
+    color: var(--tm-primary, #3366CC);
 }
 
 @media (max-width: 767px) {
@@ -302,21 +323,34 @@ a.btn-icon.btn-icon--danger:hover {
     .nav-links li a:hover,
     .nav-links li .nav-logout-btn:hover {
         background: #f3f4f6;
-        color: #111827;
+        color: var(--tm-primary, #3366CC);
     }
-    .nav-lang {
+    /* Language dropdown in mobile: inline like other items */
+    .nav-lang-dropdown > summary {
         display: block;
-        padding: 0;
-    }
-    .nav-lang a {
-        display: inline;
         font-size: 1rem;
-        color: #374151;
-        padding: 0 !important;
-    }
-    /* Wrap nav-lang content in the li's own padding */
-    li.nav-lang {
         padding: 0.75rem 1rem;
+        color: #374151;
+    }
+    .nav-lang-dropdown > summary:hover {
+        background: #f3f4f6;
+        color: var(--tm-primary, #3366CC);
+    }
+    .nav-lang-panel {
+        position: static;
+        border: none;
+        box-shadow: none;
+        border-radius: 0;
+        margin: 0;
+        padding: 0;
+        background: #f9fafb;
+    }
+    .nav-lang-panel a {
+        padding: 0.75rem 1rem 0.75rem 2rem;
+        font-size: 1rem;
+    }
+    .nav-lang-panel a:hover {
+        color: var(--tm-primary, #3366CC);
     }
 }
 

@@ -31,14 +31,19 @@
             <li><a href="/iam/dashboard" th:text="#{nav.travelParty}">Reisepartei</a></li>
             <li><a href="/trips/" th:text="#{nav.trips}">Reisen</a></li>
             <li><a href="/trips/recipes" th:text="#{nav.recipes}">Rezepte</a></li>
-            <li class="nav-lang">
-                <a th:href="@{''(lang='de')}" th:text="#{common.german}">DE</a> /
-                <a th:href="@{''(lang='en')}" th:text="#{common.english}">EN</a>
+            <li class="nav-lang-item">
+                <details class="nav-lang-dropdown">
+                    <summary th:text="#{nav.language}">Sprache</summary>
+                    <div class="nav-lang-panel">
+                        <a th:href="@{''(lang='de')}" th:text="#{common.german}">Deutsch</a>
+                        <a th:href="@{''(lang='en')}" th:text="#{common.english}">English</a>
+                    </div>
+                </details>
             </li>
             <li>
-                <form method="post" action="/logout" style="margin:0;">
-                    <button type="submit" class="nav-logout-btn" th:text="#{nav.logout}">Abmelden</button>
-                </form>
+                <a href="/logout" class="nav-logout-btn" th:text="#{nav.logout}"
+                   onclick="event.preventDefault(); this.closest('li').querySelector('form').submit();">Abmelden</a>
+                <form method="post" action="/logout" style="display:none;"></form>
             </li>
         </ul>
     </nav>
