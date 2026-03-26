@@ -19,16 +19,16 @@ Travelmate is a multi-tenant travel management platform built as a **Maven multi
 
 ## Versioning
 
-Maven CI-Friendly Versions (`${revision}` property). Current version: `0.4.0-SNAPSHOT`.
+Maven CI-Friendly Versions (`${revision}` property). Current version: `0.12.2`.
 
 Schema: `<major>.<iteration>.<patch>-SNAPSHOT`. The `<iteration>` tracks development iterations.
 
 ```bash
 # Release workflow:
-# 1. Set release version:  <revision>0.2.0</revision>
-# 2. ./mvnw clean verify && git commit -am "release: v0.2.0" && git tag v0.2.0
-# 3. Set next SNAPSHOT:    <revision>0.3.0-SNAPSHOT</revision>
-# 4. git commit -am "chore: prepare 0.3.0-SNAPSHOT"
+# 1. Set release version:  <revision>0.12.2</revision>
+# 2. ./mvnw clean verify && git commit -am "Release v0.12.2" && git tag v0.12.2
+# 3. Set next SNAPSHOT:    <revision>0.13.0-SNAPSHOT</revision>
+# 4. git commit -am "chore: prepare 0.13.0-SNAPSHOT"
 ```
 
 The `flatten-maven-plugin` resolves `${revision}` at build time. `.flattened-pom.xml` files are git-ignored.
@@ -204,6 +204,6 @@ Invitations belong to the Trips Core Domain, not IAM.
 
 ## Documentation
 
-- 11 ADRs in `docs/adr/` (MADR format, German)
+- 18 ADRs in `docs/adr/` (MADR format, German)
 - Arc42 architecture docs in `docs/arc42/`
 - Design diagrams in `docs/design/`

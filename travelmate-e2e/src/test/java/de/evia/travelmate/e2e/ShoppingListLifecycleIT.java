@@ -50,7 +50,8 @@ class ShoppingListLifecycleIT extends E2ETestBase {
     @Test
     @Order(2)
     void createRecipe() {
-        navigateAndWait("/trips/recipes/new");
+        final String tripId = extractTripId();
+        navigateAndWait("/trips/" + tripId + "/recipes/new");
 
         page.fill("input[name=name]", RECIPE_NAME);
         page.fill("input[name=servings]", "4");

@@ -46,8 +46,9 @@ public class ShoppingListSteps {
             page.waitForLoadState();
             tripDetailPath = page.url().replace(BASE_URL, "");
 
-            // Create recipe
-            navigateAndWait("/trips/recipes/new");
+            // Create trip recipe
+            final String tid = tripDetailPath.replaceAll(".*/(\\w{8}-\\w{4}-\\w{4}-\\w{4}-\\w{12}).*", "$1");
+            navigateAndWait("/trips/" + tid + "/recipes/new");
             page.locator("#name").fill(RECIPE_NAME);
             page.locator("#servings").fill("4");
             page.locator("input[name=ingredientName]").first().fill(INGREDIENT_NAME);

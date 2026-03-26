@@ -37,7 +37,13 @@ class MealPlanLifecycleIT extends E2ETestBase {
     @Test
     @Order(2)
     void createRecipeForLaterAssignment() {
-        navigateAndWait("/trips/recipes/new");
+        // Navigate to trip detail to get tripId, then create trip recipe
+        navigateAndWait("/trips/");
+        page.locator("a", new com.microsoft.playwright.Page.LocatorOptions().setHasText(TRIP_NAME)).click();
+        page.waitForLoadState();
+        tripDetailUrl = page.url();
+        final String tripId = extractTripId();
+        navigateAndWait("/trips/" + tripId + "/recipes/new");
 
         page.fill("input[name=name]", RECIPE_NAME);
         page.fill("input[name=servings]", "4");

@@ -149,7 +149,8 @@ public class MealPlanSteps {
     @Und("es existiert ein Rezept in meiner Rezeptsammlung")
     public void esExistiertEinRezeptInMeinerRezeptsammlung() {
         if (!recipeCreated) {
-            navigateAndWait("/trips/recipes/new");
+            final String tid = extractTripId();
+            navigateAndWait("/trips/" + tid + "/recipes/new");
             page.fill("input[name=name]", RECIPE_NAME);
             page.fill("input[name=servings]", "4");
             page.locator("input[name=ingredientName]").first().fill("Nudeln");
