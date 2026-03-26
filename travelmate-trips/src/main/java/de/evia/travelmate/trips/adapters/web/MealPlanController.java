@@ -69,7 +69,7 @@ public class MealPlanController {
         final TripRepresentation trip = tripService.findById(new TripId(tripId));
         final MealPlanRepresentation mealPlan = mealPlanService.findByTripId(
             new TripId(tripId), identity.tenantId());
-        final List<RecipeRepresentation> recipes = recipeService.findAllByTenantId(identity.tenantId());
+        final List<RecipeRepresentation> recipes = recipeService.findAllByTripId(new TripId(tripId));
 
         final var slotsByDate = mealPlan.slots().stream()
             .collect(Collectors.groupingBy(

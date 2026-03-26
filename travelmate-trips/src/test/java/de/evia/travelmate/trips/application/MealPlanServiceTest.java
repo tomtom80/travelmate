@@ -117,7 +117,7 @@ class MealPlanServiceTest {
     void assignRecipeSucceedsWithValidRecipe() {
         final MealPlan mealPlan = createMealPlan();
         final TripId tripId = mealPlan.tripId();
-        final Recipe recipe = Recipe.create(
+        final Recipe recipe = Recipe.createPersonal(
             new TenantId(TENANT_UUID), new RecipeName("Pasta"), new Servings(4),
             List.of(new Ingredient("Nudeln", new BigDecimal("500"), "g")));
         when(mealPlanRepository.findByTripId(tripId)).thenReturn(Optional.of(mealPlan));
@@ -154,12 +154,12 @@ class MealPlanServiceTest {
         mealPlan.assignRecipe(mealPlan.slots().getFirst().mealSlotId(), recipeId);
         when(mealPlanRepository.findByTripId(tripId)).thenReturn(Optional.of(mealPlan));
 
-        final Recipe recipe = Recipe.create(tenantId, new RecipeName("Pasta"), new Servings(4),
+        final Recipe recipe = Recipe.createPersonal(tenantId, new RecipeName("Pasta"), new Servings(4),
             List.of(new Ingredient("Nudeln", new BigDecimal("500"), "g")));
         // Create a recipe with matching ID for enrichment
-        final Recipe matchingRecipe = Recipe.create(tenantId, new RecipeName("Matching"), new Servings(2),
+        final Recipe matchingRecipe = Recipe.createPersonal(tenantId, new RecipeName("Matching"), new Servings(2),
             List.of(new Ingredient("X", new BigDecimal("1"), "g")));
-        when(recipeRepository.findAllByTenantId(tenantId)).thenReturn(List.of(recipe, matchingRecipe));
+        when(recipeRepository.findAllByTripId(any())).thenReturn(List.of(recipe, matchingRecipe));
 
         final MealPlanRepresentation result = mealPlanService.findByTripId(tripId, tenantId);
 

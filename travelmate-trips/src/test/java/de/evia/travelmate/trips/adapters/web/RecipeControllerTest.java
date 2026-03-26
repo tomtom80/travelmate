@@ -64,7 +64,7 @@ class RecipeControllerTest {
 
     @Test
     void listShowsRecipes() throws Exception {
-        when(recipeService.findAllByTenantId(new TenantId(TENANT_UUID)))
+        when(recipeService.findAllPersonalByTenantId(new TenantId(TENANT_UUID)))
             .thenReturn(List.of());
 
         mockMvc.perform(get("/recipes")
@@ -86,8 +86,8 @@ class RecipeControllerTest {
 
     @Test
     void createRecipeRedirectsToList() throws Exception {
-        when(recipeService.createRecipe(any(CreateRecipeCommand.class)))
-            .thenReturn(new RecipeRepresentation(RECIPE_UUID, TENANT_UUID, "Pasta", 4, List.of()));
+        when(recipeService.createPersonalRecipe(any(CreateRecipeCommand.class)))
+            .thenReturn(new RecipeRepresentation(RECIPE_UUID, TENANT_UUID, null, null, "Pasta", 4, List.of()));
 
         mockMvc.perform(post("/recipes")
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
@@ -99,13 +99,13 @@ class RecipeControllerTest {
             .andExpect(status().is3xxRedirection())
             .andExpect(redirectedUrl("/recipes"));
 
-        verify(recipeService).createRecipe(any(CreateRecipeCommand.class));
+        verify(recipeService).createPersonalRecipe(any(CreateRecipeCommand.class));
     }
 
     @Test
     void editFormShowsExistingRecipe() throws Exception {
         final RecipeRepresentation recipe = new RecipeRepresentation(
-            RECIPE_UUID, TENANT_UUID, "Pasta", 4,
+            RECIPE_UUID, TENANT_UUID, null, null, "Pasta", 4,
             List.of(new IngredientRepresentation("Nudeln", new BigDecimal("500"), "g"))
         );
         when(recipeService.findById(new RecipeId(RECIPE_UUID))).thenReturn(recipe);
@@ -121,7 +121,7 @@ class RecipeControllerTest {
     @Test
     void updateRecipeRedirectsToList() throws Exception {
         final RecipeRepresentation recipe = new RecipeRepresentation(
-            RECIPE_UUID, TENANT_UUID, "Pasta", 4, List.of());
+            RECIPE_UUID, TENANT_UUID, null, null, "Pasta", 4, List.of());
         when(recipeService.findById(new RecipeId(RECIPE_UUID))).thenReturn(recipe);
         when(recipeService.updateRecipe(any(UpdateRecipeCommand.class))).thenReturn(recipe);
 
@@ -141,7 +141,7 @@ class RecipeControllerTest {
     @Test
     void deleteRecipeRedirectsToList() throws Exception {
         final RecipeRepresentation recipe = new RecipeRepresentation(
-            RECIPE_UUID, TENANT_UUID, "Delete Me", 1, List.of());
+            RECIPE_UUID, TENANT_UUID, null, null, "Delete Me", 1, List.of());
         when(recipeService.findById(new RecipeId(RECIPE_UUID))).thenReturn(recipe);
 
         mockMvc.perform(post("/recipes/" + RECIPE_UUID + "/delete")
@@ -156,7 +156,7 @@ class RecipeControllerTest {
     void editFormRejectsCrossTenantAccess() throws Exception {
         final UUID otherTenantUuid = UUID.randomUUID();
         final RecipeRepresentation recipe = new RecipeRepresentation(
-            RECIPE_UUID, otherTenantUuid, "Pasta", 4, List.of());
+            RECIPE_UUID, otherTenantUuid, null, null, "Pasta", 4, List.of());
         when(recipeService.findById(new RecipeId(RECIPE_UUID))).thenReturn(recipe);
 
         mockMvc.perform(get("/recipes/" + RECIPE_UUID + "/edit")

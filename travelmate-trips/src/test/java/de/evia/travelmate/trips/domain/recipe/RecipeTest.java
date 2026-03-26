@@ -23,7 +23,7 @@ class RecipeTest {
 
     @Test
     void createCreatesRecipeWithAllFields() {
-        final Recipe recipe = Recipe.create(TENANT_ID, NAME, SERVINGS, INGREDIENTS);
+        final Recipe recipe = Recipe.createPersonal(TENANT_ID, NAME, SERVINGS, INGREDIENTS);
 
         assertThat(recipe.recipeId()).isNotNull();
         assertThat(recipe.tenantId()).isEqualTo(TENANT_ID);
@@ -34,20 +34,20 @@ class RecipeTest {
 
     @Test
     void createRejectsEmptyIngredients() {
-        assertThatThrownBy(() -> Recipe.create(TENANT_ID, NAME, SERVINGS, List.of()))
+        assertThatThrownBy(() -> Recipe.createPersonal(TENANT_ID, NAME, SERVINGS, List.of()))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("at least one ingredient");
     }
 
     @Test
     void createRejectsNullName() {
-        assertThatThrownBy(() -> Recipe.create(TENANT_ID, null, SERVINGS, INGREDIENTS))
+        assertThatThrownBy(() -> Recipe.createPersonal(TENANT_ID, null, SERVINGS, INGREDIENTS))
             .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void updateReplacesAllFields() {
-        final Recipe recipe = Recipe.create(TENANT_ID, NAME, SERVINGS, INGREDIENTS);
+        final Recipe recipe = Recipe.createPersonal(TENANT_ID, NAME, SERVINGS, INGREDIENTS);
         final RecipeName newName = new RecipeName("Lasagne");
         final Servings newServings = new Servings(6);
         final List<Ingredient> newIngredients = List.of(
@@ -66,7 +66,7 @@ class RecipeTest {
 
     @Test
     void updateRejectsEmptyIngredients() {
-        final Recipe recipe = Recipe.create(TENANT_ID, NAME, SERVINGS, INGREDIENTS);
+        final Recipe recipe = Recipe.createPersonal(TENANT_ID, NAME, SERVINGS, INGREDIENTS);
 
         assertThatThrownBy(() -> recipe.update(NAME, SERVINGS, List.of()))
             .isInstanceOf(IllegalArgumentException.class)
@@ -75,7 +75,7 @@ class RecipeTest {
 
     @Test
     void ingredientsListIsUnmodifiable() {
-        final Recipe recipe = Recipe.create(TENANT_ID, NAME, SERVINGS, INGREDIENTS);
+        final Recipe recipe = Recipe.createPersonal(TENANT_ID, NAME, SERVINGS, INGREDIENTS);
 
         assertThatThrownBy(() -> recipe.ingredients().add(
             new Ingredient("Olivenoel", new BigDecimal("2"), "EL")))

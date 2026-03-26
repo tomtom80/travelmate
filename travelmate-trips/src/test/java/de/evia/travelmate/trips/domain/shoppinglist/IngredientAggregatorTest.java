@@ -31,7 +31,7 @@ class IngredientAggregatorTest {
 
     @Test
     void aggregatesAndScalesIngredients() {
-        final Recipe pasta = Recipe.create(TENANT_ID, new RecipeName("Pasta"), new Servings(4), List.of(
+        final Recipe pasta = Recipe.createPersonal(TENANT_ID, new RecipeName("Pasta"), new Servings(4), List.of(
             new Ingredient("Spaghetti", new BigDecimal("500"), "g"),
             new Ingredient("Tomaten", new BigDecimal("800"), "g")
         ));
@@ -52,10 +52,10 @@ class IngredientAggregatorTest {
 
     @Test
     void aggregatesSameIngredientAcrossRecipes() {
-        final Recipe pasta = Recipe.create(TENANT_ID, new RecipeName("Pasta"), new Servings(4), List.of(
+        final Recipe pasta = Recipe.createPersonal(TENANT_ID, new RecipeName("Pasta"), new Servings(4), List.of(
             new Ingredient("Tomaten", new BigDecimal("500"), "g")
         ));
-        final Recipe soup = Recipe.create(TENANT_ID, new RecipeName("Suppe"), new Servings(4), List.of(
+        final Recipe soup = Recipe.createPersonal(TENANT_ID, new RecipeName("Suppe"), new Servings(4), List.of(
             new Ingredient("Tomaten", new BigDecimal("600"), "g")
         ));
         final MealPlan plan = createMealPlanWithTwoRecipes(
@@ -73,10 +73,10 @@ class IngredientAggregatorTest {
 
     @Test
     void caseInsensitiveIngredientMatching() {
-        final Recipe recipe1 = Recipe.create(TENANT_ID, new RecipeName("R1"), new Servings(2), List.of(
+        final Recipe recipe1 = Recipe.createPersonal(TENANT_ID, new RecipeName("R1"), new Servings(2), List.of(
             new Ingredient("tomaten", new BigDecimal("300"), "g")
         ));
-        final Recipe recipe2 = Recipe.create(TENANT_ID, new RecipeName("R2"), new Servings(2), List.of(
+        final Recipe recipe2 = Recipe.createPersonal(TENANT_ID, new RecipeName("R2"), new Servings(2), List.of(
             new Ingredient("Tomaten", new BigDecimal("400"), "G")
         ));
         final MealPlan plan = createMealPlanWithTwoRecipes(
@@ -93,7 +93,7 @@ class IngredientAggregatorTest {
 
     @Test
     void differentUnitsAreNotAggregated() {
-        final Recipe recipe = Recipe.create(TENANT_ID, new RecipeName("Mixed"), new Servings(2), List.of(
+        final Recipe recipe = Recipe.createPersonal(TENANT_ID, new RecipeName("Mixed"), new Servings(2), List.of(
             new Ingredient("Salz", new BigDecimal("10"), "g"),
             new Ingredient("Salz", new BigDecimal("2"), "TL")
         ));
@@ -107,7 +107,7 @@ class IngredientAggregatorTest {
 
     @Test
     void excludesSkipSlots() {
-        final Recipe recipe = Recipe.create(TENANT_ID, new RecipeName("Pasta"), new Servings(2), List.of(
+        final Recipe recipe = Recipe.createPersonal(TENANT_ID, new RecipeName("Pasta"), new Servings(2), List.of(
             new Ingredient("Nudeln", new BigDecimal("250"), "g")
         ));
         final MealSlot skipSlot = new MealSlot(
@@ -125,7 +125,7 @@ class IngredientAggregatorTest {
 
     @Test
     void excludesEatingOutSlots() {
-        final Recipe recipe = Recipe.create(TENANT_ID, new RecipeName("Pasta"), new Servings(2), List.of(
+        final Recipe recipe = Recipe.createPersonal(TENANT_ID, new RecipeName("Pasta"), new Servings(2), List.of(
             new Ingredient("Nudeln", new BigDecimal("250"), "g")
         ));
         final MealSlot eatingOutSlot = new MealSlot(
@@ -156,7 +156,7 @@ class IngredientAggregatorTest {
 
     @Test
     void scalesWithFractionalFactor() {
-        final Recipe recipe = Recipe.create(TENANT_ID, new RecipeName("Cake"), new Servings(4), List.of(
+        final Recipe recipe = Recipe.createPersonal(TENANT_ID, new RecipeName("Cake"), new Servings(4), List.of(
             new Ingredient("Mehl", new BigDecimal("400"), "g")
         ));
         final MealPlan plan = createMealPlanWithRecipe(recipe.recipeId().value());

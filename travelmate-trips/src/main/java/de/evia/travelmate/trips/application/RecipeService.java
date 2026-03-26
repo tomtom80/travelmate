@@ -19,6 +19,7 @@ import de.evia.travelmate.trips.domain.recipe.RecipeId;
 import de.evia.travelmate.trips.domain.recipe.RecipeName;
 import de.evia.travelmate.trips.domain.recipe.RecipeRepository;
 import de.evia.travelmate.trips.domain.recipe.Servings;
+import de.evia.travelmate.trips.domain.trip.TripId;
 
 @Service
 @Transactional
@@ -33,9 +34,9 @@ public class RecipeService {
         this.mealPlanRepository = mealPlanRepository;
     }
 
-    public RecipeRepresentation createRecipe(final CreateRecipeCommand command) {
+    public RecipeRepresentation createPersonalRecipe(final CreateRecipeCommand command) {
         final List<Ingredient> ingredients = toIngredients(command.ingredients());
-        final Recipe recipe = Recipe.create(
+        final Recipe recipe = Recipe.createPersonal(
             new TenantId(command.tenantId()),
             new RecipeName(command.name()),
             new Servings(command.servings()),
@@ -43,6 +44,31 @@ public class RecipeService {
         );
         recipeRepository.save(recipe);
         return new RecipeRepresentation(recipe);
+    }
+
+    public RecipeRepresentation createTripRecipe(final CreateRecipeCommand command,
+                                                  final TripId tripId,
+                                                  final String contributedBy) {
+        final List<Ingredient> ingredients = toIngredients(command.ingredients());
+        final Recipe recipe = Recipe.createForTrip(
+            new TenantId(command.tenantId()),
+            tripId,
+            contributedBy,
+            new RecipeName(command.name()),
+            new Servings(command.servings()),
+            ingredients
+        );
+        recipeRepository.save(recipe);
+        return new RecipeRepresentation(recipe);
+    }
+
+    public RecipeRepresentation shareToTrip(final RecipeId recipeId,
+                                             final TripId tripId,
+                                             final String contributedBy) {
+        final Recipe personal = findRecipe(recipeId);
+        final Recipe tripCopy = personal.copyToTrip(tripId, contributedBy);
+        recipeRepository.save(tripCopy);
+        return new RecipeRepresentation(tripCopy);
     }
 
     public RecipeRepresentation updateRecipe(final UpdateRecipeCommand command) {
@@ -73,8 +99,15 @@ public class RecipeService {
     }
 
     @Transactional(readOnly = true)
-    public List<RecipeRepresentation> findAllByTenantId(final TenantId tenantId) {
-        return recipeRepository.findAllByTenantId(tenantId).stream()
+    public List<RecipeRepresentation> findAllPersonalByTenantId(final TenantId tenantId) {
+        return recipeRepository.findAllPersonalByTenantId(tenantId).stream()
+            .map(RecipeRepresentation::new)
+            .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public List<RecipeRepresentation> findAllByTripId(final TripId tripId) {
+        return recipeRepository.findAllByTripId(tripId).stream()
             .map(RecipeRepresentation::new)
             .toList();
     }

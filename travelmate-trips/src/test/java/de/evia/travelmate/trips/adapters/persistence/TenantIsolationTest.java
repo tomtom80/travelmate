@@ -127,14 +127,14 @@ class TenantIsolationTest {
 
     @Test
     void recipesFromTenantANotVisibleToTenantB() {
-        final Recipe recipeA = Recipe.create(
+        final Recipe recipeA = Recipe.createPersonal(
             TENANT_A, new RecipeName("Pasta A"), new Servings(4),
             List.of(new Ingredient("Nudeln", new BigDecimal("500"), "g"))
         );
         recipeRepository.save(recipeA);
 
-        final List<Recipe> tenantARecipes = recipeRepository.findAllByTenantId(TENANT_A);
-        final List<Recipe> tenantBRecipes = recipeRepository.findAllByTenantId(TENANT_B);
+        final List<Recipe> tenantARecipes = recipeRepository.findAllPersonalByTenantId(TENANT_A);
+        final List<Recipe> tenantBRecipes = recipeRepository.findAllPersonalByTenantId(TENANT_B);
 
         assertThat(tenantARecipes).extracting(r -> r.recipeId().value())
             .contains(recipeA.recipeId().value());

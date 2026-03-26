@@ -12,6 +12,7 @@ import de.evia.travelmate.trips.domain.recipe.RecipeId;
 import de.evia.travelmate.trips.domain.recipe.RecipeName;
 import de.evia.travelmate.trips.domain.recipe.RecipeRepository;
 import de.evia.travelmate.trips.domain.recipe.Servings;
+import de.evia.travelmate.trips.domain.trip.TripId;
 
 @Repository
 public class RecipeRepositoryAdapter implements RecipeRepository {
@@ -28,6 +29,8 @@ public class RecipeRepositoryAdapter implements RecipeRepository {
             .orElseGet(() -> new RecipeJpaEntity(
                 recipe.recipeId().value(),
                 recipe.tenantId().value(),
+                recipe.tripId() != null ? recipe.tripId().value() : null,
+                recipe.contributedBy(),
                 recipe.name().value(),
                 recipe.servings().value()
             ));
@@ -44,8 +47,15 @@ public class RecipeRepositoryAdapter implements RecipeRepository {
     }
 
     @Override
-    public List<Recipe> findAllByTenantId(final TenantId tenantId) {
-        return jpaRepository.findAllByTenantId(tenantId.value()).stream()
+    public List<Recipe> findAllPersonalByTenantId(final TenantId tenantId) {
+        return jpaRepository.findAllByTenantIdAndTripIdIsNull(tenantId.value()).stream()
+            .map(this::toDomain)
+            .toList();
+    }
+
+    @Override
+    public List<Recipe> findAllByTripId(final TripId tripId) {
+        return jpaRepository.findAllByTripId(tripId.value()).stream()
             .map(this::toDomain)
             .toList();
     }
@@ -71,6 +81,8 @@ public class RecipeRepositoryAdapter implements RecipeRepository {
         return new Recipe(
             new RecipeId(entity.getRecipeId()),
             new TenantId(entity.getTenantId()),
+            entity.getTripId() != null ? new TripId(entity.getTripId()) : null,
+            entity.getContributedBy(),
             new RecipeName(entity.getName()),
             new Servings(entity.getServings()),
             ingredients

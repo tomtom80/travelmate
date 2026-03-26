@@ -84,7 +84,7 @@ public class MealPlanService {
     public MealPlanRepresentation findByTripId(final TripId tripId, final TenantId tenantId) {
         final MealPlan mealPlan = findMealPlan(tripId);
         final MealPlanRepresentation repr = new MealPlanRepresentation(mealPlan);
-        return enrichWithRecipeNames(repr, tenantId);
+        return enrichWithRecipeNames(repr, tripId);
     }
 
     @Transactional(readOnly = true)
@@ -103,8 +103,8 @@ public class MealPlanService {
     }
 
     private MealPlanRepresentation enrichWithRecipeNames(final MealPlanRepresentation repr,
-                                                         final TenantId tenantId) {
-        final Map<UUID, String> recipeNames = recipeRepository.findAllByTenantId(tenantId).stream()
+                                                         final TripId tripId) {
+        final Map<UUID, String> recipeNames = recipeRepository.findAllByTripId(tripId).stream()
             .collect(Collectors.toMap(
                 r -> r.recipeId().value(),
                 r -> r.name().value(),

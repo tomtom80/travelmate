@@ -185,7 +185,7 @@ public class ShoppingListService {
             return List.of();
         }
 
-        final List<Recipe> recipes = recipeRepository.findAllByTenantId(tenantId);
+        final List<Recipe> recipes = recipeRepository.findAllByTripId(new TripId(trip.tripId().value()));
         final Map<UUID, Recipe> recipesById = recipes.stream()
             .collect(Collectors.toMap(r -> r.recipeId().value(), Function.identity()));
 

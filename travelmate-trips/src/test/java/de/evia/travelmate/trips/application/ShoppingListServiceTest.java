@@ -84,7 +84,7 @@ class ShoppingListServiceTest {
             .thenReturn(Optional.empty());
         when(mealPlanRepository.findByTripId(tripId)).thenReturn(Optional.of(mealPlan));
         when(tripRepository.findById(tripId)).thenReturn(Optional.of(trip));
-        when(recipeRepository.findAllByTenantId(TENANT_ID)).thenReturn(List.of(recipe));
+        when(recipeRepository.findAllByTripId(any())).thenReturn(List.of(recipe));
         when(shoppingListRepository.save(any(ShoppingList.class)))
             .thenAnswer(inv -> inv.getArgument(0));
         when(travelPartyRepository.findByTenantId(TENANT_ID)).thenReturn(Optional.empty());
@@ -144,7 +144,7 @@ class ShoppingListServiceTest {
             .thenReturn(Optional.of(existing));
         when(mealPlanRepository.findByTripId(tripId)).thenReturn(Optional.of(mealPlan));
         when(tripRepository.findById(tripId)).thenReturn(Optional.of(trip));
-        when(recipeRepository.findAllByTenantId(TENANT_ID)).thenReturn(List.of(recipe));
+        when(recipeRepository.findAllByTripId(any())).thenReturn(List.of(recipe));
         when(shoppingListRepository.save(any(ShoppingList.class)))
             .thenAnswer(inv -> inv.getArgument(0));
         when(travelPartyRepository.findByTenantId(TENANT_ID)).thenReturn(Optional.empty());
@@ -328,7 +328,7 @@ class ShoppingListServiceTest {
     }
 
     private Recipe createRecipe() {
-        return Recipe.create(TENANT_ID, new RecipeName("Pasta Bolognese"), new Servings(4),
+        return Recipe.createPersonal(TENANT_ID, new RecipeName("Pasta Bolognese"), new Servings(4),
             List.of(
                 new Ingredient("Spaghetti", new BigDecimal("500"), "g"),
                 new Ingredient("Hackfleisch", new BigDecimal("400"), "g"),

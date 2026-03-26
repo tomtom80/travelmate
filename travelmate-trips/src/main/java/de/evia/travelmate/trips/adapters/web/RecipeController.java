@@ -44,7 +44,7 @@ public class RecipeController {
     @GetMapping
     public String list(@AuthenticationPrincipal final Jwt jwt, final Model model) {
         final ResolvedIdentity identity = requireIdentity(jwt);
-        final var recipes = recipeService.findAllByTenantId(identity.tenantId());
+        final var recipes = recipeService.findAllPersonalByTenantId(identity.tenantId());
         model.addAttribute("view", "recipe/list");
         model.addAttribute("recipes", recipes);
         return "layout/default";
@@ -68,7 +68,7 @@ public class RecipeController {
         final ResolvedIdentity identity = requireIdentity(jwt);
         final List<IngredientCommand> ingredients = buildIngredientCommands(
             ingredientNames, ingredientQuantities, ingredientUnits);
-        recipeService.createRecipe(new CreateRecipeCommand(
+        recipeService.createPersonalRecipe(new CreateRecipeCommand(
             identity.tenantId().value(), name, servings, ingredients));
         return "redirect:/recipes";
     }

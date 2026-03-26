@@ -7,5 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface RecipeJpaRepository extends JpaRepository<RecipeJpaEntity, UUID> {
 
-    List<RecipeJpaEntity> findAllByTenantId(UUID tenantId);
+    List<RecipeJpaEntity> findAllByTenantIdAndTripIdIsNull(UUID tenantId);
+
+    List<RecipeJpaEntity> findAllByTripId(UUID tripId);
 }

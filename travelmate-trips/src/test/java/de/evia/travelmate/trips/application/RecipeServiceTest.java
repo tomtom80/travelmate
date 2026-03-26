@@ -56,7 +56,7 @@ class RecipeServiceTest {
             List.of(new IngredientCommand("Spaghetti", new BigDecimal("500"), "g"))
         );
 
-        final RecipeRepresentation result = recipeService.createRecipe(command);
+        final RecipeRepresentation result = recipeService.createPersonalRecipe(command);
 
         assertThat(result.name()).isEqualTo("Spaghetti Bolognese");
         assertThat(result.servings()).isEqualTo(4);
@@ -77,7 +77,7 @@ class RecipeServiceTest {
             )
         );
 
-        final RecipeRepresentation result = recipeService.createRecipe(command);
+        final RecipeRepresentation result = recipeService.createPersonalRecipe(command);
 
         final ArgumentCaptor<Recipe> captor = ArgumentCaptor.forClass(Recipe.class);
         verify(recipeRepository).save(captor.capture());
@@ -86,7 +86,7 @@ class RecipeServiceTest {
 
     @Test
     void updateRecipeChangesFields() {
-        final Recipe existing = Recipe.create(
+        final Recipe existing = Recipe.createPersonal(
             new TenantId(TENANT_UUID), new RecipeName("Old Name"), new Servings(2),
             List.of(new Ingredient("Mehl", new BigDecimal("200"), "g"))
         );
@@ -108,7 +108,7 @@ class RecipeServiceTest {
 
     @Test
     void deleteRecipeRemovesFromRepository() {
-        final Recipe existing = Recipe.create(
+        final Recipe existing = Recipe.createPersonal(
             new TenantId(TENANT_UUID), new RecipeName("To Delete"), new Servings(1),
             List.of(new Ingredient("X", new BigDecimal("1"), "g"))
         );
@@ -131,7 +131,7 @@ class RecipeServiceTest {
 
     @Test
     void deleteRecipeRejectsWhenAssignedToMealSlot() {
-        final Recipe existing = Recipe.create(
+        final Recipe existing = Recipe.createPersonal(
             new TenantId(TENANT_UUID), new RecipeName("In Use"), new Servings(2),
             List.of(new Ingredient("Y", new BigDecimal("100"), "g"))
         );
@@ -145,7 +145,7 @@ class RecipeServiceTest {
 
     @Test
     void findByIdReturnsRepresentation() {
-        final Recipe recipe = Recipe.create(
+        final Recipe recipe = Recipe.createPersonal(
             new TenantId(TENANT_UUID), new RecipeName("Pancakes"), new Servings(4),
             List.of(new Ingredient("Mehl", new BigDecimal("200"), "g"))
         );
@@ -159,13 +159,13 @@ class RecipeServiceTest {
     @Test
     void findAllByTenantIdReturnsRepresentations() {
         final TenantId tenantId = new TenantId(TENANT_UUID);
-        final Recipe r1 = Recipe.create(tenantId, new RecipeName("A"), new Servings(1),
+        final Recipe r1 = Recipe.createPersonal(tenantId, new RecipeName("A"), new Servings(1),
             List.of(new Ingredient("X", new BigDecimal("1"), "g")));
-        final Recipe r2 = Recipe.create(tenantId, new RecipeName("B"), new Servings(2),
+        final Recipe r2 = Recipe.createPersonal(tenantId, new RecipeName("B"), new Servings(2),
             List.of(new Ingredient("Y", new BigDecimal("2"), "ml")));
-        when(recipeRepository.findAllByTenantId(tenantId)).thenReturn(List.of(r1, r2));
+        when(recipeRepository.findAllPersonalByTenantId(tenantId)).thenReturn(List.of(r1, r2));
 
-        final List<RecipeRepresentation> results = recipeService.findAllByTenantId(tenantId);
+        final List<RecipeRepresentation> results = recipeService.findAllPersonalByTenantId(tenantId);
 
         assertThat(results).hasSize(2);
     }

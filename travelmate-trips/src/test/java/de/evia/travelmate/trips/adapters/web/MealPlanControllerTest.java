@@ -110,7 +110,7 @@ class MealPlanControllerTest {
         when(tripService.findById(new TripId(TRIP_UUID))).thenReturn(trip);
         when(mealPlanService.findByTripId(new TripId(TRIP_UUID), new TenantId(TENANT_UUID)))
             .thenReturn(mealPlan);
-        when(recipeService.findAllByTenantId(new TenantId(TENANT_UUID))).thenReturn(List.of());
+        when(recipeService.findAllByTripId(any())).thenReturn(List.of());
 
         mockMvc.perform(get("/" + TRIP_UUID + "/mealplan")
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL))))

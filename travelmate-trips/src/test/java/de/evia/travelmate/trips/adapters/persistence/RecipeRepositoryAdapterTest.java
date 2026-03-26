@@ -29,7 +29,7 @@ class RecipeRepositoryAdapterTest {
 
     @Test
     void savesAndFindsRecipe() {
-        final Recipe recipe = Recipe.create(
+        final Recipe recipe = Recipe.createPersonal(
             new TenantId(UUID.randomUUID()),
             new RecipeName("Spaghetti Bolognese"),
             new Servings(4),
@@ -47,7 +47,7 @@ class RecipeRepositoryAdapterTest {
 
     @Test
     void savesRecipeWithMultipleIngredients() {
-        final Recipe recipe = Recipe.create(
+        final Recipe recipe = Recipe.createPersonal(
             new TenantId(UUID.randomUUID()),
             new RecipeName("Lasagne"),
             new Servings(6),
@@ -66,7 +66,7 @@ class RecipeRepositoryAdapterTest {
 
     @Test
     void updatesRecipeAndReplacesIngredients() {
-        final Recipe recipe = Recipe.create(
+        final Recipe recipe = Recipe.createPersonal(
             new TenantId(UUID.randomUUID()),
             new RecipeName("Original"),
             new Servings(2),
@@ -94,20 +94,20 @@ class RecipeRepositoryAdapterTest {
     @Test
     void findsAllByTenantId() {
         final TenantId tenantId = new TenantId(UUID.randomUUID());
-        final Recipe r1 = Recipe.create(tenantId, new RecipeName("Recipe A"), new Servings(1),
+        final Recipe r1 = Recipe.createPersonal(tenantId, new RecipeName("Recipe A"), new Servings(1),
             List.of(new Ingredient("A", new BigDecimal("1"), "g")));
-        final Recipe r2 = Recipe.create(tenantId, new RecipeName("Recipe B"), new Servings(2),
+        final Recipe r2 = Recipe.createPersonal(tenantId, new RecipeName("Recipe B"), new Servings(2),
             List.of(new Ingredient("B", new BigDecimal("2"), "ml")));
         repository.save(r1);
         repository.save(r2);
 
-        final List<Recipe> found = repository.findAllByTenantId(tenantId);
+        final List<Recipe> found = repository.findAllPersonalByTenantId(tenantId);
         assertThat(found).hasSize(2);
     }
 
     @Test
     void deletesRecipe() {
-        final Recipe recipe = Recipe.create(
+        final Recipe recipe = Recipe.createPersonal(
             new TenantId(UUID.randomUUID()),
             new RecipeName("To Delete"),
             new Servings(1),
