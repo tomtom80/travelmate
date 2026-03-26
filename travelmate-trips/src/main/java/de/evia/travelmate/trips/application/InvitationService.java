@@ -112,6 +112,10 @@ public class InvitationService {
             .findFirst()
             .orElseThrow(() -> new IllegalStateException("Member not found: " + invitation.inviteeId()));
 
+        if (trip.hasParticipant(invitation.inviteeId())) {
+            throw new DuplicateEntityException("participant.error.alreadyExists");
+        }
+
         trip.addParticipant(invitation.inviteeId(), member.firstName(), member.lastName());
         tripRepository.save(trip);
         invitationRepository.save(invitation);
@@ -120,7 +124,7 @@ public class InvitationService {
             invitation.tenantId().value(),
             trip.tripId().value(),
             invitation.inviteeId(),
-            member.email(),
+            member.firstName() + " " + member.lastName(),
             party.tenantId().value(),
             party.name(),
             member.dateOfBirth(),
@@ -206,6 +210,11 @@ public class InvitationService {
 
             final Trip trip = tripRepository.findById(invitation.tripId())
                 .orElseThrow(() -> new IllegalStateException("Trip not found: " + invitation.tripId().value()));
+
+            if (trip.hasParticipant(memberId)) {
+                invitationRepository.save(invitation);
+                continue;
+            }
 
             trip.addParticipant(memberId, firstName, lastName);
             tripRepository.save(trip);

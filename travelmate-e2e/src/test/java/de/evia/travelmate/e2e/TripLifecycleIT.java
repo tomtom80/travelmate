@@ -184,10 +184,12 @@ class TripLifecycleIT extends E2ETestBase {
         page.locator("a", new com.microsoft.playwright.Page.LocatorOptions().setHasText(TRIP_NAME)).click();
         page.waitForLoadState();
 
-        if (page.locator("form[action*='/stay-period']").count() > 0) {
-            page.locator("form[action*='/stay-period'] input[name=arrivalDate]").fill("2026-07-02");
-            page.locator("form[action*='/stay-period'] input[name=departureDate]").fill("2026-07-13");
-            page.locator("form[action*='/stay-period'] button[type=submit]").click();
+        final var editButton = page.locator("button.btn-icon[data-dialog-id]").first();
+        if (editButton.count() > 0) {
+            editButton.click();
+            page.locator("dialog[open] input[name=arrivalDate]").fill("2026-07-02");
+            page.locator("dialog[open] input[name=departureDate]").fill("2026-07-13");
+            page.locator("dialog[open] button[type=submit]").click();
             page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
 
             assertThat(page.content()).contains("2026-07-02");

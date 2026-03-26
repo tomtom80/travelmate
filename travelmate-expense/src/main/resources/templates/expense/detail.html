@@ -97,67 +97,82 @@
 
     <article th:if="${!expense.partyAccounts().isEmpty()}">
         <h2 th:text="#{expense.partyAccount}">Reisekonto nach Reisepartei</h2>
-        <figure class="table-cards">
-            <table>
-                <thead>
-                    <tr>
-                        <th th:text="#{expense.partyAccount.party}">Reisepartei</th>
-                        <th th:text="#{expense.partyAccount.members}">Mitglieder</th>
-                        <th th:text="#{expense.partyAccount.receiptCredits}">Belegguthaben</th>
-                        <th th:text="#{expense.partyAccount.advancePlanned}">Geplante Anzahlung</th>
-                        <th th:text="#{expense.partyAccount.advancePaid}">Vorauszahlungen</th>
-                        <th th:text="#{expense.partyAccount.advanceOutstanding}">Noch einzahlen</th>
-                        <th th:text="#{expense.partyAccount.fairShare}">Aktueller Anteil</th>
-                        <th th:text="#{expense.partyAccount.currentBalance}">Aktueller Stand</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr th:each="account : ${expense.partyAccounts()}">
-                        <td th:data-label="#{expense.partyAccount.party}" th:text="${account.partyName()}"></td>
-                        <td th:data-label="#{expense.partyAccount.members}">
-                            <small th:each="name, iter : ${account.memberNames()}">
-                                <span th:text="${name}"></span><span th:if="${!iter.last}">, </span>
-                            </small>
-                            <small style="display:block;" th:if="${!account.entries().isEmpty()}">
-                                <strong th:text="#{expense.partyAccount.timeline}">Kontoverlauf</strong>
-                                <span th:each="entry, iter : ${account.entries()}" style="display:block;">
-                                    <span th:text="#{${'expense.partyAccount.entry.' + entry.type()}}">Kontozeile</span>:
-                                    <span th:if="${!entry.label().isBlank()}" th:text="${entry.label()}"></span>
-                                    <span th:if="${!entry.label().isBlank()}"> </span>
-                                    <span th:text="${#numbers.formatDecimal(entry.amount(), 1, 2) + ' EUR'}"></span>
-                                    <span> -> </span>
-                                    <span th:text="${#numbers.formatDecimal(entry.runningBalance(), 1, 2) + ' EUR'}"></span>
-                                </span>
-                            </small>
-                        </td>
-                        <td th:data-label="#{expense.partyAccount.receiptCredits}" th:text="${#numbers.formatDecimal(account.receiptCredits(), 1, 2) + ' EUR'}"></td>
-                        <td th:data-label="#{expense.partyAccount.advancePlanned}" th:text="${#numbers.formatDecimal(account.advancePaymentsPlanned(), 1, 2) + ' EUR'}"></td>
-                        <td th:data-label="#{expense.partyAccount.advancePaid}" th:text="${#numbers.formatDecimal(account.advancePaymentsPaid(), 1, 2) + ' EUR'}"></td>
-                        <td th:data-label="#{expense.partyAccount.advanceOutstanding}" th:text="${#numbers.formatDecimal(account.advancePaymentsOutstanding(), 1, 2) + ' EUR'}"></td>
-                        <td th:data-label="#{expense.partyAccount.fairShare}" th:text="${#numbers.formatDecimal(account.fairShare(), 1, 2) + ' EUR'}"></td>
-                        <td th:data-label="#{expense.partyAccount.currentBalance}">
-                            <span th:if="${account.creditAmount().signum() > 0}" style="color:green;">
-                                +<span th:text="${#numbers.formatDecimal(account.creditAmount(), 1, 2)}"></span> EUR
-                            </span>
-                            <span th:if="${account.outstandingAmount().signum() > 0}" style="color:red;">
-                                <span th:text="${#numbers.formatDecimal(account.outstandingAmount().negate(), 1, 2)}"></span> EUR
-                            </span>
-                            <span th:if="${account.currentBalance().signum() == 0}">
-                                <span th:text="${#numbers.formatDecimal(account.currentBalance(), 1, 2)}"></span> EUR
-                            </span>
-                            <small style="display:block;"
-                                   th:text="${account.outstandingAmount().signum() > 0
-                                       ? #messages.msg('expense.partyAccount.outstanding', #numbers.formatDecimal(account.outstandingAmount(), 1, 2))
-                                       : (account.creditAmount().signum() > 0
-                                           ? #messages.msg('expense.partyAccount.credit', #numbers.formatDecimal(account.creditAmount(), 1, 2))
-                                           : #messages.msg('expense.partyAccount.settled'))}">
-                                Stand
-                            </small>
-                        </td>
-                    </tr>
-                </tbody>
-            </table>
-        </figure>
+
+        <div th:each="account : ${expense.partyAccounts()}" class="party-account-card">
+            <!-- Card Header: Party name + balance -->
+            <div class="party-account-card__header">
+                <strong th:text="${account.partyName()}">Familie Muster</strong>
+                <div style="text-align:right;">
+                    <span th:if="${account.creditAmount().signum() > 0}" class="party-account-card__balance party-account-card__balance--positive">
+                        +<span th:text="${#numbers.formatDecimal(account.creditAmount(), 1, 2)}"></span> EUR
+                    </span>
+                    <span th:if="${account.outstandingAmount().signum() > 0}" class="party-account-card__balance party-account-card__balance--negative">
+                        <span th:text="${#numbers.formatDecimal(account.outstandingAmount().negate(), 1, 2)}"></span> EUR
+                    </span>
+                    <span th:if="${account.currentBalance().signum() == 0}" class="party-account-card__balance">
+                        0,00 EUR
+                    </span>
+                    <small style="display:block; color:var(--pico-muted-color);" th:text="#{expense.partyAccount.currentBalance}">Aktueller Stand</small>
+                </div>
+            </div>
+
+            <!-- Summary grid -->
+            <div class="party-account-card__summary">
+                <div>
+                    <small th:text="#{expense.partyAccount.fairShare}">Anteil</small>
+                    <span th:text="${#numbers.formatDecimal(account.fairShare(), 1, 2) + ' EUR'}"></span>
+                </div>
+                <div>
+                    <small th:text="#{expense.partyAccount.receiptCredits}">Belege</small>
+                    <span th:text="${#numbers.formatDecimal(account.receiptCredits(), 1, 2) + ' EUR'}"></span>
+                </div>
+                <div th:if="${account.advancePaymentsPlanned().signum() > 0}">
+                    <small th:text="#{advance.title}">Anzahlungen</small>
+                    <span th:text="${#numbers.formatDecimal(account.advancePaymentsPaid(), 1, 2) + ' / ' + #numbers.formatDecimal(account.advancePaymentsPlanned(), 1, 2) + ' EUR'}"></span>
+                </div>
+            </div>
+
+            <!-- Status line -->
+            <small class="party-account-card__status"
+                   th:text="${account.outstandingAmount().signum() > 0
+                       ? #messages.msg('expense.partyAccount.outstanding', #numbers.formatDecimal(account.outstandingAmount(), 1, 2))
+                       : (account.creditAmount().signum() > 0
+                           ? #messages.msg('expense.partyAccount.credit', #numbers.formatDecimal(account.creditAmount(), 1, 2))
+                           : #messages.msg('expense.partyAccount.settled'))}">
+                Stand
+            </small>
+
+            <!-- Collapsible: Members -->
+            <details>
+                <summary>
+                    <span th:text="#{expense.partyAccount.members}">Mitglieder</span>
+                    (<span th:text="${account.memberNames().size()}">0</span>)
+                </summary>
+                <ul style="margin:0.5rem 0 0 0; padding-left:1.25rem;">
+                    <li th:each="name : ${account.memberNames()}" th:text="${name}">Name</li>
+                </ul>
+            </details>
+
+            <!-- Collapsible: Timeline -->
+            <details th:if="${!account.entries().isEmpty()}">
+                <summary>
+                    <span th:text="#{expense.partyAccount.timeline}">Kontoverlauf</span>
+                    (<span th:text="${account.entries().size()}">0</span>)
+                </summary>
+                <div style="margin-top:0.5rem; font-size:0.875rem;">
+                    <div th:each="entry : ${account.entries()}" style="display:flex; justify-content:space-between; padding:0.25rem 0; border-bottom:1px solid var(--pico-muted-border-color);">
+                        <span>
+                            <span th:text="#{${'expense.partyAccount.entry.' + entry.type()}}">Typ</span>
+                            <span th:if="${!entry.label().isBlank()}" th:text="${' — ' + entry.label()}"></span>
+                        </span>
+                        <span style="white-space:nowrap;">
+                            <span th:text="${#numbers.formatDecimal(entry.amount(), 1, 2) + ' EUR'}"></span>
+                            <small style="color:var(--tm-text-soft);" th:text="${' (' + #numbers.formatDecimal(entry.runningBalance(), 1, 2) + ')'}"></small>
+                        </span>
+                    </div>
+                </div>
+            </details>
+        </div>
     </article>
 
     <!-- Advance Payments -->
@@ -195,7 +210,7 @@
                             <th th:text="#{advance.party}">Reisepartei</th>
                             <th th:text="#{advance.amount}">Betrag</th>
                             <th th:text="#{advance.paid}">Bezahlt</th>
-                            <th></th>
+                            <th class="table-actions-header" th:text="#{common.actions}">Aktionen</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -210,14 +225,21 @@
                                            ? #messages.msg('advance.paidOnBy', ap.paidOn(), participantNames[ap.markedByParticipantId()])
                                            : #messages.msg('advance.paidOn', ap.paidOn())}">Bezahlt am</small>
                             </td>
-                            <td>
-                                <form method="post"
-                                      th:action="@{/{tripId}/advance-payments/{apId}/toggle-paid(tripId=${tripId}, apId=${ap.advancePaymentId()})}">
-                                    <button type="submit" class="outline secondary" style="margin:0; padding:0.25rem 0.5rem;">
-                                        <span th:if="${ap.paid()}" th:text="#{advance.unpaid}">Offen</span>
-                                        <span th:if="${!ap.paid()}" th:text="#{advance.paid}">Bezahlt</span>
-                                    </button>
-                                </form>
+                            <td th:data-label="#{common.actions}">
+                                <div class="action-col">
+                                    <form method="post"
+                                          th:action="@{/{tripId}/advance-payments/{apId}/toggle-paid(tripId=${tripId}, apId=${ap.advancePaymentId()})}"
+                                          style="margin:0;">
+                                        <button th:if="${!ap.paid()}" type="submit" class="btn-icon"
+                                                th:title="#{advance.paid}" th:aria-label="#{advance.paid}">
+                                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                                        </button>
+                                        <button th:if="${ap.paid()}" type="submit" class="btn-icon"
+                                                th:title="#{advance.unpaid}" th:aria-label="#{advance.unpaid}">
+                                            <svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                                        </button>
+                                    </form>
+                                </div>
                             </td>
                         </tr>
                     </tbody>

@@ -32,6 +32,11 @@
     </section>
 
     <h1 th:text="#{trip.title}">Reisen</h1>
+    <div class="table-toolbar">
+        <a th:href="@{/new}" role="button" class="outline btn-add" th:text="#{trip.create}">
+            Neue Reise planen
+        </a>
+    </div>
 
     <figure class="table-cards">
         <table th:if="${!trips.isEmpty()}">
@@ -41,7 +46,7 @@
                     <th th:text="#{trip.startDate}">Von</th>
                     <th th:text="#{trip.endDate}">Bis</th>
                     <th th:text="#{trip.status}">Status</th>
-                    <th></th>
+                    <th class="table-actions-header" th:text="#{common.actions}">Aktionen</th>
                 </tr>
             </thead>
             <tbody>
@@ -53,10 +58,15 @@
                     <td th:data-label="#{trip.startDate}" th:text="${trip.startDate()}"></td>
                     <td th:data-label="#{trip.endDate}" th:text="${trip.endDate()}"></td>
                     <td th:data-label="#{trip.status}"><mark th:text="#{${'trip.status.' + trip.status()}}"></mark></td>
-                    <td>
-                        <a th:if="${trip.status() == 'COMPLETED'}"
-                           th:href="|/expense/${trip.tripId()}|"
-                           th:text="#{trip.expense.action}">Abrechnung</a>
+                    <td th:data-label="#{common.actions}">
+                        <div class="action-col">
+                            <a th:if="${trip.status() == 'COMPLETED'}"
+                               th:href="|/expense/${trip.tripId()}|"
+                               class="btn-icon"
+                               th:title="#{trip.expense.action}" th:aria-label="#{trip.expense.action}">
+                                <svg viewBox="0 0 24 24"><rect x="2" y="3" width="20" height="18" rx="2"/><line x1="2" y1="9" x2="22" y2="9"/><line x1="10" y1="3" x2="10" y2="9"/></svg>
+                            </a>
+                        </div>
                     </td>
                 </tr>
             </tbody>
@@ -64,7 +74,7 @@
     </figure>
     <p th:if="${trips.isEmpty()}" th:text="#{trip.empty}">Noch keine Reisen geplant.</p>
 
-    <a th:href="@{/new}" role="button" th:text="#{trip.create}">Neue Reise planen</a>
+
 </div>
 </body>
 </html>

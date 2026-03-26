@@ -142,10 +142,10 @@ public class ShoppingListSteps {
 
     @Wenn("ich einen manuellen Eintrag {string} mit Menge {string} und Einheit {string} hinzufuege")
     public void ichEinenManuellenEintragHinzufuege(final String name, final String quantity, final String unit) {
-        page.locator("tfoot input[name=name]").fill(name);
-        page.locator("tfoot input[name=quantity]").fill(quantity);
-        page.locator("tfoot input[name=unit]").fill(unit);
-        clickAndWaitForHtmx("tfoot button[type=submit]");
+        page.locator("form:has(input[name=unit]) input[name=name]").fill(name);
+        page.locator("form:has(input[name=unit]) input[name=quantity]").fill(quantity);
+        page.locator("form:has(input[name=unit]) input[name=unit]").fill(unit);
+        clickAndWaitForHtmx("form:has(input[name=unit]) button[type=submit]");
     }
 
     @Dann("wird der Eintrag {string} in der manuellen Liste angezeigt")

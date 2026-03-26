@@ -82,15 +82,17 @@ public class TripPlanningSteps {
 
     @When("I set my arrival date to {string} and departure to {string}")
     public void iSetMyArrivalAndDeparture(final String arrival, final String departure) {
-        if (page.locator("form[action*='/stay-period']").count() > 0) {
-            page.locator("form[action*='/stay-period'] input[name=arrivalDate]").fill(arrival);
-            page.locator("form[action*='/stay-period'] input[name=departureDate]").fill(departure);
+        final var editButton = page.locator("button.btn-icon[data-dialog-id]").first();
+        if (editButton.count() > 0) {
+            editButton.click();
+            page.locator("dialog[open] input[name=arrivalDate]").fill(arrival);
+            page.locator("dialog[open] input[name=departureDate]").fill(departure);
         }
     }
 
     @When("I save the stay period")
     public void iSaveTheStayPeriod() {
-        page.locator("form[action*='/stay-period'] button[type=submit]").click();
+        page.locator("dialog[open] button[type=submit]").click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
     }
 
@@ -102,7 +104,7 @@ public class TripPlanningSteps {
         final String lastName = parts.length > 1 ? parts[1] : "";
         final var participantRow = page.locator("tr", new com.microsoft.playwright.Page.LocatorOptions()
             .setHasText(name)).first();
-        if (participantRow.count() > 0 && participantRow.locator("input[name=arrivalDate]").count() > 0) {
+        if (participantRow.count() > 0 && participantRow.locator("button.btn-icon").count() > 0) {
             return;
         }
         if (!waitForOwnParticipantOption(name)) {
@@ -128,10 +130,10 @@ public class TripPlanningSteps {
         ensureOrganizerEligibleParticipantAvailableOnTrip(name, "1992-03-10");
         final var participantRow = waitForParticipantActionRow(name);
         participantRow.waitFor();
-        participantRow.locator("details.action-menu").evaluate("el => el.open = true");
-        final var organizerButton = participantRow.locator("button[formaction*='/organizers/']").first();
-        organizerButton.waitFor();
-        final String organizerAction = organizerButton.getAttribute("formaction");
+        participantRow.locator("details.kebab-menu").evaluate("el => el.open = true");
+        final var organizerForm = participantRow.locator("details.kebab-menu form[action*='/organizers/']").first();
+        organizerForm.waitFor();
+        final String organizerAction = organizerForm.getAttribute("action");
         page.evaluate("""
             action => fetch(action, {
                 method: 'POST',
@@ -264,7 +266,7 @@ public class TripPlanningSteps {
     }
 
     private void ensureOrganizerEligibleParticipantAvailableOnTrip(final String name, final String dateOfBirth) {
-        final var participantRow = page.locator("tr:has(form.participant-actions-form)", new com.microsoft.playwright.Page.LocatorOptions()
+        final var participantRow = page.locator("tr:has(.action-col)", new com.microsoft.playwright.Page.LocatorOptions()
             .setHasText(name)).first();
         if (participantRow.count() > 0
             && participantRow.locator("details.action-menu summary").count() > 0) {
@@ -310,7 +312,7 @@ public class TripPlanningSteps {
 
     private com.microsoft.playwright.Locator waitForParticipantActionRow(final String name) {
         for (int i = 0; i < 30; i++) {
-            final var row = page.locator("tr:has(form.participant-actions-form)", new com.microsoft.playwright.Page.LocatorOptions()
+            final var row = page.locator("tr:has(.action-col)", new com.microsoft.playwright.Page.LocatorOptions()
                 .setHasText(name)).first();
             if (row.count() > 0) {
                 return row;
@@ -321,7 +323,7 @@ public class TripPlanningSteps {
                 navigateAndWait(currentTripDetailUrl.replace(BASE_URL, ""));
             }
         }
-        return page.locator("tr:has(form.participant-actions-form)", new com.microsoft.playwright.Page.LocatorOptions()
+        return page.locator("tr:has(.action-col)", new com.microsoft.playwright.Page.LocatorOptions()
             .setHasText(name)).first();
     }
 }

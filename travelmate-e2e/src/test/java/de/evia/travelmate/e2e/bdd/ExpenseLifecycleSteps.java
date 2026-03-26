@@ -146,12 +146,13 @@ public class ExpenseLifecycleSteps {
                                              final String departure) {
         final String tripDetailUrl = TripPlanningSteps.getCurrentTripDetailUrl();
         for (int i = 0; i < 30; i++) {
-            final var participantRow = page.locator("tr:has(form.participant-actions-form)", new com.microsoft.playwright.Page.LocatorOptions()
+            final var participantRow = page.locator("tr:has(.action-col)", new com.microsoft.playwright.Page.LocatorOptions()
                 .setHasText(participantName)).first();
-            if (participantRow.locator("input[name=arrivalDate]").count() > 0) {
-                participantRow.locator("input[name=arrivalDate]").fill(arrival);
-                participantRow.locator("input[name=departureDate]").fill(departure);
-                participantRow.locator("button[type=submit]").first().click();
+            if (participantRow.count() > 0 && participantRow.locator("button.btn-icon[data-dialog-id]").count() > 0) {
+                participantRow.locator("button.btn-icon[data-dialog-id]").click();
+                page.locator("dialog[open] input[name=arrivalDate]").fill(arrival);
+                page.locator("dialog[open] input[name=departureDate]").fill(departure);
+                page.locator("dialog[open] button[type=submit]").click();
                 page.waitForLoadState(LoadState.NETWORKIDLE);
                 return;
             }
@@ -160,11 +161,12 @@ public class ExpenseLifecycleSteps {
                 navigateAndWait(tripDetailUrl.replace(BASE_URL, ""));
             }
         }
-        final var participantRow = page.locator("tr:has(form.participant-actions-form)", new com.microsoft.playwright.Page.LocatorOptions()
+        final var participantRow = page.locator("tr:has(.action-col)", new com.microsoft.playwright.Page.LocatorOptions()
             .setHasText(participantName)).first();
-        participantRow.locator("input[name=arrivalDate]").fill(arrival);
-        participantRow.locator("input[name=departureDate]").fill(departure);
-        participantRow.locator("button[type=submit]").first().click();
+        participantRow.locator("button.btn-icon[data-dialog-id]").click();
+        page.locator("dialog[open] input[name=arrivalDate]").fill(arrival);
+        page.locator("dialog[open] input[name=departureDate]").fill(departure);
+        page.locator("dialog[open] button[type=submit]").click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
     }
 

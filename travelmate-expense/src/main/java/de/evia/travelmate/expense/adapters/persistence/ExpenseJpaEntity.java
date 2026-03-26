@@ -12,6 +12,7 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 
 import de.evia.travelmate.expense.domain.expense.ExpenseStatus;
@@ -38,12 +39,15 @@ public class ExpenseJpaEntity {
     private boolean reviewRequired;
 
     @OneToMany(mappedBy = "expense", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OrderBy("date ASC, description ASC")
     private List<ReceiptJpaEntity> receipts = new ArrayList<>();
 
     @OneToMany(mappedBy = "expense", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OrderBy("participantId ASC")
     private List<WeightingJpaEntity> weightings = new ArrayList<>();
 
     @OneToMany(mappedBy = "expense", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OrderBy("partyName ASC")
     private List<AdvancePaymentJpaEntity> advancePayments = new ArrayList<>();
 
     protected ExpenseJpaEntity() {

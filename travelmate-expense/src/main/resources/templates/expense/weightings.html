@@ -16,7 +16,8 @@
                 <tr th:each="weighting : ${expense.weightings()}">
                     <td th:data-label="#{expense.weighting.participant}" th:text="${participantNames[weighting.participantId()] != null ? participantNames[weighting.participantId()] : weighting.participantId()}"></td>
                     <td th:data-label="#{expense.weighting.weight}">
-                        <form method="post" th:action="@{/{tripId}/weightings(tripId=${tripId})}" style="margin:0;">
+                        <form hx-post th:hx-post="@{/{tripId}/weightings(tripId=${tripId})}"
+                              hx-target="#weightings" hx-swap="innerHTML" style="margin:0;">
                             <input type="hidden" name="participantId" th:value="${weighting.participantId()}">
                             <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
                                 <input type="number" name="weight" min="0" step="0.1"

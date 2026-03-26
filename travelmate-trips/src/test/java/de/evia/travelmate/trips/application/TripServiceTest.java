@@ -22,6 +22,7 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import org.mockito.ArgumentCaptor;
 
+import de.evia.travelmate.common.domain.DuplicateEntityException;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.common.events.trips.ParticipantJoinedTrip;
 import de.evia.travelmate.common.events.trips.TripCompleted;
@@ -81,7 +82,7 @@ class TripServiceTest {
     }
 
     @Test
-    void createTripAddsOnlyTravelPartyMembersByDefault() {
+    void createTripAddsAllTravelPartyMembersAndDependents() {
         final UUID member2Id = UUID.randomUUID();
         final UUID dependentId = UUID.randomUUID();
         final TravelParty party = TravelParty.create(new TenantId(TENANT_UUID), "Familie Test");
@@ -103,10 +104,10 @@ class TripServiceTest {
         final ArgumentCaptor<Trip> tripCaptor = ArgumentCaptor.forClass(Trip.class);
         verify(tripRepository).save(tripCaptor.capture());
         final Trip savedTrip = tripCaptor.getValue();
-        assertThat(savedTrip.participants()).hasSize(2);
+        assertThat(savedTrip.participants()).hasSize(3);
         assertThat(savedTrip.hasParticipant(ORGANIZER_ID)).isTrue();
         assertThat(savedTrip.hasParticipant(member2Id)).isTrue();
-        assertThat(savedTrip.hasParticipant(dependentId)).isFalse();
+        assertThat(savedTrip.hasParticipant(dependentId)).isTrue();
     }
 
     @Test
@@ -362,6 +363,45 @@ class TripServiceTest {
             .orElseThrow();
         assertThat(joinedEvent.accountHolder()).isFalse();
         assertThat(joinedEvent.dateOfBirth()).isEqualTo(LocalDate.of(2023, 1, 15));
+    }
+
+    @Test
+    void addParticipantToTripRejectsAlreadyExistingParticipant() {
+        final UUID member2Id = UUID.randomUUID();
+        final TravelParty party = TravelParty.create(new TenantId(TENANT_UUID), "Familie Test");
+        party.addMember(ORGANIZER_ID, "max@example.com", "Max", "Mustermann");
+        party.addMember(member2Id, "lisa@example.com", "Lisa", "Mustermann");
+        when(travelPartyRepository.findByTenantId(new TenantId(TENANT_UUID))).thenReturn(Optional.of(party));
+
+        final Trip trip = Trip.plan(new TenantId(TENANT_UUID), new TripName("Skiurlaub"), null,
+            new DateRange(LocalDate.of(2026, 3, 15), LocalDate.of(2026, 3, 22)),
+            ORGANIZER_ID, List.of(ORGANIZER_ID, member2Id));
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+
+        assertThatThrownBy(() -> tripService.addParticipantToTrip(new AddParticipantToTripCommand(
+            trip.tripId().value(), member2Id, ORGANIZER_ID, TENANT_UUID
+        )))
+            .isInstanceOf(DuplicateEntityException.class)
+            .hasMessageContaining("participant.error.alreadyExists");
+    }
+
+    @Test
+    void addParticipantToTripRejectsDuplicateDependent() {
+        final UUID dependentId = UUID.randomUUID();
+        final TravelParty party = TravelParty.create(new TenantId(TENANT_UUID), "Familie Test");
+        party.addMember(ORGANIZER_ID, "max@example.com", "Max", "Mustermann");
+        party.addDependent(dependentId, ORGANIZER_ID, "Tim", "Mustermann", LocalDate.of(2023, 1, 15));
+        when(travelPartyRepository.findByTenantId(new TenantId(TENANT_UUID))).thenReturn(Optional.of(party));
+
+        final Trip trip = createTrip();
+        trip.addParticipant(dependentId, "Tim", "Mustermann");
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+
+        assertThatThrownBy(() -> tripService.addParticipantToTrip(new AddParticipantToTripCommand(
+            trip.tripId().value(), dependentId, ORGANIZER_ID, TENANT_UUID
+        )))
+            .isInstanceOf(DuplicateEntityException.class)
+            .hasMessageContaining("participant.error.alreadyExists");
     }
 
     @Test

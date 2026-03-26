@@ -5,26 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="#{landing.title}">Travelmate — Gemeinsam Reisen planen</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
+    <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/landing.css}">
 </head>
 <body>
-    <nav class="container">
-        <ul>
-            <li><a th:href="@{/}"><strong th:text="#{nav.brand}">Travelmate</strong></a></li>
-        </ul>
+    <nav class="container nav-bar">
         <ul>
             <li>
+                <a th:href="@{/}" class="nav-brand">
+                    <img th:src="@{/images/logo.svg}" alt="Travelmate" class="nav-logo">
+                </a>
+            </li>
+            <li class="nav-toggle">
+                <button type="button" aria-label="Menu" aria-expanded="false"
+                        onclick="var n=this.closest('nav');n.classList.toggle('nav-open');this.setAttribute('aria-expanded',n.classList.contains('nav-open'))">
+                    <svg width="20" height="20" viewBox="0 0 24 24" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                </button>
+            </li>
+        </ul>
+        <ul class="nav-links">
+            <li class="nav-lang">
                 <a th:href="@{''(lang='de')}" th:text="#{common.german}">DE</a> /
                 <a th:href="@{''(lang='en')}" th:text="#{common.english}">EN</a>
             </li>
-            <li th:if="${!isAuthenticated}"><a th:href="@{/signup}" role="button" class="outline" th:text="#{landing.register}">Registrieren</a></li>
-            <li th:if="${!isAuthenticated}"><a href="/oauth2/authorization/keycloak" role="button" th:text="#{landing.login}">Anmelden</a></li>
-            <li th:if="${isAuthenticated}"><a th:href="@{/dashboard}" role="button" th:text="#{landing.dashboard}">Dashboard</a></li>
-            <li th:if="${isAuthenticated}"><a href="/iam/logout" role="button" class="outline" th:text="#{nav.logout}">Abmelden</a></li>
+            <li th:if="${!isAuthenticated}"><a th:href="@{/signup}" th:text="#{landing.register}">Registrieren</a></li>
+            <li th:if="${!isAuthenticated}"><a href="/oauth2/authorization/keycloak" th:text="#{landing.login}">Anmelden</a></li>
+            <li th:if="${isAuthenticated}"><a th:href="@{/dashboard}" th:text="#{landing.dashboard}">Dashboard</a></li>
+            <li th:if="${isAuthenticated}"><a href="/iam/logout" class="nav-logout-btn" th:text="#{nav.logout}">Abmelden</a></li>
         </ul>
     </nav>
 
     <header class="container hero">
+        <img th:src="@{/images/logo.svg}" alt="Travelmate" style="height:3rem; margin-bottom:1rem;">
         <hgroup>
             <h1 th:text="#{landing.hero.headline}">Gemeinsam Reisen planen.</h1>
             <p th:text="#{landing.hero.subtitle}">Organisiere Reisen mit deiner Familie und Freunden.</p>
@@ -40,21 +52,27 @@
             <div class="grid">
                 <article>
                     <header>
-                        <span class="feature-icon">&#9992;</span>
+                        <span class="feature-icon">
+                            <svg viewBox="0 0 24 24" width="32" height="32" stroke="var(--tm-primary)" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </span>
                         <h3 th:text="#{landing.feature.party.title}">Reisepartei</h3>
                     </header>
                     <p th:text="#{landing.feature.party.text}">Erstelle deine Reisepartei und lade Familie und Mitreisende ein.</p>
                 </article>
                 <article>
                     <header>
-                        <span class="feature-icon">&#127965;</span>
+                        <span class="feature-icon">
+                            <svg viewBox="0 0 24 24" width="32" height="32" stroke="var(--tm-primary)" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"/></svg>
+                        </span>
                         <h3 th:text="#{landing.feature.trips.title}">Reisen organisieren</h3>
                     </header>
                     <p th:text="#{landing.feature.trips.text}">Plane Reisen, verwalte Zeitraeume und behalte den Ueberblick.</p>
                 </article>
                 <article>
                     <header>
-                        <span class="feature-icon">&#128176;</span>
+                        <span class="feature-icon">
+                            <svg viewBox="0 0 24 24" width="32" height="32" stroke="var(--tm-primary)" fill="none" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="5" width="20" height="14" rx="2"/><line x1="2" y1="10" x2="22" y2="10"/></svg>
+                        </span>
                         <h3 th:text="#{landing.feature.expense.title}">Abrechnung</h3>
                     </header>
                     <p th:text="#{landing.feature.expense.text}">Teile Ausgaben fair auf.</p>

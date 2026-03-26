@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import de.evia.travelmate.common.domain.DomainEvent;
+import de.evia.travelmate.common.domain.DuplicateEntityException;
 import de.evia.travelmate.common.domain.EntityNotFoundException;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.common.events.trips.ParticipantJoinedTrip;
@@ -75,8 +76,17 @@ public class TripService {
 
     private List<Participant> collectAllParticipants(final TravelParty party) {
         final List<Participant> participants = new ArrayList<>();
-        party.members().forEach(m -> participants.add(
-            new Participant(m.memberId(), m.firstName(), m.lastName())));
+        final java.util.Set<UUID> seen = new java.util.HashSet<>();
+        party.members().forEach(m -> {
+            if (seen.add(m.memberId())) {
+                participants.add(new Participant(m.memberId(), m.firstName(), m.lastName()));
+            }
+        });
+        party.dependents().forEach(d -> {
+            if (seen.add(d.dependentId())) {
+                participants.add(new Participant(d.dependentId(), d.firstName(), d.lastName()));
+            }
+        });
         return participants;
     }
 
@@ -149,6 +159,10 @@ public class TripService {
             .orElseThrow(() -> new EntityNotFoundException("TravelParty", command.actorPartyTenantId().toString()));
         assertActorCanManageOwnPartyParticipant(actorParty, command.actorId(), command.participantId());
 
+        if (trip.hasParticipant(command.participantId())) {
+            throw new DuplicateEntityException("participant.error.alreadyExists");
+        }
+
         final var member = actorParty.members().stream()
             .filter(m -> m.memberId().equals(command.participantId()))
             .findFirst()
@@ -160,7 +174,7 @@ public class TripService {
                 trip.tenantId().value(),
                 trip.tripId().value(),
                 member.memberId(),
-                member.email(),
+                member.firstName() + " " + member.lastName(),
                 actorParty.tenantId().value(),
                 actorParty.name(),
                 member.dateOfBirth(),
@@ -237,7 +251,7 @@ public class TripService {
                     trip.tenantId().value(),
                     trip.tripId().value(),
                     participant.participantId(),
-                    member.get().email(),
+                    member.get().firstName() + " " + member.get().lastName(),
                     party.tenantId().value(),
                     party.name(),
                     member.get().dateOfBirth(),

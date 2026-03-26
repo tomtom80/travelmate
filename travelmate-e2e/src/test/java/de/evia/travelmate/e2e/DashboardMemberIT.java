@@ -130,7 +130,7 @@ class DashboardMemberIT extends E2ETestBase {
         assertThat(page.locator("#companions").innerHTML()).contains("Lina");
 
         page.onceDialog(dialog -> dialog.accept());
-        clickAndWaitForHtmx("#companions tr:has-text('Lina') button.outline.secondary");
+        clickAndWaitForHtmx("#companions tr:has-text('Lina') button.btn-icon--danger");
 
         assertThat(page.locator("#companions").innerHTML()).doesNotContain("Lina");
     }
@@ -145,7 +145,7 @@ class DashboardMemberIT extends E2ETestBase {
         page.onceDialog(dialog -> dialog.accept());
         page.waitForResponse(
             response -> response.url().contains("/iam/dashboard/members/"),
-            () -> page.locator("#members tr:has-text('Lisa') button.outline.secondary").click()
+            () -> page.locator("#members tr:has-text('Lisa') button.btn-icon--danger").click()
         );
         page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
 

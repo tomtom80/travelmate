@@ -63,7 +63,7 @@
                         <th th:text="#{invitation.member}">Mitglied</th>
                         <th th:text="#{trip.arrivalDate}">Anreise</th>
                         <th th:text="#{trip.departureDate}">Abreise</th>
-                        <th th:text="#{invitation.actions}">Aktionen</th>
+                        <th class="table-actions-header" th:text="#{common.actions}">Aktionen</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -76,52 +76,68 @@
                         </td>
                         <td th:data-label="#{trip.arrivalDate}" th:text="${p.arrivalDate()}"></td>
                         <td th:data-label="#{trip.departureDate}" th:text="${p.departureDate()}"></td>
-                        <td th:if="${p.manageableByCurrentParty() || isOrganizer}" th:data-label="#{invitation.actions}">
-                            <form method="post"
-                                  th:action="@{/{tid}/participants/{pid}/stay-period(tid=${trip.tripId()},pid=${p.participantId()})}"
-                                  class="participant-actions-form">
-                                <div class="participant-actions-grid">
-                                    <label class="participant-actions-field">
-                                        <span class="participant-actions-label" th:text="#{trip.arrivalDate}">Anreise</span>
-                                        <input type="date" name="arrivalDate" th:value="${p.arrivalDate()}"
-                                               th:aria-label="#{trip.arrivalDate}" th:title="#{trip.arrivalDate}"
-                                               required class="participant-actions-input">
-                                    </label>
-                                    <label class="participant-actions-field">
-                                        <span class="participant-actions-label" th:text="#{trip.departureDate}">Abreise</span>
-                                        <input type="date" name="departureDate" th:value="${p.departureDate()}"
-                                               th:aria-label="#{trip.departureDate}" th:title="#{trip.departureDate}"
-                                               required class="participant-actions-input">
-                                    </label>
-                                    <div class="participant-actions-toolbar">
-                                        <button type="submit" th:text="#{common.save}"
-                                                class="participant-actions-primary">Speichern</button>
-                                        <details class="action-menu"
-                                                 th:if="${(isOrganizer && p.organizerEligible() && p.participantId() != currentMemberId && !trip.organizerIds().contains(p.participantId())) || p.participantId() != currentMemberId}">
-                                            <summary th:attr="aria-label=#{common.more},title=#{common.more}">
-                                                <span class="action-menu__dots" aria-hidden="true">...</span>
-                                                <span class="action-menu__chevron" aria-hidden="true">&gt;</span>
-                                            </summary>
-                                            <div class="action-menu__panel">
-                                                <button type="submit" class="outline"
-                                                        th:if="${isOrganizer && p.organizerEligible() && p.participantId() != currentMemberId && !trip.organizerIds().contains(p.participantId())}"
-                                                        th:formaction="@{/{tid}/organizers/{pid}(tid=${trip.tripId()},pid=${p.participantId()})}"
-                                                        th:text="#{trip.organizer.grant}">Zum Organizer machen</button>
-                                                <button type="submit" class="outline secondary"
-                                                        th:if="${p.participantId() != currentMemberId}"
-                                                        th:formaction="@{/{tid}/participants/{pid}/remove(tid=${trip.tripId()},pid=${p.participantId()})}"
-                                                        th:text="#{common.remove}">Entfernen</button>
-                                            </div>
-                                        </details>
+                        <td th:data-label="#{common.actions}">
+                            <div class="action-col" th:if="${p.manageableByCurrentParty() || isOrganizer}">
+                                <!-- Edit stay period via dialog -->
+                                <button type="button" class="btn-icon"
+                                        th:title="#{common.edit}" th:aria-label="#{common.edit}"
+                                        th:data-dialog-id="${'stay-period-dialog-' + p.participantId()}"
+                                        onclick="document.getElementById(this.dataset.dialogId).showModal()">
+                                    <svg viewBox="0 0 24 24"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                                </button>
+                                <!-- Kebab menu for organizer actions -->
+                                <details class="kebab-menu"
+                                         th:if="${(isOrganizer && p.organizerEligible() && p.participantId() != currentMemberId && !trip.organizerIds().contains(p.participantId())) || p.participantId() != currentMemberId}">
+                                    <summary th:title="#{common.more}" th:aria-label="#{common.more}">
+                                        <svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                                    </summary>
+                                    <div class="kebab-menu__panel">
+                                        <form th:if="${isOrganizer && p.organizerEligible() && p.participantId() != currentMemberId && !trip.organizerIds().contains(p.participantId())}"
+                                              method="post"
+                                              th:action="@{/{tid}/organizers/{pid}(tid=${trip.tripId()},pid=${p.participantId()})}"
+                                              style="margin:0;">
+                                            <button type="submit" th:text="#{trip.organizer.grant}">Zum Organizer machen</button>
+                                        </form>
+                                        <form th:if="${p.participantId() != currentMemberId}"
+                                              method="post"
+                                              th:action="@{/{tid}/participants/{pid}/remove(tid=${trip.tripId()},pid=${p.participantId()})}"
+                                              style="margin:0;">
+                                            <button type="submit" class="kebab-menu__danger" th:text="#{common.remove}">Entfernen</button>
+                                        </form>
                                     </div>
-                                </div>
-                            </form>
+                                </details>
+                            </div>
                         </td>
-                        <td th:if="${!(p.manageableByCurrentParty() || isOrganizer)}"></td>
                     </tr>
                 </tbody>
             </table>
         </figure>
+
+        <!-- Stay period edit dialogs (one per participant) -->
+        <th:block th:each="p : ${participants}" th:if="${p.manageableByCurrentParty() || isOrganizer}">
+            <dialog th:id="${'stay-period-dialog-' + p.participantId()}">
+                <article>
+                    <h3 style="margin-bottom:1rem;" th:text="${p.firstName() + ' ' + p.lastName() + ' — '} + #{trip.stayPeriod}">Aufenthaltsdauer</h3>
+                    <form method="post"
+                          th:action="@{/{tid}/participants/{pid}/stay-period(tid=${trip.tripId()},pid=${p.participantId()})}">
+                        <label>
+                            <span th:text="#{trip.arrivalDate}">Anreise</span>
+                            <input type="date" name="arrivalDate" th:value="${p.arrivalDate()}" required>
+                        </label>
+                        <label>
+                            <span th:text="#{trip.departureDate}">Abreise</span>
+                            <input type="date" name="departureDate" th:value="${p.departureDate()}" required>
+                        </label>
+                        <div class="grid" style="margin-top:1rem;">
+                            <button type="button" class="secondary outline"
+                                    onclick="this.closest('dialog').close()"
+                                    th:text="#{common.cancel}">Abbrechen</button>
+                            <button type="submit" th:text="#{common.save}">Speichern</button>
+                        </div>
+                    </form>
+                </article>
+            </dialog>
+        </th:block>
         <p th:if="${participants.isEmpty()}" th:text="#{trip.participants.empty}">Noch keine Teilnehmer.</p>
     </article>
 

@@ -130,10 +130,10 @@ class ShoppingListLifecycleIT extends E2ETestBase {
     @Test
     @Order(20)
     void addManualItem() {
-        page.locator("tfoot input[name=name]").fill(MANUAL_ITEM_NAME);
-        page.locator("tfoot input[name=quantity]").fill(MANUAL_ITEM_QUANTITY);
-        page.locator("tfoot input[name=unit]").fill(MANUAL_ITEM_UNIT);
-        clickAndWaitForHtmx("tfoot button[type=submit]");
+        page.locator("form:has(input[name=unit]) input[name=name]").fill(MANUAL_ITEM_NAME);
+        page.locator("form:has(input[name=unit]) input[name=quantity]").fill(MANUAL_ITEM_QUANTITY);
+        page.locator("form:has(input[name=unit]) input[name=unit]").fill(MANUAL_ITEM_UNIT);
+        clickAndWaitForHtmx("form:has(input[name=unit]) button[type=submit]");
         page.waitForSelector("#manual-items-tbody td:has-text('" + MANUAL_ITEM_NAME + "')");
 
         final String content = page.content();

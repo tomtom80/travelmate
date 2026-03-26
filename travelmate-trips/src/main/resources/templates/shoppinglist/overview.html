@@ -58,6 +58,35 @@
              th:if="${trip.status() == 'COMPLETED' || trip.status() == 'CANCELLED'}">
             <div th:replace="~{shoppinglist/overview :: itemLists}"></div>
         </div>
+
+        <!-- Add manual item form — OUTSIDE polling container to prevent input loss -->
+        <article th:if="${trip.status() != 'COMPLETED' && trip.status() != 'CANCELLED'}">
+            <h3 th:text="#{shoppinglist.item.add}">Eintrag hinzufuegen</h3>
+            <form th:hx-post="@{/{tid}/shoppinglist/items(tid=${trip.tripId()})}"
+                  hx-target="#shopping-list-content"
+                  hx-swap="innerHTML"
+                  hx-disabled-elt="find [type=submit]"
+                  hx-on::after-request="if(event.detail.successful) { this.reset(); }">
+                <div class="grid">
+                    <label>
+                        <span th:text="#{shoppinglist.item.name}">Name</span>
+                        <input type="text" name="name" required
+                               th:placeholder="#{shoppinglist.item.name.placeholder}">
+                    </label>
+                    <label>
+                        <span th:text="#{shoppinglist.item.quantity}">Menge</span>
+                        <input type="number" name="quantity" step="any" min="0.01" required
+                               th:placeholder="#{shoppinglist.item.quantity.placeholder}">
+                    </label>
+                    <label>
+                        <span th:text="#{shoppinglist.item.unit}">Einheit</span>
+                        <input type="text" name="unit" required
+                               th:placeholder="#{shoppinglist.item.unit.placeholder}">
+                    </label>
+                </div>
+                <button type="submit" th:text="#{shoppinglist.item.add}">Eintrag hinzufuegen</button>
+            </form>
+        </article>
     </div>
 
     <a th:href="@{/{id}(id=${trip.tripId()})}" role="button" class="outline" th:text="#{common.back}">Zurueck</a>
@@ -171,41 +200,7 @@
                         </td>
                     </tr>
                 </tbody>
-                <tfoot>
-                    <tr>
-                        <td colspan="6">
-                            <form th:hx-post="@{/{tid}/shoppinglist/items(tid=${trip.tripId()})}"
-                                  hx-target="#shopping-list-content"
-                                  hx-swap="innerHTML"
-                                  hx-disabled-elt="find [type=submit]"
-                                  hx-on::after-request="if(event.detail.successful) { this.reset(); }"
-                                  style="margin:0;">
-                                <div style="display:flex; gap:0.5rem; align-items:end; flex-wrap:wrap;">
-                                    <label style="margin-bottom:0; flex:2;">
-                                        <span th:text="#{shoppinglist.item.name}">Name</span>
-                                        <input type="text" name="name" required
-                                               th:placeholder="#{shoppinglist.item.name.placeholder}"
-                                               style="margin-bottom:0;">
-                                    </label>
-                                    <label style="margin-bottom:0; flex:1;">
-                                        <span th:text="#{shoppinglist.item.quantity}">Menge</span>
-                                        <input type="number" name="quantity" step="any" min="0.01" required
-                                               th:placeholder="#{shoppinglist.item.quantity.placeholder}"
-                                               style="margin-bottom:0;">
-                                    </label>
-                                    <label style="margin-bottom:0; flex:1;">
-                                        <span th:text="#{shoppinglist.item.unit}">Einheit</span>
-                                        <input type="text" name="unit" required
-                                               th:placeholder="#{shoppinglist.item.unit.placeholder}"
-                                               style="margin-bottom:0;">
-                                    </label>
-                                    <button type="submit" style="margin-bottom:0; white-space:nowrap; width:auto;"
-                                            th:text="#{shoppinglist.item.add}">Eintrag hinzufuegen</button>
-                                </div>
-                            </form>
-                        </td>
-                    </tr>
-                </tfoot>
+                <!-- tfoot removed: add-form is outside polling container to prevent input loss -->
             </table>
         </figure>
         <p th:if="${manualItems.isEmpty() && recipeItems.isEmpty()}" th:text="#{shoppinglist.empty}">Keine Eintraege vorhanden.</p>

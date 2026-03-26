@@ -79,7 +79,7 @@ public class DashboardManagementSteps {
     public void iClickTheDeleteButtonForCompanion(final String name) {
         // Override confirm() to auto-accept — avoids Playwright dialog handler issues in Cucumber
         page.evaluate("window.confirm = () => true");
-        clickAndWaitForHtmx("#companions tr:has-text('" + name + "') button.outline.secondary");
+        clickAndWaitForHtmx("#companions tr:has-text('" + name + "') button.btn-icon--danger");
     }
 
     @Then("{string} is no longer in the companion list")

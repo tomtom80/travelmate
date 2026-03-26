@@ -14,6 +14,7 @@ import jakarta.persistence.FetchType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.OneToMany;
+import jakarta.persistence.OrderBy;
 import jakarta.persistence.Table;
 
 @Entity
@@ -51,6 +52,7 @@ public class TripJpaEntity {
     private List<UUID> organizerIds = new ArrayList<>();
 
     @OneToMany(mappedBy = "trip", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    @OrderBy("firstName ASC, lastName ASC")
     private List<ParticipantJpaEntity> participants = new ArrayList<>();
 
     protected TripJpaEntity() {

@@ -6,6 +6,7 @@ import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -36,6 +37,7 @@ import de.evia.travelmate.trips.application.command.GrantTripOrganizerCommand;
 import de.evia.travelmate.trips.application.command.RemoveParticipantFromTripCommand;
 import de.evia.travelmate.trips.application.command.SetStayPeriodCommand;
 import de.evia.travelmate.trips.application.representation.InvitationRepresentation;
+import de.evia.travelmate.trips.application.representation.PartyParticipantOption;
 import de.evia.travelmate.trips.application.representation.TripRepresentation;
 import de.evia.travelmate.trips.domain.invitation.InvitationId;
 import de.evia.travelmate.trips.domain.travelparty.TravelParty;
@@ -261,6 +263,56 @@ class TripControllerTest {
         verify(tripService).removeParticipantFromTrip(new RemoveParticipantFromTripCommand(
             TRIP_UUID, DEPENDENT_UUID, ORGANIZER_UUID, TENANT_UUID
         ));
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void detailExcludesExistingParticipantsFromAvailableOwnPartyDropdown() throws Exception {
+        final TripRepresentation trip = new TripRepresentation(
+            TRIP_UUID, TENANT_UUID, "Skiurlaub", null,
+            LocalDate.of(2026, 3, 15), LocalDate.of(2026, 3, 22),
+            "PLANNING", ORGANIZER_UUID,
+            List.of(ORGANIZER_UUID, INVITEE_UUID, DEPENDENT_UUID)
+        );
+
+        when(tripService.findById(new TripId(TRIP_UUID))).thenReturn(trip);
+        when(invitationService.findByTripId(new TripId(TRIP_UUID))).thenReturn(List.of());
+
+        mockMvc.perform(get("/" + TRIP_UUID)
+                .with(jwt().jwt(j -> j.claim("email", ORGANIZER_EMAIL))))
+            .andExpect(status().isOk())
+            .andExpect(model().attributeExists("availableOwnPartyParticipants"))
+            .andDo(result -> {
+                final List<PartyParticipantOption> available =
+                    (List<PartyParticipantOption>) result.getModelAndView()
+                        .getModel().get("availableOwnPartyParticipants");
+                assertThat(available).isEmpty();
+            });
+    }
+
+    @SuppressWarnings("unchecked")
+    @Test
+    void detailShowsOnlyNonParticipantsInAvailableOwnPartyDropdown() throws Exception {
+        final TripRepresentation trip = new TripRepresentation(
+            TRIP_UUID, TENANT_UUID, "Skiurlaub", null,
+            LocalDate.of(2026, 3, 15), LocalDate.of(2026, 3, 22),
+            "PLANNING", ORGANIZER_UUID,
+            List.of(ORGANIZER_UUID, INVITEE_UUID)
+        );
+
+        when(tripService.findById(new TripId(TRIP_UUID))).thenReturn(trip);
+        when(invitationService.findByTripId(new TripId(TRIP_UUID))).thenReturn(List.of());
+
+        mockMvc.perform(get("/" + TRIP_UUID)
+                .with(jwt().jwt(j -> j.claim("email", ORGANIZER_EMAIL))))
+            .andExpect(status().isOk())
+            .andDo(result -> {
+                final List<PartyParticipantOption> available =
+                    (List<PartyParticipantOption>) result.getModelAndView()
+                        .getModel().get("availableOwnPartyParticipants");
+                assertThat(available).hasSize(1);
+                assertThat(available.getFirst().participantId()).isEqualTo(DEPENDENT_UUID);
+            });
     }
 
     @Test
