@@ -26,7 +26,7 @@
 | **Security Disabled in Test Profile** | Integration tests do not validate security configuration (roles, JWT, tenant isolation) | Medium |
 | ~~**Missing End-to-End Tests**~~ | ~~No automated E2E tests across SCS boundaries~~ -- **Addressed**: E2E module with Playwright created (see ADR-0010), base structure in place | ~~Medium~~ |
 | **Monitoring and Observability** | No centralized logging, tracing, or metrics. No Micrometer/Prometheus integration. No alerting. | Medium |
-| **Incomplete Kubernetes Manifests** | Deployment manifests only exist for IAM, not for all SCS. No health probes, resource limits, or HPA configured. | Medium |
+| **No Kubernetes Platform Baseline** | There is currently no maintained Kubernetes baseline in the repository: no manifests, no Helm/Kustomize structure, no ingress setup, and no deployment automation for a cluster target. | Medium |
 | **No ArchUnit Tests** | Hexagonal architecture invariants (domain layer must not import Spring/JPA, adapter layer boundaries) are not enforced by automated tests | Medium |
 | **No JaCoCo Coverage Enforcement** | Test coverage is not measured or enforced in the build pipeline. Coverage gaps may exist without visibility. | Low |
 | **No Dead Letter Queue Configuration** | RabbitMQ consumers have no DLQ configured. Unprocessable messages cause infinite redelivery loops or are silently dropped depending on error handling. | Medium |

@@ -30,7 +30,16 @@ cd travelmate-iam && ./mvnw spring-boot:run
 cd travelmate-trips && ./mvnw spring-boot:run
 ```
 
-## Produktionsumgebung (Kubernetes)
+## Produktionsumgebung
+
+Aktueller Stand:
+
+- Es existiert derzeit kein umgesetzter produktiver Kubernetes-Stack im Repository.
+- Die aktuelle produktionsnahe Betriebsdiskussion basiert auf einer Migration vom Compose-orientierten Setup zu Kubernetes.
+- Die aktuelle Marktrecherche und Zielbild-Empfehlung ist dokumentiert in
+  [`../operations/2026-03-26-kubernetes-hosting-marktrecherche.md`](../operations/2026-03-26-kubernetes-hosting-marktrecherche.md).
+
+### Zielbild fuer eine Kubernetes-basierte Produktionsumgebung
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -56,13 +65,14 @@ cd travelmate-trips && ./mvnw spring-boot:run
 └─────────────────────────────────────────────────┘
 ```
 
-### CI/CD Pipeline
+Das Diagramm beschreibt ein moegliches Zielbild, nicht den aktuell implementierten Plattformstand.
 
-- **Azure Pipelines** (`azure-pipelines.yml` je Service)
-- **Stufe 1:** Tests ausführen (`./mvnw clean test`)
-- **Stufe 2:** Docker-Image bauen und in Google Artifact Registry pushen
-- **Registry:** `europe-west3-docker.pkg.dev/travelmate-dev-422115/travelmate-cr/`
-- **Deployment-Manifeste:** `travelmate-iam/manifest/`
+### Erwartete CI/CD-Bausteine fuer das Zielbild
+
+- GitHub Actions fuer Build, Test und Deployment-Orchestrierung
+- Container-Build pro SCS (`gateway`, `iam`, `trips`, `expense`)
+- Kubernetes-Deployment mit Helm oder Kustomize
+- gestufte Einfuehrung: zuerst stateless Services, danach Stateful Workloads
 
 ## Referenzen
 

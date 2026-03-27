@@ -1,0 +1,13 @@
+{
+	email {env.ACME_EMAIL}
+}
+
+{env.TRAVELMATE_HOST} {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:8080
+}
+
+{env.KEYCLOAK_HOST} {
+	encode zstd gzip
+	reverse_proxy 127.0.0.1:7082
+}

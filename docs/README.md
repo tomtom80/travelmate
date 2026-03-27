@@ -8,12 +8,20 @@ Diese Dokumentation beschreibt Architektur, Produktzuschnitt, Design-Artefakte u
 - [`adr/`](./adr): Architecture Decision Records
 - [`backlog/`](./backlog): Iterationsplaene, Story-Schnitte und Release-Notizen
 - [`design/`](./design): UX, Wireframes, Event Storming und Komponenten-Design
+- [`operations/`](./operations): Betriebs-, Hosting- und Plattformdokumentation
 - [`test-cases/`](./test-cases): BDD-Features, Teststrategie und Testfallbeschreibungen
 
 ## Aktuelle Release-Dokumente
 
 - [`backlog/release-v0.12.2.md`](./backlog/release-v0.12.2.md)
 - [`backlog/release-v0.12.0.md`](./backlog/release-v0.12.0.md)
+
+## Aktuelle Operations-Dokumente
+
+- [`operations/2026-03-26-kubernetes-hosting-marktrecherche.md`](./operations/2026-03-26-kubernetes-hosting-marktrecherche.md)
+- [`operations/2026-03-26-demo-hosting-empfehlung.md`](./operations/2026-03-26-demo-hosting-empfehlung.md)
+- [`operations/2026-03-26-demo-betriebskonzept.md`](./operations/2026-03-26-demo-betriebskonzept.md)
+- [`operations/2026-03-27-demo-go-live-checkliste.md`](./operations/2026-03-27-demo-go-live-checkliste.md)
 
 ## Empfohlener Einstieg
 

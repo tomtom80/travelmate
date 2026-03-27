@@ -1,0 +1,249 @@
+services:
+
+  postgres-iam:
+    image: postgres:16-alpine
+    container_name: travelmate-demo-postgres-iam
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: travelmate_iam
+      POSTGRES_USER: travelmate
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres-iam-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U travelmate -d travelmate_iam"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  postgres-trips:
+    image: postgres:16-alpine
+    container_name: travelmate-demo-postgres-trips
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: travelmate_trips
+      POSTGRES_USER: travelmate
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres-trips-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U travelmate -d travelmate_trips"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  postgres-expense:
+    image: postgres:16-alpine
+    container_name: travelmate-demo-postgres-expense
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: travelmate_expense
+      POSTGRES_USER: travelmate
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - postgres-expense-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U travelmate -d travelmate_expense"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  postgres-keycloak:
+    image: postgres:16-alpine
+    container_name: travelmate-demo-postgres-keycloak
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: keycloak
+      POSTGRES_USER: keycloak
+      POSTGRES_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+    volumes:
+      - postgres-keycloak-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U keycloak -d keycloak"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:4.0-management-alpine
+    container_name: travelmate-demo-rabbitmq
+    restart: unless-stopped
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.1.4
+    container_name: travelmate-demo-keycloak
+    restart: unless-stopped
+    entrypoint: /bin/bash
+    command: >-
+      -c "bash /opt/keycloak/data/import/init-smtp-from-env.sh &
+      /opt/keycloak/bin/kc.sh start --http-enabled=true --proxy-headers=xforwarded --import-realm"
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres-keycloak:5432/keycloak
+      KC_DB_USERNAME: keycloak
+      KC_DB_PASSWORD: ${KEYCLOAK_DB_PASSWORD}
+      KC_HOSTNAME: ${KEYCLOAK_PUBLIC_URL}
+      KC_PROXY_HEADERS: xforwarded
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      SMTP_HOST: ${SMTP_HOST}
+      SMTP_PORT: ${SMTP_PORT}
+      SMTP_FROM: ${SMTP_FROM}
+      SMTP_FROM_DISPLAY_NAME: ${SMTP_FROM_DISPLAY_NAME}
+      SMTP_AUTH: ${MAIL_SMTP_AUTH}
+      SMTP_STARTTLS: ${MAIL_SMTP_STARTTLS_ENABLE}
+      SMTP_SSL: ${SMTP_SSL}
+      SMTP_USER: ${MAIL_USERNAME}
+      SMTP_PASSWORD: ${MAIL_PASSWORD}
+    ports:
+      - "127.0.0.1:7082:8080"
+    volumes:
+      - ./docker/keycloak/realm-export.json:/opt/keycloak/data/import/realm-export.json:ro
+      - ./docker/keycloak/init-smtp-from-env.sh:/opt/keycloak/data/import/init-smtp-from-env.sh:ro
+      - ./docker/keycloak/themes/travelmate:/opt/keycloak/themes/travelmate:ro
+    depends_on:
+      postgres-keycloak:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "exec 3<>/dev/tcp/localhost/8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 30s
+
+  gateway:
+    image: ${IMAGE_REGISTRY:-ghcr.io}/${IMAGE_NAMESPACE}/travelmate-gateway:${IMAGE_TAG:-demo}
+    build:
+      context: .
+      args:
+        MODULE: travelmate-gateway
+    container_name: travelmate-demo-gateway
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8080:8080"
+    environment:
+      IAM_SERVICE_URL: http://iam:8081
+      TRIPS_SERVICE_URL: http://trips:8082
+      EXPENSE_SERVICE_URL: http://expense:8083
+      KEYCLOAK_AUTH_URI: ${KEYCLOAK_PUBLIC_URL}/realms/travelmate/protocol/openid-connect/auth
+      KEYCLOAK_TOKEN_URI: http://keycloak:8080/realms/travelmate/protocol/openid-connect/token
+      KEYCLOAK_JWK_URI: http://keycloak:8080/realms/travelmate/protocol/openid-connect/certs
+      KEYCLOAK_USERINFO_URI: http://keycloak:8080/realms/travelmate/protocol/openid-connect/userinfo
+      KEYCLOAK_END_SESSION_URI: ${KEYCLOAK_PUBLIC_URL}/realms/travelmate/protocol/openid-connect/logout
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+    depends_on:
+      keycloak:
+        condition: service_healthy
+
+  iam:
+    image: ${IMAGE_REGISTRY:-ghcr.io}/${IMAGE_NAMESPACE}/travelmate-iam:${IMAGE_TAG:-demo}
+    build:
+      context: .
+      args:
+        MODULE: travelmate-iam
+    container_name: travelmate-demo-iam
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres-iam
+      DB_PORT: 5432
+      DB_NAME: travelmate_iam
+      DB_USER: travelmate
+      DB_PASSWORD: ${DB_PASSWORD}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      KEYCLOAK_JWK_URI: http://keycloak:8080/realms/travelmate/protocol/openid-connect/certs
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      MAIL_HOST: ${SMTP_HOST}
+      MAIL_PORT: ${SMTP_PORT}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH}
+      MAIL_SMTP_STARTTLS_ENABLE: ${MAIL_SMTP_STARTTLS_ENABLE}
+    depends_on:
+      postgres-iam:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+
+  trips:
+    image: ${IMAGE_REGISTRY:-ghcr.io}/${IMAGE_NAMESPACE}/travelmate-trips:${IMAGE_TAG:-demo}
+    build:
+      context: .
+      args:
+        MODULE: travelmate-trips
+    container_name: travelmate-demo-trips
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres-trips
+      DB_PORT: 5432
+      DB_NAME: travelmate_trips
+      DB_USER: travelmate
+      DB_PASSWORD: ${DB_PASSWORD}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      KEYCLOAK_JWK_URI: http://keycloak:8080/realms/travelmate/protocol/openid-connect/certs
+      MAIL_HOST: ${SMTP_HOST}
+      MAIL_PORT: ${SMTP_PORT}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_SMTP_AUTH: ${MAIL_SMTP_AUTH}
+      MAIL_SMTP_STARTTLS_ENABLE: ${MAIL_SMTP_STARTTLS_ENABLE}
+      TRAVELMATE_BASE_URL: ${TRAVELMATE_PUBLIC_URL}
+      LLM_ENABLED: "false"
+    depends_on:
+      postgres-trips:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+
+  expense:
+    image: ${IMAGE_REGISTRY:-ghcr.io}/${IMAGE_NAMESPACE}/travelmate-expense:${IMAGE_TAG:-demo}
+    build:
+      context: .
+      args:
+        MODULE: travelmate-expense
+    container_name: travelmate-demo-expense
+    restart: unless-stopped
+    environment:
+      DB_HOST: postgres-expense
+      DB_PORT: 5432
+      DB_NAME: travelmate_expense
+      DB_USER: travelmate
+      DB_PASSWORD: ${DB_PASSWORD}
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_PORT: 5672
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      KEYCLOAK_JWK_URI: http://keycloak:8080/realms/travelmate/protocol/openid-connect/certs
+      LLM_ENABLED: "false"
+    depends_on:
+      postgres-expense:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      keycloak:
+        condition: service_healthy
+
+volumes:
+  postgres-iam-data:
+  postgres-trips-data:
+  postgres-expense-data:
+  postgres-keycloak-data:

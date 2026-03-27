@@ -59,6 +59,49 @@ Build and start all services with Compose:
 docker compose up --build
 ```
 
+## Betriebsmodi
+
+### Lokale Entwicklung
+
+Die lokale Entwicklungsumgebung bleibt beim bestehenden Compose-Stack:
+
+```bash
+docker compose up -d
+./mvnw clean verify
+```
+
+Merkmale:
+
+- nutzt `docker-compose.yml`
+- verwendet lokale PostgreSQL-, RabbitMQ-, Keycloak- und Mailpit-Container
+- ist fuer Weiterentwicklung und lokale Tests gedacht
+
+### Demo-Umgebung
+
+Fuer eine oeffentlich erreichbare Demo gibt es einen getrennten Betriebsweg:
+
+- Compose-Datei: [`docker-compose.demo.yml`](./docker-compose.demo.yml)
+- Beispiel-Variablen: [`.env.demo.example`](./.env.demo.example)
+- Reverse Proxy: [`Caddyfile.demo`](./Caddyfile.demo)
+- automatischer Redeploy: [`scripts/deploy-demo.sh`](./scripts/deploy-demo.sh)
+- Server-Bootstrap: [`scripts/bootstrap-demo-server.sh`](./scripts/bootstrap-demo-server.sh)
+- konkrete Demo-Env-Vorlage: [`.env.demo.hetzner-brevo.example`](./.env.demo.hetzner-brevo.example)
+- GitHub Actions CI: [`.github/workflows/ci.yml`](./.github/workflows/ci.yml)
+- GitHub Actions Demo-Deploy: [`.github/workflows/demo-deploy.yml`](./.github/workflows/demo-deploy.yml)
+
+Merkmale:
+
+- verwendet echtes SMTP statt Mailpit
+- ist fuer haeufige Redeployments per GitHub Actions ausgelegt
+- laeuft typischerweise auf einer separaten Hetzner-VM
+- ist bewusst vom lokalen Dev-Setup getrennt
+
+Weiterfuehrende Betriebsdoku:
+
+- [`docs/operations/2026-03-26-demo-hosting-empfehlung.md`](./docs/operations/2026-03-26-demo-hosting-empfehlung.md)
+- [`docs/operations/2026-03-26-demo-betriebskonzept.md`](./docs/operations/2026-03-26-demo-betriebskonzept.md)
+- [`docs/operations/2026-03-26-kubernetes-hosting-marktrecherche.md`](./docs/operations/2026-03-26-kubernetes-hosting-marktrecherche.md)
+
 ## Tests
 
 Run tests for a single module:
