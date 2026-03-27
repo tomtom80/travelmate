@@ -4,13 +4,13 @@ Travelmate is a multi-tenant travel planning platform built as a Maven monorepo.
 
 ## Release
 
-Current repository release state: `v0.12.2`
+Current repository release state: `v0.12.3`
 
-Patch release `v0.12.2` includes:
+Patch release `v0.12.3` includes:
 
-- editable travel party names with cross-SCS event propagation
-- trip-scoped recipes created directly in the trip context
-- updated E2E and BDD coverage for the new recipe scoping
+- demo hosting and operations documentation
+- demo deployment automation via GitHub Actions and GHCR
+- Hetzner/Brevo demo environment templates and bootstrap scripts
 - refreshed project and release documentation
 
 ## Architecture Overview
