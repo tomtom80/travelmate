@@ -54,6 +54,9 @@ class TripControllerTest {
     private static final UUID ORGANIZER_UUID = UUID.randomUUID();
     private static final UUID INVITEE_UUID = UUID.randomUUID();
     private static final UUID DEPENDENT_UUID = UUID.randomUUID();
+    private static final UUID OTHER_PARTY_TENANT_UUID = UUID.randomUUID();
+    private static final UUID OTHER_PARTY_MEMBER_UUID = UUID.randomUUID();
+    private static final String OTHER_PARTY_MEMBER_EMAIL = "other@test.de";
     private static final String ORGANIZER_EMAIL = "org@test.de";
     private static final String INVITEE_EMAIL = "inv@test.de";
 
@@ -76,6 +79,7 @@ class TripControllerTest {
     private TravelPartyRepository travelPartyRepository;
 
     private TravelParty party;
+    private TravelParty otherParty;
 
     @BeforeEach
     void setUpParty() {
@@ -83,9 +87,12 @@ class TripControllerTest {
         party.addMember(ORGANIZER_UUID, ORGANIZER_EMAIL, "Max", "Org");
         party.addMember(INVITEE_UUID, INVITEE_EMAIL, "Lisa", "Inv");
         party.addDependent(DEPENDENT_UUID, ORGANIZER_UUID, "Tim", "Org");
+        otherParty = TravelParty.create(new TenantId(OTHER_PARTY_TENANT_UUID), "Familie Anders");
+        otherParty.addMember(OTHER_PARTY_MEMBER_UUID, OTHER_PARTY_MEMBER_EMAIL, "Ola", "Anders");
         when(travelPartyRepository.findByMemberEmail(ORGANIZER_EMAIL)).thenReturn(Optional.of(party));
         when(travelPartyRepository.findByMemberEmail(INVITEE_EMAIL)).thenReturn(Optional.of(party));
         when(travelPartyRepository.findByTenantId(new TenantId(TENANT_UUID))).thenReturn(Optional.of(party));
+        when(travelPartyRepository.findAll()).thenReturn(List.of(party, otherParty));
     }
 
     @Test
@@ -118,8 +125,8 @@ class TripControllerTest {
     @Test
     void listShowsPendingInvitations() throws Exception {
         final InvitationRepresentation pendingInv = new InvitationRepresentation(
-            UUID.randomUUID(), TENANT_UUID, TRIP_UUID, INVITEE_UUID, ORGANIZER_UUID,
-            null, "MEMBER", "PENDING"
+            UUID.randomUUID(), TENANT_UUID, TRIP_UUID, INVITEE_UUID, OTHER_PARTY_MEMBER_UUID,
+            null, TENANT_UUID, "MEMBER", "PENDING"
         );
         final TripRepresentation trip = new TripRepresentation(
             TRIP_UUID, TENANT_UUID, "Skiurlaub", null,
@@ -137,11 +144,24 @@ class TripControllerTest {
         mockMvc.perform(get("/")
                 .with(jwt().jwt(j -> j.claim("email", INVITEE_EMAIL))))
             .andExpect(status().isOk())
-            .andExpect(model().attributeExists("pendingInvitations"));
+            .andExpect(model().attributeExists("pendingInvitations"))
+            .andDo(result -> {
+                @SuppressWarnings("unchecked")
+                final List<de.evia.travelmate.trips.application.representation.PendingInvitationView> invitations =
+                    (List<de.evia.travelmate.trips.application.representation.PendingInvitationView>)
+                        result.getModelAndView().getModel().get("pendingInvitations");
+                assertThat(invitations).singleElement()
+                    .extracting(de.evia.travelmate.trips.application.representation.PendingInvitationView::inviterName)
+                    .isEqualTo("Ola Anders");
+            });
     }
 
     @Test
     void detailShowsTripWithInvitations() throws Exception {
+        final InvitationRepresentation invitation = new InvitationRepresentation(
+            UUID.randomUUID(), TENANT_UUID, TRIP_UUID, OTHER_PARTY_MEMBER_UUID, ORGANIZER_UUID,
+            OTHER_PARTY_MEMBER_EMAIL, OTHER_PARTY_TENANT_UUID, "MEMBER", "PENDING"
+        );
         final TripRepresentation trip = new TripRepresentation(
             TRIP_UUID, TENANT_UUID, "Skiurlaub", null,
             LocalDate.of(2026, 3, 15), LocalDate.of(2026, 3, 22),
@@ -149,7 +169,7 @@ class TripControllerTest {
         );
 
         when(tripService.findById(new TripId(TRIP_UUID))).thenReturn(trip);
-        when(invitationService.findByTripId(new TripId(TRIP_UUID))).thenReturn(List.of());
+        when(invitationService.findByTripId(new TripId(TRIP_UUID))).thenReturn(List.of(invitation));
 
         mockMvc.perform(get("/" + TRIP_UUID)
                 .with(jwt().jwt(j -> j.claim("email", ORGANIZER_EMAIL))))
@@ -159,14 +179,53 @@ class TripControllerTest {
             .andExpect(model().attributeExists("trip"))
             .andExpect(model().attributeExists("participants"))
             .andExpect(model().attributeExists("invitations"))
-            .andExpect(model().attributeExists("invitableMembers"));
+            .andExpect(model().attributeExists("invitableMembers"))
+            .andDo(result -> {
+                @SuppressWarnings("unchecked")
+                final List<de.evia.travelmate.trips.application.representation.InvitationView> invitations =
+                    (List<de.evia.travelmate.trips.application.representation.InvitationView>)
+                        result.getModelAndView().getModel().get("invitations");
+                assertThat(invitations).singleElement().satisfies(inv -> {
+                    assertThat(inv.inviteeName()).isEqualTo("Ola Anders");
+                    assertThat(inv.targetPartyName()).isEqualTo("Familie Anders");
+                });
+            });
+    }
+
+    @Test
+    void invitationLandingRedirectsInviteeToTripList() throws Exception {
+        final UUID invitationUuid = UUID.randomUUID();
+        final InvitationRepresentation invitation = new InvitationRepresentation(
+            invitationUuid, TENANT_UUID, TRIP_UUID, INVITEE_UUID, ORGANIZER_UUID,
+            INVITEE_EMAIL, TENANT_UUID, "MEMBER", "PENDING"
+        );
+        when(invitationService.findById(new InvitationId(invitationUuid))).thenReturn(invitation);
+
+        mockMvc.perform(get("/invitations/" + invitationUuid)
+                .with(jwt().jwt(j -> j.claim("email", INVITEE_EMAIL))))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/"));
+    }
+
+    @Test
+    void invitationLandingRejectsDifferentActor() throws Exception {
+        final UUID invitationUuid = UUID.randomUUID();
+        final InvitationRepresentation invitation = new InvitationRepresentation(
+            invitationUuid, TENANT_UUID, TRIP_UUID, INVITEE_UUID, ORGANIZER_UUID,
+            INVITEE_EMAIL, TENANT_UUID, "MEMBER", "PENDING"
+        );
+        when(invitationService.findById(new InvitationId(invitationUuid))).thenReturn(invitation);
+
+        mockMvc.perform(get("/invitations/" + invitationUuid)
+                .with(jwt().jwt(j -> j.claim("email", ORGANIZER_EMAIL))))
+            .andExpect(status().isForbidden());
     }
 
     @Test
     void inviteCreatesInvitationAndReturnsFragment() throws Exception {
         final InvitationRepresentation inv = new InvitationRepresentation(
             UUID.randomUUID(), TENANT_UUID, TRIP_UUID, INVITEE_UUID, ORGANIZER_UUID,
-            null, "MEMBER", "PENDING"
+            null, null, "MEMBER", "PENDING"
         );
 
         when(invitationService.invite(any(InviteParticipantCommand.class))).thenReturn(inv);
@@ -187,11 +246,12 @@ class TripControllerTest {
         when(invitationService.findByTripId(new TripId(TRIP_UUID))).thenReturn(List.of());
 
         mockMvc.perform(post("/" + TRIP_UUID + "/invitations/" + invitationUuid + "/accept")
-                .with(jwt().jwt(j -> j.claim("email", INVITEE_EMAIL))))
+                .with(jwt().jwt(j -> j.claim("email", INVITEE_EMAIL)))
+                .header("HX-Request", "true"))
             .andExpect(status().isOk())
             .andExpect(view().name("trip/invitations :: invitationList"));
 
-        verify(invitationService).accept(new InvitationId(invitationUuid));
+        verify(invitationService).accept(new InvitationId(invitationUuid), INVITEE_UUID);
     }
 
     @Test
@@ -201,11 +261,24 @@ class TripControllerTest {
         when(invitationService.findByTripId(new TripId(TRIP_UUID))).thenReturn(List.of());
 
         mockMvc.perform(post("/" + TRIP_UUID + "/invitations/" + invitationUuid + "/decline")
-                .with(jwt().jwt(j -> j.claim("email", INVITEE_EMAIL))))
+                .with(jwt().jwt(j -> j.claim("email", INVITEE_EMAIL)))
+                .header("HX-Request", "true"))
             .andExpect(status().isOk())
             .andExpect(view().name("trip/invitations :: invitationList"));
 
-        verify(invitationService).decline(new InvitationId(invitationUuid));
+        verify(invitationService).decline(new InvitationId(invitationUuid), INVITEE_UUID);
+    }
+
+    @Test
+    void acceptInvitationRedirectsForRegularFormPost() throws Exception {
+        final UUID invitationUuid = UUID.randomUUID();
+
+        mockMvc.perform(post("/" + TRIP_UUID + "/invitations/" + invitationUuid + "/accept")
+                .with(jwt().jwt(j -> j.claim("email", INVITEE_EMAIL))))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/"));
+
+        verify(invitationService).accept(new InvitationId(invitationUuid), INVITEE_UUID);
     }
 
     @Test

@@ -100,8 +100,12 @@ public class DashboardController {
                                   final Locale locale,
                                   final Model model) {
         final Account account = resolveAccount(jwt);
-        accountService.deleteDependent(id);
-        triggerSuccessToast(response, messageSource.getMessage("companion.deleted", null, locale));
+        try {
+            accountService.deleteDependent(id);
+            triggerSuccessToast(response, messageSource.getMessage("companion.deleted", null, locale));
+        } catch (final BusinessRuleViolationException e) {
+            triggerErrorToast(response, messageSource.getMessage(e.getMessage(), null, e.getMessage(), locale));
+        }
         model.addAttribute("dependents", accountService.findDependentsByTenantId(account.tenantId()));
         return "dashboard/companions :: companionList";
     }
@@ -149,6 +153,7 @@ public class DashboardController {
             triggerSuccessToast(response, messageSource.getMessage("member.deleted", null, locale));
         } catch (final BusinessRuleViolationException e) {
             model.addAttribute("memberError", e.getMessage());
+            triggerErrorToast(response, messageSource.getMessage(e.getMessage(), null, e.getMessage(), locale));
         }
         model.addAttribute("members", accountService.findAllByTenantId(account.tenantId()));
         model.addAttribute("currentAccount", account);
@@ -191,5 +196,10 @@ public class DashboardController {
     private void triggerSuccessToast(final HttpServletResponse response, final String message) {
         response.setHeader("HX-Trigger",
             "{\"showToast\":{\"level\":\"success\",\"message\":\"" + message.replace("\"", "\\\"") + "\"}}");
+    }
+
+    private void triggerErrorToast(final HttpServletResponse response, final String message) {
+        response.setHeader("HX-Trigger",
+            "{\"showToast\":{\"level\":\"error\",\"message\":\"" + message.replace("\"", "\\\"") + "\"}}");
     }
 }

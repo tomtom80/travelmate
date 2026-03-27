@@ -12,6 +12,8 @@ import org.springframework.stereotype.Component;
 
 import de.evia.travelmate.common.events.iam.AccountRegistered;
 import de.evia.travelmate.common.events.iam.DependentAddedToTenant;
+import de.evia.travelmate.common.events.iam.DependentRemovedFromTenant;
+import de.evia.travelmate.common.events.iam.MemberRemovedFromTenant;
 import de.evia.travelmate.common.events.iam.TenantCreated;
 import de.evia.travelmate.common.events.iam.TenantRenamed;
 import de.evia.travelmate.trips.application.TravelPartyService;
@@ -28,6 +30,8 @@ public class IamEventConsumer {
     private final Timer tenantCreatedTimer;
     private final Timer accountRegisteredTimer;
     private final Timer dependentAddedTimer;
+    private final Timer memberRemovedTimer;
+    private final Timer dependentRemovedTimer;
     private final Timer tenantRenamedTimer;
 
     public IamEventConsumer(final TravelPartyService travelPartyService, final MeterRegistry meterRegistry) {
@@ -35,6 +39,8 @@ public class IamEventConsumer {
         this.tenantCreatedTimer = eventTimer(meterRegistry, "TenantCreated");
         this.accountRegisteredTimer = eventTimer(meterRegistry, "AccountRegistered");
         this.dependentAddedTimer = eventTimer(meterRegistry, "DependentAddedToTenant");
+        this.memberRemovedTimer = eventTimer(meterRegistry, "MemberRemovedFromTenant");
+        this.dependentRemovedTimer = eventTimer(meterRegistry, "DependentRemovedFromTenant");
         this.tenantRenamedTimer = eventTimer(meterRegistry, "TenantRenamed");
     }
 
@@ -60,6 +66,18 @@ public class IamEventConsumer {
     public void onDependentAdded(final DependentAddedToTenant event) {
         dependentAddedTimer.record(() ->
             executeWithRetry(() -> travelPartyService.onDependentAdded(event), "DependentAdded", event.tenantId().toString()));
+    }
+
+    @RabbitListener(queues = RabbitMqConfig.QUEUE_MEMBER_REMOVED)
+    public void onMemberRemoved(final MemberRemovedFromTenant event) {
+        memberRemovedTimer.record(() ->
+            executeWithRetry(() -> travelPartyService.onMemberRemoved(event), "MemberRemoved", event.tenantId().toString()));
+    }
+
+    @RabbitListener(queues = RabbitMqConfig.QUEUE_DEPENDENT_REMOVED)
+    public void onDependentRemoved(final DependentRemovedFromTenant event) {
+        dependentRemovedTimer.record(() ->
+            executeWithRetry(() -> travelPartyService.onDependentRemoved(event), "DependentRemoved", event.tenantId().toString()));
     }
 
     private void executeWithRetry(final Runnable action, final String eventType, final String tenantId) {

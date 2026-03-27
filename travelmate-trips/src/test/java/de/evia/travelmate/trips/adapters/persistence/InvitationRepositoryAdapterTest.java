@@ -31,7 +31,8 @@ class InvitationRepositoryAdapterTest {
         final TripId tripId = new TripId(UUID.randomUUID());
         final UUID inviteeId = UUID.randomUUID();
         final UUID invitedBy = UUID.randomUUID();
-        final Invitation invitation = Invitation.create(TENANT_ID, tripId, inviteeId, invitedBy);
+        final UUID targetPartyTenantId = UUID.randomUUID();
+        final Invitation invitation = Invitation.create(TENANT_ID, tripId, inviteeId, invitedBy, targetPartyTenantId);
 
         repository.save(invitation);
 
@@ -40,6 +41,7 @@ class InvitationRepositoryAdapterTest {
         assertThat(found.get().tenantId()).isEqualTo(TENANT_ID);
         assertThat(found.get().tripId()).isEqualTo(tripId);
         assertThat(found.get().inviteeId()).isEqualTo(inviteeId);
+        assertThat(found.get().targetPartyTenantId()).isEqualTo(targetPartyTenantId);
         assertThat(found.get().status()).isEqualTo(InvitationStatus.PENDING);
     }
 
@@ -62,8 +64,8 @@ class InvitationRepositoryAdapterTest {
     void findsByTripId() {
         final TripId tripId = new TripId(UUID.randomUUID());
         final UUID invitedBy = UUID.randomUUID();
-        repository.save(Invitation.create(TENANT_ID, tripId, UUID.randomUUID(), invitedBy));
-        repository.save(Invitation.create(TENANT_ID, tripId, UUID.randomUUID(), invitedBy));
+        repository.save(Invitation.create(TENANT_ID, tripId, UUID.randomUUID(), invitedBy, UUID.randomUUID()));
+        repository.save(Invitation.create(TENANT_ID, tripId, UUID.randomUUID(), invitedBy, UUID.randomUUID()));
 
         final List<Invitation> found = repository.findByTripId(tripId);
 
@@ -74,8 +76,8 @@ class InvitationRepositoryAdapterTest {
     void findsByInviteeIdAndStatus() {
         final UUID inviteeId = UUID.randomUUID();
         final UUID invitedBy = UUID.randomUUID();
-        final Invitation pending = Invitation.create(TENANT_ID, new TripId(UUID.randomUUID()), inviteeId, invitedBy);
-        final Invitation accepted = Invitation.create(TENANT_ID, new TripId(UUID.randomUUID()), inviteeId, invitedBy);
+        final Invitation pending = Invitation.create(TENANT_ID, new TripId(UUID.randomUUID()), inviteeId, invitedBy, UUID.randomUUID());
+        final Invitation accepted = Invitation.create(TENANT_ID, new TripId(UUID.randomUUID()), inviteeId, invitedBy, UUID.randomUUID());
         accepted.accept();
         repository.save(pending);
         repository.save(accepted);
@@ -103,7 +105,7 @@ class InvitationRepositoryAdapterTest {
     void existsByTripIdAndInviteeId() {
         final TripId tripId = new TripId(UUID.randomUUID());
         final UUID inviteeId = UUID.randomUUID();
-        repository.save(Invitation.create(TENANT_ID, tripId, inviteeId, UUID.randomUUID()));
+        repository.save(Invitation.create(TENANT_ID, tripId, inviteeId, UUID.randomUUID(), UUID.randomUUID()));
 
         assertThat(repository.existsByTripIdAndInviteeId(tripId, inviteeId)).isTrue();
         assertThat(repository.existsByTripIdAndInviteeId(tripId, UUID.randomUUID())).isFalse();
@@ -121,7 +123,7 @@ class InvitationRepositoryAdapterTest {
     @Test
     void updatesStatusOnSave() {
         final TripId tripId = new TripId(UUID.randomUUID());
-        final Invitation invitation = Invitation.create(TENANT_ID, tripId, UUID.randomUUID(), UUID.randomUUID());
+        final Invitation invitation = Invitation.create(TENANT_ID, tripId, UUID.randomUUID(), UUID.randomUUID(), UUID.randomUUID());
         repository.save(invitation);
 
         invitation.accept();
@@ -138,7 +140,7 @@ class InvitationRepositoryAdapterTest {
         repository.save(invitation);
 
         final UUID memberId = UUID.randomUUID();
-        invitation.linkToMember(memberId);
+        invitation.linkToMember(memberId, UUID.randomUUID());
         repository.save(invitation);
 
         final Invitation found = repository.findById(invitation.invitationId()).orElseThrow();
@@ -150,5 +152,17 @@ class InvitationRepositoryAdapterTest {
     void returnsEmptyForUnknownId() {
         final Optional<Invitation> found = repository.findById(new de.evia.travelmate.trips.domain.invitation.InvitationId(UUID.randomUUID()));
         assertThat(found).isEmpty();
+    }
+
+    @Test
+    void existsByTripIdAndTargetPartyTenantIdInStatuses() {
+        final TripId tripId = new TripId(UUID.randomUUID());
+        final UUID targetPartyTenantId = UUID.randomUUID();
+        repository.save(Invitation.create(TENANT_ID, tripId, UUID.randomUUID(), UUID.randomUUID(), targetPartyTenantId));
+
+        assertThat(repository.existsByTripIdAndTargetPartyTenantIdInStatuses(
+            tripId,
+            targetPartyTenantId,
+            List.of(InvitationStatus.PENDING))).isTrue();
     }
 }

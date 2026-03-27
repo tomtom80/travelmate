@@ -33,11 +33,13 @@ public class InvitationRepositoryAdapter implements InvitationRepository {
                 invitation.inviteeId(),
                 invitation.invitedBy(),
                 invitation.inviteeEmail(),
+                invitation.targetPartyTenantId(),
                 invitation.invitationType().name(),
                 invitation.status().name()
             ));
         entity.setStatus(invitation.status().name());
         entity.setInviteeId(invitation.inviteeId());
+        entity.setTargetPartyTenantId(invitation.targetPartyTenantId());
         jpaRepository.save(entity);
         return invitation;
     }
@@ -69,6 +71,17 @@ public class InvitationRepositoryAdapter implements InvitationRepository {
     }
 
     @Override
+    public boolean existsByTripIdAndTargetPartyTenantIdInStatuses(final TripId tripId,
+                                                                  final UUID targetPartyTenantId,
+                                                                  final List<InvitationStatus> statuses) {
+        return jpaRepository.existsByTripIdAndTargetPartyTenantIdAndStatusIn(
+            tripId.value(),
+            targetPartyTenantId,
+            statuses.stream().map(InvitationStatus::name).toList()
+        );
+    }
+
+    @Override
     public boolean existsByTripIdAndInviteeId(final TripId tripId, final UUID inviteeId) {
         return jpaRepository.existsByTripIdAndInviteeId(tripId.value(), inviteeId);
     }
@@ -86,6 +99,7 @@ public class InvitationRepositoryAdapter implements InvitationRepository {
             entity.getInviteeId(),
             entity.getInvitedBy(),
             entity.getInviteeEmail(),
+            entity.getTargetPartyTenantId(),
             InvitationType.valueOf(entity.getInvitationType()),
             InvitationStatus.valueOf(entity.getStatus())
         );

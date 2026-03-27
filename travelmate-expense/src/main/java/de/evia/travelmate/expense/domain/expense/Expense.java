@@ -144,6 +144,14 @@ public class Expense extends AggregateRoot {
         weightings.add(new ParticipantWeighting(participantId, newWeight));
     }
 
+    public void removeParticipant(final UUID participantId) {
+        assertNotSettled();
+        argumentIsNotNull(participantId, "participantId");
+        argumentIsTrue(receipts.isEmpty(),
+            "Participants with financial references must remain in the expense history.");
+        weightings.removeIf(weighting -> weighting.participantId().equals(participantId));
+    }
+
     public void settle() {
         argumentIsTrue(
             status == ExpenseStatus.OPEN || status == ExpenseStatus.READY_FOR_SETTLEMENT,

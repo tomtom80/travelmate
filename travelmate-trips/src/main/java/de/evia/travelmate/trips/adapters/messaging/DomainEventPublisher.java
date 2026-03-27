@@ -11,6 +11,7 @@ import org.springframework.transaction.event.TransactionalEventListener;
 import de.evia.travelmate.common.events.trips.AccommodationPriceSet;
 import de.evia.travelmate.common.events.trips.ExternalUserInvitedToTrip;
 import de.evia.travelmate.common.events.trips.ParticipantJoinedTrip;
+import de.evia.travelmate.common.events.trips.ParticipantRemovedFromTrip;
 import de.evia.travelmate.common.events.trips.StayPeriodUpdated;
 import de.evia.travelmate.common.events.trips.TripCompleted;
 import de.evia.travelmate.common.events.trips.TripCreated;
@@ -36,6 +37,11 @@ public class DomainEventPublisher {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onParticipantJoinedTrip(final ParticipantJoinedTrip event) {
         publishSafely(RoutingKeys.PARTICIPANT_CONFIRMED, event);
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onParticipantRemovedTrip(final ParticipantRemovedFromTrip event) {
+        publishSafely(RoutingKeys.PARTICIPANT_REMOVED, event);
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)

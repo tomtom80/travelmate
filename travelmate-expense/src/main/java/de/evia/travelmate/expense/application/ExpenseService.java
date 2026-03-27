@@ -15,7 +15,9 @@ import org.springframework.transaction.annotation.Transactional;
 import de.evia.travelmate.common.domain.DomainEvent;
 import de.evia.travelmate.common.domain.EntityNotFoundException;
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.common.events.iam.TenantRenamed;
 import de.evia.travelmate.common.events.trips.ParticipantJoinedTrip;
+import de.evia.travelmate.common.events.trips.ParticipantRemovedFromTrip;
 import de.evia.travelmate.common.events.trips.StayPeriodUpdated;
 import de.evia.travelmate.common.events.trips.TripCompleted;
 import de.evia.travelmate.common.events.trips.TripCreated;
@@ -79,6 +81,33 @@ public class ExpenseService {
             event.participantTenantId(), event.partyName(), event.dateOfBirth(), event.accountHolder()));
         tripProjectionRepository.save(projection);
         synchronizeExpenseForParticipantJoin(projection, event.participantId());
+    }
+
+    public void onParticipantRemoved(final ParticipantRemovedFromTrip event) {
+        final TripProjection projection = tripProjectionRepository.findByTripId(event.tripId())
+            .orElseThrow(() -> new EntityNotFoundException("TripProjection", event.tripId().toString()));
+
+        final Expense expense = expenseRepository.findByTripId(new TenantId(event.tenantId()), event.tripId()).orElse(null);
+        if (expense == null || expense.receipts().isEmpty()) {
+            projection.removeParticipant(event.participantId());
+            tripProjectionRepository.save(projection);
+            if (expense != null) {
+                expense.removeParticipant(event.participantId());
+                expenseRepository.save(expense);
+            }
+            return;
+        }
+
+        LOG.info("Keeping participant {} in expense projection for trip {} because financial history exists",
+            event.participantId(), event.tripId());
+    }
+
+    public void onTenantRenamed(final TenantRenamed event) {
+        final List<TripProjection> projections = tripProjectionRepository.findByPartyTenantId(event.tenantId());
+        for (final TripProjection projection : projections) {
+            projection.updatePartyName(event.tenantId(), event.newName());
+            tripProjectionRepository.save(projection);
+        }
     }
 
     public void onStayPeriodUpdated(final StayPeriodUpdated event) {

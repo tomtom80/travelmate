@@ -7,6 +7,7 @@ public record InvitationView(
     UUID tripId,
     UUID inviteeId,
     String inviteeName,
+    String targetPartyName,
     String invitationType,
     String status
 ) {

@@ -77,6 +77,22 @@ public class TripProjection {
         }
     }
 
+    public void updatePartyName(final UUID partyTenantId, final String newName) {
+        argumentIsNotNull(partyTenantId, "partyTenantId");
+        argumentIsNotBlank(newName, "newName");
+        for (int i = 0; i < participants.size(); i++) {
+            final TripParticipant participant = participants.get(i);
+            if (partyTenantId.equals(participant.partyTenantId())) {
+                participants.set(i, participant.withPartyName(newName));
+            }
+        }
+    }
+
+    public void removeParticipant(final UUID participantId) {
+        argumentIsNotNull(participantId, "participantId");
+        participants.removeIf(participant -> participant.participantId().equals(participantId));
+    }
+
     public void setAccommodationTotalPrice(final BigDecimal accommodationTotalPrice) {
         this.accommodationTotalPrice = accommodationTotalPrice;
     }

@@ -25,11 +25,15 @@ public class RabbitMqConfig {
     public static final String QUEUE_TENANT_CREATED = "trips.tenant-created";
     public static final String QUEUE_ACCOUNT_REGISTERED = "trips.account-registered";
     public static final String QUEUE_DEPENDENT_ADDED = "trips.dependent-added";
+    public static final String QUEUE_MEMBER_REMOVED = "trips.member-removed";
+    public static final String QUEUE_DEPENDENT_REMOVED = "trips.dependent-removed";
     public static final String QUEUE_TENANT_RENAMED = "trips.tenant-renamed";
 
     public static final String QUEUE_TENANT_CREATED_DLQ = QUEUE_TENANT_CREATED + ".dlq";
     public static final String QUEUE_ACCOUNT_REGISTERED_DLQ = QUEUE_ACCOUNT_REGISTERED + ".dlq";
     public static final String QUEUE_DEPENDENT_ADDED_DLQ = QUEUE_DEPENDENT_ADDED + ".dlq";
+    public static final String QUEUE_MEMBER_REMOVED_DLQ = QUEUE_MEMBER_REMOVED + ".dlq";
+    public static final String QUEUE_DEPENDENT_REMOVED_DLQ = QUEUE_DEPENDENT_REMOVED + ".dlq";
     public static final String QUEUE_TENANT_RENAMED_DLQ = QUEUE_TENANT_RENAMED + ".dlq";
 
     @Bean
@@ -77,6 +81,22 @@ public class RabbitMqConfig {
     }
 
     @Bean
+    public Queue memberRemovedQueue() {
+        return QueueBuilder.durable(QUEUE_MEMBER_REMOVED)
+            .withArgument("x-dead-letter-exchange", RoutingKeys.DLX_EXCHANGE)
+            .withArgument("x-dead-letter-routing-key", QUEUE_MEMBER_REMOVED_DLQ)
+            .build();
+    }
+
+    @Bean
+    public Queue dependentRemovedQueue() {
+        return QueueBuilder.durable(QUEUE_DEPENDENT_REMOVED)
+            .withArgument("x-dead-letter-exchange", RoutingKeys.DLX_EXCHANGE)
+            .withArgument("x-dead-letter-routing-key", QUEUE_DEPENDENT_REMOVED_DLQ)
+            .build();
+    }
+
+    @Bean
     public Queue tenantRenamedQueue() {
         return QueueBuilder.durable(QUEUE_TENANT_RENAMED)
             .withArgument("x-dead-letter-exchange", RoutingKeys.DLX_EXCHANGE)
@@ -102,6 +122,16 @@ public class RabbitMqConfig {
     }
 
     @Bean
+    public Binding memberRemovedBinding(final Queue memberRemovedQueue, final TopicExchange topicExchange) {
+        return BindingBuilder.bind(memberRemovedQueue).to(topicExchange).with(RoutingKeys.MEMBER_REMOVED);
+    }
+
+    @Bean
+    public Binding dependentRemovedBinding(final Queue dependentRemovedQueue, final TopicExchange topicExchange) {
+        return BindingBuilder.bind(dependentRemovedQueue).to(topicExchange).with(RoutingKeys.DEPENDENT_REMOVED);
+    }
+
+    @Bean
     public Binding tenantRenamedBinding(final Queue tenantRenamedQueue, final TopicExchange topicExchange) {
         return BindingBuilder.bind(tenantRenamedQueue).to(topicExchange).with(RoutingKeys.TENANT_RENAMED);
     }
@@ -121,6 +151,16 @@ public class RabbitMqConfig {
     @Bean
     public Queue dependentAddedDlq() {
         return QueueBuilder.durable(QUEUE_DEPENDENT_ADDED_DLQ).build();
+    }
+
+    @Bean
+    public Queue memberRemovedDlq() {
+        return QueueBuilder.durable(QUEUE_MEMBER_REMOVED_DLQ).build();
+    }
+
+    @Bean
+    public Queue dependentRemovedDlq() {
+        return QueueBuilder.durable(QUEUE_DEPENDENT_REMOVED_DLQ).build();
     }
 
     @Bean
@@ -145,6 +185,18 @@ public class RabbitMqConfig {
     public Binding dependentAddedDlqBinding(final Queue dependentAddedDlq,
                                              final DirectExchange deadLetterExchange) {
         return BindingBuilder.bind(dependentAddedDlq).to(deadLetterExchange).with(QUEUE_DEPENDENT_ADDED_DLQ);
+    }
+
+    @Bean
+    public Binding memberRemovedDlqBinding(final Queue memberRemovedDlq,
+                                            final DirectExchange deadLetterExchange) {
+        return BindingBuilder.bind(memberRemovedDlq).to(deadLetterExchange).with(QUEUE_MEMBER_REMOVED_DLQ);
+    }
+
+    @Bean
+    public Binding dependentRemovedDlqBinding(final Queue dependentRemovedDlq,
+                                               final DirectExchange deadLetterExchange) {
+        return BindingBuilder.bind(dependentRemovedDlq).to(deadLetterExchange).with(QUEUE_DEPENDENT_REMOVED_DLQ);
     }
 
     @Bean

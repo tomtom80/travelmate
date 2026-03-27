@@ -1,8 +1,8 @@
 @manuell
-Feature: Member Registration via Invitation
+Feature: Member Registration via Travel Party Invitation
   As a person who has been invited to join a Reisepartei
-  I want to click the link in my invitation email, set a password, and log in
-  So that I can join the travel party without interfering with the organizer's session
+  I want to click the link in my travel-party invitation email, set a password, and log in
+  So that I can join the travel party without interfering with the organizer's session and independently from trip invitations
 
   # ALL scenarios require multi-browser sessions + Mailpit API integration.
   # Tagged @manuell at feature level — none are automatable in single-browser E2E.
@@ -23,6 +23,13 @@ Feature: Member Registration via Invitation
     And I submit the registration form
     Then I can log in with the new credentials
     And the dashboard shows "Familie Mueller"
+
+  Scenario: Travel-party invitation onboarding does not auto-join a trip
+    Given Lisa was invited as a member of "Familie Mueller" but has no trip invitation yet
+    When Lisa completes registration from the member invitation link
+    Then Lisa can log in with the new credentials
+    And the dashboard shows "Familie Mueller"
+    And no trip is joined automatically as part of the travel-party invitation flow
 
   Scenario: Completing member registration does not affect the organizer's session
     Given Anna is currently logged in in browser A

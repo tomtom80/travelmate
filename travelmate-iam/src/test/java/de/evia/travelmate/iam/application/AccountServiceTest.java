@@ -46,6 +46,7 @@ import de.evia.travelmate.iam.domain.dependent.Dependent;
 import de.evia.travelmate.iam.domain.dependent.DependentId;
 import de.evia.travelmate.iam.domain.dependent.DependentRepository;
 import de.evia.travelmate.iam.domain.registration.InvitationToken;
+import de.evia.travelmate.iam.domain.tripparticipation.TripParticipationRepository;
 
 @ExtendWith(MockitoExtension.class)
 class AccountServiceTest {
@@ -61,6 +62,9 @@ class AccountServiceTest {
 
     @Mock
     private RegistrationService registrationService;
+
+    @Mock
+    private TripParticipationRepository tripParticipationRepository;
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
@@ -139,6 +143,7 @@ class AccountServiceTest {
         final Dependent dependent = IamTestFixtures.dependent();
         when(dependentRepository.findById(any(DependentId.class)))
             .thenReturn(Optional.of(dependent));
+        when(tripParticipationRepository.existsByParticipantId(dependent.dependentId().value())).thenReturn(false);
 
         accountService.deleteDependent(dependent.dependentId().value());
 
@@ -152,6 +157,7 @@ class AccountServiceTest {
         when(accountRepository.countByTenantId(IamTestFixtures.TENANT_ID)).thenReturn(2L);
         when(accountRepository.findById(IamTestFixtures.ACCOUNT_ID))
             .thenReturn(Optional.of(account));
+        when(tripParticipationRepository.existsByParticipantId(IamTestFixtures.ACCOUNT_ID.value())).thenReturn(false);
 
         accountService.deleteMember(IamTestFixtures.ACCOUNT_ID, IamTestFixtures.TENANT_ID);
 
@@ -166,6 +172,26 @@ class AccountServiceTest {
         assertThatThrownBy(() -> accountService.deleteMember(IamTestFixtures.ACCOUNT_ID, IamTestFixtures.TENANT_ID))
             .isInstanceOf(BusinessRuleViolationException.class)
             .hasMessageContaining("lastMember");
+    }
+
+    @Test
+    void deleteMemberRejectsTripParticipants() {
+        when(accountRepository.countByTenantId(IamTestFixtures.TENANT_ID)).thenReturn(2L);
+        when(tripParticipationRepository.existsByParticipantId(IamTestFixtures.ACCOUNT_ID.value())).thenReturn(true);
+
+        assertThatThrownBy(() -> accountService.deleteMember(IamTestFixtures.ACCOUNT_ID, IamTestFixtures.TENANT_ID))
+            .isInstanceOf(BusinessRuleViolationException.class)
+            .hasMessageContaining("tripParticipation");
+    }
+
+    @Test
+    void deleteDependentRejectsTripParticipants() {
+        final UUID dependentId = UUID.randomUUID();
+        when(tripParticipationRepository.existsByParticipantId(dependentId)).thenReturn(true);
+
+        assertThatThrownBy(() -> accountService.deleteDependent(dependentId))
+            .isInstanceOf(BusinessRuleViolationException.class)
+            .hasMessageContaining("tripParticipation");
     }
 
     @Test

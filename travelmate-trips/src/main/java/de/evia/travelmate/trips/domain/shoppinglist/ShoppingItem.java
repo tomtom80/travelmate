@@ -85,6 +85,17 @@ public class ShoppingItem {
         this.status = ShoppingItemStatus.ASSIGNED;
     }
 
+    void clearAssignmentOnParticipantRemoval(final UUID participantId) {
+        argumentIsNotNull(participantId, "participantId");
+        if (!participantId.equals(this.assignedTo)) {
+            return;
+        }
+        if (this.status == ShoppingItemStatus.OPEN || this.status == ShoppingItemStatus.ASSIGNED) {
+            this.status = ShoppingItemStatus.OPEN;
+            this.assignedTo = null;
+        }
+    }
+
     public ShoppingItemId shoppingItemId() {
         return shoppingItemId;
     }

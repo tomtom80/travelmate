@@ -19,19 +19,21 @@ class InvitationTest {
 
     @Test
     void createInitializesInvitationAsPending() {
-        final Invitation invitation = Invitation.create(TENANT_ID, TRIP_ID, INVITEE_ID, INVITED_BY);
+        final UUID targetPartyTenantId = UUID.randomUUID();
+        final Invitation invitation = Invitation.create(TENANT_ID, TRIP_ID, INVITEE_ID, INVITED_BY, targetPartyTenantId);
 
         assertThat(invitation.invitationId()).isNotNull();
         assertThat(invitation.tenantId()).isEqualTo(TENANT_ID);
         assertThat(invitation.tripId()).isEqualTo(TRIP_ID);
         assertThat(invitation.inviteeId()).isEqualTo(INVITEE_ID);
         assertThat(invitation.invitedBy()).isEqualTo(INVITED_BY);
+        assertThat(invitation.targetPartyTenantId()).isEqualTo(targetPartyTenantId);
         assertThat(invitation.status()).isEqualTo(InvitationStatus.PENDING);
     }
 
     @Test
     void acceptTransitionsToPendingToAccepted() {
-        final Invitation invitation = Invitation.create(TENANT_ID, TRIP_ID, INVITEE_ID, INVITED_BY);
+        final Invitation invitation = Invitation.create(TENANT_ID, TRIP_ID, INVITEE_ID, INVITED_BY, UUID.randomUUID());
 
         invitation.accept();
 
@@ -40,7 +42,7 @@ class InvitationTest {
 
     @Test
     void declineTransitionsPendingToDeclined() {
-        final Invitation invitation = Invitation.create(TENANT_ID, TRIP_ID, INVITEE_ID, INVITED_BY);
+        final Invitation invitation = Invitation.create(TENANT_ID, TRIP_ID, INVITEE_ID, INVITED_BY, UUID.randomUUID());
 
         invitation.decline();
 
@@ -49,7 +51,7 @@ class InvitationTest {
 
     @Test
     void cannotAcceptAlreadyAcceptedInvitation() {
-        final Invitation invitation = Invitation.create(TENANT_ID, TRIP_ID, INVITEE_ID, INVITED_BY);
+        final Invitation invitation = Invitation.create(TENANT_ID, TRIP_ID, INVITEE_ID, INVITED_BY, UUID.randomUUID());
         invitation.accept();
 
         assertThatThrownBy(invitation::accept)
@@ -58,7 +60,7 @@ class InvitationTest {
 
     @Test
     void cannotDeclineAlreadyAcceptedInvitation() {
-        final Invitation invitation = Invitation.create(TENANT_ID, TRIP_ID, INVITEE_ID, INVITED_BY);
+        final Invitation invitation = Invitation.create(TENANT_ID, TRIP_ID, INVITEE_ID, INVITED_BY, UUID.randomUUID());
         invitation.accept();
 
         assertThatThrownBy(invitation::decline)
@@ -67,7 +69,7 @@ class InvitationTest {
 
     @Test
     void cannotAcceptDeclinedInvitation() {
-        final Invitation invitation = Invitation.create(TENANT_ID, TRIP_ID, INVITEE_ID, INVITED_BY);
+        final Invitation invitation = Invitation.create(TENANT_ID, TRIP_ID, INVITEE_ID, INVITED_BY, UUID.randomUUID());
         invitation.decline();
 
         assertThatThrownBy(invitation::accept)
@@ -76,25 +78,25 @@ class InvitationTest {
 
     @Test
     void rejectsNullTenantId() {
-        assertThatThrownBy(() -> Invitation.create(null, TRIP_ID, INVITEE_ID, INVITED_BY))
+        assertThatThrownBy(() -> Invitation.create(null, TRIP_ID, INVITEE_ID, INVITED_BY, UUID.randomUUID()))
             .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void rejectsNullTripId() {
-        assertThatThrownBy(() -> Invitation.create(TENANT_ID, null, INVITEE_ID, INVITED_BY))
+        assertThatThrownBy(() -> Invitation.create(TENANT_ID, null, INVITEE_ID, INVITED_BY, UUID.randomUUID()))
             .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void rejectsNullInviteeId() {
-        assertThatThrownBy(() -> Invitation.create(TENANT_ID, TRIP_ID, null, INVITED_BY))
+        assertThatThrownBy(() -> Invitation.create(TENANT_ID, TRIP_ID, null, INVITED_BY, UUID.randomUUID()))
             .isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test
     void rejectsNullInvitedBy() {
-        assertThatThrownBy(() -> Invitation.create(TENANT_ID, TRIP_ID, INVITEE_ID, null))
+        assertThatThrownBy(() -> Invitation.create(TENANT_ID, TRIP_ID, INVITEE_ID, null, UUID.randomUUID()))
             .isInstanceOf(IllegalArgumentException.class);
     }
 
@@ -116,17 +118,19 @@ class InvitationTest {
         final Invitation invitation = Invitation.inviteExternal(TENANT_ID, TRIP_ID, "ext@test.de", INVITED_BY);
         final UUID memberId = UUID.randomUUID();
 
-        invitation.linkToMember(memberId);
+        final UUID targetPartyTenantId = UUID.randomUUID();
+        invitation.linkToMember(memberId, targetPartyTenantId);
 
         assertThat(invitation.inviteeId()).isEqualTo(memberId);
+        assertThat(invitation.targetPartyTenantId()).isEqualTo(targetPartyTenantId);
         assertThat(invitation.status()).isEqualTo(InvitationStatus.ACCEPTED);
     }
 
     @Test
     void linkToMemberRejectsNonAwaitingStatus() {
-        final Invitation invitation = Invitation.create(TENANT_ID, TRIP_ID, INVITEE_ID, INVITED_BY);
+        final Invitation invitation = Invitation.create(TENANT_ID, TRIP_ID, INVITEE_ID, INVITED_BY, UUID.randomUUID());
 
-        assertThatThrownBy(() -> invitation.linkToMember(UUID.randomUUID()))
+        assertThatThrownBy(() -> invitation.linkToMember(UUID.randomUUID(), UUID.randomUUID()))
             .isInstanceOf(IllegalStateException.class);
     }
 

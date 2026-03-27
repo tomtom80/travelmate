@@ -17,6 +17,7 @@ public class Invitation extends AggregateRoot {
     private UUID inviteeId;
     private final UUID invitedBy;
     private final String inviteeEmail;
+    private UUID targetPartyTenantId;
     private final InvitationType invitationType;
     private InvitationStatus status;
 
@@ -26,6 +27,7 @@ public class Invitation extends AggregateRoot {
                       final UUID inviteeId,
                       final UUID invitedBy,
                       final String inviteeEmail,
+                      final UUID targetPartyTenantId,
                       final InvitationType invitationType,
                       final InvitationStatus status) {
         argumentIsNotNull(invitationId, "invitationId");
@@ -40,6 +42,7 @@ public class Invitation extends AggregateRoot {
         this.inviteeId = inviteeId;
         this.invitedBy = invitedBy;
         this.inviteeEmail = inviteeEmail;
+        this.targetPartyTenantId = targetPartyTenantId;
         this.invitationType = invitationType;
         this.status = status;
     }
@@ -47,12 +50,13 @@ public class Invitation extends AggregateRoot {
     public static Invitation create(final TenantId tenantId,
                                     final TripId tripId,
                                     final UUID inviteeId,
-                                    final UUID invitedBy) {
+                                    final UUID invitedBy,
+                                    final UUID targetPartyTenantId) {
         argumentIsNotNull(inviteeId, "inviteeId");
         return new Invitation(
             new InvitationId(UUID.randomUUID()),
             tenantId, tripId, inviteeId, invitedBy,
-            null, InvitationType.MEMBER, InvitationStatus.PENDING
+            null, targetPartyTenantId, InvitationType.MEMBER, InvitationStatus.PENDING
         );
     }
 
@@ -67,17 +71,18 @@ public class Invitation extends AggregateRoot {
         return new Invitation(
             new InvitationId(UUID.randomUUID()),
             tenantId, tripId, null, invitedBy,
-            inviteeEmail, InvitationType.EXTERNAL, InvitationStatus.AWAITING_REGISTRATION
+            inviteeEmail, null, InvitationType.EXTERNAL, InvitationStatus.AWAITING_REGISTRATION
         );
     }
 
-    public void linkToMember(final UUID memberId) {
+    public void linkToMember(final UUID memberId, final UUID targetPartyTenantId) {
         argumentIsNotNull(memberId, "memberId");
         if (this.status != InvitationStatus.AWAITING_REGISTRATION) {
             throw new IllegalStateException(
                 "Cannot link member to invitation in status " + this.status);
         }
         this.inviteeId = memberId;
+        this.targetPartyTenantId = targetPartyTenantId;
         this.status = InvitationStatus.ACCEPTED;
     }
 
@@ -120,6 +125,10 @@ public class Invitation extends AggregateRoot {
 
     public String inviteeEmail() {
         return inviteeEmail;
+    }
+
+    public UUID targetPartyTenantId() {
+        return targetPartyTenantId;
     }
 
     public InvitationType invitationType() {

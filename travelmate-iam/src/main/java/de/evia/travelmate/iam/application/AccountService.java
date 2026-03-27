@@ -31,6 +31,7 @@ import de.evia.travelmate.iam.domain.dependent.Dependent;
 import de.evia.travelmate.iam.domain.dependent.DependentId;
 import de.evia.travelmate.iam.domain.dependent.DependentRepository;
 import de.evia.travelmate.iam.domain.registration.InvitationToken;
+import de.evia.travelmate.iam.domain.tripparticipation.TripParticipationRepository;
 
 @Service
 @Transactional
@@ -40,17 +41,20 @@ public class AccountService {
     private final DependentRepository dependentRepository;
     private final IdentityProviderService identityProviderService;
     private final RegistrationService registrationService;
+    private final TripParticipationRepository tripParticipationRepository;
     private final ApplicationEventPublisher eventPublisher;
 
     public AccountService(final AccountRepository accountRepository,
                           final DependentRepository dependentRepository,
                           final IdentityProviderService identityProviderService,
                           final RegistrationService registrationService,
+                          final TripParticipationRepository tripParticipationRepository,
                           final ApplicationEventPublisher eventPublisher) {
         this.accountRepository = accountRepository;
         this.dependentRepository = dependentRepository;
         this.identityProviderService = identityProviderService;
         this.registrationService = registrationService;
+        this.tripParticipationRepository = tripParticipationRepository;
         this.eventPublisher = eventPublisher;
     }
 
@@ -122,6 +126,9 @@ public class AccountService {
     }
 
     public void deleteDependent(final UUID dependentId) {
+        if (tripParticipationRepository.existsByParticipantId(dependentId)) {
+            throw new BusinessRuleViolationException("member.error.tripParticipation");
+        }
         final Dependent dependent = dependentRepository.findById(new DependentId(dependentId))
             .orElseThrow(() -> new EntityNotFoundException("Dependent", dependentId.toString()));
         dependent.markForRemoval();
@@ -133,6 +140,9 @@ public class AccountService {
         final long memberCount = accountRepository.countByTenantId(tenantId);
         if (memberCount <= 1) {
             throw new BusinessRuleViolationException("member.error.lastMember");
+        }
+        if (tripParticipationRepository.existsByParticipantId(accountId.value())) {
+            throw new BusinessRuleViolationException("member.error.tripParticipation");
         }
         final Account account = accountRepository.findById(accountId)
             .orElseThrow(() -> new EntityNotFoundException("Account", accountId.value().toString()));

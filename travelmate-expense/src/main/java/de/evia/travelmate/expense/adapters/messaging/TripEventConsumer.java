@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import de.evia.travelmate.common.events.trips.AccommodationPriceSet;
 import de.evia.travelmate.common.events.trips.ParticipantJoinedTrip;
+import de.evia.travelmate.common.events.trips.ParticipantRemovedFromTrip;
 import de.evia.travelmate.common.events.trips.StayPeriodUpdated;
 import de.evia.travelmate.common.events.trips.TripCompleted;
 import de.evia.travelmate.common.events.trips.TripCreated;
@@ -25,6 +26,7 @@ public class TripEventConsumer {
     private final ExpenseService expenseService;
     private final Timer tripCreatedTimer;
     private final Timer participantJoinedTimer;
+    private final Timer participantRemovedTimer;
     private final Timer stayPeriodUpdatedTimer;
     private final Timer tripCompletedTimer;
     private final Timer accommodationPriceSetTimer;
@@ -33,6 +35,7 @@ public class TripEventConsumer {
         this.expenseService = expenseService;
         this.tripCreatedTimer = eventTimer(meterRegistry, "TripCreated");
         this.participantJoinedTimer = eventTimer(meterRegistry, "ParticipantJoinedTrip");
+        this.participantRemovedTimer = eventTimer(meterRegistry, "ParticipantRemovedFromTrip");
         this.stayPeriodUpdatedTimer = eventTimer(meterRegistry, "StayPeriodUpdated");
         this.tripCompletedTimer = eventTimer(meterRegistry, "TripCompleted");
         this.accommodationPriceSetTimer = eventTimer(meterRegistry, "AccommodationPriceSet");
@@ -49,6 +52,13 @@ public class TripEventConsumer {
         LOG.info("Received ParticipantJoinedTrip for trip {} participant {}",
             event.tripId(), event.participantId());
         participantJoinedTimer.record(() -> expenseService.onParticipantJoined(event));
+    }
+
+    @RabbitListener(queues = RabbitMqConfig.QUEUE_PARTICIPANT_REMOVED)
+    public void onParticipantRemoved(final ParticipantRemovedFromTrip event) {
+        LOG.info("Received ParticipantRemovedFromTrip for trip {} participant {}",
+            event.tripId(), event.participantId());
+        participantRemovedTimer.record(() -> expenseService.onParticipantRemoved(event));
     }
 
     @RabbitListener(queues = RabbitMqConfig.QUEUE_STAY_PERIOD_UPDATED)

@@ -6,6 +6,8 @@ import org.springframework.transaction.annotation.Transactional;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.common.events.iam.AccountRegistered;
 import de.evia.travelmate.common.events.iam.DependentAddedToTenant;
+import de.evia.travelmate.common.events.iam.DependentRemovedFromTenant;
+import de.evia.travelmate.common.events.iam.MemberRemovedFromTenant;
 import de.evia.travelmate.common.events.iam.TenantCreated;
 import de.evia.travelmate.common.events.iam.TenantRenamed;
 import de.evia.travelmate.trips.domain.travelparty.TravelParty;
@@ -64,6 +66,28 @@ public class TravelPartyService {
         party.addDependent(event.dependentId(), event.guardianAccountId(),
             event.firstName(), event.lastName(), event.dateOfBirth());
         repository.save(party);
+    }
+
+    @Transactional
+    public void onMemberRemoved(final MemberRemovedFromTenant event) {
+        final TenantId tenantId = new TenantId(event.tenantId());
+        repository.findByTenantId(tenantId).ifPresent(party -> {
+            if (party.hasMember(event.accountId())) {
+                party.removeMember(event.accountId());
+                repository.save(party);
+            }
+        });
+    }
+
+    @Transactional
+    public void onDependentRemoved(final DependentRemovedFromTenant event) {
+        final TenantId tenantId = new TenantId(event.tenantId());
+        repository.findByTenantId(tenantId).ifPresent(party -> {
+            if (party.findDependent(event.dependentId()).isPresent()) {
+                party.removeDependent(event.dependentId());
+                repository.save(party);
+            }
+        });
     }
 
     private TravelParty findOrCreateParty(final TenantId tenantId) {

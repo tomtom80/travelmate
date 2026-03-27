@@ -23,7 +23,11 @@ import de.evia.travelmate.common.messaging.RoutingKeys;
 public class RabbitMqConfig {
 
     public static final String QUEUE_EXTERNAL_USER_INVITED = "iam.external-user-invited";
+    public static final String QUEUE_PARTICIPANT_JOINED = "iam.participant-joined";
+    public static final String QUEUE_PARTICIPANT_REMOVED = "iam.participant-removed";
     public static final String QUEUE_EXTERNAL_USER_INVITED_DLQ = QUEUE_EXTERNAL_USER_INVITED + ".dlq";
+    public static final String QUEUE_PARTICIPANT_JOINED_DLQ = QUEUE_PARTICIPANT_JOINED + ".dlq";
+    public static final String QUEUE_PARTICIPANT_REMOVED_DLQ = QUEUE_PARTICIPANT_REMOVED + ".dlq";
 
     @Bean
     public TopicExchange topicExchange() {
@@ -52,10 +56,40 @@ public class RabbitMqConfig {
     }
 
     @Bean
+    public Queue participantJoinedQueue() {
+        return QueueBuilder.durable(QUEUE_PARTICIPANT_JOINED)
+            .withArgument("x-dead-letter-exchange", RoutingKeys.DLX_EXCHANGE)
+            .withArgument("x-dead-letter-routing-key", QUEUE_PARTICIPANT_JOINED_DLQ)
+            .build();
+    }
+
+    @Bean
+    public Queue participantRemovedQueue() {
+        return QueueBuilder.durable(QUEUE_PARTICIPANT_REMOVED)
+            .withArgument("x-dead-letter-exchange", RoutingKeys.DLX_EXCHANGE)
+            .withArgument("x-dead-letter-routing-key", QUEUE_PARTICIPANT_REMOVED_DLQ)
+            .build();
+    }
+
+    @Bean
     public Binding externalUserInvitedBinding(final Queue externalUserInvitedQueue,
                                               final TopicExchange topicExchange) {
         return BindingBuilder.bind(externalUserInvitedQueue).to(topicExchange)
             .with(RoutingKeys.EXTERNAL_USER_INVITED);
+    }
+
+    @Bean
+    public Binding participantJoinedBinding(final Queue participantJoinedQueue,
+                                            final TopicExchange topicExchange) {
+        return BindingBuilder.bind(participantJoinedQueue).to(topicExchange)
+            .with(RoutingKeys.PARTICIPANT_CONFIRMED);
+    }
+
+    @Bean
+    public Binding participantRemovedBinding(final Queue participantRemovedQueue,
+                                             final TopicExchange topicExchange) {
+        return BindingBuilder.bind(participantRemovedQueue).to(topicExchange)
+            .with(RoutingKeys.PARTICIPANT_REMOVED);
     }
 
     @Bean
@@ -64,9 +98,33 @@ public class RabbitMqConfig {
     }
 
     @Bean
+    public Queue participantJoinedDlq() {
+        return QueueBuilder.durable(QUEUE_PARTICIPANT_JOINED_DLQ).build();
+    }
+
+    @Bean
+    public Queue participantRemovedDlq() {
+        return QueueBuilder.durable(QUEUE_PARTICIPANT_REMOVED_DLQ).build();
+    }
+
+    @Bean
     public Binding externalUserInvitedDlqBinding(final Queue externalUserInvitedDlq,
                                                   final DirectExchange deadLetterExchange) {
         return BindingBuilder.bind(externalUserInvitedDlq).to(deadLetterExchange)
             .with(QUEUE_EXTERNAL_USER_INVITED_DLQ);
+    }
+
+    @Bean
+    public Binding participantJoinedDlqBinding(final Queue participantJoinedDlq,
+                                               final DirectExchange deadLetterExchange) {
+        return BindingBuilder.bind(participantJoinedDlq).to(deadLetterExchange)
+            .with(QUEUE_PARTICIPANT_JOINED_DLQ);
+    }
+
+    @Bean
+    public Binding participantRemovedDlqBinding(final Queue participantRemovedDlq,
+                                                final DirectExchange deadLetterExchange) {
+        return BindingBuilder.bind(participantRemovedDlq).to(deadLetterExchange)
+            .with(QUEUE_PARTICIPANT_REMOVED_DLQ);
     }
 }

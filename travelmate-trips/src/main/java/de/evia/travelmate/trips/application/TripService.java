@@ -9,6 +9,7 @@ import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import de.evia.travelmate.common.domain.BusinessRuleViolationException;
 import de.evia.travelmate.common.domain.DomainEvent;
 import de.evia.travelmate.common.domain.DuplicateEntityException;
 import de.evia.travelmate.common.domain.EntityNotFoundException;
@@ -22,6 +23,7 @@ import de.evia.travelmate.trips.application.command.SetStayPeriodCommand;
 import de.evia.travelmate.trips.application.representation.TripRepresentation;
 import de.evia.travelmate.trips.domain.travelparty.TravelParty;
 import de.evia.travelmate.trips.domain.travelparty.TravelPartyRepository;
+import de.evia.travelmate.trips.domain.shoppinglist.ShoppingListRepository;
 import de.evia.travelmate.trips.domain.trip.DateRange;
 import de.evia.travelmate.trips.domain.trip.Participant;
 import de.evia.travelmate.trips.domain.trip.StayPeriod;
@@ -29,6 +31,7 @@ import de.evia.travelmate.trips.domain.trip.Trip;
 import de.evia.travelmate.trips.domain.trip.TripId;
 import de.evia.travelmate.trips.domain.trip.TripName;
 import de.evia.travelmate.trips.domain.trip.TripRepository;
+import de.evia.travelmate.trips.domain.trip.TripStatus;
 
 @Service
 @Transactional
@@ -36,14 +39,20 @@ public class TripService {
 
     private final TripRepository tripRepository;
     private final TravelPartyRepository travelPartyRepository;
+    private final ShoppingListRepository shoppingListRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final TripParticipationEventPublisher tripParticipationEventPublisher;
 
     public TripService(final TripRepository tripRepository,
                        final TravelPartyRepository travelPartyRepository,
-                       final ApplicationEventPublisher eventPublisher) {
+                       final ShoppingListRepository shoppingListRepository,
+                       final ApplicationEventPublisher eventPublisher,
+                       final TripParticipationEventPublisher tripParticipationEventPublisher) {
         this.tripRepository = tripRepository;
         this.travelPartyRepository = travelPartyRepository;
+        this.shoppingListRepository = shoppingListRepository;
         this.eventPublisher = eventPublisher;
+        this.tripParticipationEventPublisher = tripParticipationEventPublisher;
     }
 
     public TripRepresentation createTrip(final CreateTripCommand command) {
@@ -170,7 +179,7 @@ public class TripService {
         if (member != null) {
             trip.addParticipant(member.memberId(), member.firstName(), member.lastName());
             tripRepository.save(trip);
-            eventPublisher.publishEvent(new ParticipantJoinedTrip(
+            tripParticipationEventPublisher.publishParticipantJoinedAfterCommit(new ParticipantJoinedTrip(
                 trip.tenantId().value(),
                 trip.tripId().value(),
                 member.memberId(),
@@ -191,7 +200,7 @@ public class TripService {
                 "Only participants from the actor's own travel party can be added."));
         trip.addParticipant(dependent.dependentId(), dependent.firstName(), dependent.lastName());
         tripRepository.save(trip);
-        eventPublisher.publishEvent(new ParticipantJoinedTrip(
+        tripParticipationEventPublisher.publishParticipantJoinedAfterCommit(new ParticipantJoinedTrip(
             trip.tenantId().value(),
             trip.tripId().value(),
             dependent.dependentId(),
@@ -206,12 +215,20 @@ public class TripService {
 
     public void removeParticipantFromTrip(final RemoveParticipantFromTripCommand command) {
         final Trip trip = findTrip(new TripId(command.tripId()));
+        if (trip.status() == TripStatus.COMPLETED) {
+            throw new BusinessRuleViolationException("participant.error.completedTripRemovalNotAllowed");
+        }
         final TravelParty actorParty = travelPartyRepository.findByTenantId(new TenantId(command.actorPartyTenantId()))
             .orElseThrow(() -> new EntityNotFoundException("TravelParty", command.actorPartyTenantId().toString()));
         assertActorCanManageOwnPartyParticipant(actorParty, command.actorId(), command.participantId());
 
         trip.removeParticipant(command.participantId());
         tripRepository.save(trip);
+        shoppingListRepository.findByTripIdAndTenantId(trip.tripId(), trip.tenantId()).ifPresent(shoppingList -> {
+            shoppingList.clearAssignmentsForParticipant(command.participantId());
+            shoppingListRepository.save(shoppingList);
+        });
+        publishEvents(trip);
     }
 
     public void grantTripOrganizer(final GrantTripOrganizerCommand command) {
@@ -247,7 +264,7 @@ public class TripService {
         for (final Participant participant : trip.participants()) {
             final var member = party.findMember(participant.participantId());
             if (member.isPresent()) {
-                eventPublisher.publishEvent(new ParticipantJoinedTrip(
+                tripParticipationEventPublisher.publishParticipantJoinedAfterCommit(new ParticipantJoinedTrip(
                     trip.tenantId().value(),
                     trip.tripId().value(),
                     participant.participantId(),
@@ -263,7 +280,7 @@ public class TripService {
             final var dependent = party.findDependent(participant.participantId())
                 .orElseThrow(() -> new IllegalStateException(
                     "Participant " + participant.participantId() + " missing from travel party projection."));
-            eventPublisher.publishEvent(new ParticipantJoinedTrip(
+            tripParticipationEventPublisher.publishParticipantJoinedAfterCommit(new ParticipantJoinedTrip(
                 trip.tenantId().value(),
                 trip.tripId().value(),
                 participant.participantId(),

@@ -19,7 +19,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.common.events.iam.AccountRegistered;
 import de.evia.travelmate.common.events.iam.DependentAddedToTenant;
+import de.evia.travelmate.common.events.iam.DependentRemovedFromTenant;
+import de.evia.travelmate.common.events.iam.MemberRemovedFromTenant;
 import de.evia.travelmate.common.events.iam.TenantCreated;
+import de.evia.travelmate.common.events.iam.TenantRenamed;
 import de.evia.travelmate.trips.domain.travelparty.TravelParty;
 import de.evia.travelmate.trips.domain.travelparty.TravelPartyRepository;
 
@@ -147,6 +150,48 @@ class TravelPartyServiceTest {
         assertThat(party.dependents()).hasSize(1);
         assertThat(party.dependents().getFirst().dependentId()).isEqualTo(dependentId);
         assertThat(party.dependents().getFirst().dateOfBirth()).isEqualTo(LocalDate.of(2020, 8, 10));
+        verify(repository).save(party);
+    }
+
+    @Test
+    void onTenantRenamedUpdatesPartyName() {
+        final UUID tenantId = UUID.randomUUID();
+        final TravelParty party = TravelParty.create(new TenantId(tenantId), "Alt");
+        when(repository.findByTenantId(new TenantId(tenantId))).thenReturn(Optional.of(party));
+
+        service.onTenantRenamed(new TenantRenamed(tenantId, "Neu", LocalDate.now()));
+
+        assertThat(party.name()).isEqualTo("Neu");
+        verify(repository).save(party);
+    }
+
+    @Test
+    void onMemberRemovedDeletesMemberFromProjection() {
+        final UUID tenantId = UUID.randomUUID();
+        final UUID accountId = UUID.randomUUID();
+        final TravelParty party = TravelParty.create(new TenantId(tenantId), "Familie Test");
+        party.addMember(accountId, "member@example.com", "Max", "Mustermann");
+        when(repository.findByTenantId(new TenantId(tenantId))).thenReturn(Optional.of(party));
+
+        service.onMemberRemoved(new MemberRemovedFromTenant(tenantId, accountId, "member@example.com", LocalDate.now()));
+
+        assertThat(party.members()).isEmpty();
+        verify(repository).save(party);
+    }
+
+    @Test
+    void onDependentRemovedDeletesDependentFromProjection() {
+        final UUID tenantId = UUID.randomUUID();
+        final UUID guardianId = UUID.randomUUID();
+        final UUID dependentId = UUID.randomUUID();
+        final TravelParty party = TravelParty.create(new TenantId(tenantId), "Familie Test");
+        party.addMember(guardianId, "guardian@example.com", "Max", "Mustermann");
+        party.addDependent(dependentId, guardianId, "Lena", "Mustermann");
+        when(repository.findByTenantId(new TenantId(tenantId))).thenReturn(Optional.of(party));
+
+        service.onDependentRemoved(new DependentRemovedFromTenant(tenantId, dependentId, LocalDate.now()));
+
+        assertThat(party.dependents()).isEmpty();
         verify(repository).save(party);
     }
 }

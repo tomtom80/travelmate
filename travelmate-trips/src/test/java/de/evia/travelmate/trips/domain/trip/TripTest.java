@@ -10,6 +10,7 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.common.events.trips.ParticipantRemovedFromTrip;
 import de.evia.travelmate.common.events.trips.StayPeriodUpdated;
 import de.evia.travelmate.common.events.trips.TripCompleted;
 import de.evia.travelmate.common.events.trips.TripCreated;
@@ -85,11 +86,13 @@ class TripTest {
     void removeParticipant() {
         final UUID participantId = UUID.randomUUID();
         final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID, List.of(ORGANIZER_ID, participantId));
+        trip.clearDomainEvents();
 
         trip.removeParticipant(participantId);
 
         assertThat(trip.hasParticipant(participantId)).isFalse();
         assertThat(trip.participants()).hasSize(1);
+        assertThat(trip.domainEvents()).singleElement().isInstanceOf(ParticipantRemovedFromTrip.class);
     }
 
     @Test

@@ -16,6 +16,8 @@
                     <td th:data-label="#{invitation.member}">
                         <span th:text="${inv.inviteeName()}"></span>
                         <small th:if="${inv.invitationType() == 'EXTERNAL'}" th:text="#{invitation.statusExternal}"> (extern)</small>
+                        <small th:if="${inv.targetPartyName() != null}"
+                               th:text="|#{invitation.party}: ${inv.targetPartyName()}|">Reisepartei: Familie Test</small>
                     </td>
                     <td th:data-label="#{trip.status}"><mark th:text="#{${'invitation.status.' + inv.status()}}"></mark></td>
                     <td th:data-label="#{common.actions}" th:if="${inv.status() == 'PENDING' && inv.inviteeId() == currentMemberId}">

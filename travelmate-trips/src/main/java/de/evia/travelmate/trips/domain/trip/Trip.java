@@ -10,6 +10,7 @@ import java.util.UUID;
 
 import de.evia.travelmate.common.domain.AggregateRoot;
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.common.events.trips.ParticipantRemovedFromTrip;
 import de.evia.travelmate.common.events.trips.StayPeriodUpdated;
 import de.evia.travelmate.common.events.trips.TripCompleted;
 import de.evia.travelmate.common.events.trips.TripCreated;
@@ -116,6 +117,12 @@ public class Trip extends AggregateRoot {
         if (!removed) {
             throw new IllegalArgumentException("Participant " + participantId + " not found in this trip.");
         }
+        registerEvent(new ParticipantRemovedFromTrip(
+            tenantId.value(),
+            tripId.value(),
+            participantId,
+            LocalDate.now()
+        ));
     }
 
     public void grantOrganizerRights(final UUID participantId) {

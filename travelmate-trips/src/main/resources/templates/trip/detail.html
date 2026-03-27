@@ -98,7 +98,7 @@
                                               style="margin:0;">
                                             <button type="submit" th:text="#{trip.organizer.grant}">Zum Organizer machen</button>
                                         </form>
-                                        <form th:if="${p.participantId() != currentMemberId}"
+                                        <form th:if="${p.participantId() != currentMemberId && trip.status() != 'COMPLETED'}"
                                               method="post"
                                               th:action="@{/{tid}/participants/{pid}/remove(tid=${trip.tripId()},pid=${p.participantId()})}"
                                               style="margin:0;">

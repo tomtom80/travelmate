@@ -18,6 +18,9 @@ public interface InvitationRepository {
 
     List<Invitation> findByInviteeEmailAndStatus(String inviteeEmail, InvitationStatus status);
 
+    boolean existsByTripIdAndTargetPartyTenantIdInStatuses(TripId tripId, UUID targetPartyTenantId,
+                                                           List<InvitationStatus> statuses);
+
     boolean existsByTripIdAndInviteeId(TripId tripId, UUID inviteeId);
 
     boolean existsByTripIdAndInviteeEmail(TripId tripId, String inviteeEmail);

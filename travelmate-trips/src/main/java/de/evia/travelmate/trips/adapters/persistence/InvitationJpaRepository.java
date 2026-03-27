@@ -13,6 +13,8 @@ public interface InvitationJpaRepository extends JpaRepository<InvitationJpaEnti
 
     List<InvitationJpaEntity> findByInviteeEmailAndStatus(String inviteeEmail, String status);
 
+    boolean existsByTripIdAndTargetPartyTenantIdAndStatusIn(UUID tripId, UUID targetPartyTenantId, List<String> statuses);
+
     boolean existsByTripIdAndInviteeId(UUID tripId, UUID inviteeId);
 
     boolean existsByTripIdAndInviteeEmail(UUID tripId, String inviteeEmail);

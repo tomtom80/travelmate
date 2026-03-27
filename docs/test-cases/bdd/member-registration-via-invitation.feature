@@ -1,7 +1,7 @@
-Feature: Member Registration via Invitation
-  As a person who has been invited to join a Reisepartei
-  I want to click the link in my invitation email, set a password, and log in
-  So that I can join the travel party without interfering with the organizer's session
+Feature: Member Registration via Travel Party Invitation
+  As a person who has been invited to join an existing Reisepartei
+  I want to click the link in my travel-party invitation email, set my password during onboarding, and log in
+  So that I can join the travel party without interfering with the organizer's session and independently from trip invitations
 
   Background:
     Given "Anna Müller" is the organizer of "Familie Müller"
@@ -28,6 +28,15 @@ Feature: Member Registration via Invitation
     Then I am on the IAM dashboard
     And the dashboard shows "Familie Müller"
     And the dashboard shows "Lisa"
+
+  @happy-path
+  Scenario: Travel party invitation onboarding is distinct from trip invitations
+    Given I was invited as a member of "Familie Müller" but not yet to any trip
+    When I complete registration from the member invitation email
+    Then I can log in to Travelmate
+    And I am a member of "Familie Müller"
+    And I do not automatically join any trip
+    And any later trip invitation must be shown and handled separately inside Trips
 
   @happy-path
   Scenario: Completing member registration does not affect the organizer's session

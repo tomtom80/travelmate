@@ -5,8 +5,13 @@ import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
 import com.microsoft.playwright.Browser;
@@ -39,7 +44,7 @@ public class PlaywrightHooks {
 
     @BeforeAll
     public static void setUpBrowser() {
-        playwright = Playwright.create();
+        playwright = Playwright.create(new Playwright.CreateOptions().setEnv(playwrightEnv()));
         browser = playwright.chromium().launch(
             new BrowserType.LaunchOptions().setHeadless(true));
         context = browser.newContext();
@@ -228,5 +233,56 @@ public class PlaywrightHooks {
 
     private static String sqlLiteral(final String value) {
         return value.replace("'", "''");
+    }
+
+    private static Map<String, String> playwrightEnv() {
+        final Map<String, String> env = new HashMap<>(System.getenv());
+        final String browsersPath = preparePlaywrightBrowsersPath();
+        env.putIfAbsent("PLAYWRIGHT_BROWSERS_PATH", browsersPath);
+        return env;
+    }
+
+    private static String preparePlaywrightBrowsersPath() {
+        final String configuredPath = System.getProperty("e2e.playwrightBrowsersPath");
+        if (configuredPath != null && !configuredPath.isBlank()) {
+            return configuredPath;
+        }
+
+        final Path targetPath = Path.of(System.getProperty("java.io.tmpdir"), "ms-playwright");
+        final Path sourcePath = Path.of(System.getProperty("user.home"), "Library", "Caches", "ms-playwright");
+        try {
+            if (Files.notExists(targetPath)) {
+                if (Files.exists(sourcePath)) {
+                    copyDirectory(sourcePath, targetPath);
+                } else {
+                    Files.createDirectories(targetPath);
+                }
+            }
+        } catch (final Exception ignored) {
+        }
+        return targetPath.toString();
+    }
+
+    private static void copyDirectory(final Path sourcePath, final Path targetPath) throws java.io.IOException {
+        try (var paths = Files.walk(sourcePath)) {
+            paths.forEach(source -> {
+                try {
+                    final Path target = targetPath.resolve(sourcePath.relativize(source).toString());
+                    if (Files.isDirectory(source)) {
+                        Files.createDirectories(target);
+                    } else {
+                        Files.createDirectories(target.getParent());
+                        Files.copy(source, target, StandardCopyOption.REPLACE_EXISTING);
+                    }
+                } catch (final java.io.IOException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        } catch (final RuntimeException e) {
+            if (e.getCause() instanceof java.io.IOException ioException) {
+                throw ioException;
+            }
+            throw e;
+        }
     }
 }

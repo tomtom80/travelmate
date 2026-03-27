@@ -2,6 +2,7 @@ package de.evia.travelmate.expense.adapters.persistence;
 
 import java.util.Optional;
 import java.util.UUID;
+import java.util.List;
 
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -41,6 +42,13 @@ public class TripProjectionRepositoryAdapter implements TripProjectionRepository
     @Override
     public Optional<TripProjection> findByTripId(final UUID tripId) {
         return jpaRepository.findById(tripId).map(this::toDomain);
+    }
+
+    @Override
+    public List<TripProjection> findByPartyTenantId(final UUID partyTenantId) {
+        return jpaRepository.findDistinctByParticipantsPartyTenantId(partyTenantId).stream()
+            .map(this::toDomain)
+            .toList();
     }
 
     @Override

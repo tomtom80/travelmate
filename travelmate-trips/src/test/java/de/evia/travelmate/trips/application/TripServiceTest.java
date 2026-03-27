@@ -4,9 +4,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import java.time.LocalDate;
@@ -32,6 +34,10 @@ import de.evia.travelmate.trips.application.command.GrantTripOrganizerCommand;
 import de.evia.travelmate.trips.application.command.RemoveParticipantFromTripCommand;
 import de.evia.travelmate.trips.application.command.SetStayPeriodCommand;
 import de.evia.travelmate.trips.application.representation.TripRepresentation;
+import de.evia.travelmate.trips.domain.shoppinglist.ShoppingItem;
+import de.evia.travelmate.trips.domain.shoppinglist.ShoppingItemId;
+import de.evia.travelmate.trips.domain.shoppinglist.ShoppingList;
+import de.evia.travelmate.trips.domain.shoppinglist.ShoppingListRepository;
 import de.evia.travelmate.trips.domain.travelparty.TravelParty;
 import de.evia.travelmate.trips.domain.travelparty.TravelPartyRepository;
 import de.evia.travelmate.trips.domain.trip.DateRange;
@@ -54,7 +60,13 @@ class TripServiceTest {
     private TravelPartyRepository travelPartyRepository;
 
     @Mock
+    private ShoppingListRepository shoppingListRepository;
+
+    @Mock
     private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private TripParticipationEventPublisher tripParticipationEventPublisher;
 
     @InjectMocks
     private TripService tripService;
@@ -128,12 +140,9 @@ class TripServiceTest {
 
         tripService.createTrip(command);
 
-        final ArgumentCaptor<Object> eventCaptor = ArgumentCaptor.forClass(Object.class);
-        verify(eventPublisher, atLeastOnce()).publishEvent(eventCaptor.capture());
-        final List<ParticipantJoinedTrip> joinedEvents = eventCaptor.getAllValues().stream()
-            .filter(ParticipantJoinedTrip.class::isInstance)
-            .map(ParticipantJoinedTrip.class::cast)
-            .toList();
+        final ArgumentCaptor<ParticipantJoinedTrip> eventCaptor = ArgumentCaptor.forClass(ParticipantJoinedTrip.class);
+        verify(tripParticipationEventPublisher, atLeastOnce()).publishParticipantJoinedAfterCommit(eventCaptor.capture());
+        final List<ParticipantJoinedTrip> joinedEvents = eventCaptor.getAllValues();
         assertThat(joinedEvents).hasSize(2);
         assertThat(joinedEvents).extracting(ParticipantJoinedTrip::participantId)
             .containsExactlyInAnyOrder(ORGANIZER_ID, member2Id);
@@ -354,13 +363,9 @@ class TripServiceTest {
 
         assertThat(trip.hasParticipant(dependentId)).isTrue();
         verify(tripRepository).save(trip);
-        final ArgumentCaptor<Object> eventCaptor = ArgumentCaptor.forClass(Object.class);
-        verify(eventPublisher, atLeastOnce()).publishEvent(eventCaptor.capture());
-        final ParticipantJoinedTrip joinedEvent = eventCaptor.getAllValues().stream()
-            .filter(ParticipantJoinedTrip.class::isInstance)
-            .map(ParticipantJoinedTrip.class::cast)
-            .findFirst()
-            .orElseThrow();
+        final ArgumentCaptor<ParticipantJoinedTrip> eventCaptor = ArgumentCaptor.forClass(ParticipantJoinedTrip.class);
+        verify(tripParticipationEventPublisher, atLeastOnce()).publishParticipantJoinedAfterCommit(eventCaptor.capture());
+        final ParticipantJoinedTrip joinedEvent = eventCaptor.getValue();
         assertThat(joinedEvent.accountHolder()).isFalse();
         assertThat(joinedEvent.dateOfBirth()).isEqualTo(LocalDate.of(2023, 1, 15));
     }
@@ -440,6 +445,70 @@ class TripServiceTest {
 
         assertThat(trip.hasParticipant(dependentId)).isFalse();
         verify(tripRepository).save(trip);
+    }
+
+    @Test
+    void removeParticipantFromTripRejectsCompletedTrip() {
+        final UUID dependentId = UUID.randomUUID();
+        final Trip trip = Trip.plan(new TenantId(TENANT_UUID), new TripName("Skiurlaub"), null, new DateRange(
+            LocalDate.of(2026, 3, 15), LocalDate.of(2026, 3, 22)
+        ), ORGANIZER_ID, List.of(ORGANIZER_ID, dependentId));
+        trip.confirm();
+        trip.start();
+        trip.complete();
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+
+        assertThatThrownBy(() -> tripService.removeParticipantFromTrip(new RemoveParticipantFromTripCommand(
+            trip.tripId().value(), dependentId, ORGANIZER_ID, TENANT_UUID
+        )))
+            .isInstanceOf(de.evia.travelmate.common.domain.BusinessRuleViolationException.class)
+            .hasMessageContaining("completedTripRemovalNotAllowed");
+
+        verify(tripRepository, never()).save(any(Trip.class));
+        verify(shoppingListRepository, never()).save(any(ShoppingList.class));
+    }
+
+    @Test
+    void removeParticipantFromTripClearsOpenShoppingAssignmentsButPreservesPurchasedHistory() {
+        final UUID dependentId = UUID.randomUUID();
+        final TravelParty party = TravelParty.create(new TenantId(TENANT_UUID), "Familie Test");
+        party.addMember(ORGANIZER_ID, "max@example.com", "Max", "Mustermann");
+        party.addDependent(dependentId, ORGANIZER_ID, "Tim", "Mustermann");
+        when(travelPartyRepository.findByTenantId(new TenantId(TENANT_UUID))).thenReturn(Optional.of(party));
+
+        final Trip trip = Trip.plan(new TenantId(TENANT_UUID), new TripName("Skiurlaub"), null, new DateRange(
+            LocalDate.of(2026, 3, 15), LocalDate.of(2026, 3, 22)
+        ), ORGANIZER_ID, List.of(ORGANIZER_ID, dependentId));
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+
+        final ShoppingList shoppingList = ShoppingList.generate(trip.tenantId(), trip.tripId(), List.of());
+        final ShoppingItemId openItemId = shoppingList.addManualItem("Water", BigDecimal.ONE, "bottle");
+        shoppingList.assignItem(openItemId, dependentId);
+        final ShoppingItemId purchasedItemId = shoppingList.addManualItem("Bread", BigDecimal.ONE, "pcs");
+        shoppingList.assignItem(purchasedItemId, dependentId);
+        shoppingList.markPurchased(purchasedItemId, dependentId);
+        when(shoppingListRepository.findByTripIdAndTenantId(trip.tripId(), trip.tenantId()))
+            .thenReturn(Optional.of(shoppingList));
+
+        tripService.removeParticipantFromTrip(new RemoveParticipantFromTripCommand(
+            trip.tripId().value(), dependentId, ORGANIZER_ID, TENANT_UUID
+        ));
+
+        final ShoppingItem openItem = shoppingList.items().stream()
+            .filter(item -> item.shoppingItemId().equals(openItemId))
+            .findFirst()
+            .orElseThrow();
+        final ShoppingItem purchasedItem = shoppingList.items().stream()
+            .filter(item -> item.shoppingItemId().equals(purchasedItemId))
+            .findFirst()
+            .orElseThrow();
+
+        assertThat(openItem.status()).isEqualTo(de.evia.travelmate.trips.domain.shoppinglist.ShoppingItemStatus.OPEN);
+        assertThat(openItem.assignedTo()).isNull();
+        assertThat(purchasedItem.status())
+            .isEqualTo(de.evia.travelmate.trips.domain.shoppinglist.ShoppingItemStatus.PURCHASED);
+        assertThat(purchasedItem.assignedTo()).isEqualTo(dependentId);
+        verify(shoppingListRepository).save(shoppingList);
     }
 
     private Trip createTrip() {

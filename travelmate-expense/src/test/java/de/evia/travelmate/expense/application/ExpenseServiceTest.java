@@ -24,10 +24,12 @@ import org.springframework.context.ApplicationEventPublisher;
 import de.evia.travelmate.common.domain.DomainEvent;
 import de.evia.travelmate.common.domain.EntityNotFoundException;
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.common.events.iam.TenantRenamed;
 import de.evia.travelmate.common.events.expense.ExpenseCreated;
 import de.evia.travelmate.common.events.expense.ExpenseSettled;
 import de.evia.travelmate.common.events.trips.AccommodationPriceSet;
 import de.evia.travelmate.common.events.trips.ParticipantJoinedTrip;
+import de.evia.travelmate.common.events.trips.ParticipantRemovedFromTrip;
 import de.evia.travelmate.common.events.trips.StayPeriodUpdated;
 import de.evia.travelmate.common.events.trips.TripCompleted;
 import de.evia.travelmate.common.events.trips.TripCreated;
@@ -249,6 +251,87 @@ class ExpenseServiceTest {
         assertThat(saved.tripName()).isEqualTo("Unknown Trip");
         assertThat(saved.participants()).hasSize(1);
         verify(expenseRepository).save(any(Expense.class));
+    }
+
+    @Test
+    void onParticipantRemovedDeletesProjectionParticipantAndWeightingWhenNoFinancialHistoryExists() {
+        final ParticipantRemovedFromTrip event = new ParticipantRemovedFromTrip(
+            TENANT_UUID, TRIP_ID, ALICE, LocalDate.now()
+        );
+        final TripProjection projection = TripProjection.create(TRIP_ID, TENANT_ID, "Summer Vacation");
+        projection.addParticipant(new TripParticipant(ALICE, "Alice", null, null, UUID.randomUUID(), "Familie Test"));
+        projection.addParticipant(new TripParticipant(BOB, "Bob", null, null, UUID.randomUUID(), "Familie Zwei"));
+        final Expense expense = Expense.create(
+            TENANT_ID,
+            TRIP_ID,
+            List.of(
+                new ParticipantWeighting(ALICE, BigDecimal.ONE),
+                new ParticipantWeighting(BOB, BigDecimal.ONE)
+            )
+        );
+        expense.clearDomainEvents();
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.of(projection));
+        when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.of(expense));
+        when(tripProjectionRepository.save(any(TripProjection.class))).thenAnswer(inv -> inv.getArgument(0));
+        when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        expenseService.onParticipantRemoved(event);
+
+        final ArgumentCaptor<TripProjection> projectionCaptor = ArgumentCaptor.forClass(TripProjection.class);
+        verify(tripProjectionRepository).save(projectionCaptor.capture());
+        assertThat(projectionCaptor.getValue().participants()).extracting(TripParticipant::participantId)
+            .containsExactly(BOB);
+
+        final ArgumentCaptor<Expense> expenseCaptor = ArgumentCaptor.forClass(Expense.class);
+        verify(expenseRepository).save(expenseCaptor.capture());
+        assertThat(expenseCaptor.getValue().weightings()).containsExactly(new ParticipantWeighting(BOB, BigDecimal.ONE));
+    }
+
+    @Test
+    void onParticipantRemovedKeepsParticipantWhenFinancialHistoryExists() {
+        final ParticipantRemovedFromTrip event = new ParticipantRemovedFromTrip(
+            TENANT_UUID, TRIP_ID, ALICE, LocalDate.now()
+        );
+        final TripProjection projection = TripProjection.create(TRIP_ID, TENANT_ID, "Summer Vacation");
+        projection.addParticipant(new TripParticipant(ALICE, "Alice"));
+        final Expense expense = Expense.create(
+            TENANT_ID, TRIP_ID, List.of(new ParticipantWeighting(ALICE, BigDecimal.ONE))
+        );
+        expense.clearDomainEvents();
+        expense.addReceipt("Groceries", new de.evia.travelmate.expense.domain.expense.Amount(new BigDecimal("10.00")),
+            ALICE, ALICE, LocalDate.of(2026, 7, 2), null);
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.of(projection));
+        when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.of(expense));
+
+        expenseService.onParticipantRemoved(event);
+
+        verify(tripProjectionRepository, never()).save(any(TripProjection.class));
+        verify(expenseRepository, never()).save(any(Expense.class));
+        assertThat(projection.participants()).extracting(TripParticipant::participantId).containsExactly(ALICE);
+        assertThat(expense.weightings()).containsExactly(new ParticipantWeighting(ALICE, BigDecimal.ONE));
+    }
+
+    @Test
+    void onTenantRenamedUpdatesPartyNamesAcrossMatchingProjections() {
+        final UUID partyTenantId = UUID.randomUUID();
+        final TripProjection projection = TripProjection.create(TRIP_ID, TENANT_ID, "Summer Vacation");
+        projection.addParticipant(new TripParticipant(ALICE, "Alice", null, null, partyTenantId, "Familie Alt"));
+        projection.addParticipant(new TripParticipant(BOB, "Bob", null, null, UUID.randomUUID(), "Familie Zwei"));
+        when(tripProjectionRepository.findByPartyTenantId(partyTenantId)).thenReturn(List.of(projection));
+        when(tripProjectionRepository.save(any(TripProjection.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        expenseService.onTenantRenamed(new TenantRenamed(partyTenantId, "Familie Neu", LocalDate.now()));
+
+        final ArgumentCaptor<TripProjection> captor = ArgumentCaptor.forClass(TripProjection.class);
+        verify(tripProjectionRepository).save(captor.capture());
+        assertThat(captor.getValue().participants().stream()
+            .filter(participant -> partyTenantId.equals(participant.partyTenantId()))
+            .map(TripParticipant::partyName))
+            .containsOnly("Familie Neu");
+        assertThat(captor.getValue().participants().stream()
+            .filter(participant -> !partyTenantId.equals(participant.partyTenantId()))
+            .map(TripParticipant::partyName))
+            .containsOnly("Familie Zwei");
     }
 
     // --- onStayPeriodUpdated ---

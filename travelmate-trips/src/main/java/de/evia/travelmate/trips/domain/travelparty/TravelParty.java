@@ -65,6 +65,20 @@ public class TravelParty {
         dependents.add(new TravelPartyDependent(dependentId, guardianMemberId, firstName, lastName, dateOfBirth));
     }
 
+    public void removeMember(final UUID memberId) {
+        final boolean removed = members.removeIf(member -> member.memberId().equals(memberId));
+        if (!removed) {
+            throw new IllegalArgumentException("Member " + memberId + " not found in travel party.");
+        }
+    }
+
+    public void removeDependent(final UUID dependentId) {
+        final boolean removed = dependents.removeIf(dependent -> dependent.dependentId().equals(dependentId));
+        if (!removed) {
+            throw new IllegalArgumentException("Dependent " + dependentId + " not found in travel party.");
+        }
+    }
+
     public boolean hasMember(final UUID memberId) {
         return members.stream().anyMatch(m -> m.memberId().equals(memberId));
     }

@@ -41,6 +41,19 @@ public record TripParticipant(UUID participantId, String name,
         return partyTenantId != null && partyName != null;
     }
 
+    public TripParticipant withPartyName(final String newPartyName) {
+        return new TripParticipant(
+            participantId,
+            name,
+            arrivalDate,
+            departureDate,
+            partyTenantId,
+            newPartyName,
+            dateOfBirth,
+            accountHolder
+        );
+    }
+
     public long nights() {
         if (!hasStayPeriod()) {
             return 0;

@@ -60,6 +60,9 @@ class InvitationServiceTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
+    @Mock
+    private TripParticipationEventPublisher tripParticipationEventPublisher;
+
     @InjectMocks
     private InvitationService invitationService;
 
@@ -71,6 +74,9 @@ class InvitationServiceTest {
         when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
         when(travelPartyRepository.findByTenantId(TENANT_ID)).thenReturn(Optional.of(party));
         when(invitationRepository.existsByTripIdAndInviteeId(trip.tripId(), INVITEE_ID)).thenReturn(false);
+        when(invitationRepository.existsByTripIdAndTargetPartyTenantIdInStatuses(
+            trip.tripId(), TENANT_UUID, List.of(InvitationStatus.PENDING, InvitationStatus.AWAITING_REGISTRATION)))
+            .thenReturn(false);
         when(invitationRepository.save(any(Invitation.class))).thenAnswer(inv -> inv.getArgument(0));
 
         final InvitationRepresentation result = invitationService.invite(
@@ -90,6 +96,9 @@ class InvitationServiceTest {
         when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
         when(travelPartyRepository.findByTenantId(TENANT_ID)).thenReturn(Optional.of(party));
         when(invitationRepository.existsByTripIdAndInviteeId(trip.tripId(), INVITEE_ID)).thenReturn(false);
+        when(invitationRepository.existsByTripIdAndTargetPartyTenantIdInStatuses(
+            trip.tripId(), TENANT_UUID, List.of(InvitationStatus.PENDING, InvitationStatus.AWAITING_REGISTRATION)))
+            .thenReturn(false);
         when(invitationRepository.save(any(Invitation.class))).thenAnswer(inv -> inv.getArgument(0));
 
         invitationService.invite(
@@ -142,14 +151,14 @@ class InvitationServiceTest {
     @Test
     void acceptAddsParticipantToTripAndPublishesEvent() {
         final Trip trip = createTrip();
-        final Invitation invitation = Invitation.create(TENANT_ID, trip.tripId(), INVITEE_ID, ORGANIZER_ID);
+        final Invitation invitation = Invitation.create(TENANT_ID, trip.tripId(), INVITEE_ID, ORGANIZER_ID, TENANT_UUID);
         final TravelParty party = createPartyWithMembers(ORGANIZER_ID, INVITEE_ID);
 
         when(invitationRepository.findById(invitation.invitationId())).thenReturn(Optional.of(invitation));
         when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
         when(travelPartyRepository.findByTenantId(TENANT_ID)).thenReturn(Optional.of(party));
 
-        invitationService.accept(invitation.invitationId());
+        invitationService.accept(invitation.invitationId(), INVITEE_ID);
 
         assertThat(invitation.status()).isEqualTo(InvitationStatus.ACCEPTED);
         assertThat(trip.hasParticipant(INVITEE_ID)).isTrue();
@@ -158,38 +167,81 @@ class InvitationServiceTest {
 
         final ArgumentCaptor<ParticipantJoinedTrip> eventCaptor =
             ArgumentCaptor.forClass(ParticipantJoinedTrip.class);
-        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        verify(tripParticipationEventPublisher).publishParticipantJoinedAfterCommit(eventCaptor.capture());
         final ParticipantJoinedTrip event = eventCaptor.getValue();
         assertThat(event.participantId()).isEqualTo(INVITEE_ID);
         assertThat(event.tripId()).isEqualTo(trip.tripId().value());
     }
 
     @Test
+    void acceptResolvesInvitedMemberFromTargetPartyTenant() {
+        final Trip trip = createTrip();
+        final UUID targetPartyTenantId = UUID.randomUUID();
+        final Invitation invitation = Invitation.create(TENANT_ID, trip.tripId(), INVITEE_ID, ORGANIZER_ID, targetPartyTenantId);
+        final TravelParty targetParty = TravelParty.create(new TenantId(targetPartyTenantId), "Familie Ziel");
+        targetParty.addMember(INVITEE_ID, "invitee@test.de", "Rita", "Receiver");
+
+        when(invitationRepository.findById(invitation.invitationId())).thenReturn(Optional.of(invitation));
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+        when(travelPartyRepository.findByTenantId(new TenantId(targetPartyTenantId))).thenReturn(Optional.of(targetParty));
+
+        invitationService.accept(invitation.invitationId(), INVITEE_ID);
+
+        assertThat(invitation.status()).isEqualTo(InvitationStatus.ACCEPTED);
+        assertThat(trip.hasParticipant(INVITEE_ID)).isTrue();
+        verify(tripRepository).save(trip);
+        verify(invitationRepository).save(invitation);
+    }
+
+    @Test
     void acceptRejectsAlreadyExistingParticipant() {
         final Trip trip = createTrip();
         trip.addParticipant(INVITEE_ID, "Test", "User");
-        final Invitation invitation = Invitation.create(TENANT_ID, trip.tripId(), INVITEE_ID, ORGANIZER_ID);
+        final Invitation invitation = Invitation.create(TENANT_ID, trip.tripId(), INVITEE_ID, ORGANIZER_ID, TENANT_UUID);
         final TravelParty party = createPartyWithMembers(ORGANIZER_ID, INVITEE_ID);
 
         when(invitationRepository.findById(invitation.invitationId())).thenReturn(Optional.of(invitation));
         when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
         when(travelPartyRepository.findByTenantId(TENANT_ID)).thenReturn(Optional.of(party));
 
-        assertThatThrownBy(() -> invitationService.accept(invitation.invitationId()))
+        assertThatThrownBy(() -> invitationService.accept(invitation.invitationId(), INVITEE_ID))
             .isInstanceOf(DuplicateEntityException.class)
             .hasMessageContaining("participant.error.alreadyExists");
     }
 
     @Test
     void declineSetsStatusToDeclined() {
-        final Invitation invitation = Invitation.create(TENANT_ID, new TripId(UUID.randomUUID()), INVITEE_ID, ORGANIZER_ID);
+        final Invitation invitation = Invitation.create(TENANT_ID, new TripId(UUID.randomUUID()), INVITEE_ID, ORGANIZER_ID, TENANT_UUID);
 
         when(invitationRepository.findById(invitation.invitationId())).thenReturn(Optional.of(invitation));
 
-        invitationService.decline(invitation.invitationId());
+        invitationService.decline(invitation.invitationId(), INVITEE_ID);
 
         assertThat(invitation.status()).isEqualTo(InvitationStatus.DECLINED);
         verify(invitationRepository).save(invitation);
+    }
+
+    @Test
+    void acceptRejectsDifferentActor() {
+        final Trip trip = createTrip();
+        final Invitation invitation = Invitation.create(TENANT_ID, trip.tripId(), INVITEE_ID, ORGANIZER_ID, TENANT_UUID);
+
+        when(invitationRepository.findById(invitation.invitationId())).thenReturn(Optional.of(invitation));
+
+        assertThatThrownBy(() -> invitationService.accept(invitation.invitationId(), ORGANIZER_ID))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("invited member");
+    }
+
+    @Test
+    void declineRejectsDifferentActor() {
+        final Invitation invitation = Invitation.create(TENANT_ID, new TripId(UUID.randomUUID()), INVITEE_ID, ORGANIZER_ID, TENANT_UUID);
+
+        when(invitationRepository.findById(invitation.invitationId())).thenReturn(Optional.of(invitation));
+
+        assertThatThrownBy(() -> invitationService.decline(invitation.invitationId(), ORGANIZER_ID))
+            .isInstanceOf(IllegalArgumentException.class)
+            .hasMessageContaining("invited member");
     }
 
     @Test
@@ -237,8 +289,10 @@ class InvitationServiceTest {
     @Test
     void inviteExternalRejectsDuplicateEmail() {
         final Trip trip = createTrip();
+        final TravelParty party = createPartyWithMembers(ORGANIZER_ID);
 
         when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+        when(travelPartyRepository.findByTenantId(TENANT_ID)).thenReturn(Optional.of(party));
         when(invitationRepository.existsByTripIdAndInviteeEmail(trip.tripId(), "dup@test.de")).thenReturn(true);
 
         assertThatThrownBy(() -> invitationService.inviteExternal(
@@ -264,6 +318,33 @@ class InvitationServiceTest {
         assertThat(trip.hasParticipant(newMemberId)).isTrue();
         verify(invitationRepository).save(invitation);
         verify(tripRepository).save(trip);
+    }
+
+    @Test
+    void inviteExternalCoalescesRegisteredPartyByEmail() {
+        final Trip trip = createTrip();
+        final TravelParty organizerParty = createPartyWithMembers(ORGANIZER_ID);
+        final UUID targetMemberId = UUID.randomUUID();
+        final UUID targetPartyTenantId = UUID.randomUUID();
+        final TravelParty targetParty = TravelParty.create(new TenantId(targetPartyTenantId), "Familie Ziel");
+        targetParty.addMember(targetMemberId, "known@test.de", "Known", "User");
+
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+        when(travelPartyRepository.findByTenantId(TENANT_ID)).thenReturn(Optional.of(organizerParty));
+        when(travelPartyRepository.findByMemberEmail("known@test.de")).thenReturn(Optional.of(targetParty));
+        when(invitationRepository.existsByTripIdAndTargetPartyTenantIdInStatuses(
+            trip.tripId(), targetPartyTenantId, List.of(InvitationStatus.PENDING, InvitationStatus.AWAITING_REGISTRATION)))
+            .thenReturn(false);
+        when(invitationRepository.save(any(Invitation.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        final InvitationRepresentation result = invitationService.inviteExternal(
+            new InviteExternalCommand(TENANT_UUID, trip.tripId().value(), "known@test.de",
+                "Known", "User", LocalDate.of(1990, 1, 1), ORGANIZER_ID)
+        );
+
+        assertThat(result.inviteeId()).isEqualTo(targetMemberId);
+        assertThat(result.targetPartyTenantId()).isEqualTo(targetPartyTenantId);
+        verify(eventPublisher).publishEvent(any(InvitationCreated.class));
     }
 
     @Test

@@ -90,6 +90,11 @@ public class ShoppingList extends AggregateRoot {
         findItem(itemId).undoPurchase();
     }
 
+    public void clearAssignmentsForParticipant(final UUID participantId) {
+        argumentIsNotNull(participantId, "participantId");
+        items.forEach(item -> item.clearAssignmentOnParticipantRemoval(participantId));
+    }
+
     private ShoppingItem findItem(final ShoppingItemId itemId) {
         return items.stream()
             .filter(item -> item.shoppingItemId().equals(itemId))
