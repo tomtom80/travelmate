@@ -1,10 +1,16 @@
 # Iteration 13 — Delivery Plan: Invitation Hardening, Lifecycle-Safe Removal, and Projection Consistency
 
 **Date**: 2026-03-27
-**Target Version**: unreleased
+**Target Version**: v0.13.0
 **Input**: collaborative invitation/deletion refinement after `v0.12.3`
 
-**Status**: IN PROGRESS
+**Status**: DONE — released as `v0.13.0` on 2026-03-29
+
+## Release Verification
+
+- 909 unit/integration tests green (18 common + 185 IAM + 421 Trips + 285 Expense)
+- All delivered code slices verified in v0.12.2–v0.12.4 releases
+- Final release consolidated as v0.13.0
 
 ## Planning Goal
 
