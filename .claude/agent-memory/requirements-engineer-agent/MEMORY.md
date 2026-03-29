@@ -1,6 +1,14 @@
 # Requirements Engineer Agent Memory
 
 ## Iteration History
+- Iteration 14 (v0.14.0): Stories written 2026-03-29 — Collaborative Trip Planning (DatePoll + AccommodationPoll)
+  - Refined story document: docs/backlog/iteration-14-stories.md
+  - S14-A (L): Create Date Poll with Options (US-TRIPS-080) — DatePoll aggregate, Flyway V13, CreateDatePoll/AddDateOption/RemoveDateOption commands, DatePollCreated event
+  - S14-B (L): Vote in Date Poll (US-TRIPS-081) — CastDateVote/ChangeDateVote, Doodle matrix read model, voter = Member (not Dependent), checked in AppService via TravelPartyRepository
+  - S14-C (M): Confirm Date Poll and Update Trip Period (US-TRIPS-082) — ConfirmDatePoll triggers Trip.confirmDateRange() in same transaction; StayPeriods outside new range reset; Trip.dateRange stays mandatory (no Breaking Change)
+  - S14-D (L): Propose and Manage Accommodation Candidates (US-TRIPS-083) — AccommodationPoll aggregate, Flyway V14, ProposeCandidate/ArchiveCandidate; URL-Import routes to proposeFromImport() when poll OPEN (HS-4 resolution)
+  - S14-E (L): Vote for Accommodation and Finalize Selection (US-TRIPS-084) — CastAccommodationVote/MoveAccommodationVote/SelectAccommodation; SelectAccommodation creates Accommodation aggregate from candidate; single active vote per participant
+  - S14-F (M): Trip Planning UI Integration — Thymeleaf trip/planning.html fragment; HTMX-driven; no HTMX polling in MVP; .card-grid for AccommodationPoll, matrix table for DatePoll
 - Iteration 3 (v0.3.0): Completed — S3-A01 through S3-A05 (IAM), S3-B01 through S3-B07 (Trips)
 - Iteration 4 (v0.5.0): Completed — Registration flow, error handling, UX hardening
 - Iteration 5 (v0.6.0): Completed — Expense SCS, ArchUnit, JaCoCo, RabbitMQ DLQ, HTMX
@@ -48,6 +56,23 @@
 - SN-B## = Trips stories
 - SN-C## = Expense stories
 - SN-D## = Gateway/Infra stories
+
+## Key Design Decisions (Iteration 14 — 2026-03-29)
+- Two separate aggregates (DatePoll, AccommodationPoll) — NOT a generic Poll<T>; differences in voting mode, option type, result action, and candidate lifecycle justify separate aggregates (ADR-0019 candidate)
+- DatePoll: Multi-select Doodle-style (Set<DateOptionId> per voter); AccommodationPoll: single active vote per voter (UNIQUE constraint + aggregate invariant)
+- Trip.dateRange stays mandatory (Pflichtfeld) — DatePoll.confirm() overwrites via Trip.confirmDateRange(); no Breaking Change to Trip constructor (HS-1 resolution)
+- ConfirmDatePollService calls DatePoll.confirm() then Trip.confirmDateRange() in same transaction — no internal event listener needed; both aggregates in same BC
+- StayPeriod reset: Trip.confirmDateRange() resets StayPeriods that fall outside the new range
+- Polls restricted to PLANNING status; TripService.cancelTrip() cancels open polls (Policy P3)
+- Voter identity check (Account vs Dependent) done in Application Service via TravelPartyRepository — aggregate stores only UUIDs
+- URL-Import integration (HS-4): AccommodationImportService checks for open AccommodationPoll; if OPEN → proposeFromImport(); if no poll → Accommodation.create() as before
+- SelectAccommodation: creates Accommodation aggregate from candidate data; replaces any existing Accommodation for the trip; non-selected ACTIVE candidates → ARCHIVED
+- Poll events are BC-internal (not in travelmate-common); no new cross-SCS event contracts
+- Flyway V13 (date_poll, date_option, date_vote, date_vote_selection) + V14 (accommodation_poll, accommodation_candidate, accommodation_vote) in Trips SCS
+- DateRange VO reused from domain/trip/ for DateOption time ranges
+- No HTMX background polling in MVP for poll views — user-action-driven HTMX only
+- ADR-0020 candidate: Trip.dateRange as mandatory field (not Optional)
+- Implementation order: S14-A → S14-D (parallel) → S14-B → S14-E → S14-C → S14-F
 
 ## Key Design Decisions (Iteration 11 — 2026-03-19)
 - Theme: Mobile UX Refactoring — NO new domain logic, NO Flyway migrations, NO new aggregates
@@ -120,7 +145,7 @@
 ## Future Feature Ideas (from user)
 - US-TRIPS-041 Recipe Import from URL: DEFERRED to Iteration 12+ (LOW priority per user — HtmlAccommodationImportAdapter pattern from S10-A will be reused; Iteration 11 is fully mobile UX)
 - US-EXP-022 Custom Receipt Splitting: deferred from Iter 10 (Receipt OCR takes M slot); Iteration 11+
-- US-TRIPS-062 Accommodation Poll: deferred — new LocationPoll aggregate, Could priority
+- US-TRIPS-062 Accommodation Poll: DONE in Iteration 14 as S14-D/S14-E
 - TravelPartyNameRegistered event (was S10-E old plan): still needed for correct party names in settlement; small story, re-evaluate for Iter 11
 - Bring-App: Einkaufsliste → Bring API sync (US-TRIPS-055, deferred — no stable API docs)
 - SSE-based real-time updates (deferred from Iteration 8)

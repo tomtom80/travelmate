@@ -1942,10 +1942,24 @@ Items from `docs/arc42/11-risks-and-technical-debt.md`:
 | S10-D: Export Settlement as PDF | US-EXP-033 | E-EXP-04 | Could | M | Expense |
 | S10-E: Lighthouse CI | US-INFRA-042 | E-INFRA-05 | Should | S | Infrastructure |
 
-### Iteration 11+ (Future — Polls, Bring, Recipe Import, Custom Split, Polish)
+### Iteration 14 (PLANNED — Collaborative Trip Planning)
+
+| Story | Epic | Priority | Size | Bounded Context |
+|-------|------|----------|------|-----------------|
+| S14-A: Create Date Poll with Options | US-TRIPS-080 | E-TRIPS-08 | Must | L | Trips |
+| S14-B: Vote in Date Poll (Doodle-style) | US-TRIPS-081 | E-TRIPS-08 | Must | L | Trips |
+| S14-C: Confirm Date Poll and Update Trip Period | US-TRIPS-082 | E-TRIPS-08 | Must | M | Trips |
+| S14-D: Propose and Manage Accommodation Candidates | US-TRIPS-083 | E-TRIPS-08 | Must | L | Trips |
+| S14-E: Vote for Accommodation and Finalize Selection | US-TRIPS-084 | E-TRIPS-08 | Must | L | Trips |
+| S14-F: Trip Planning UI Integration | — | E-TRIPS-08 | Should | M | Trips |
+
+ADRs: ADR-0019 (Separate Poll Aggregates), ADR-0020 (Trip.dateRange bleibt Pflichtfeld)
+
+### Iteration 15+ (Future — Kitchen Duty, Bring, Recipe Import, Polish)
 
 | Story | Epic | Priority | Size |
 |-------|------|----------|------|
+| US-TRIPS-035 | E-TRIPS-04 | Should | M |
 | US-TRIPS-041 | E-TRIPS-05 | Could | L |
 | US-TRIPS-062 | E-TRIPS-07 | Could | L |
 | US-TRIPS-055 | E-TRIPS-06 | Could | L |
@@ -1955,26 +1969,6 @@ Items from `docs/arc42/11-risks-and-technical-debt.md`:
 | US-IAM-051 | E-IAM-06 | Could | M |
 | US-IAM-052 | E-IAM-06 | Could | S |
 | US-IAM-061 | E-IAM-07 | Won't | L |
-
----
-
-### Important Next Step After Iteration 12
-
-The next high-value Trips slice after Iteration 12 should focus on collaborative trip initialization and decision-making, not on more accounting polish.
-
-| Story | Epic | Priority | Size |
-|-------|------|----------|------|
-| US-TRIPS-080 | E-TRIPS-08 | Must | L |
-| US-TRIPS-081 | E-TRIPS-08 | Must | L |
-| US-TRIPS-082 | E-TRIPS-08 | Must | M |
-| US-TRIPS-083 | E-TRIPS-08 | Must | L |
-| US-TRIPS-084 | E-TRIPS-08 | Must | L |
-| US-TRIPS-035 | E-TRIPS-04 | Should | M |
-
-Rationale:
-- Once party self-management and live party accounts are in place, the next domain bottleneck is the planning start of a trip.
-- Date discovery and accommodation selection both happen before or alongside booking and invitations.
-- Kitchen duty extends the existing meal-plan domain with a concrete fairness and responsibility feature.
 
 ---
 

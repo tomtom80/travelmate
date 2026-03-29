@@ -18,6 +18,7 @@
 - [eventstorming-trips-iter8](eventstorming-trips-iter8.md) — Trips Iteration 8: Shopping List + Email Notifications (2026-03-17)
 - [eventstorming-iteration9](eventstorming-iteration9.md) — Iteration 9 REVISED: PartyWeighting refactoring, Accommodation Aggregate, Advance Payment, Resubmit UI, PWA (2026-03-18)
 - [eventstorming-iteration10](eventstorming-iteration10.md) — Iteration 10 REVISED: Accommodation URL Import (headline), Kassenzettel-Scan/OCR, Category Breakdown, PDF Export, Lighthouse CI (2026-03-19). Recipe Import DEFERRED.
+- [eventstorming-iteration14](eventstorming-iteration14.md) — Iteration 14: DatePoll + AccommodationPoll aggregates for collaborative trip planning (2026-03-29). Two separate aggregates, BC-internal events.
 
 ## Quality Attributes
 - (to be populated after Quality Storming)
