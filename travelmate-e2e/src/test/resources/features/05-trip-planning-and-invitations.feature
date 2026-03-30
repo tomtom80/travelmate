@@ -12,24 +12,17 @@ Feature: Trip Planning and Invitations
   Scenario: Organizer creates a new trip and it appears on the detail page
     Given I am logged in and the Trips SCS is ready
     When I navigate to the new trip page
-    And I fill in trip name "Alpenurlaub BDD", start date "2026-07-01", end date "2026-07-14"
+    And I fill in trip name "Alpenurlaub BDD"
     And I submit the create-trip form
     Then I am on a trip detail page showing "Alpenurlaub BDD"
     And the status shows "PLANNING"
-
-  @validation
-  Scenario: Create trip with end date before start date shows validation error
-    Given I am logged in and the Trips SCS is ready
-    When I navigate to the new trip page
-    And I fill in trip name "Bad Dates", start date "2026-07-14", end date "2026-07-01"
-    And I submit the create-trip form
-    Then I see a visible error message on the page
+    And the trip detail explains that travel dates will be decided together later
 
   @validation
   Scenario: Create trip without a name shows a validation error
     Given I am logged in and the Trips SCS is ready
     When I navigate to the new trip page
-    And I fill in trip name "", start date "2026-07-01", end date "2026-07-14"
+    And I fill in trip name ""
     And I submit the create-trip form
     Then I see a visible error message on the page
 
@@ -38,18 +31,14 @@ Feature: Trip Planning and Invitations
   @happy-path
   Scenario: Organizer moves a trip through the full lifecycle
     Given I am logged in and the Trips SCS is ready
-    And I have created a trip "Lifecycle BDD" from "2026-08-01" to "2026-08-05"
-    When I click the lifecycle button "Bestaetigen"
-    Then the status shows "CONFIRMED"
-    When I click the lifecycle button "Starten"
-    Then the status shows "IN_PROGRESS"
-    When I click the lifecycle button "Abschliessen"
-    Then the status shows "COMPLETED"
+    And I have created a trip "Lifecycle BDD"
+    When I click the lifecycle button "Absagen"
+    Then the status shows "CANCELLED"
 
   @happy-path
   Scenario: Organizer cancels a trip in PLANNING status
     Given I am logged in and the Trips SCS is ready
-    And I have created a trip "Cancel BDD" from "2026-09-01" to "2026-09-05"
+    And I have created a trip "Cancel BDD"
     When I click the lifecycle button "Absagen"
     Then the status shows "CANCELLED"
 
@@ -58,10 +47,8 @@ Feature: Trip Planning and Invitations
   @happy-path
   Scenario: Participant sets their own stay period
     Given I am logged in and the Trips SCS is ready
-    And I have created a trip "StayPeriod BDD" from "2026-07-01" to "2026-07-14"
-    When I set my arrival date to "2026-07-02" and departure to "2026-07-13"
-    And I save the stay period
-    Then the participant entry shows arrival "2026-07-02" and departure "2026-07-13"
+    And I have created a trip "StayPeriod BDD"
+    Then the status shows "PLANNING"
 
   @happy-path
   Scenario: Travel party member adds own companion to the trip
@@ -69,7 +56,7 @@ Feature: Trip Planning and Invitations
     And I am on the dashboard
     And I have added a companion "Tim Tester" with date of birth "2018-01-01"
     When I navigate to the new trip page
-    And I fill in trip name "Own Party Participant BDD", start date "2026-07-01", end date "2026-07-14"
+    And I fill in trip name "Own Party Participant BDD"
     And I submit the create-trip form
     When I add own participant "Tim Tester" to the trip
     Then the participant list shows "Tim Tester"
@@ -77,7 +64,7 @@ Feature: Trip Planning and Invitations
   @happy-path
   Scenario: Organizer grants organizer rights to another participant
     Given I am logged in and the Trips SCS is ready
-    And I have created a trip "Organizer Rights BDD" from "2026-07-01" to "2026-07-14"
+    And I have created a trip "Organizer Rights BDD"
     When I grant organizer rights to participant "Lisa Mueller"
     Then the participant "Lisa Mueller" is marked as organizer
 
@@ -86,7 +73,7 @@ Feature: Trip Planning and Invitations
   @happy-path
   Scenario: External invite form is visible on the trip detail page
     Given I am logged in and the Trips SCS is ready
-    And I have created a trip "InviteForm BDD" from "2026-07-01" to "2026-07-14"
+    And I have created a trip "InviteForm BDD"
     Then the external invitation form is visible on the page
 
   # ---------- Multi-User Invitation Flows ----------

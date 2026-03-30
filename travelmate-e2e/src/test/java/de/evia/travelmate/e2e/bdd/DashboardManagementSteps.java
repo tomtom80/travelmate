@@ -25,11 +25,13 @@ public class DashboardManagementSteps {
         // Always create a fresh tenant per scenario to avoid state leakage
         scenarioCounter++;
         context.clearCookies();
+        EnglishCommonSteps.resetLoginState();
         final String suffix = RUN_ID + "-" + scenarioCounter;
         final String tenantName = "BDD-Dashboard " + suffix;
         final String email = "bdd-dash-" + suffix + "@e2e.test";
         currentTenantName = tenantName;
         signUpAndLogin(tenantName, "Orga", "Tester", email, PASSWORD);
+        waitForTripsReady();
     }
 
     @Given("I am on the dashboard")

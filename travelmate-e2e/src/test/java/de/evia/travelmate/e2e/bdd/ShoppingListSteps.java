@@ -34,20 +34,13 @@ public class ShoppingListSteps {
                 waitForTripsReady();
             }
 
-            // Create trip
-            navigateAndWait("/trips/new");
-            page.locator("#name").fill(TRIP_NAME);
-            page.locator("#startDate, input[name=startDate]").first().fill("2026-11-01");
-            page.locator("#endDate, input[name=endDate]").first().fill("2026-11-03");
-            page.locator("main button[type=submit]").click();
-            page.waitForLoadState();
-            // Navigate to trip detail from list
-            page.locator("a", new com.microsoft.playwright.Page.LocatorOptions().setHasText(TRIP_NAME)).click();
-            page.waitForLoadState();
+            createTripWithoutDates(TRIP_NAME);
+            final String tid = openTripFromList(TRIP_NAME);
+            createAndConfirmDatePoll(tid, "2026-11-01", "2026-11-03", "2026-11-02", "2026-11-04");
+            navigateAndWait("/trips/" + tid);
             tripDetailPath = page.url().replace(BASE_URL, "");
 
             // Create trip recipe
-            final String tid = tripDetailPath.replaceAll(".*/(\\w{8}-\\w{4}-\\w{4}-\\w{4}-\\w{12}).*", "$1");
             navigateAndWait("/trips/" + tid + "/recipes/new");
             page.locator("#name").fill(RECIPE_NAME);
             page.locator("#servings").fill("4");

@@ -118,18 +118,8 @@ class InvitationLifecycleIT extends E2ETestBase {
     @Order(11)
     void organizerInvitesRegisteredParty2ByEmailAndMailLinkTargetsTripInvitationLanding() {
         waitForTripsReady();
-        navigateAndWait("/trips/new");
-
-        page.fill("input[name=name]", TRIP_NAME);
-        page.fill("#description", "Trip invitation lifecycle E2E");
-        page.fill("input[name=startDate]", "2026-09-01");
-        page.fill("input[name=endDate]", "2026-09-10");
-        page.locator("main button[type=submit]").click();
-        page.waitForLoadState();
-
-        navigateAndWait("/trips/");
-        page.locator("a", new Page.LocatorOptions().setHasText(TRIP_NAME)).click();
-        page.waitForLoadState();
+        createTripWithoutDates(TRIP_NAME, "Trip invitation lifecycle E2E");
+        openTripFromList(TRIP_NAME);
 
         page.locator("button.outline[onclick*='invite-external-dialog'][onclick*='showModal']").click();
         page.locator("#invite-external-dialog input[name=firstName]").fill("Rita");

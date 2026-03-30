@@ -10,17 +10,7 @@
 
         <label for="description" th:text="#{trip.description}">Beschreibung</label>
         <textarea id="description" name="description"></textarea>
-
-        <div class="grid">
-            <label>
-                <span th:text="#{trip.startDate}">Von</span>
-                <input type="date" id="startDate" name="startDate" required>
-            </label>
-            <label>
-                <span th:text="#{trip.endDate}">Bis</span>
-                <input type="date" id="endDate" name="endDate" required>
-            </label>
-        </div>
+        <p th:text="#{trip.dateRange.pendingHint}">Den Reisezeitraum legt ihr spaeter gemeinsam in der Planung fest.</p>
 
         <button type="submit" th:text="#{trip.submit}">Reise anlegen</button>
     </form>

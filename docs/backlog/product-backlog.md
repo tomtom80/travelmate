@@ -58,7 +58,7 @@ IAM ──(U)──→ D. Conformist ──→ Trips ──→ Partnership ─�
 | E-IAM-05 | IAM | Multi-Organizer Support | TODO |
 | E-IAM-06 | IAM | Notification Service (Email, SMS) | TODO |
 | E-IAM-07 | IAM | Authentication & Security Enhancements | TODO |
-| E-TRIPS-01 | Trips | Trip Lifecycle Management | ✅ Done |
+| E-TRIPS-01 | Trips | Trip Lifecycle Management | Partial |
 | E-TRIPS-02 | Trips | Invitation & Participation | ✅ Done |
 | E-TRIPS-03 | Trips | Stay Periods & Scheduling | ✅ Done |
 | E-TRIPS-04 | Trips | Meal Planning (Essensplan) | TODO |
@@ -455,7 +455,8 @@ IAM ──(U)──→ D. Conformist ──→ Trips ──→ Partnership ─�
 
 ### E-TRIPS-01: Trip Lifecycle Management
 
-> Creating, viewing, and managing Trip status transitions.
+> Creating, viewing, and managing Trip status transitions, including the transition from open
+> planning to verbindlich entschiedener Reiseplanung.
 
 ---
 
@@ -463,18 +464,21 @@ IAM ──(U)──→ D. Conformist ──→ Trips ──→ Partnership ─�
 **Epic**: E-TRIPS-01
 **Priority**: Must
 **Size**: L
-**As an** Organizer, **I want** to create a new Trip with a name, description, and date range, **so that** I can start planning a holiday.
+**As an** Organizer, **I want** to create a new Trip with a name and description, **so that** I can
+start collaborative planning before the final dates are decided.
 
 ##### Acceptance Criteria
-- **Given** I am on the Trips page, **When** I fill in Name, Description, Start Date, End Date and submit, **Then** a Trip is created in PLANNING status with me as the Organizer.
-- **Given** the Trip is created, **When** the TripCreated event is published, **Then** the Expense SCS can create a Ledger for this Trip.
-- **Given** the Start Date is after the End Date, **When** I submit, **Then** I see a validation error.
+- **Given** I am on the Trips page, **When** I fill in Name and Description and submit, **Then** a
+  Trip is created in PLANNING status with me as the Organizer.
+- **Given** the Trip is created, **When** the TripCreated event is published, **Then** the Expense
+  SCS can create a Ledger for this Trip without implying that the final travel period is already
+  fixed.
 
 ##### Technical Notes
 - Bounded Context: Trips
 - Aggregate: Trip (factory method `Trip.plan(...)`)
 - Domain Events: TripCreated
-- VOs: TripId, TripName, TripDescription, DateRange
+- VOs: TripId, TripName, TripDescription
 
 ---
 
@@ -515,14 +519,19 @@ IAM ──(U)──→ D. Conformist ──→ Trips ──→ Partnership ─�
 **As an** Organizer, **I want** to advance the Trip through its lifecycle (PLANNING -> CONFIRMED -> IN_PROGRESS -> COMPLETED), **so that** all participants know the current state.
 
 ##### Acceptance Criteria
-- **Given** a Trip is in PLANNING, **When** I click "Confirm", **Then** the status changes to CONFIRMED.
+- **Given** a Trip is in PLANNING and all required planning decisions are completed, **When** I
+  click "Confirm", **Then** the status changes to CONFIRMED.
+- **Given** a Trip is in PLANNING but the Reisezeitraum or Unterkunftsentscheidung is not yet
+  verbindlich, **When** I click "Confirm", **Then** the system blocks confirmation and guides me
+  back into the planning workflow.
 - **Given** a Trip is in CONFIRMED, **When** I click "Start", **Then** the status changes to IN_PROGRESS.
 - **Given** a Trip is IN_PROGRESS, **When** I click "Complete", **Then** the status changes to COMPLETED and TripCompleted is published.
 - **Given** a Trip is in PLANNING, **When** I click "Cancel", **Then** the status changes to CANCELLED.
 
 ##### Technical Notes
 - Domain Events: TripCompleted
-- Status enum: PLANNING, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED
+- Status enum: PLANNING, READY or equivalent planning-ready state, CONFIRMED, IN_PROGRESS,
+  COMPLETED, CANCELLED
 
 ---
 
@@ -530,12 +539,13 @@ IAM ──(U)──→ D. Conformist ──→ Trips ──→ Partnership ─�
 **Epic**: E-TRIPS-01
 **Priority**: Should
 **Size**: S
-**As an** Organizer, **I want** to edit a Trip's name, description, or date range, **so that** I can adjust plans.
+**As an** Organizer, **I want** to edit a Trip's name or description, **so that** I can adjust
+plans without bypassing collaborative decisions.
 
 ##### Acceptance Criteria
-- **Given** a Trip is in PLANNING or CONFIRMED, **When** I edit and save, **Then** the Trip details are updated.
+- **Given** a Trip is in PLANNING or CONFIRMED, **When** I edit and save, **Then** the Trip details
+  are updated.
 - **Given** a Trip is IN_PROGRESS or COMPLETED, **When** I try to edit, **Then** editing is not allowed.
-- **Given** I change dates, **When** existing StayPeriods fall outside the new range, **Then** I see a validation warning.
 
 ##### Technical Notes
 - Bounded Context: Trips
@@ -997,11 +1007,17 @@ IAM ──(U)──→ D. Conformist ──→ Trips ──→ Partnership ─�
 **Epic**: E-TRIPS-07
 **Priority**: Should
 **Size**: M
-**As an** Organizer, **I want** to add accommodation details (name, address, URL, room count, price per night) to a Trip, **so that** all Participants have the information.
+**As an** Organizer, **I want** to maintain the chosen accommodation details after the
+accommodation decision is confirmed, **so that** all Participants have the verbindliche booking
+information.
 
 ##### Acceptance Criteria
-- **Given** I am editing a Trip, **When** I add accommodation details, **Then** the information is saved and visible on the Trip detail page.
-- **Given** a Trip has accommodation info, **When** a Participant views the Trip, **Then** they see all accommodation details.
+- **Given** the accommodation decision for a trip is confirmed, **When** I add or refine
+  accommodation details, **Then** the information is saved and visible on the Trip detail page.
+- **Given** the accommodation decision is not yet confirmed, **When** I try to maintain a
+  verbindliche accommodation directly, **Then** the system redirects me to the accommodation poll.
+- **Given** a Trip has accommodation info, **When** a Participant views the Trip, **Then** they see
+  all accommodation details.
 
 ##### Technical Notes
 - Bounded Context: Trips
@@ -1093,7 +1109,9 @@ IAM ──(U)──→ D. Conformist ──→ Trips ──→ Partnership ─�
 
 ##### Acceptance Criteria
 - **Given** a date poll has votes, **When** I review the results, **Then** I can see which option currently has the most support.
-- **Given** I am the organizer, **When** I confirm one of the poll options as final, **Then** the trip date range is updated to that selected period.
+- **Given** I am the organizer, **When** I confirm one of the poll options as final, **Then** the
+  trip date range is updated to that selected period and the trip advances to the next planning
+  stage toward confirmation.
 - **Given** a final period was selected, **When** participants open the trip, **Then** they see the chosen trip period and the historical poll result.
 
 ##### Technical Notes
@@ -1140,6 +1158,30 @@ IAM ──(U)──→ D. Conformist ──→ Trips ──→ Partnership ─�
 - Organizer retains final booking decision after the poll
 - Optional add-on later: show availability for the selected date range directly on the candidate
 - Could supersede the older generic `US-TRIPS-062` once implemented in detail
+
+#### US-TRIPS-085: Align Trip Lifecycle with Collaborative Planning
+**Epic**: E-TRIPS-08
+**Priority**: Must
+**Size**: L
+**As an** Organizer or participant, **I want** trip creation, planning, and confirmation to follow
+one consistent workflow, **so that** dates and accommodation are decided collaboratively before the
+trip becomes verbindlich.
+
+##### Acceptance Criteria
+- **Given** I create a new trip, **When** the form is shown, **Then** it asks only for planning
+  container data and not for a final travel period.
+- **Given** I open the planning entry point on the trip detail page, **When** the page loads,
+  **Then** I see a title and subtitle that mention both travel period and accommodation decision.
+- **Given** the required planning decisions are not yet complete, **When** I try to confirm the
+  trip, **Then** the system blocks confirmation and explains what is still missing.
+- **Given** the accommodation decision is not yet confirmed, **When** I try to manage a
+  verbindliche accommodation directly, **Then** the system routes me back into the poll-driven
+  planning workflow.
+
+##### Technical Notes
+- Refines the lifecycle assumptions from E-TRIPS-01 and E-TRIPS-07
+- Supersedes the mandatory `Trip.dateRange` assumption from ADR-0020 through ADR-0021
+- Requires updates to trip creation form, planning navigation copy, and confirmation preconditions
 
 ---
 
@@ -1942,7 +1984,7 @@ Items from `docs/arc42/11-risks-and-technical-debt.md`:
 | S10-D: Export Settlement as PDF | US-EXP-033 | E-EXP-04 | Could | M | Expense |
 | S10-E: Lighthouse CI | US-INFRA-042 | E-INFRA-05 | Should | S | Infrastructure |
 
-### Iteration 14 (PLANNED — Collaborative Trip Planning)
+### Iteration 14 (REFINED — Collaborative Trip Planning)
 
 | Story | Epic | Priority | Size | Bounded Context |
 |-------|------|----------|------|-----------------|
@@ -1952,8 +1994,9 @@ Items from `docs/arc42/11-risks-and-technical-debt.md`:
 | S14-D: Propose and Manage Accommodation Candidates | US-TRIPS-083 | E-TRIPS-08 | Must | L | Trips |
 | S14-E: Vote for Accommodation and Finalize Selection | US-TRIPS-084 | E-TRIPS-08 | Must | L | Trips |
 | S14-F: Trip Planning UI Integration | — | E-TRIPS-08 | Should | M | Trips |
+| S14-G: Refine Trip Lifecycle for Collaborative Planning | US-TRIPS-085 | E-TRIPS-08 | Must | L | Trips |
 
-ADRs: ADR-0019 (Separate Poll Aggregates), ADR-0020 (Trip.dateRange bleibt Pflichtfeld)
+ADRs: ADR-0019 (Separate Poll Aggregates), ADR-0021 (Trip als Planungscontainer, Polls steuern verbindliche Planung)
 
 ### Iteration 15+ (Future — Kitchen Duty, Bring, Recipe Import, Polish)
 

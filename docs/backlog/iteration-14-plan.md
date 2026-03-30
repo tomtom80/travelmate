@@ -4,7 +4,7 @@
 **Target Version**: v0.14.0
 **Input**: [iteration-14-stories.md](./iteration-14-stories.md), [iteration-14-scope.md](../design/eventstorming/iteration-14-scope.md)
 
-**Status**: PLANNED
+**Status**: REFINED
 
 ---
 
@@ -16,13 +16,14 @@ mechanisms allow travel parties to collectively find a travel period and choose 
 1. **DatePoll** — Doodle-style multi-select: "Which date ranges work for your party?"
 2. **AccommodationPoll** — Single active vote with re-vote: "Which accommodation do you prefer?"
 
-Both polls run within the PLANNING trip lifecycle phase. The organizer retains final decision power.
+Both polls run within the collaborative planning phase. The organizer retains final decision power,
+but a newly created trip is no longer treated as fully scheduled.
 
 The plan optimizes for:
 
 - domain correctness first (separate aggregates with clean invariants)
 - visible user value early (DatePoll is usable before AccommodationPoll lands)
-- minimal impact on existing Trip aggregate (dateRange stays mandatory, ADR-0020)
+- consistent trip lifecycle and planning semantics (ADR-0021)
 
 ---
 
@@ -31,7 +32,7 @@ The plan optimizes for:
 | ADR | Decision | Rationale |
 |-----|----------|-----------|
 | ADR-0019 | Separate DatePoll + AccommodationPoll aggregates | Different voting modes, candidate types, and result actions — generic Poll would blur invariants |
-| ADR-0020 | Trip.dateRange remains mandatory | No breaking change; DatePoll overwrites initial "suggestion" on confirmation |
+| ADR-0021 | Trip starts as planning container; polls determine verbindliche Planungsentscheidungen | Removes the contradiction between trip creation, planning UI, and collaborative polls |
 
 ---
 
@@ -46,6 +47,7 @@ The plan optimizes for:
 | S14-C | Confirm Date Poll and Update Trip Period | closes the loop — poll result becomes trip dates |
 | S14-D | Propose and Manage Accommodation Candidates | enables collaborative accommodation shortlist |
 | S14-E | Vote for Accommodation and Finalize Selection | completes collaborative planning loop |
+| S14-G | Refine Trip Lifecycle for Collaborative Planning | removes contradictions between trip creation and poll-driven decisions |
 
 ### Should
 
@@ -83,11 +85,27 @@ Engineering outcome:
 - DatePoll aggregate established with clean invariants
 - Repository + persistence adapter pattern consistent with existing aggregates
 
+### Slice 1.5: Trip Lifecycle Refinement (S14-G)
+
+Includes:
+- trip creation without mandatory final date range
+- planning state semantics aligned with ADR-0021
+- planning dashboard copy aligned with collaborative date and accommodation decisions
+- blocking of direct accommodation management before confirmed accommodation decision
+
+User outcome:
+- a new trip starts as a planning workspace, not as a fully scheduled trip
+- participants understand that both travel period and accommodation are decided collaboratively
+
+Engineering outcome:
+- trip lifecycle and poll workflow use one consistent domain model
+- groundwork for event and UI migration away from mandatory `Trip.dateRange`
+
 ### Slice 2: DatePoll Confirmation (S14-C)
 
 Includes:
 - ConfirmDatePoll command → DatePoll.confirm()
-- Trip.confirmDateRange(DateRange) — new method on Trip aggregate
+- Trip.confirmDateRange(DateRange) as the step that establishes the verbindliche Reisezeit
 - StayPeriod reset on date range change
 - MealPlan invalidation/regeneration on date range change
 
@@ -96,7 +114,7 @@ User outcome:
 - participants re-enter stay periods after date change
 
 Engineering outcome:
-- Trip aggregate extended with confirmDateRange() (ADR-0020)
+- Trip aggregate aligned with the lifecycle semantics from ADR-0021
 - StayPeriod + MealPlan cascading updates tested
 
 ### Slice 3: AccommodationPoll Aggregate (S14-D + S14-E)
@@ -114,6 +132,7 @@ User outcome:
 - single-vote with re-vote for fair preference signaling
 - organizer finalizes accommodation booking from shortlist
 - URL-Import feeds into poll when one is open
+- direct accommodation management stays blocked until a decision is confirmed
 
 Engineering outcome:
 - AccommodationPoll aggregate with ACTIVE/ARCHIVED/SELECTED candidate lifecycle
@@ -143,13 +162,15 @@ Engineering outcome:
 |-------|-------|-----------|
 | 1 | S14-A | DatePoll aggregate — establishes the pattern |
 | 2 | S14-B | voting model completes the DatePoll value |
-| 3 | S14-C | confirmation closes the date planning loop |
-| 4 | S14-D | AccommodationPoll aggregate — can overlap with S14-B |
-| 5 | S14-E | voting + selection completes accommodation planning |
-| 6 | S14-F | unified planning UI integration |
+| 3 | S14-G | lifecycle refinement before the final workflow is hardened |
+| 4 | S14-C | confirmation closes the date planning loop |
+| 5 | S14-D | AccommodationPoll aggregate — can overlap with S14-B |
+| 6 | S14-E | voting + selection completes accommodation planning |
+| 7 | S14-F | unified planning UI integration |
 
-**Parallelism**: S14-A/B/C and S14-D/E are independent tracks. S14-D can start as soon as S14-A
-establishes the aggregate pattern. S14-F is incremental and can grow alongside other stories.
+**Parallelism**: S14-A/B/C and S14-D/E are still largely independent tracks. S14-G must align the
+trip lifecycle before the final UI and confirmation flows are considered complete. S14-F is
+incremental and can grow alongside other stories.
 
 ---
 
@@ -170,12 +191,14 @@ Main risk:
 ### S14-C: DatePoll Confirmation
 
 Expected changes:
-- `Trip.java` — new method `confirmDateRange(DateRange)` (non-breaking addition)
+- `Trip.java` — lifecycle refinement so the final date range is not required at creation
 - `DatePollService.confirmPoll()` orchestrates DatePoll + Trip updates
 - StayPeriod reset logic in Trip aggregate
 - MealPlan invalidation handler
+- event contract review for `TripCreated` and follow-up confirmation events
 
 Main risk:
+- migration from mandatory `Trip.dateRange` to lifecycle-aware planning state
 - StayPeriod reset UX — participants must re-enter dates (HS-2)
 - MealPlan regeneration must handle existing recipes
 
@@ -202,11 +225,11 @@ Focus:
 - DatePoll confirmation (selects one option, status transition)
 - AccommodationPoll candidate lifecycle (ACTIVE → ARCHIVED → SELECTED)
 - AccommodationPoll voting (single vote, move vote, archive cascade)
-- Trip.confirmDateRange() and StayPeriod reset
+- trip lifecycle progression toward readiness and StayPeriod reset
 
 Recommended targets:
 - `DatePollTest`, `AccommodationPollTest` — comprehensive domain unit tests
-- `TripTest` — extension for confirmDateRange()
+- `TripTest` — lifecycle-aware creation and confirmDateRange()
 
 ### Application / Integration Tests
 
@@ -215,6 +238,7 @@ Focus:
 - AccommodationPollService orchestration (propose, vote, select → Accommodation create)
 - Voter identity validation via TravelParty
 - Poll-aware URL-Import routing
+- blocking of direct accommodation management before the poll decision is confirmed
 
 ### Web / Controller Tests
 
@@ -233,6 +257,7 @@ Minimum critical paths:
 4. Participant proposes accommodation candidate
 5. Participants vote for accommodation
 6. Organizer selects accommodation → Accommodation aggregate created
+7. Direct accommodation management becomes available only after the decision is confirmed
 
 ### BDD Scenarios
 
@@ -248,6 +273,7 @@ German Gherkin scenarios for:
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
+| Lifecycle migration around missing `Trip.dateRange` causes regressions | HIGH | Add focused domain, controller, and E2E coverage for trips without dates at creation |
 | StayPeriod reset after date change causes user confusion | HIGH | Toast notification + clear re-entry prompt in UI |
 | URL-Import/poll routing becomes fragile | MEDIUM | Conditional check in AccommodationImportService with clear fallback |
 | Open polls block Trip.confirm() unexpectedly | MEDIUM | Clear UI guidance showing poll closure as precondition |

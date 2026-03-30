@@ -29,6 +29,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.trips.application.AccommodationPollService;
 import de.evia.travelmate.trips.application.AccommodationService;
 import de.evia.travelmate.trips.application.TripService;
 import de.evia.travelmate.trips.application.command.AddRoomCommand;
@@ -36,6 +37,7 @@ import de.evia.travelmate.trips.application.command.AssignPartyToRoomCommand;
 import de.evia.travelmate.trips.application.command.RemoveRoomAssignmentCommand;
 import de.evia.travelmate.trips.application.command.RemoveRoomCommand;
 import de.evia.travelmate.trips.application.command.SetAccommodationCommand;
+import de.evia.travelmate.trips.application.representation.AccommodationPollRepresentation;
 import de.evia.travelmate.trips.application.representation.AccommodationRepresentation;
 import de.evia.travelmate.trips.application.representation.RoomRepresentation;
 import de.evia.travelmate.trips.application.representation.TripRepresentation;
@@ -63,6 +65,9 @@ class AccommodationControllerTest {
     private AccommodationService accommodationService;
 
     @MockitoBean
+    private AccommodationPollService accommodationPollService;
+
+    @MockitoBean
     private TripService tripService;
 
     @MockitoBean
@@ -80,6 +85,8 @@ class AccommodationControllerTest {
             LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 5),
             "PLANNING", MEMBER_UUID, List.of(MEMBER_UUID));
         when(tripService.findById(new TripId(TRIP_UUID))).thenReturn(tripRepr);
+        when(accommodationPollService.findLatestByTripId(new TenantId(TENANT_UUID), new TripId(TRIP_UUID)))
+            .thenReturn(accommodationPollRepresentation("CONFIRMED"));
     }
 
     @Test
@@ -106,17 +113,21 @@ class AccommodationControllerTest {
     @Test
     void overviewShowsEmptyStateWhenNoAccommodation() throws Exception {
         when(accommodationService.findByTripId(new TripId(TRIP_UUID))).thenReturn(Optional.empty());
+        when(accommodationPollService.findLatestByTripId(new TenantId(TENANT_UUID), new TripId(TRIP_UUID)))
+            .thenThrow(new IllegalArgumentException("none"));
 
         mockMvc.perform(get("/" + TRIP_UUID + "/accommodation")
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL))))
-            .andExpect(status().isOk())
-            .andExpect(model().attribute("accommodation", (Object) null));
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/" + TRIP_UUID + "/planning"));
     }
 
     @Test
     void setAccommodationRedirectsToOverview() throws Exception {
         when(accommodationService.setAccommodation(any(SetAccommodationCommand.class)))
             .thenReturn(accommodationRepresentation());
+        when(accommodationPollService.findLatestByTripId(new TenantId(TENANT_UUID), new TripId(TRIP_UUID)))
+            .thenReturn(accommodationPollRepresentation("CONFIRMED"));
 
         mockMvc.perform(post("/" + TRIP_UUID + "/accommodation")
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
@@ -134,6 +145,8 @@ class AccommodationControllerTest {
     void addRoomRedirectsToOverview() throws Exception {
         when(accommodationService.addRoom(any(AddRoomCommand.class)))
             .thenReturn(accommodationRepresentation());
+        when(accommodationPollService.findLatestByTripId(new TenantId(TENANT_UUID), new TripId(TRIP_UUID)))
+            .thenReturn(accommodationPollRepresentation("CONFIRMED"));
 
         mockMvc.perform(post("/" + TRIP_UUID + "/accommodation/rooms")
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
@@ -149,6 +162,8 @@ class AccommodationControllerTest {
     void updateRoomRedirectsToOverview() throws Exception {
         when(accommodationService.updateRoom(any(), any(UUID.class), any(UUID.class), anyString(), anyInt()))
             .thenReturn(accommodationRepresentation());
+        when(accommodationPollService.findLatestByTripId(new TenantId(TENANT_UUID), new TripId(TRIP_UUID)))
+            .thenReturn(accommodationPollRepresentation("CONFIRMED"));
 
         mockMvc.perform(post("/" + TRIP_UUID + "/accommodation/rooms/" + ROOM_UUID + "/update")
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
@@ -164,6 +179,8 @@ class AccommodationControllerTest {
     void removeRoomRedirectsToOverview() throws Exception {
         when(accommodationService.removeRoom(any(RemoveRoomCommand.class)))
             .thenReturn(accommodationRepresentation());
+        when(accommodationPollService.findLatestByTripId(new TenantId(TENANT_UUID), new TripId(TRIP_UUID)))
+            .thenReturn(accommodationPollRepresentation("CONFIRMED"));
 
         mockMvc.perform(post("/" + TRIP_UUID + "/accommodation/rooms/" + ROOM_UUID + "/delete")
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL))))
@@ -177,6 +194,8 @@ class AccommodationControllerTest {
     void assignPartyToRoomRedirectsToOverview() throws Exception {
         when(accommodationService.assignPartyToRoom(any(AssignPartyToRoomCommand.class)))
             .thenReturn(accommodationRepresentation());
+        when(accommodationPollService.findLatestByTripId(new TenantId(TENANT_UUID), new TripId(TRIP_UUID)))
+            .thenReturn(accommodationPollRepresentation("CONFIRMED"));
 
         mockMvc.perform(post("/" + TRIP_UUID + "/accommodation/rooms/" + ROOM_UUID + "/assign")
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
@@ -194,6 +213,8 @@ class AccommodationControllerTest {
         final UUID assignmentId = UUID.randomUUID();
         when(accommodationService.removeRoomAssignment(any(RemoveRoomAssignmentCommand.class)))
             .thenReturn(accommodationRepresentation());
+        when(accommodationPollService.findLatestByTripId(new TenantId(TENANT_UUID), new TripId(TRIP_UUID)))
+            .thenReturn(accommodationPollRepresentation("CONFIRMED"));
 
         mockMvc.perform(post("/" + TRIP_UUID + "/accommodation/assignments/" + assignmentId + "/delete")
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL))))
@@ -205,6 +226,8 @@ class AccommodationControllerTest {
 
     @Test
     void removeAccommodationRedirectsToOverview() throws Exception {
+        when(accommodationPollService.findLatestByTripId(new TenantId(TENANT_UUID), new TripId(TRIP_UUID)))
+            .thenReturn(accommodationPollRepresentation("CONFIRMED"));
         mockMvc.perform(post("/" + TRIP_UUID + "/accommodation/delete")
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL))))
             .andExpect(status().is3xxRedirection())
@@ -236,6 +259,8 @@ class AccommodationControllerTest {
             LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 5),
             "PLANNING", otherMember, List.of(MEMBER_UUID, otherMember));
         when(tripService.findById(new TripId(TRIP_UUID))).thenReturn(trip);
+        when(accommodationPollService.findLatestByTripId(new TenantId(TENANT_UUID), new TripId(TRIP_UUID)))
+            .thenReturn(accommodationPollRepresentation("CONFIRMED"));
 
         mockMvc.perform(post("/" + TRIP_UUID + "/accommodation")
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
@@ -253,6 +278,8 @@ class AccommodationControllerTest {
             LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 5),
             "COMPLETED", MEMBER_UUID, List.of(MEMBER_UUID));
         when(tripService.findById(new TripId(TRIP_UUID))).thenReturn(completedTrip);
+        when(accommodationPollService.findLatestByTripId(new TenantId(TENANT_UUID), new TripId(TRIP_UUID)))
+            .thenReturn(accommodationPollRepresentation("CONFIRMED"));
 
         mockMvc.perform(post("/" + TRIP_UUID + "/accommodation")
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
@@ -261,6 +288,20 @@ class AccommodationControllerTest {
                 .param("roomBedCount", "2")
                 .param("roomPricePerNight", ""))
             .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void setAccommodationRejectsBeforePollDecision() throws Exception {
+        when(accommodationPollService.findLatestByTripId(new TenantId(TENANT_UUID), new TripId(TRIP_UUID)))
+            .thenThrow(new IllegalArgumentException("none"));
+
+        mockMvc.perform(post("/" + TRIP_UUID + "/accommodation")
+                .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
+                .param("name", "Huette")
+                .param("roomName", "Zimmer 1")
+                .param("roomBedCount", "2")
+                .param("roomPricePerNight", ""))
+            .andExpect(status().isConflict());
     }
 
     @Test
@@ -402,6 +443,18 @@ class AccommodationControllerTest {
             null, null, null,
             List.of(new RoomRepresentation(ROOM_UUID, "Zimmer 1", 2, null)),
             2, List.of(), 0
+        );
+    }
+
+    private AccommodationPollRepresentation accommodationPollRepresentation(final String status) {
+        return new AccommodationPollRepresentation(
+            UUID.randomUUID(),
+            TENANT_UUID,
+            TRIP_UUID,
+            status,
+            UUID.randomUUID(),
+            List.of(),
+            List.of()
         );
     }
 }

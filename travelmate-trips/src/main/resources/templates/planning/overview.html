@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<body>
+<div th:fragment="content">
+    <hgroup>
+        <h1 th:text="#{planning.title}">Reiseplanung</h1>
+        <p><a th:href="@{/{id}(id=${trip.tripId()})}" th:text="${trip.name()}">Reise</a></p>
+    </hgroup>
+
+    <article class="planning-hero">
+        <div class="planning-hero__layout">
+            <div>
+                <p class="poll-hero__eyebrow" th:text="#{planning.title}">Reiseplanung</p>
+                <h2 th:text="#{planning.card.title}">Planung abstimmen</h2>
+                <p th:text="#{planning.card.subtitle}">Legt gemeinsam Reisezeitraum und Unterkunft fest, bevor die Reise bestaetigt wird.</p>
+                <div class="poll-hero__stats">
+                    <div class="poll-stat">
+                        <strong th:text="${datePoll != null ? 1 : 0}">0</strong>
+                        <span th:text="#{datepoll.title}">Terminabstimmung</span>
+                    </div>
+                    <div class="poll-stat">
+                        <strong th:text="${accommodationPoll != null ? 1 : 0}">0</strong>
+                        <span th:text="#{accommodationpoll.title}">Unterkunftsabstimmung</span>
+                    </div>
+                </div>
+            </div>
+            <div class="planning-hero__art" aria-hidden="true">
+                <svg viewBox="0 0 240 160">
+                    <rect x="22" y="28" width="80" height="98" rx="18"></rect>
+                    <rect x="116" y="42" width="102" height="84" rx="18"></rect>
+                    <path d="M48 56h28"></path>
+                    <path d="M48 74h28"></path>
+                    <path d="M48 92h28"></path>
+                    <circle cx="82" cy="56" r="6"></circle>
+                    <circle cx="82" cy="74" r="6"></circle>
+                    <circle cx="82" cy="92" r="6"></circle>
+                    <path d="m76 74 4 4 8-10"></path>
+                    <path d="M138 104h56"></path>
+                    <path d="M138 86h32"></path>
+                    <path d="M138 68h44"></path>
+                    <path d="m180 56 10 10 18-20"></path>
+                </svg>
+            </div>
+        </div>
+    </article>
+
+    <section class="feature-section">
+        <div class="feature-grid">
+            <article class="feature-card planning-step-card">
+                <div class="feature-card__body">
+                    <p class="feature-card__eyebrow" th:text="#{planning.step1}">Schritt 1</p>
+                    <div class="planning-step-card__header">
+                        <h3 th:text="#{datepoll.title}">Terminabstimmung</h3>
+                        <mark th:if="${datePoll != null}" th:text="#{${'datepoll.status.' + datePoll.status()}}">Status</mark>
+                        <mark th:if="${datePoll == null}" th:text="#{planning.notStarted}">Nicht gestartet</mark>
+                    </div>
+                    <div class="planning-step-card__art" aria-hidden="true">
+                        <svg viewBox="0 0 120 72">
+                            <rect x="10" y="10" width="100" height="52" rx="14"></rect>
+                            <path d="M34 10v52"></path>
+                            <path d="M58 10v52"></path>
+                            <path d="M82 10v52"></path>
+                            <path d="M10 30h100"></path>
+                            <path d="M10 46h100"></path>
+                            <circle cx="46" cy="38" r="6"></circle>
+                            <path d="m43 38 2 2 4-5"></path>
+                        </svg>
+                    </div>
+                    <th:block th:if="${datePoll == null}">
+                        <p th:text="#{planning.datepoll.hint}">Stimmt gemeinsam ueber den Reisezeitraum ab.</p>
+                    </th:block>
+                    <th:block th:if="${datePoll != null && datePoll.status() == 'OPEN'}">
+                        <p th:text="#{planning.datepoll.openHint}">Die Abstimmung laeuft — stimme jetzt ab.</p>
+                        <ul class="planning-step-card__list">
+                            <li th:each="option : ${datePoll.options()}" th:text="${option.startDate() + ' - ' + option.endDate() + ' (' + option.voteCount() + ')'}">
+                                Zeitraum
+                            </li>
+                        </ul>
+                    </th:block>
+                    <th:block th:if="${datePoll != null && datePoll.status() == 'CONFIRMED'}">
+                        <p>
+                            <span th:text="#{planning.datepoll.confirmed}">Bestaetigt</span>:
+                            <strong><span th:text="${trip.startDate()}"></span> - <span th:text="${trip.endDate()}"></span></strong>
+                        </p>
+                    </th:block>
+                    <th:block th:if="${datePoll != null && datePoll.status() == 'CANCELLED'}">
+                        <p th:text="#{planning.datepoll.cancelled}">Die Terminabstimmung wurde abgebrochen.</p>
+                    </th:block>
+                </div>
+                <div class="feature-card__actions">
+                    <a th:if="${datePoll == null && isOrganizer && trip.status() == 'PLANNING'}"
+                       th:href="@{/{id}/datepoll/create(id=${trip.tripId()})}"
+                       role="button" class="feature-card__cta outline"
+                       th:text="#{datepoll.create}">Erstellen</a>
+                    <a th:if="${datePoll != null}"
+                       th:href="@{/{id}/datepoll(id=${trip.tripId()})}"
+                       role="button" class="feature-card__cta outline"
+                       th:text="#{planning.vote}">Abstimmen</a>
+                </div>
+            </article>
+
+            <article class="feature-card planning-step-card">
+                <div class="feature-card__body">
+                    <p class="feature-card__eyebrow" th:text="#{planning.step2}">Schritt 2</p>
+                    <div class="planning-step-card__header">
+                        <h3 th:text="#{accommodationpoll.title}">Unterkunftsabstimmung</h3>
+                        <mark th:if="${accommodationPoll != null}" th:text="#{${'accommodationpoll.status.' + accommodationPoll.status()}}">Status</mark>
+                        <mark th:if="${accommodationPoll == null}" th:text="#{planning.notStarted}">Nicht gestartet</mark>
+                    </div>
+                    <div class="planning-step-card__art" aria-hidden="true">
+                        <svg viewBox="0 0 120 72">
+                            <path d="M18 58h84"></path>
+                            <path d="M30 58V34l18-12 16 11 16-11 18 12v24"></path>
+                            <path d="M40 58V40h18v18"></path>
+                            <path d="M72 58V40h14v18"></path>
+                            <circle cx="92" cy="22" r="8"></circle>
+                        </svg>
+                    </div>
+                    <th:block th:if="${accommodationPoll == null}">
+                        <p th:text="#{planning.accommodationpoll.hint}">Schlagt Unterkuenfte vor und stimmt gemeinsam ab.</p>
+                    </th:block>
+                    <th:block th:if="${accommodationPoll != null && accommodationPoll.status() == 'OPEN'}">
+                        <p th:text="#{planning.accommodationpoll.openHint}">Die Abstimmung laeuft — waehle deine bevorzugte Unterkunft.</p>
+                        <ul class="planning-step-card__list">
+                            <li th:each="candidate : ${accommodationPoll.candidates()}">
+                                <span th:text="${candidate.name()}">Hotel</span>
+                                <span th:text="${' (' + candidate.voteCount() + ')'}">(0)</span>
+                                <a th:if="${candidate.url()}" th:href="${candidate.url()}" target="_blank" rel="noopener" th:text="#{common.link}">Link</a>
+                            </li>
+                        </ul>
+                    </th:block>
+                    <th:block th:if="${accommodationPoll != null && accommodationPoll.status() == 'CONFIRMED'}">
+                        <th:block th:each="candidate : ${accommodationPoll.candidates()}">
+                            <p th:if="${accommodationPoll.selectedCandidateId() != null && accommodationPoll.selectedCandidateId().equals(candidate.candidateId())}">
+                                <span th:text="#{planning.accommodationpoll.confirmed}">Bestaetigt</span>:
+                                <strong th:text="${candidate.name()}">Hotel</strong>
+                                <a th:if="${candidate.url()}" th:href="${candidate.url()}" target="_blank" rel="noopener" th:text="#{common.link}">Link</a>
+                            </p>
+                        </th:block>
+                    </th:block>
+                    <th:block th:if="${accommodationPoll != null && accommodationPoll.status() == 'CANCELLED'}">
+                        <p th:text="#{planning.accommodationpoll.cancelled}">Die Unterkunftsabstimmung wurde abgebrochen.</p>
+                    </th:block>
+                </div>
+                <div class="feature-card__actions">
+                    <a th:if="${accommodationPoll == null && isOrganizer && trip.status() == 'PLANNING'}"
+                       th:href="@{/{id}/accommodationpoll/create(id=${trip.tripId()})}"
+                       role="button" class="feature-card__cta outline"
+                       th:text="#{accommodationpoll.create}">Erstellen</a>
+                    <a th:if="${accommodationPoll != null}"
+                       th:href="@{/{id}/accommodationpoll(id=${trip.tripId()})}"
+                       role="button" class="feature-card__cta outline"
+                       th:text="#{planning.vote}">Abstimmen</a>
+                </div>
+            </article>
+        </div>
+    </section>
+
+    <article th:if="${datePoll != null && datePoll.status() == 'CONFIRMED' && accommodationPoll != null && accommodationPoll.status() == 'CONFIRMED'}">
+        <h3 th:text="#{planning.summary}">Zusammenfassung</h3>
+        <p th:text="#{planning.allConfirmed}">Alle Abstimmungen sind abgeschlossen. Die Reise kann bestaetigt werden.</p>
+    </article>
+
+    <a th:href="@{/{id}(id=${trip.tripId()})}" role="button" class="outline" th:text="#{common.back}">Zurueck</a>
+</div>
+</body>
+</html>

@@ -34,10 +34,10 @@ public class TripJpaEntity {
     @Column(name = "description")
     private String description;
 
-    @Column(name = "start_date", nullable = false)
+    @Column(name = "start_date")
     private LocalDate startDate;
 
-    @Column(name = "end_date", nullable = false)
+    @Column(name = "end_date")
     private LocalDate endDate;
 
     @Column(name = "status", nullable = false)
@@ -78,6 +78,8 @@ public class TripJpaEntity {
     public String getDescription() { return description; }
     public LocalDate getStartDate() { return startDate; }
     public LocalDate getEndDate() { return endDate; }
+    public void setStartDate(final LocalDate startDate) { this.startDate = startDate; }
+    public void setEndDate(final LocalDate endDate) { this.endDate = endDate; }
     public String getStatus() { return status; }
     public void setStatus(final String status) { this.status = status; }
     public UUID getOrganizerId() { return organizerId; }

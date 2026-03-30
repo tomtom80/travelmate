@@ -1,0 +1,299 @@
+package de.evia.travelmate.trips.adapters.web;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
+
+import org.springframework.http.HttpStatus;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.server.ResponseStatusException;
+
+import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.trips.application.AccommodationService;
+import de.evia.travelmate.trips.application.AccommodationPollService;
+import de.evia.travelmate.trips.application.TripService;
+import de.evia.travelmate.trips.application.command.CastAccommodationVoteCommand;
+import de.evia.travelmate.trips.application.command.ConfirmAccommodationPollCommand;
+import de.evia.travelmate.trips.application.command.CreateAccommodationPollCommand;
+import de.evia.travelmate.trips.application.command.CreateAccommodationPollCommand.CandidateProposalCommand;
+import de.evia.travelmate.trips.application.command.AddAccommodationCandidateCommand;
+import de.evia.travelmate.trips.application.command.RemoveAccommodationCandidateCommand;
+import de.evia.travelmate.trips.application.representation.AccommodationPollRepresentation;
+import de.evia.travelmate.trips.application.representation.TripRepresentation;
+import de.evia.travelmate.trips.domain.accommodation.AccommodationImportResult;
+import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationPollId;
+import de.evia.travelmate.trips.domain.trip.TripId;
+import de.evia.travelmate.trips.domain.travelparty.TravelPartyRepository;
+
+@Controller
+public class AccommodationPollController {
+
+    private final AccommodationService accommodationService;
+    private final AccommodationPollService accommodationPollService;
+    private final TripService tripService;
+    private final TravelPartyRepository travelPartyRepository;
+
+    public AccommodationPollController(final AccommodationService accommodationService,
+                                       final AccommodationPollService accommodationPollService,
+                                       final TripService tripService,
+                                       final TravelPartyRepository travelPartyRepository) {
+        this.accommodationService = accommodationService;
+        this.accommodationPollService = accommodationPollService;
+        this.tripService = tripService;
+        this.travelPartyRepository = travelPartyRepository;
+    }
+
+    @GetMapping("/{tripId}/accommodationpoll")
+    public String overview(@AuthenticationPrincipal final Jwt jwt,
+                           @PathVariable final UUID tripId,
+                           final Model model) {
+        final ResolvedIdentity identity = requireIdentity(jwt);
+        final TripRepresentation trip = validateTripAccess(tripId, identity);
+        populateOverviewModel(model, trip, identity, null, null);
+        return "layout/default";
+    }
+
+    @GetMapping("/{tripId}/accommodationpoll/create")
+    public String createForm(@AuthenticationPrincipal final Jwt jwt,
+                             @PathVariable final UUID tripId,
+                             final Model model) {
+        final ResolvedIdentity identity = requireIdentity(jwt);
+        final TripRepresentation trip = validateTripAccess(tripId, identity);
+        requireOrganizer(trip, identity);
+
+        model.addAttribute("view", "accommodationpoll/create");
+        model.addAttribute("trip", trip);
+        return "layout/default";
+    }
+
+    @PostMapping("/{tripId}/accommodationpoll/create")
+    public String create(@AuthenticationPrincipal final Jwt jwt,
+                         @PathVariable final UUID tripId,
+                         @RequestParam("candidateName") final List<String> names,
+                         @RequestParam(value = "candidateUrl", required = false) final List<String> urls,
+                         @RequestParam(value = "candidateDescription", required = false) final List<String> descriptions) {
+        final ResolvedIdentity identity = requireIdentity(jwt);
+        final TripRepresentation trip = validateTripAccess(tripId, identity);
+        requireOrganizer(trip, identity);
+
+        final List<CandidateProposalCommand> candidates = new ArrayList<>();
+        for (int i = 0; i < names.size(); i++) {
+            final String url = urls != null && i < urls.size() ? emptyToNull(urls.get(i)) : null;
+            final String desc = descriptions != null && i < descriptions.size() ? emptyToNull(descriptions.get(i)) : null;
+            candidates.add(new CandidateProposalCommand(names.get(i), url, desc));
+        }
+
+        accommodationPollService.createPoll(new CreateAccommodationPollCommand(
+            trip.tenantId(), tripId, candidates));
+
+        return "redirect:/" + tripId + "/accommodationpoll";
+    }
+
+    @PostMapping("/{tripId}/accommodationpoll/{pollId}/candidates/add")
+    public String addCandidate(@AuthenticationPrincipal final Jwt jwt,
+                               @PathVariable final UUID tripId,
+                               @PathVariable final UUID pollId,
+                               @RequestParam final String name,
+                               @RequestParam(required = false) final String url,
+                               @RequestParam(required = false) final String description) {
+        final ResolvedIdentity identity = requireIdentity(jwt);
+        final TripRepresentation trip = validateTripAccess(tripId, identity);
+
+        accommodationPollService.addCandidate(new AddAccommodationCandidateCommand(
+            trip.tenantId(), pollId, name, emptyToNull(url), emptyToNull(description)));
+
+        return "redirect:/" + tripId + "/accommodationpoll";
+    }
+
+    @PostMapping("/{tripId}/accommodationpoll/{pollId}/candidates/{candidateId}/remove")
+    public String removeCandidate(@AuthenticationPrincipal final Jwt jwt,
+                                  @PathVariable final UUID tripId,
+                                  @PathVariable final UUID pollId,
+                                  @PathVariable final UUID candidateId) {
+        final ResolvedIdentity identity = requireIdentity(jwt);
+        final TripRepresentation trip = validateTripAccess(tripId, identity);
+        requireOrganizer(trip, identity);
+
+        accommodationPollService.removeCandidate(new RemoveAccommodationCandidateCommand(
+            trip.tenantId(), pollId, candidateId));
+
+        return "redirect:/" + tripId + "/accommodationpoll";
+    }
+
+    @PostMapping("/{tripId}/accommodationpoll/{pollId}/vote")
+    public String castVote(@AuthenticationPrincipal final Jwt jwt,
+                           @PathVariable final UUID tripId,
+                           @PathVariable final UUID pollId,
+                           @RequestParam final UUID selectedCandidateId) {
+        final ResolvedIdentity identity = requireIdentity(jwt);
+        final TripRepresentation trip = validateTripAccess(tripId, identity);
+
+        accommodationPollService.castVote(new CastAccommodationVoteCommand(
+            trip.tenantId(), pollId, identity.memberId(), selectedCandidateId));
+
+        return "redirect:/" + tripId + "/accommodationpoll";
+    }
+
+    @PostMapping("/{tripId}/accommodationpoll/{pollId}/import")
+    public String importCandidate(@AuthenticationPrincipal final Jwt jwt,
+                                  @PathVariable final UUID tripId,
+                                  @PathVariable final UUID pollId,
+                                  @RequestParam final String url,
+                                  final Model model) {
+        final ResolvedIdentity identity = requireIdentity(jwt);
+        final TripRepresentation trip = validateTripAccess(tripId, identity);
+
+        try {
+            final Optional<AccommodationImportResult> importResult = accommodationService.importFromUrl(url);
+            if (importResult.isEmpty()) {
+                populateOverviewModel(model, trip, identity, "accommodation.import.error", null);
+                return "layout/default";
+            }
+
+            final AccommodationImportResult imported = importResult.get();
+            accommodationPollService.addCandidate(new AddAccommodationCandidateCommand(
+                trip.tenantId(),
+                pollId,
+                candidateName(imported),
+                emptyToNull(imported.bookingUrl()),
+                candidateDescription(imported)));
+            return "redirect:/" + tripId + "/accommodationpoll";
+        } catch (final IllegalArgumentException e) {
+            populateOverviewModel(model, trip, identity, "accommodation.import.error.url", null);
+            return "layout/default";
+        }
+    }
+
+    @PostMapping("/{tripId}/accommodationpoll/{pollId}/confirm")
+    public String confirm(@AuthenticationPrincipal final Jwt jwt,
+                          @PathVariable final UUID tripId,
+                          @PathVariable final UUID pollId,
+                          @RequestParam final UUID confirmedCandidateId) {
+        final ResolvedIdentity identity = requireIdentity(jwt);
+        final TripRepresentation trip = validateTripAccess(tripId, identity);
+        requireOrganizer(trip, identity);
+
+        accommodationPollService.confirmPoll(new ConfirmAccommodationPollCommand(
+            trip.tenantId(), pollId, confirmedCandidateId));
+
+        return "redirect:/" + tripId + "/accommodationpoll";
+    }
+
+    @PostMapping("/{tripId}/accommodationpoll/{pollId}/cancel")
+    public String cancel(@AuthenticationPrincipal final Jwt jwt,
+                         @PathVariable final UUID tripId,
+                         @PathVariable final UUID pollId) {
+        final ResolvedIdentity identity = requireIdentity(jwt);
+        final TripRepresentation trip = validateTripAccess(tripId, identity);
+        requireOrganizer(trip, identity);
+
+        accommodationPollService.cancelPoll(tripTenantId(trip), new AccommodationPollId(pollId));
+
+        return "redirect:/" + tripId + "/accommodationpoll";
+    }
+
+    private String emptyToNull(final String value) {
+        return value != null && !value.isBlank() ? value : null;
+    }
+
+    private void populateOverviewModel(final Model model,
+                                       final TripRepresentation trip,
+                                       final ResolvedIdentity identity,
+                                       final String importError,
+                                       final String importSuccess) {
+        AccommodationPollRepresentation poll = null;
+        try {
+            poll = accommodationPollService.findLatestByTripId(tripTenantId(trip), new TripId(trip.tripId()));
+        } catch (final Exception ignored) {
+        }
+
+        UUID currentVoteCandidateId = null;
+        if (poll != null) {
+            currentVoteCandidateId = poll.votes().stream()
+                .filter(v -> v.voterId().equals(identity.memberId()))
+                .findFirst()
+                .map(AccommodationPollRepresentation.VoteRepresentation::selectedCandidateId)
+                .orElse(null);
+        }
+
+        model.addAttribute("view", "accommodationpoll/overview");
+        model.addAttribute("trip", trip);
+        model.addAttribute("accommodationPoll", poll);
+        model.addAttribute("isOrganizer", trip.isOrganizer(identity.memberId()));
+        model.addAttribute("currentMemberId", identity.memberId());
+        model.addAttribute("currentVoteCandidateId", currentVoteCandidateId);
+        model.addAttribute("importError", importError);
+        model.addAttribute("importSuccess", importSuccess);
+    }
+
+    private String candidateName(final AccommodationImportResult imported) {
+        final String importedName = emptyToNull(imported.name());
+        if (importedName != null) {
+            return importedName;
+        }
+
+        final String importedUrl = emptyToNull(imported.bookingUrl());
+        if (importedUrl != null) {
+            return importedUrl;
+        }
+
+        return "Imported accommodation";
+    }
+
+    private String candidateDescription(final AccommodationImportResult imported) {
+        final String notes = emptyToNull(imported.notes());
+        if (notes != null) {
+            return notes;
+        }
+        return emptyToNull(imported.address());
+    }
+
+    private Optional<ResolvedIdentity> resolveIdentity(final Jwt jwt) {
+        final String email = jwt.getClaimAsString("email");
+        if (email == null) {
+            return Optional.empty();
+        }
+        return travelPartyRepository.findByMemberEmail(email)
+            .flatMap(party -> party.members().stream()
+                .filter(m -> email.equals(m.email()))
+                .findFirst()
+                .map(m -> new ResolvedIdentity(party.tenantId(), m.memberId())));
+    }
+
+    private ResolvedIdentity requireIdentity(final Jwt jwt) {
+        return resolveIdentity(jwt)
+            .orElseThrow(() -> new ResponseStatusException(
+                HttpStatus.FORBIDDEN, "No travel party found for user"));
+    }
+
+    private TripRepresentation validateTripAccess(final UUID tripId, final ResolvedIdentity identity) {
+        final TripRepresentation trip = tripService.findById(new TripId(tripId));
+        final boolean isTenantMember = trip.tenantId().equals(identity.tenantId().value());
+        final boolean isParticipant = trip.participantIds().contains(identity.memberId());
+        if (!isTenantMember && !isParticipant) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Access denied");
+        }
+        return trip;
+    }
+
+    private void requireOrganizer(final TripRepresentation trip, final ResolvedIdentity identity) {
+        if (!trip.isOrganizer(identity.memberId())) {
+            throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Only organizers can manage accommodation polls");
+        }
+    }
+
+    private TenantId tripTenantId(final TripRepresentation trip) {
+        return new TenantId(trip.tenantId());
+    }
+
+    private record ResolvedIdentity(TenantId tenantId, UUID memberId) {
+    }
+}

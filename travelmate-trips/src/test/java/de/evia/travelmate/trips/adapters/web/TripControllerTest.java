@@ -27,7 +27,9 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.trips.application.AccommodationPollService;
 import de.evia.travelmate.trips.application.AccommodationService;
+import de.evia.travelmate.trips.application.DatePollService;
 import de.evia.travelmate.trips.application.InvitationService;
 import de.evia.travelmate.trips.application.MealPlanService;
 import de.evia.travelmate.trips.application.TripService;
@@ -74,6 +76,12 @@ class TripControllerTest {
 
     @MockitoBean
     private AccommodationService accommodationService;
+
+    @MockitoBean
+    private DatePollService datePollService;
+
+    @MockitoBean
+    private AccommodationPollService accommodationPollService;
 
     @MockitoBean
     private TravelPartyRepository travelPartyRepository;
@@ -289,6 +297,20 @@ class TripControllerTest {
             .andExpect(redirectedUrl("/" + TRIP_UUID));
 
         verify(tripService).confirmTrip(new TripId(TRIP_UUID));
+    }
+
+    @Test
+    void createTripSubmitsWithoutDates() throws Exception {
+        mockMvc.perform(post("/")
+                .with(jwt().jwt(j -> j.claim("email", ORGANIZER_EMAIL)))
+                .param("name", "Neue Planung")
+                .param("description", "Beschreibung"))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/"));
+
+        verify(tripService).createTrip(new de.evia.travelmate.trips.application.command.CreateTripCommand(
+            TENANT_UUID, "Neue Planung", "Beschreibung", ORGANIZER_UUID
+        ));
     }
 
     @Test

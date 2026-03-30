@@ -14,8 +14,12 @@
                     <strong th:text="${inv.inviterName()}">Max Mustermann</strong>
                 </p>
                 <p>
-                    <span th:text="${inv.tripStartDate()}">15.03.2026</span> –
-                    <span th:text="${inv.tripEndDate()}">22.03.2026</span>
+                    <th:block th:if="${inv.tripStartDate() != null && inv.tripEndDate() != null}">
+                        <span th:text="${inv.tripStartDate()}">15.03.2026</span> –
+                        <span th:text="${inv.tripEndDate()}">22.03.2026</span>
+                    </th:block>
+                    <span th:if="${inv.tripStartDate() == null || inv.tripEndDate() == null}"
+                          th:text="#{trip.dateRange.pending}">Wird gemeinsam festgelegt</span>
                 </p>
                 <footer>
                     <div class="grid">
@@ -55,8 +59,8 @@
                         <a th:href="@{/{id}(id=${trip.tripId()})}"
                            th:text="${trip.name()}"></a>
                     </td>
-                    <td th:data-label="#{trip.startDate}" th:text="${trip.startDate()}"></td>
-                    <td th:data-label="#{trip.endDate}" th:text="${trip.endDate()}"></td>
+                    <td th:data-label="#{trip.startDate}" th:text="${trip.startDate() != null ? trip.startDate() : '—'}"></td>
+                    <td th:data-label="#{trip.endDate}" th:text="${trip.endDate() != null ? trip.endDate() : '—'}"></td>
                     <td th:data-label="#{trip.status}"><mark th:text="#{${'trip.status.' + trip.status()}}"></mark></td>
                     <td th:data-label="#{common.actions}">
                         <div class="action-col">

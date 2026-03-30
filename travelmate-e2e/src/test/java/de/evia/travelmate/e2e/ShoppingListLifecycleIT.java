@@ -32,18 +32,13 @@ class ShoppingListLifecycleIT extends E2ETestBase {
         signUpAndLogin(TENANT_NAME, "Lisa", "Einkauf", EMAIL, PASSWORD);
         waitForTripsReady();
 
-        navigateAndWait("/trips/new");
-        page.fill("input[name=name]", TRIP_NAME);
-        page.fill("input[name=startDate]", "2026-10-01");
-        page.fill("input[name=endDate]", "2026-10-03");
-        page.locator("main button[type=submit]").click();
-        page.waitForLoadState();
+        createTripWithoutDates(TRIP_NAME, null);
+        final String tripId = openTripFromList(TRIP_NAME);
+        createAndConfirmDatePoll(tripId, "2026-10-01", "2026-10-03", "2026-10-02", "2026-10-04");
+        navigateAndWait("/trips/" + tripId);
 
         assertThat(page.content()).contains(TRIP_NAME);
 
-        // Navigate from trip list to trip detail
-        page.locator("a", new com.microsoft.playwright.Page.LocatorOptions().setHasText(TRIP_NAME)).click();
-        page.waitForLoadState();
         tripDetailUrl = page.url();
     }
 

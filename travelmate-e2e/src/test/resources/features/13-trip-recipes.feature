@@ -9,7 +9,7 @@ Feature: Trip Recipes — Shared recipe pool within a trip
   @happy-path
   Scenario: Trip detail page shows a recipes feature card
     Given I am logged in as organizer of a new Reisepartei
-    And I have created a trip "Sommerurlaub" from "2026-08-01" to "2026-08-14"
+    And I have created a trip "Sommerurlaub"
     When I navigate to the trip detail page
     Then I see a "Rezepte" feature card
 

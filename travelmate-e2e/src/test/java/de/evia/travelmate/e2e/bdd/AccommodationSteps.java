@@ -34,17 +34,10 @@ public class AccommodationSteps {
                 waitForTripsReady();
             }
 
-            // Create trip
-            navigateAndWait("/trips/new");
-            page.locator("#name, input[name=name]").first().fill(TRIP_NAME);
-            page.locator("#startDate, input[name=startDate]").first().fill("2026-12-01");
-            page.locator("#endDate, input[name=endDate]").first().fill("2026-12-05");
-            page.locator("main button[type=submit]").click();
-            page.waitForLoadState();
-
-            // Navigate to trip detail from list
-            page.locator("a", new com.microsoft.playwright.Page.LocatorOptions().setHasText(TRIP_NAME)).click();
-            page.waitForLoadState();
+            createTripWithoutDates(TRIP_NAME);
+            final String tripId = openTripFromList(TRIP_NAME);
+            createAndConfirmDatePoll(tripId, "2026-12-01", "2026-12-05", "2026-12-02", "2026-12-06");
+            createAndConfirmAccommodationPoll(tripId, "Berghuette", "Ferienhaus");
             tripDetailPath = page.url().replace(BASE_URL, "");
 
             tripCreated = true;
@@ -59,11 +52,7 @@ public class AccommodationSteps {
 
     @Dann("sehe ich den Hinweis dass noch keine Unterkunft hinterlegt ist")
     public void seheIchDenHinweisDassNochKeineUnterkunftHinterlegtIst() {
-        final String content = page.content();
-        assertThat(content).satisfiesAnyOf(
-            c -> assertThat(c).contains("Noch keine Unterkunft"),
-            c -> assertThat(c).contains("Unterkunft hinzufuegen")
-        );
+        assertThat(page.content()).contains("Unterkunft hinzufuegen");
     }
 
     @Und("ich eine Unterkunft mit Name {string} und Adresse {string} und Gesamtpreis {string} erfasse")
@@ -124,7 +113,6 @@ public class AccommodationSteps {
 
     private String extractTripId() {
         final String url = tripDetailPath != null ? tripDetailPath : page.url().replace(BASE_URL, "");
-        final String path = url.replaceFirst(".*/(trips|expense)/", "");
-        return path.replaceAll("[/?#].*", "");
+        return PlaywrightHooks.extractTripId(url);
     }
 }

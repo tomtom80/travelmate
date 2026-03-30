@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<body>
+<div th:fragment="content">
+    <hgroup>
+        <h1 th:text="#{datepoll.create}">Terminabstimmung erstellen</h1>
+        <p><a th:href="@{/{id}(id=${trip.tripId()})}" th:text="${trip.name()}">Reise</a></p>
+    </hgroup>
+
+    <article>
+        <form method="post" th:action="@{/{id}/datepoll/create(id=${trip.tripId()})}" id="datepoll-form">
+            <div id="date-options">
+                <div class="date-option grid" style="align-items:end;">
+                    <label>
+                        <span th:text="#{trip.startDate}">Von</span>
+                        <input type="date" name="startDate" required>
+                    </label>
+                    <label>
+                        <span th:text="#{trip.endDate}">Bis</span>
+                        <input type="date" name="endDate" required>
+                    </label>
+                    <div></div>
+                </div>
+                <div class="date-option grid" style="align-items:end;">
+                    <label>
+                        <span th:text="#{trip.startDate}">Von</span>
+                        <input type="date" name="startDate" required>
+                    </label>
+                    <label>
+                        <span th:text="#{trip.endDate}">Bis</span>
+                        <input type="date" name="endDate" required>
+                    </label>
+                    <div>
+                        <button type="button" class="outline secondary" onclick="this.closest('.date-option').remove()">
+                            <span th:text="#{common.remove}">Entfernen</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" class="outline" id="add-option-btn" th:text="#{datepoll.addOption}">+ Zeitraum hinzufuegen</button>
+
+            <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+                <button type="submit" th:text="#{datepoll.create}">Erstellen</button>
+                <a th:href="@{/{id}/datepoll(id=${trip.tripId()})}" role="button" class="outline secondary"
+                   th:text="#{common.cancel}">Abbrechen</a>
+            </div>
+        </form>
+    </article>
+
+    <template id="date-option-template">
+        <div class="date-option grid" style="align-items:end;">
+            <label>
+                <span th:text="#{trip.startDate}">Von</span>
+                <input type="date" name="startDate" required>
+            </label>
+            <label>
+                <span th:text="#{trip.endDate}">Bis</span>
+                <input type="date" name="endDate" required>
+            </label>
+            <div>
+                <button type="button" class="outline secondary" onclick="this.closest('.date-option').remove()">
+                    <span th:text="#{common.remove}">Entfernen</span>
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        document.getElementById('add-option-btn').addEventListener('click', function() {
+            var template = document.getElementById('date-option-template');
+            var clone = template.content.cloneNode(true);
+            document.getElementById('date-options').appendChild(clone);
+        });
+    </script>
+</div>
+</body>
+</html>

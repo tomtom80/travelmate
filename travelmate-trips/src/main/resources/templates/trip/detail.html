@@ -9,15 +9,18 @@
 
     <!-- Trip Info Card -->
     <article>
-        <p>
+        <p th:if="${trip.startDate() != null && trip.endDate() != null}">
             <span th:text="#{trip.startDate}">Von</span>: <strong th:text="${trip.startDate()}"></strong> —
             <span th:text="#{trip.endDate}">Bis</span>: <strong th:text="${trip.endDate()}"></strong>
+        </p>
+        <p th:if="${trip.startDate() == null || trip.endDate() == null}" th:text="#{trip.dateRange.pendingHint}">
+            Den Reisezeitraum legt ihr spaeter gemeinsam in der Planung fest.
         </p>
         <p><span th:text="#{trip.status}">Status</span>: <mark th:text="#{${'trip.status.' + trip.status()}}"></mark></p>
 
         <div th:if="${isOrganizer}">
             <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                <form th:if="${trip.status() == 'PLANNING'}" method="post"
+                <form th:if="${trip.status() == 'PLANNING' && trip.startDate() != null && trip.endDate() != null && hasAccommodation}" method="post"
                       th:action="@{/{id}/confirm(id=${trip.tripId()})}">
                     <button type="submit" th:text="#{trip.confirm}">Bestaetigen</button>
                 </form>
@@ -256,11 +259,30 @@
                        role="button"
                        class="feature-card__cta"
                        th:text="#{trip.tools.open}">Oeffnen</a>
-                    <a th:if="${!hasAccommodation && isOrganizer && trip.status() != 'COMPLETED' && trip.status() != 'CANCELLED'}"
+                    <a th:if="${!hasAccommodation && isOrganizer && accommodationDecisionConfirmed}"
                        th:href="@{/{id}/accommodation(id=${trip.tripId()})}"
                        role="button"
                        class="feature-card__cta"
                        th:text="#{trip.tools.create}">Erstellen</a>
+                    <a th:if="${!hasAccommodation && isOrganizer && !accommodationDecisionConfirmed && trip.status() == 'PLANNING'}"
+                       th:href="@{/{id}/planning(id=${trip.tripId()})}"
+                       role="button"
+                       class="feature-card__cta"
+                       th:text="#{planning.vote}">Abstimmen</a>
+                </div>
+            </article>
+
+            <article class="feature-card" th:if="${trip.status() == 'PLANNING'}">
+                <div class="feature-card__body">
+                    <p class="feature-card__eyebrow" th:text="#{trip.tools.category.plan}">Planung</p>
+                    <h3 th:text="#{planning.card.title}">Planung abstimmen</h3>
+                    <p th:text="#{planning.card.subtitle}">Legt gemeinsam Reisezeitraum und Unterkunft fest, bevor die Reise bestaetigt wird.</p>
+                </div>
+                <div class="feature-card__actions">
+                    <a th:href="@{/{id}/planning(id=${trip.tripId()})}"
+                       role="button"
+                       class="feature-card__cta"
+                       th:text="#{trip.tools.open}">Oeffnen</a>
                 </div>
             </article>
 

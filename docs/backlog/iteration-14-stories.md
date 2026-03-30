@@ -4,7 +4,7 @@
 **Target Version**: v0.14.0
 **Bounded Contexts**: Trips (date poll, accommodation poll, trip lifecycle)
 
-**Implementation Status**: PLANNED
+**Implementation Status**: REFINED
 
 ---
 
@@ -12,20 +12,23 @@
 
 This iteration introduces two collaborative decision-making mechanisms for the trip planning phase.
 Both are rooted in the same domain insight: the organizer has final authority, but the group should
-have a structured way to contribute before the decision is made.
+have a structured way to contribute before the decision is made and before the trip becomes
+verbindlich geplant.
 
 **DatePoll** is a Doodle-style multi-select poll. The organizer defines candidate date ranges, all
 account-holding participants mark which options work for them, and the organizer confirms one as the
-final trip period. The confirmed option updates `Trip.dateRange` directly.
+final trip period. The confirmed option determines the verbindliche Reisedaten.
 
 **AccommodationPoll** is a single active-vote poll. Any account-holding participant can propose
 candidates (manually or via URL import), all participants cast exactly one vote and can move it,
 and the organizer selects the final accommodation. The selected candidate creates a full
 `Accommodation` aggregate.
 
-Both polls are restricted to the `PLANNING` trip status and may run in parallel. The organizer is
-not forced to use either: the existing direct-edit paths for trip dates and accommodation remain
-available. Dependents (Mitreisende) have no voting right in either poll.
+Both polls are restricted to the collaborative planning phase and may run in parallel. The organizer
+does not lose final authority, but direct-edit paths must not undercut the democratic default flow:
+exact trip dates are not set at trip creation, and a verbindliche accommodation is not created
+before the accommodation decision is confirmed. Dependents (Mitreisende) have no voting right in
+either poll.
 
 The two mechanisms are modelled as **two separate aggregate roots** (`DatePoll`,
 `AccommodationPoll`) rather than a generic poll, because their voting modes, option types, result
@@ -47,7 +50,7 @@ S14-B: Vote in Date Poll (Doodle-style)
 
 S14-C: Confirm Date Poll and Update Trip Period
   — depends on S14-B (votes must be visible to decide)
-  — triggers Trip.confirmDateRange(); resets StayPeriods
+  — triggers the final trip date decision; resets StayPeriods if required
 
 S14-D: Propose and Manage Accommodation Candidates
   — independent from DatePoll stories; can start in parallel with S14-A
@@ -55,11 +58,15 @@ S14-D: Propose and Manage Accommodation Candidates
 
 S14-E: Vote for Accommodation and Finalize Selection
   — depends on S14-D (AccommodationPoll and candidates must exist)
-  — SelectAccommodation creates the Accommodation aggregate
+  — SelectAccommodation creates the verbindliche Accommodation aggregate
 
 S14-F: Trip Planning UI Integration
   — depends on all previous stories being functional
   — assembles both polls into a coherent planning tab/section
+
+S14-G: Refine Trip Lifecycle for Collaborative Planning
+  — aligns trip creation, planning dashboard, and poll outcomes
+  — removes the mandatory date contradiction from trip creation
 ```
 
 ---
@@ -74,6 +81,7 @@ S14-F: Trip Planning UI Integration
 | S14-D | Propose and Manage Accommodation Candidates | Must | L | Trips |
 | S14-E | Vote for Accommodation and Finalize Selection | Must | L | Trips |
 | S14-F | Trip Planning UI Integration | Should | M | Trips |
+| S14-G | Refine Trip Lifecycle for Collaborative Planning | Must | L | Trips |
 
 **Scope rationale:**
 
@@ -88,6 +96,10 @@ S14-F is a Should story because both poll types have standalone HTMX-driven UIs 
 own stories. S14-F adds the integrated planning dashboard view. It can be deferred if scope is
 tight, but the overall UX is significantly weaker without it.
 
+S14-G is a Must story because the previous lifecycle assumption (`Trip.dateRange` as mandatory at
+creation) conflicts with the core value of collaborative planning and with the intended user
+journey.
+
 ---
 
 ## Recommended Implementation Order
@@ -98,8 +110,9 @@ tight, but the overall UX is significantly weaker without it.
 | 2 | S14-D | AccommodationPoll aggregate — can start once S14-A domain patterns are established |
 | 3 | S14-B | DatePoll voting on top of the aggregate |
 | 4 | S14-E | AccommodationPoll voting + SelectAccommodation |
-| 5 | S14-C | DatePoll confirmation + Trip.confirmDateRange() + StayPeriod reset |
-| 6 | S14-F | Planning UI integration on top of working polls |
+| 5 | S14-G | Lifecycle refinement before final UI hardening |
+| 6 | S14-C | DatePoll confirmation + final date decision + StayPeriod reset |
+| 7 | S14-F | Planning UI integration on top of working polls |
 
 ---
 
@@ -112,8 +125,10 @@ tight, but the overall UX is significantly weaker without it.
 - **Bring-App integration** (US-TRIPS-055): Einkaufsliste to Bring API sync; deferred, no stable API.
 - **TravelPartyNameRegistered event**: small story needed for correct party-name propagation into
   Expense; should be scheduled before or within the next Expense-focused iteration.
-- **ADR-0019** (separate Poll aggregates) and **ADR-0020** (Trip.dateRange as mandatory field)
-  should be written during or immediately after this iteration.
+- **ADR-0019** (separate Poll aggregates) should be written during or immediately after this
+  iteration.
+- **ADR-0021** should supersede the former ADR-0020 draft and define the lifecycle-aware planning
+  process for trips without mandatory dates at creation.
 
 ---
 

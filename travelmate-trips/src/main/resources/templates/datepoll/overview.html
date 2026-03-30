@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<body>
+<div th:fragment="content">
+    <hgroup>
+        <h1 th:text="#{datepoll.title}">Terminabstimmung</h1>
+        <p><a th:href="@{/{id}(id=${trip.tripId()})}" th:text="${trip.name()}">Reise</a></p>
+    </hgroup>
+
+    <article th:if="${datePoll == null}">
+        <div class="poll-empty-state">
+            <p class="poll-empty-state__eyebrow" th:text="#{planning.step1}">Schritt 1</p>
+            <h2 th:text="#{datepoll.title}">Terminabstimmung</h2>
+            <p th:text="#{datepoll.empty}">Noch keine Terminabstimmung vorhanden.</p>
+            <a th:if="${isOrganizer && trip.status() == 'PLANNING'}"
+               th:href="@{/{id}/datepoll/create(id=${trip.tripId()})}"
+               role="button"
+               th:text="#{datepoll.create}">Terminabstimmung erstellen</a>
+        </div>
+    </article>
+
+    <th:block th:if="${datePoll != null}">
+        <article class="poll-hero">
+            <div class="poll-hero__layout">
+                <div>
+                    <p class="poll-hero__eyebrow" th:text="#{planning.step1}">Schritt 1</p>
+                    <div class="poll-section__header">
+                        <div>
+                            <h2 th:text="#{datepoll.title}">Terminabstimmung</h2>
+                            <p th:if="${datePoll.status() == 'OPEN'}" th:text="#{planning.datepoll.openHint}">
+                                Die Abstimmung laeuft — stimme jetzt ab.
+                            </p>
+                            <p th:if="${datePoll.status() == 'CONFIRMED'}">
+                                <span th:text="#{planning.datepoll.confirmed}">Bestaetigt</span>:
+                                <strong>
+                                    <span th:text="${trip.startDate()}"></span> - <span th:text="${trip.endDate()}"></span>
+                                </strong>
+                            </p>
+                            <p th:if="${datePoll.status() == 'CANCELLED'}" th:text="#{planning.datepoll.cancelled}">
+                                Die Terminabstimmung wurde abgebrochen.
+                            </p>
+                        </div>
+                        <mark th:text="#{${'datepoll.status.' + datePoll.status()}}">Status</mark>
+                    </div>
+                    <div class="poll-hero__stats">
+                        <div class="poll-stat">
+                            <strong th:text="${datePoll.options().size()}">0</strong>
+                            <span th:text="#{datepoll.option}">Zeitraum</span>
+                        </div>
+                        <div class="poll-stat">
+                            <strong th:text="${datePoll.votes().size()}">0</strong>
+                            <span th:text="#{datepoll.votes}">Stimmen</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="poll-hero__art" aria-hidden="true">
+                    <svg viewBox="0 0 220 140">
+                        <rect x="18" y="22" width="184" height="96" rx="18"></rect>
+                        <path d="M52 22v96"></path>
+                        <path d="M88 22v96"></path>
+                        <path d="M124 22v96"></path>
+                        <path d="M160 22v96"></path>
+                        <path d="M18 54h184"></path>
+                        <path d="M18 86h184"></path>
+                        <circle cx="70" cy="70" r="10"></circle>
+                        <path d="m66 70 3 3 6-7"></path>
+                        <circle cx="142" cy="102" r="10"></circle>
+                        <path d="m138 102 3 3 6-7"></path>
+                    </svg>
+                </div>
+            </div>
+        </article>
+
+        <article>
+            <div class="poll-section__header">
+                <div>
+                    <h3 th:text="#{planning.vote}">Abstimmen</h3>
+                    <p th:if="${datePoll.status() == 'OPEN'}" th:text="#{planning.datepoll.hint}">
+                        Stimmt gemeinsam ueber den Reisezeitraum ab.
+                    </p>
+                </div>
+            </div>
+
+            <form th:if="${datePoll.status() == 'OPEN'}"
+                  method="post"
+                  th:action="@{/{tid}/datepoll/{pid}/vote(tid=${trip.tripId()},pid=${datePoll.datePollId()})}">
+                <figure class="table-cards">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th th:text="#{datepoll.option}">Zeitraum</th>
+                                <th th:text="#{datepoll.votes}">Stimmen</th>
+                                <th th:text="#{datepoll.yourVote}">Deine Stimme</th>
+                                <th th:if="${isOrganizer}" class="table-actions-header" th:text="#{common.actions}">Aktionen</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="option : ${datePoll.options()}">
+                                <td th:data-label="#{datepoll.option}">
+                                    <div class="poll-row-copy">
+                                        <strong><span th:text="${option.startDate()}"></span> - <span th:text="${option.endDate()}"></span></strong>
+                                    </div>
+                                </td>
+                                <td th:data-label="#{datepoll.votes}" th:text="${option.voteCount()}">0</td>
+                                <td th:data-label="#{datepoll.yourVote}">
+                                    <input type="checkbox" name="selectedOptionIds"
+                                           th:value="${option.dateOptionId()}"
+                                           th:checked="${currentVoteOptionIds != null && currentVoteOptionIds.contains(option.dateOptionId())}">
+                                </td>
+                                <td th:if="${isOrganizer}" th:data-label="#{common.actions}">
+                                    <button type="submit"
+                                            class="btn-icon btn-icon--danger"
+                                            th:attr="form=${'remove-option-' + option.dateOptionId()}"
+                                            th:title="#{common.remove}" th:aria-label="#{common.remove}">
+                                        <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </figure>
+                <div class="poll-footer-actions">
+                    <button type="submit" th:text="#{datepoll.submitVote}">Abstimmen</button>
+                </div>
+            </form>
+            <th:block th:if="${isOrganizer}">
+                <form th:each="option : ${datePoll.options()}"
+                      method="post"
+                      th:id="${'remove-option-' + option.dateOptionId()}"
+                      th:action="@{/{tid}/datepoll/{pid}/options/{oid}/remove(tid=${trip.tripId()},pid=${datePoll.datePollId()},oid=${option.dateOptionId()})}">
+                </form>
+            </th:block>
+
+            <figure th:if="${datePoll.status() != 'OPEN'}" class="table-cards">
+                <table>
+                    <thead>
+                        <tr>
+                            <th th:text="#{datepoll.option}">Zeitraum</th>
+                            <th th:text="#{datepoll.votes}">Stimmen</th>
+                            <th th:if="${datePoll.status() == 'CONFIRMED'}"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="option : ${datePoll.options()}"
+                            th:classappend="${datePoll.confirmedOptionId() != null && datePoll.confirmedOptionId().equals(option.dateOptionId())} ? 'confirmed-option' : ''">
+                            <td th:data-label="#{datepoll.option}">
+                                <div class="poll-row-copy">
+                                    <strong><span th:text="${option.startDate()}"></span> - <span th:text="${option.endDate()}"></span></strong>
+                                </div>
+                            </td>
+                            <td th:data-label="#{datepoll.votes}" th:text="${option.voteCount()}">0</td>
+                            <td th:if="${datePoll.status() == 'CONFIRMED'}">
+                                <mark th:if="${datePoll.confirmedOptionId() != null && datePoll.confirmedOptionId().equals(option.dateOptionId())}"
+                                      th:text="#{datepoll.confirmed}">Bestaetigt</mark>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </figure>
+        </article>
+
+        <article th:if="${isOrganizer && datePoll.status() == 'OPEN'}">
+            <div class="poll-section__header">
+                <div>
+                    <h3 th:text="#{common.actions}">Aktionen</h3>
+                    <p>Optionen ergaenzen, Zeitraum auswaehlen oder die Abstimmung abbrechen.</p>
+                </div>
+            </div>
+            <div class="poll-management-grid">
+                <section class="poll-panel">
+                    <h4 th:text="#{datepoll.addOption}">Zeitraum hinzufuegen</h4>
+                    <form method="post"
+                          th:action="@{/{tid}/datepoll/{pid}/options/add(tid=${trip.tripId()},pid=${datePoll.datePollId()})}">
+                        <label>
+                            <span th:text="#{trip.startDate}">Von</span>
+                            <input type="date" name="startDate" required>
+                        </label>
+                        <label>
+                            <span th:text="#{trip.endDate}">Bis</span>
+                            <input type="date" name="endDate" required>
+                        </label>
+                        <button type="submit" th:text="#{datepoll.addOption}">Hinzufuegen</button>
+                    </form>
+                </section>
+                <section class="poll-panel">
+                    <h4 th:text="#{datepoll.confirmTitle}">Termin bestaetigen</h4>
+                    <form method="post"
+                          th:action="@{/{tid}/datepoll/{pid}/confirm(tid=${trip.tripId()},pid=${datePoll.datePollId()})}">
+                        <label>
+                            <span th:text="#{datepoll.selectOption}">Zeitraum waehlen</span>
+                            <select name="confirmedOptionId" required>
+                                <option value="" th:text="#{datepoll.selectOption}">-- Zeitraum waehlen --</option>
+                                <option th:each="option : ${datePoll.options()}"
+                                        th:value="${option.dateOptionId()}"
+                                        th:text="${option.startDate() + ' - ' + option.endDate() + ' (' + option.voteCount() + ')'}">
+                                </option>
+                            </select>
+                        </label>
+                        <button type="submit" th:text="#{datepoll.confirmAction}">Bestaetigen</button>
+                    </form>
+                </section>
+            </div>
+
+            <form method="post"
+                  th:action="@{/{tid}/datepoll/{pid}/cancel(tid=${trip.tripId()},pid=${datePoll.datePollId()})}">
+                <div class="poll-footer-actions">
+                    <button type="submit" class="outline secondary" th:text="#{datepoll.cancelAction}">Abstimmung abbrechen</button>
+                </div>
+            </form>
+        </article>
+    </th:block>
+
+    <a th:href="@{/{id}(id=${trip.tripId()})}" role="button" class="outline" th:text="#{common.back}">Zurueck</a>
+</div>
+</body>
+</html>

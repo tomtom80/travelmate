@@ -27,12 +27,10 @@ public class TripPlanningSteps {
         navigateAndWait("/trips/new");
     }
 
-    @When("I fill in trip name {string}, start date {string}, end date {string}")
-    public void iFillInTripDetails(final String name, final String startDate, final String endDate) {
+    @When("I fill in trip name {string}")
+    public void iFillInTripDetails(final String name) {
         lastTripName = name;
         page.fill("input[name=name]", name);
-        page.fill("input[name=startDate]", startDate);
-        page.fill("input[name=endDate]", endDate);
     }
 
     @When("I submit the create-trip form")
@@ -56,20 +54,10 @@ public class TripPlanningSteps {
         assertThat(found).as("Expected status '%s' on the page", status).isTrue();
     }
 
-    @Given("I have created a trip {string} from {string} to {string}")
-    public void iHaveCreatedATrip(final String name, final String startDate, final String endDate) {
-        navigateAndWait("/trips/new");
-        page.fill("input[name=name]", name + " " + RUN_ID);
-        page.fill("input[name=startDate]", startDate);
-        page.fill("input[name=endDate]", endDate);
-        page.locator("main button[type=submit]").click();
-        page.waitForLoadState();
-
-        // Navigate to the trip detail page
-        navigateAndWait("/trips/");
-        page.locator("a", new com.microsoft.playwright.Page.LocatorOptions()
-            .setHasText(name + " " + RUN_ID)).click();
-        page.waitForLoadState();
+    @Given("I have created a trip {string}")
+    public void iHaveCreatedATrip(final String name) {
+        createTripWithoutDates(name + " " + RUN_ID);
+        openTripFromList(name + " " + RUN_ID);
         currentTripDetailUrl = page.url();
     }
 
@@ -176,6 +164,13 @@ public class TripPlanningSteps {
     public void theExternalInvitationFormIsVisibleOnThePage() {
         final int formCount = page.locator("form[action*='/invitations/external'], form[hx-post*='/invitations/external']").count();
         assertThat(formCount).as("External invitation form should be visible").isPositive();
+    }
+
+    @Then("the trip detail explains that travel dates will be decided together later")
+    public void theTripDetailExplainsThatTravelDatesWillBeDecidedTogetherLater() {
+        final String content = page.content();
+        assertThat(content).contains("gemeinsam");
+        assertThat(content).contains("Planung");
     }
 
     @When("I navigate to a non-existent trip detail page")

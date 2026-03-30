@@ -88,6 +88,105 @@ abstract class E2ETestBase {
         targetPage.navigate(url, new Page.NavigateOptions().setWaitUntil(WaitUntilState.NETWORKIDLE));
     }
 
+    static void createTripWithoutDates(final String tripName, final String description) {
+        createTripWithoutDates(page, tripName, description);
+    }
+
+    static void createTripWithoutDates(final Page targetPage, final String tripName, final String description) {
+        navigateAndWait(targetPage, "/trips/new");
+        targetPage.fill("input[name=name]", tripName);
+        if (description != null) {
+            targetPage.fill("textarea[name=description], #description", description);
+        }
+        targetPage.locator("main button[type=submit]").click();
+        targetPage.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
+    }
+
+    static String openTripFromList(final String tripName) {
+        return openTripFromList(page, tripName);
+    }
+
+    static String openTripFromList(final Page targetPage, final String tripName) {
+        navigateAndWait(targetPage, "/trips/");
+        targetPage.locator("a", new Page.LocatorOptions().setHasText(tripName)).click();
+        targetPage.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
+        return extractTripId(targetPage);
+    }
+
+    static void createAndConfirmDatePoll(final String tripId,
+                                         final String option1Start,
+                                         final String option1End,
+                                         final String option2Start,
+                                         final String option2End) {
+        navigateAndWait("/trips/" + tripId + "/datepoll/create");
+        page.locator("input[name=startDate]").nth(0).fill(option1Start);
+        page.locator("input[name=endDate]").nth(0).fill(option1End);
+        page.locator("input[name=startDate]").nth(1).fill(option2Start);
+        page.locator("input[name=endDate]").nth(1).fill(option2End);
+        page.locator("button[type=submit]:not(.outline)").first().click();
+        page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
+
+        page.locator("select[name=confirmedOptionId]").selectOption(
+            page.locator("select[name=confirmedOptionId] option:not([value=''])").first().getAttribute("value")
+        );
+        page.locator("button[type=submit]:has-text('Bestaetigen'), button[type=submit]:has-text('Confirm')").click();
+        page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
+    }
+
+    static void createAndConfirmAccommodationPoll(final String tripId,
+                                                  final String candidate1Name,
+                                                  final String candidate1Url,
+                                                  final String candidate1Description,
+                                                  final String candidate2Name,
+                                                  final String candidate2Description) {
+        navigateAndWait("/trips/" + tripId + "/accommodationpoll/create");
+        page.locator("input[name=candidateName]").nth(0).fill(candidate1Name);
+        if (candidate1Url != null) {
+            page.locator("input[name=candidateUrl]").nth(0).fill(candidate1Url);
+        }
+        if (candidate1Description != null) {
+            page.locator("input[name=candidateDescription]").nth(0).fill(candidate1Description);
+        }
+        page.locator("input[name=candidateName]").nth(1).fill(candidate2Name);
+        if (candidate2Description != null) {
+            page.locator("input[name=candidateDescription]").nth(1).fill(candidate2Description);
+        }
+        page.locator("button[type=submit]:not(.outline)").first().click();
+        page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
+
+        page.locator("select[name=confirmedCandidateId]").selectOption(
+            page.locator("select[name=confirmedCandidateId] option:not([value=''])").first().getAttribute("value")
+        );
+        page.locator("button[type=submit]:has-text('Bestaetigen'), button[type=submit]:has-text('Confirm')").click();
+        page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
+    }
+
+    static void createAccommodationAfterPollDecision(final String tripId,
+                                                     final String name,
+                                                     final String address,
+                                                     final String checkIn,
+                                                     final String checkOut,
+                                                     final String totalPrice,
+                                                     final String roomName,
+                                                     final String roomBedCount) {
+        navigateAndWait("/trips/" + tripId + "/accommodation");
+        page.locator("button:has-text('Unterkunft hinzufuegen'), button:has-text('Accommodation hinzufügen')").first().click();
+        page.waitForSelector("dialog[open]");
+        page.locator("dialog input[name=name]").fill(name);
+        if (address != null) {
+            page.locator("dialog input[name=address]").fill(address);
+        }
+        page.locator("dialog input[name=checkIn]").fill(checkIn);
+        page.locator("dialog input[name=checkOut]").fill(checkOut);
+        if (totalPrice != null) {
+            page.locator("dialog input[name=totalPrice]").fill(totalPrice);
+        }
+        page.locator("dialog input[name=roomName]").fill(roomName);
+        page.locator("dialog input[name=roomBedCount]").fill(roomBedCount);
+        page.locator("dialog button[type=submit]").click();
+        page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
+    }
+
     static void signUpAndLogin(final String tenantName, final String firstName, final String lastName,
                                 final String email, final String password) {
         signUpAndLogin(page, tenantName, firstName, lastName, email, password);
@@ -256,6 +355,12 @@ abstract class E2ETestBase {
             .replace("http://iam:8081/iam", IAM_PUBLIC_URL)
             .replace("http://gateway:8080", BASE_URL)
             .replace("http://trips:8082", BASE_URL + "/trips");
+    }
+
+    static String extractTripId(final Page targetPage) {
+        final String url = targetPage.url();
+        final String path = url.replaceFirst(".*/(trips|expense)/", "");
+        return path.replaceAll("[/?#].*", "");
     }
 
     private static Map<String, String> playwrightEnv() {

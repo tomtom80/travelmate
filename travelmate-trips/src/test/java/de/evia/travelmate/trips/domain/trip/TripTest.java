@@ -49,6 +49,14 @@ class TripTest {
     }
 
     @Test
+    void planWithoutDateRangeCreatesPlanningContainer() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, null, ORGANIZER_ID);
+
+        assertThat(trip.dateRange()).isNull();
+        assertThat(trip.status()).isEqualTo(TripStatus.PLANNING);
+    }
+
+    @Test
     void planAddsAllProvidedParticipants() {
         final UUID member2 = UUID.randomUUID();
         final UUID dependent1 = UUID.randomUUID();
@@ -191,6 +199,15 @@ class TripTest {
     }
 
     @Test
+    void cannotConfirmWithoutDateRange() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, null, ORGANIZER_ID);
+
+        assertThatThrownBy(trip::confirm)
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("final date range");
+    }
+
+    @Test
     void cannotStartWhenNotConfirmed() {
         final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
 
@@ -249,6 +266,72 @@ class TripTest {
         );
 
         assertThatThrownBy(() -> trip.setParticipantStayPeriod(UUID.randomUUID(), stayPeriod))
+            .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    // --- updateDateRange ---
+
+    @Test
+    void updateDateRangeInPlanningSucceeds() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+        final DateRange newRange = new DateRange(
+            LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 14));
+
+        trip.updateDateRange(newRange);
+
+        assertThat(trip.dateRange()).isEqualTo(newRange);
+    }
+
+    @Test
+    void updateDateRangeResetsInvalidStayPeriods() {
+        final UUID participant2 = UUID.randomUUID();
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID,
+            List.of(ORGANIZER_ID, participant2));
+        trip.setParticipantStayPeriod(ORGANIZER_ID,
+            new StayPeriod(LocalDate.of(2026, 3, 16), LocalDate.of(2026, 3, 20)));
+        trip.setParticipantStayPeriod(participant2,
+            new StayPeriod(LocalDate.of(2026, 3, 15), LocalDate.of(2026, 3, 22)));
+        trip.clearDomainEvents();
+
+        final DateRange newRange = new DateRange(
+            LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 14));
+        trip.updateDateRange(newRange);
+
+        assertThat(trip.participants().get(0).stayPeriod()).isNull();
+        assertThat(trip.participants().get(1).stayPeriod()).isNull();
+    }
+
+    @Test
+    void updateDateRangeKeepsValidStayPeriods() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+        final StayPeriod stayPeriod = new StayPeriod(
+            LocalDate.of(2026, 3, 16), LocalDate.of(2026, 3, 20));
+        trip.setParticipantStayPeriod(ORGANIZER_ID, stayPeriod);
+
+        final DateRange widerRange = new DateRange(
+            LocalDate.of(2026, 3, 10), LocalDate.of(2026, 3, 25));
+        trip.updateDateRange(widerRange);
+
+        assertThat(trip.participants().getFirst().stayPeriod()).isEqualTo(stayPeriod);
+    }
+
+    @Test
+    void updateDateRangeRejectsNonPlanningStatus() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+        trip.confirm();
+        final DateRange newRange = new DateRange(
+            LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 14));
+
+        assertThatThrownBy(() -> trip.updateDateRange(newRange))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("PLANNING");
+    }
+
+    @Test
+    void updateDateRangeRejectsNull() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+
+        assertThatThrownBy(() -> trip.updateDateRange(null))
             .isInstanceOf(IllegalArgumentException.class);
     }
 }

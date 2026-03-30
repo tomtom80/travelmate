@@ -145,6 +145,8 @@ public class ExpenseLifecycleSteps {
                                              final String arrival,
                                              final String departure) {
         final String tripDetailUrl = TripPlanningSteps.getCurrentTripDetailUrl();
+        final String tripId = extractTripIdFromCurrentTrip();
+        ensureDateDecisionReady(tripId);
         for (int i = 0; i < 30; i++) {
             final var participantRow = page.locator("tr:has(.action-col)", new com.microsoft.playwright.Page.LocatorOptions()
                 .setHasText(participantName)).first();
@@ -173,6 +175,7 @@ public class ExpenseLifecycleSteps {
     @And("I have added accommodation price {string}")
     public void iHaveAddedAccommodationPrice(final String totalPrice) {
         final String tripId = extractTripIdFromCurrentTrip();
+        ensureAccommodationManagementReady(tripId);
         navigateAndWait("/trips/" + tripId + "/accommodation");
         if (page.locator("button:has-text('Unterkunft hinzufuegen')").count() > 0) {
             page.locator("button:has-text('Unterkunft hinzufuegen')").click();
@@ -196,6 +199,46 @@ public class ExpenseLifecycleSteps {
             navigateAndWait("/trips/" + tripId + "/accommodation");
         }
         assertThat(page.content()).contains("BDD Expense Unterkunft");
+    }
+
+    private void ensureAccommodationManagementReady(final String tripId) {
+        ensureDateDecisionReady(tripId);
+
+        navigateAndWait("/trips/" + tripId + "/accommodation");
+        if (page.locator("button:has-text('Unterkunft hinzufuegen')").count() > 0
+            || page.content().contains("BDD Expense Unterkunft")) {
+            return;
+        }
+
+        if (page.url().contains("/planning") || page.content().contains("Unterkunft abstimmen")) {
+            if (page.locator("a[href*='/accommodationpoll/create']").count() > 0) {
+                createAndConfirmAccommodationPoll(tripId, "BDD Expense Unterkunft", "BDD Expense Alternative");
+            } else {
+                navigateAndWait("/trips/" + tripId + "/accommodationpoll");
+                if (page.locator("a[href*='/accommodationpoll/create']").count() > 0) {
+                    createAndConfirmAccommodationPoll(tripId, "BDD Expense Unterkunft", "BDD Expense Alternative");
+                }
+            }
+        }
+    }
+
+    private void ensureDateDecisionReady(final String tripId) {
+        navigateAndWait("/trips/" + tripId);
+        final String detailContent = page.content();
+
+        if (page.locator("a[href*='/datepoll/create']").count() > 0) {
+            createAndConfirmDatePoll(tripId, "2026-07-01", "2026-07-05", "2026-07-02", "2026-07-06");
+            navigateAndWait("/trips/" + tripId);
+            return;
+        }
+
+        if (detailContent.contains("Termin abstimmen") || detailContent.contains("Planung abstimmen")) {
+            navigateAndWait("/trips/" + tripId + "/datepoll");
+            if (page.locator("a[href*='/datepoll/create']").count() > 0) {
+                createAndConfirmDatePoll(tripId, "2026-07-01", "2026-07-05", "2026-07-02", "2026-07-06");
+                navigateAndWait("/trips/" + tripId);
+            }
+        }
     }
 
     @When("I open the expense page for the current trip")
@@ -318,19 +361,13 @@ public class ExpenseLifecycleSteps {
         final String fullName = tripName + " " + RUN_ID;
         lastCreatedTripName = fullName;
 
-        navigateAndWait("/trips/new");
-        page.fill("input[name=name]", fullName);
-        page.fill("input[name=startDate]", "2026-07-01");
-        page.fill("input[name=endDate]", "2026-07-14");
-        page.locator("main button[type=submit]").click();
-        page.waitForLoadState();
-
-        // Navigate to trip detail
-        navigateAndWait("/trips/");
-        page.locator("a", new com.microsoft.playwright.Page.LocatorOptions()
-            .setHasText(fullName)).click();
-        page.waitForLoadState();
+        createTripWithoutDates(fullName);
+        final String tripId = openTripFromList(fullName);
         completedTripDetailUrl = page.url();
+        createAndConfirmDatePoll(tripId, "2026-07-01", "2026-07-14", "2026-07-02", "2026-07-15");
+        createAndConfirmAccommodationPoll(tripId, "BDD Expense Unterkunft", "BDD Expense Alternative");
+        iHaveAddedAccommodationPrice("300.00");
+        navigateAndWait("/trips/" + tripId);
 
         // Move through lifecycle
         page.locator("form[action$='/confirm'] button[type=submit]").click();
@@ -354,7 +391,6 @@ public class ExpenseLifecycleSteps {
         } else {
             url = completedTripDetailUrl;
         }
-        final String path = url.replaceFirst(".*/(trips|expense)/", "");
-        return path.replaceAll("[/?#].*", "");
+        return extractTripId(url);
     }
 }

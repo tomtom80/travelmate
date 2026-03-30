@@ -34,6 +34,7 @@ import de.evia.travelmate.trips.application.command.GrantTripOrganizerCommand;
 import de.evia.travelmate.trips.application.command.RemoveParticipantFromTripCommand;
 import de.evia.travelmate.trips.application.command.SetStayPeriodCommand;
 import de.evia.travelmate.trips.application.representation.TripRepresentation;
+import de.evia.travelmate.trips.domain.accommodation.AccommodationRepository;
 import de.evia.travelmate.trips.domain.shoppinglist.ShoppingItem;
 import de.evia.travelmate.trips.domain.shoppinglist.ShoppingItemId;
 import de.evia.travelmate.trips.domain.shoppinglist.ShoppingList;
@@ -60,6 +61,9 @@ class TripServiceTest {
     private TravelPartyRepository travelPartyRepository;
 
     @Mock
+    private AccommodationRepository accommodationRepository;
+
+    @Mock
     private ShoppingListRepository shoppingListRepository;
 
     @Mock
@@ -80,9 +84,7 @@ class TripServiceTest {
         when(tripRepository.save(any(Trip.class))).thenAnswer(inv -> inv.getArgument(0));
 
         final CreateTripCommand command = new CreateTripCommand(
-            TENANT_UUID, "Skiurlaub", "Ab in die Berge",
-            LocalDate.of(2026, 3, 15), LocalDate.of(2026, 3, 22),
-            ORGANIZER_ID
+            TENANT_UUID, "Skiurlaub", "Ab in die Berge", ORGANIZER_ID
         );
 
         final TripRepresentation result = tripService.createTrip(command);
@@ -90,6 +92,8 @@ class TripServiceTest {
         assertThat(result.name()).isEqualTo("Skiurlaub");
         assertThat(result.status()).isEqualTo("PLANNING");
         assertThat(result.organizerId()).isEqualTo(ORGANIZER_ID);
+        assertThat(result.startDate()).isNull();
+        assertThat(result.endDate()).isNull();
         verify(tripRepository).save(any(Trip.class));
     }
 
@@ -106,9 +110,7 @@ class TripServiceTest {
         when(tripRepository.save(any(Trip.class))).thenAnswer(inv -> inv.getArgument(0));
 
         final CreateTripCommand command = new CreateTripCommand(
-            TENANT_UUID, "Sommerurlaub", null,
-            LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 14),
-            ORGANIZER_ID
+            TENANT_UUID, "Sommerurlaub", null, ORGANIZER_ID
         );
 
         final TripRepresentation result = tripService.createTrip(command);
@@ -133,9 +135,7 @@ class TripServiceTest {
         when(tripRepository.save(any(Trip.class))).thenAnswer(inv -> inv.getArgument(0));
 
         final CreateTripCommand command = new CreateTripCommand(
-            TENANT_UUID, "Wanderung", null,
-            LocalDate.of(2026, 6, 1), LocalDate.of(2026, 6, 7),
-            ORGANIZER_ID
+            TENANT_UUID, "Wanderung", null, ORGANIZER_ID
         );
 
         tripService.createTrip(command);
@@ -158,9 +158,7 @@ class TripServiceTest {
             .thenReturn(Optional.of(party));
 
         final CreateTripCommand command = new CreateTripCommand(
-            TENANT_UUID, "Skiurlaub", null,
-            LocalDate.of(2026, 3, 15), LocalDate.of(2026, 3, 22),
-            UUID.randomUUID()
+            TENANT_UUID, "Skiurlaub", null, UUID.randomUUID()
         );
 
         assertThatThrownBy(() -> tripService.createTrip(command))
@@ -171,12 +169,41 @@ class TripServiceTest {
     @Test
     void confirmTripTransitionsToConfirmed() {
         final Trip trip = createTrip();
+        when(accommodationRepository.existsByTripId(trip.tripId())).thenReturn(true);
         when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
 
         tripService.confirmTrip(trip.tripId());
 
         assertThat(trip.status().name()).isEqualTo("CONFIRMED");
         verify(tripRepository).save(trip);
+    }
+
+    @Test
+    void confirmTripRejectsMissingDateRange() {
+        final TravelParty party = TravelParty.create(new TenantId(TENANT_UUID), "Test");
+        party.addMember(ORGANIZER_ID, "max@example.com", "Max", "Mustermann");
+        final Trip trip = Trip.planWithParticipants(
+            new TenantId(TENANT_UUID),
+            new TripName("Offene Planung"),
+            null,
+            null,
+            ORGANIZER_ID,
+            List.of(new de.evia.travelmate.trips.domain.trip.Participant(ORGANIZER_ID, "Max", "Mustermann"))
+        );
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+
+        assertThatThrownBy(() -> tripService.confirmTrip(trip.tripId()))
+            .hasMessageContaining("confirmationRequiresDateRange");
+    }
+
+    @Test
+    void confirmTripRejectsMissingAccommodation() {
+        final Trip trip = createTrip();
+        when(accommodationRepository.existsByTripId(trip.tripId())).thenReturn(false);
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+
+        assertThatThrownBy(() -> tripService.confirmTrip(trip.tripId()))
+            .hasMessageContaining("confirmationRequiresAccommodation");
     }
 
     @Test

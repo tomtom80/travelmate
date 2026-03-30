@@ -54,21 +54,14 @@ class TripLifecycleIT extends E2ETestBase {
 
         assertThat(page.locator("input[name=name]").count()).isPositive();
         assertThat(page.locator("textarea[name=description], input[name=description]").count()).isPositive();
-        assertThat(page.locator("input[name=startDate]").count()).isPositive();
-        assertThat(page.locator("input[name=endDate]").count()).isPositive();
+        assertThat(page.locator("input[name=startDate]").count()).isZero();
+        assertThat(page.locator("input[name=endDate]").count()).isZero();
     }
 
     @Test
     @Order(11)
     void createTripSucceeds() {
-        navigateAndWait("/trips/new");
-
-        page.fill("input[name=name]", TRIP_NAME);
-        page.fill("#description", "Ein E2E-Testurlaub");
-        page.fill("input[name=startDate]", "2026-07-01");
-        page.fill("input[name=endDate]", "2026-07-14");
-        page.locator("main button[type=submit]").click();
-        page.waitForLoadState();
+        createTripWithoutDates(TRIP_NAME, "Ein E2E-Testurlaub");
 
         assertThat(page.url()).contains("/trips");
         assertThat(page.content()).contains(TRIP_NAME);
@@ -81,8 +74,7 @@ class TripLifecycleIT extends E2ETestBase {
         final String content = page.content();
 
         assertThat(content).contains(TRIP_NAME);
-        assertThat(content).contains("2026-07-01");
-        assertThat(content).contains("2026-07-14");
+        assertThat(content).contains("—");
         assertThat(content).contains("In Planung");
     }
 
@@ -96,8 +88,7 @@ class TripLifecycleIT extends E2ETestBase {
         final String content = page.content();
         assertThat(content).contains(TRIP_NAME);
         assertThat(content).contains("Ein E2E-Testurlaub");
-        assertThat(content).contains("2026-07-01");
-        assertThat(content).contains("2026-07-14");
+        assertThat(content).contains("gemeinsam");
         assertThat(content).contains("In Planung");
     }
 
@@ -111,17 +102,65 @@ class TripLifecycleIT extends E2ETestBase {
     @Test
     @Order(22)
     void tripDetailShowsStatusActionButtons() {
-        assertThat(page.locator("form[action$='/confirm'] button[type=submit]").count()).isPositive();
+        assertThat(page.locator("form[action$='/confirm'] button[type=submit]").count()).isZero();
         assertThat(page.locator("form[action$='/cancel'] button[type=submit]").count()).isPositive();
+    }
+
+    @Test
+    @Order(24)
+    void planningFlowMakesTripConfirmable() {
+        navigateAndWait("/trips/");
+        page.locator("a", new com.microsoft.playwright.Page.LocatorOptions().setHasText(TRIP_NAME)).click();
+        page.waitForLoadState();
+
+        final String tripId = extractTripId(page);
+        createAndConfirmDatePoll(tripId, "2026-07-01", "2026-07-14", "2026-07-03", "2026-07-16");
+        createAndConfirmAccommodationPoll(
+            tripId,
+            "Hotel Alpenblick",
+            "https://alpenblick.example",
+            "Direkt am See",
+            "Berghaus Morgenrot",
+            "Ruhige Lage"
+        );
+        createAccommodationAfterPollDecision(
+            tripId,
+            "Hotel Alpenblick",
+            "Alpweg 7",
+            "2026-07-01",
+            "2026-07-14",
+            "1800",
+            "Familienzimmer",
+            "4"
+        );
+
+        navigateAndWait("/trips/" + tripId);
+        assertThat(page.locator("form[action$='/confirm'] button[type=submit]").count()).isPositive();
+    }
+
+    @Test
+    @Order(25)
+    void setStayPeriodForOrganizer() {
+        navigateAndWait("/trips/");
+        page.locator("a", new com.microsoft.playwright.Page.LocatorOptions().setHasText(TRIP_NAME)).click();
+        page.waitForLoadState();
+
+        final var editButton = page.locator("button.btn-icon[data-dialog-id]").first();
+        if (editButton.count() > 0) {
+            editButton.click();
+            page.locator("dialog[open] input[name=arrivalDate]").fill("2026-07-02");
+            page.locator("dialog[open] input[name=departureDate]").fill("2026-07-13");
+            page.locator("dialog[open] button[type=submit]").click();
+            page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
+
+            assertThat(page.content()).contains("2026-07-02");
+            assertThat(page.content()).contains("2026-07-13");
+        }
     }
 
     @Test
     @Order(30)
     void confirmTripChangesStatusToConfirmed() {
-        navigateAndWait("/trips/");
-        page.locator("a", new com.microsoft.playwright.Page.LocatorOptions().setHasText(TRIP_NAME)).click();
-        page.waitForLoadState();
-
         page.locator("form[action$='/confirm'] button[type=submit]").click();
         page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
 
@@ -160,12 +199,7 @@ class TripLifecycleIT extends E2ETestBase {
     void createAndCancelTrip() {
         final String cancelTripName = "Storniert " + RUN_ID;
 
-        navigateAndWait("/trips/new");
-        page.fill("input[name=name]", cancelTripName);
-        page.fill("input[name=startDate]", "2026-08-01");
-        page.fill("input[name=endDate]", "2026-08-07");
-        page.locator("main button[type=submit]").click();
-        page.waitForLoadState();
+        createTripWithoutDates(cancelTripName, null);
 
         page.locator("a", new com.microsoft.playwright.Page.LocatorOptions().setHasText(cancelTripName)).click();
         page.waitForLoadState();
@@ -175,26 +209,6 @@ class TripLifecycleIT extends E2ETestBase {
         page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
 
         assertThat(page.content()).contains("Abgesagt");
-    }
-
-    @Test
-    @Order(25)
-    void setStayPeriodForOrganizer() {
-        navigateAndWait("/trips/");
-        page.locator("a", new com.microsoft.playwright.Page.LocatorOptions().setHasText(TRIP_NAME)).click();
-        page.waitForLoadState();
-
-        final var editButton = page.locator("button.btn-icon[data-dialog-id]").first();
-        if (editButton.count() > 0) {
-            editButton.click();
-            page.locator("dialog[open] input[name=arrivalDate]").fill("2026-07-02");
-            page.locator("dialog[open] input[name=departureDate]").fill("2026-07-13");
-            page.locator("dialog[open] button[type=submit]").click();
-            page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
-
-            assertThat(page.content()).contains("2026-07-02");
-            assertThat(page.content()).contains("2026-07-13");
-        }
     }
 
     @Test

@@ -21,7 +21,7 @@ public class Trip extends AggregateRoot {
     private final TenantId tenantId;
     private final TripName name;
     private final String description;
-    private final DateRange dateRange;
+    private DateRange dateRange;
     private final UUID organizerId;
     private final List<UUID> organizerIds;
     private final List<Participant> participants;
@@ -39,7 +39,6 @@ public class Trip extends AggregateRoot {
         argumentIsNotNull(tripId, "tripId");
         argumentIsNotNull(tenantId, "tenantId");
         argumentIsNotNull(name, "name");
-        argumentIsNotNull(dateRange, "dateRange");
         argumentIsNotNull(organizerId, "organizerId");
         argumentIsNotNull(organizerIds, "organizerIds");
         argumentIsNotNull(status, "status");
@@ -90,8 +89,8 @@ public class Trip extends AggregateRoot {
             tenantId.value(),
             trip.tripId.value(),
             name.value(),
-            dateRange.startDate(),
-            dateRange.endDate(),
+            dateRange != null ? dateRange.startDate() : null,
+            dateRange != null ? dateRange.endDate() : null,
             LocalDate.now()
         ));
         return trip;
@@ -136,6 +135,9 @@ public class Trip extends AggregateRoot {
 
     public void setParticipantStayPeriod(final UUID participantId, final StayPeriod stayPeriod) {
         argumentIsNotNull(stayPeriod, "stayPeriod");
+        if (dateRange == null) {
+            throw new IllegalStateException("Stay periods can only be set after the trip date range was confirmed.");
+        }
         if (!stayPeriod.isWithin(dateRange)) {
             throw new IllegalArgumentException(
                 "Stay period must be within the trip date range.");
@@ -163,6 +165,9 @@ public class Trip extends AggregateRoot {
 
     public void confirm() {
         assertStatus(TripStatus.PLANNING, "confirm");
+        if (dateRange == null) {
+            throw new IllegalStateException("Cannot confirm a trip without a final date range.");
+        }
         this.status = TripStatus.CONFIRMED;
     }
 
@@ -183,6 +188,17 @@ public class Trip extends AggregateRoot {
                 "Cannot cancel trip in status " + status);
         }
         this.status = TripStatus.CANCELLED;
+    }
+
+    public void updateDateRange(final DateRange newDateRange) {
+        argumentIsNotNull(newDateRange, "newDateRange");
+        assertStatus(TripStatus.PLANNING, "update date range");
+        this.dateRange = newDateRange;
+        for (final Participant participant : participants) {
+            if (participant.stayPeriod() != null && !participant.stayPeriod().isWithin(newDateRange)) {
+                participant.setStayPeriod(null);
+            }
+        }
     }
 
     private void assertStatus(final TripStatus expected, final String action) {

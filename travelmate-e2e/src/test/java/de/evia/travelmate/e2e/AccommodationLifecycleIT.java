@@ -30,19 +30,13 @@ class AccommodationLifecycleIT extends E2ETestBase {
         signUpAndLogin(TENANT_NAME, "Heidi", "Alpen", EMAIL, PASSWORD);
         waitForTripsReady();
 
-        navigateAndWait("/trips/new");
-        page.fill("input[name=name]", TRIP_NAME);
-        page.fill("input[name=startDate]", "2026-11-01");
-        page.fill("input[name=endDate]", "2026-11-05");
-        page.locator("main button[type=submit]").click();
-        page.waitForLoadState();
+        createTripWithoutDates(TRIP_NAME, null);
 
         assertThat(page.content()).contains(TRIP_NAME);
 
-        // Navigate from trip list to trip detail
-        page.locator("a", new com.microsoft.playwright.Page.LocatorOptions().setHasText(TRIP_NAME)).click();
-        page.waitForLoadState();
+        final String tripId = openTripFromList(TRIP_NAME);
         tripDetailUrl = page.url();
+        createAndConfirmDatePoll(tripId, "2026-11-01", "2026-11-05", "2026-11-02", "2026-11-06");
     }
 
     @Test
@@ -60,16 +54,28 @@ class AccommodationLifecycleIT extends E2ETestBase {
         final String tripId = extractTripId();
         navigateAndWait("/trips/" + tripId + "/accommodation");
 
-        final String content = page.content();
-        // Empty state text or add button should be visible
-        assertThat(content).satisfiesAnyOf(
-            c -> assertThat(c).contains("Unterkunft hinzufuegen"),
-            c -> assertThat(c).contains("Noch keine Unterkunft")
-        );
+        assertThat(page.url()).contains("/planning");
     }
 
     @Test
     @Order(12)
+    void confirmAccommodationPollBeforeManagingAccommodation() {
+        final String tripId = extractTripId();
+        createAndConfirmAccommodationPoll(
+            tripId,
+            ACCOMMODATION_NAME,
+            null,
+            "Tolle Aussicht",
+            "Berghaus Sonnstein",
+            "Ruhige Lage"
+        );
+
+        navigateAndWait("/trips/" + tripId + "/accommodation");
+        assertThat(page.content()).contains("Unterkunft");
+    }
+
+    @Test
+    @Order(13)
     void addAccommodationViaDialog() {
         // Open the add accommodation dialog
         page.locator("button:has-text('Unterkunft hinzufuegen')").click();
@@ -92,7 +98,7 @@ class AccommodationLifecycleIT extends E2ETestBase {
     }
 
     @Test
-    @Order(13)
+    @Order(14)
     void accommodationDetailsShown() {
         final String content = page.content();
         assertThat(content).contains(ACCOMMODATION_NAME);
@@ -102,7 +108,7 @@ class AccommodationLifecycleIT extends E2ETestBase {
     }
 
     @Test
-    @Order(14)
+    @Order(15)
     void i18nResolvedCorrectlyOnAccommodationPage() {
         final String content = page.content();
         assertThat(content).doesNotContain("??");

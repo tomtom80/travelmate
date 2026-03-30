@@ -84,6 +84,65 @@ public class PlaywrightHooks {
         page.navigate(BASE_URL + path, new Page.NavigateOptions().setWaitUntil(WaitUntilState.NETWORKIDLE));
     }
 
+    static void createTripWithoutDates(final String tripName) {
+        createTripWithoutDates(tripName, null);
+    }
+
+    static void createTripWithoutDates(final String tripName, final String description) {
+        navigateAndWait("/trips/new");
+        page.locator("#name, input[name=name]").first().fill(tripName);
+        if (description != null) {
+            page.locator("textarea[name=description], #description").first().fill(description);
+        }
+        page.locator("main button[type=submit]").click();
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+    }
+
+    static String openTripFromList(final String tripName) {
+        navigateAndWait("/trips/");
+        page.locator("a", new Page.LocatorOptions().setHasText(tripName)).click();
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+        return extractTripId(page.url());
+    }
+
+    static void createAndConfirmDatePoll(final String tripId,
+                                         final String option1Start,
+                                         final String option1End,
+                                         final String option2Start,
+                                         final String option2End) {
+        navigateAndWait("/trips/" + tripId + "/datepoll/create");
+        page.locator("input[name=startDate]").nth(0).fill(option1Start);
+        page.locator("input[name=endDate]").nth(0).fill(option1End);
+        page.locator("input[name=startDate]").nth(1).fill(option2Start);
+        page.locator("input[name=endDate]").nth(1).fill(option2End);
+        page.locator("button[type=submit]:not(.outline)").first().click();
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+
+        page.locator("select[name=confirmedOptionId]").selectOption(
+            page.locator("select[name=confirmedOptionId] option:not([value=''])").first().getAttribute("value")
+        );
+        page.locator("button[type=submit]:has-text('Bestaetigen'), button[type=submit]:has-text('Confirm')").click();
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+    }
+
+    static void createAndConfirmAccommodationPoll(final String tripId,
+                                                  final String candidate1Name,
+                                                  final String candidate2Name) {
+        navigateAndWait("/trips/" + tripId + "/accommodationpoll/create");
+        page.locator("input[name=candidateName]").nth(0).fill(candidate1Name);
+        page.locator("input[name=candidateDescription]").nth(0).fill("Erster Vorschlag");
+        page.locator("input[name=candidateName]").nth(1).fill(candidate2Name);
+        page.locator("input[name=candidateDescription]").nth(1).fill("Zweiter Vorschlag");
+        page.locator("button[type=submit]:not(.outline)").first().click();
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+
+        page.locator("select[name=confirmedCandidateId]").selectOption(
+            page.locator("select[name=confirmedCandidateId] option:not([value=''])").first().getAttribute("value")
+        );
+        page.locator("button[type=submit]:has-text('Bestaetigen'), button[type=submit]:has-text('Confirm')").click();
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+    }
+
     static void signUpAndLogin(final String tenantName, final String firstName, final String lastName,
                                 final String email, final String password) {
         navigateAndWait("/iam/signup");
@@ -181,6 +240,11 @@ public class PlaywrightHooks {
             from trip_projection
             where trip_id = '%s'::uuid and accommodation_total_price is not null and accommodation_total_price > 0
             """.formatted(sqlLiteral(tripId)));
+    }
+
+    static String extractTripId(final String url) {
+        final String path = url.replaceFirst(".*/(trips|expense)/", "");
+        return path.replaceAll("[/?#].*", "");
     }
 
     private static void waitForTripsProjectionCount(final String sql) {

@@ -18,7 +18,7 @@ Feature: Expense Settlement Navigation and Lifecycle
   @navigation
   Scenario: Planning trip already shows an expense link
     Given I am logged in and the Trips SCS is ready
-    And I have created a trip "No-Expense BDD" from "2026-07-01" to "2026-07-14"
+    And I have created a trip "No-Expense BDD"
     Then the page contains a link to the expense page
 
   # ---------- Expense Detail: Full Journey ----------
@@ -26,7 +26,7 @@ Feature: Expense Settlement Navigation and Lifecycle
   @happy-path @integration
   Scenario: Organizer opens the current trip expense
     Given I am logged in and the Trips SCS is ready
-    And I have created a trip "Expense-Full BDD" from "2026-07-01" to "2026-07-14"
+    And I have created a trip "Expense-Full BDD"
     When I am on the trip detail page
     And I click the expense link on the trip detail page
     Then I am on the expense detail page
@@ -47,7 +47,7 @@ Feature: Expense Settlement Navigation and Lifecycle
     Given I am logged in as organizer of a new Reisepartei
     And I am on the dashboard
     And I have added a companion "Tim Tester" with date of birth "2018-01-01"
-    And I have created a trip "Expense-Accommodation BDD" from "2026-07-01" to "2026-07-05"
+    And I have created a trip "Expense-Accommodation BDD"
     And I add own participant "Tim Tester" to the trip
     And I set stay period for participant "Tim Tester" to arrival "2026-07-01" and departure "2026-07-03"
     And I have added accommodation price "300"
@@ -61,7 +61,7 @@ Feature: Expense Settlement Navigation and Lifecycle
   @happy-path @integration
   Scenario: Advance payments are visible in the party account
     Given I am logged in and the Trips SCS is ready
-    And I have created a trip "Expense-Advance BDD" from "2026-07-01" to "2026-07-05"
+    And I have created a trip "Expense-Advance BDD"
     And I have added accommodation price "300"
     When I open the expense page for the current trip
     And I confirm advance payments amount "300"

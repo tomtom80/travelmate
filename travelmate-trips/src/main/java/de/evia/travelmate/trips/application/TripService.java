@@ -21,6 +21,7 @@ import de.evia.travelmate.trips.application.command.GrantTripOrganizerCommand;
 import de.evia.travelmate.trips.application.command.RemoveParticipantFromTripCommand;
 import de.evia.travelmate.trips.application.command.SetStayPeriodCommand;
 import de.evia.travelmate.trips.application.representation.TripRepresentation;
+import de.evia.travelmate.trips.domain.accommodation.AccommodationRepository;
 import de.evia.travelmate.trips.domain.travelparty.TravelParty;
 import de.evia.travelmate.trips.domain.travelparty.TravelPartyRepository;
 import de.evia.travelmate.trips.domain.shoppinglist.ShoppingListRepository;
@@ -39,17 +40,20 @@ public class TripService {
 
     private final TripRepository tripRepository;
     private final TravelPartyRepository travelPartyRepository;
+    private final AccommodationRepository accommodationRepository;
     private final ShoppingListRepository shoppingListRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final TripParticipationEventPublisher tripParticipationEventPublisher;
 
     public TripService(final TripRepository tripRepository,
                        final TravelPartyRepository travelPartyRepository,
+                       final AccommodationRepository accommodationRepository,
                        final ShoppingListRepository shoppingListRepository,
                        final ApplicationEventPublisher eventPublisher,
                        final TripParticipationEventPublisher tripParticipationEventPublisher) {
         this.tripRepository = tripRepository;
         this.travelPartyRepository = travelPartyRepository;
+        this.accommodationRepository = accommodationRepository;
         this.shoppingListRepository = shoppingListRepository;
         this.eventPublisher = eventPublisher;
         this.tripParticipationEventPublisher = tripParticipationEventPublisher;
@@ -72,7 +76,7 @@ public class TripService {
             tenantId,
             new TripName(command.name()),
             command.description(),
-            new DateRange(command.startDate(), command.endDate()),
+            null,
             command.organizerId(),
             participants
         );
@@ -120,6 +124,12 @@ public class TripService {
 
     public void confirmTrip(final TripId tripId) {
         final Trip trip = findTrip(tripId);
+        if (trip.dateRange() == null) {
+            throw new BusinessRuleViolationException("trip.error.confirmationRequiresDateRange");
+        }
+        if (!accommodationRepository.existsByTripId(tripId)) {
+            throw new BusinessRuleViolationException("trip.error.confirmationRequiresAccommodation");
+        }
         trip.confirm();
         tripRepository.save(trip);
     }
@@ -140,6 +150,12 @@ public class TripService {
     public void cancelTrip(final TripId tripId) {
         final Trip trip = findTrip(tripId);
         trip.cancel();
+        tripRepository.save(trip);
+    }
+
+    public void updateDateRange(final TripId tripId, final DateRange newDateRange) {
+        final Trip trip = findTrip(tripId);
+        trip.updateDateRange(newDateRange);
         tripRepository.save(trip);
     }
 

@@ -26,15 +26,16 @@ public class EnglishCommonSteps {
 
     @Given("I am logged in and the Trips SCS is ready")
     public void iAmLoggedInAndTripsScsIsReady() {
-        if (!loggedIn) {
-            // Clear cookies to avoid stale Keycloak sessions from prior scenarios
+        if (!loggedIn || !hasUsableTripsSession()) {
             context.clearCookies();
-            currentTenantName = "BDD-EN " + RUN_ID;
-            currentEmail = "bdd-en-" + RUN_ID + "@e2e.test";
+            if (currentTenantName == null || currentEmail == null) {
+                currentTenantName = "BDD-EN " + RUN_ID;
+                currentEmail = "bdd-en-" + RUN_ID + "@e2e.test";
+            }
             signUpAndLogin(currentTenantName, "Tester", "BDD", currentEmail, PASSWORD);
-            waitForTripsReady();
-            loggedIn = true;
         }
+        waitForTripsReady();
+        loggedIn = true;
     }
 
     @Given("I am not logged in")
@@ -80,5 +81,19 @@ public class EnglishCommonSteps {
         loggedIn = false;
         currentEmail = null;
         currentTenantName = null;
+    }
+
+    private boolean hasUsableTripsSession() {
+        try {
+            navigateAndWait("/trips/");
+            final String url = page.url();
+            final String content = page.content();
+            return !url.contains("realms/travelmate")
+                && !content.contains("kc-login")
+                && !content.contains("Forbidden")
+                && !content.contains("403");
+        } catch (final RuntimeException ignored) {
+            return false;
+        }
     }
 }

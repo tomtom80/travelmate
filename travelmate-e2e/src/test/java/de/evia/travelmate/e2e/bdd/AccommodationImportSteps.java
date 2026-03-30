@@ -16,6 +16,7 @@ public class AccommodationImportSteps {
 
     private static String tripDetailPath;
     private static boolean tripCreated = false;
+    private static boolean pollCreated = false;
 
     @Angenommen("es existiert eine Reise fuer den Unterkunfts-Import-Test")
     public void esExistiertEineReiseFuerDenImportTest() {
@@ -29,25 +30,35 @@ public class AccommodationImportSteps {
                 waitForTripsReady();
             }
 
-            navigateAndWait("/trips/new");
-            page.locator("#name").fill(TRIP_NAME);
-            page.locator("#startDate, input[name=startDate]").first().fill("2026-12-01");
-            page.locator("#endDate, input[name=endDate]").first().fill("2026-12-07");
-            page.locator("main button[type=submit]").click();
-            page.waitForLoadState();
-
-            page.locator("a", new com.microsoft.playwright.Page.LocatorOptions().setHasText(TRIP_NAME)).click();
-            page.waitForLoadState();
+            createTripWithoutDates(TRIP_NAME);
+            openTripFromList(TRIP_NAME);
             tripDetailPath = page.url().replace(BASE_URL, "");
 
             tripCreated = true;
         }
     }
 
-    @Wenn("ich die Unterkunftsseite fuer den Import-Test oeffne")
-    public void ichDieUnterkunftsseiteOeffne() {
+    @Angenommen("eine Unterkunftsabstimmung fuer den Import-Test wurde erstellt")
+    public void eineUnterkunftsabstimmungFuerDenImportTestWurdeErstellt() {
+        esExistiertEineReiseFuerDenImportTest();
+        if (!pollCreated) {
+            final String tripId = extractTripId();
+            navigateAndWait("/trips/" + tripId + "/accommodationpoll/create");
+            page.locator("input[name=candidateName]").nth(0).fill("Import Test Unterkunft");
+            page.locator("input[name=candidateDescription]").nth(0).fill("Basis fuer den Import");
+            page.locator("input[name=candidateName]").nth(1).fill("Alternative");
+            page.locator("input[name=candidateDescription]").nth(1).fill("Zweiter Vorschlag");
+            page.locator("button[type=submit]:not(.outline)").first().click();
+            page.waitForLoadState(LoadState.NETWORKIDLE);
+            pollCreated = true;
+        }
+    }
+
+    @Wenn("ich die Unterkunftsabstimmungsseite fuer den Import-Test oeffne")
+    public void ichDieUnterkunftsabstimmungsseiteOeffne() {
+        eineUnterkunftsabstimmungFuerDenImportTestWurdeErstellt();
         final String tripId = extractTripId();
-        navigateAndWait("/trips/" + tripId + "/accommodation");
+        navigateAndWait("/trips/" + tripId + "/accommodationpoll");
     }
 
     @Dann("sehe ich einen Bereich zum URL-Import")
@@ -56,10 +67,10 @@ public class AccommodationImportSteps {
         assertThat(content).containsAnyOf("URL importieren", "Import from URL", "importieren", "Importieren");
     }
 
-    @Angenommen("ich befinde mich auf der Unterkunftsseite ohne Unterkunft")
-    public void ichBefindeMichAufDerUnterkunftsseiteOhneUnterkunft() {
+    @Angenommen("ich befinde mich auf der Unterkunftsabstimmungsseite mit offener Abstimmung")
+    public void ichBefindeMichAufDerUnterkunftsabstimmungsseiteMitOffenerAbstimmung() {
         esExistiertEineReiseFuerDenImportTest();
-        ichDieUnterkunftsseiteOeffne();
+        ichDieUnterkunftsabstimmungsseiteOeffne();
     }
 
     @Wenn("ich eine URL eingebe und auf Importieren klicke")
@@ -95,7 +106,6 @@ public class AccommodationImportSteps {
 
     private String extractTripId() {
         final String url = tripDetailPath != null ? tripDetailPath : page.url().replace(BASE_URL, "");
-        final String path = url.replaceFirst(".*/(trips|expense)/", "");
-        return path.replaceAll("[/?#].*", "");
+        return PlaywrightHooks.extractTripId(url);
     }
 }

@@ -2,7 +2,7 @@
 
 ## Status
 
-Vorgeschlagen
+Ersetzt durch ADR-0021
 
 ## Context
 

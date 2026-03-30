@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<body>
+<div th:fragment="content">
+    <hgroup>
+        <h1 th:text="#{accommodationpoll.create}">Unterkunftsabstimmung erstellen</h1>
+        <p><a th:href="@{/{id}(id=${trip.tripId()})}" th:text="${trip.name()}">Reise</a></p>
+    </hgroup>
+
+    <article>
+        <form method="post" th:action="@{/{id}/accommodationpoll/create(id=${trip.tripId()})}" id="accommodationpoll-form">
+            <div id="candidates">
+                <div class="candidate-entry" style="margin-bottom:1rem; padding:1rem; border:1px solid var(--pico-muted-border-color); border-radius:var(--pico-border-radius);">
+                    <label>
+                        <span th:text="#{accommodationpoll.candidateName}">Name</span>
+                        <input type="text" name="candidateName" required>
+                    </label>
+                    <div class="grid">
+                        <label>
+                            <span th:text="#{accommodationpoll.candidateUrl}">URL</span>
+                            <input type="url" name="candidateUrl">
+                        </label>
+                        <label>
+                            <span th:text="#{accommodationpoll.candidateDescription}">Beschreibung</span>
+                            <input type="text" name="candidateDescription">
+                        </label>
+                    </div>
+                </div>
+                <div class="candidate-entry" style="margin-bottom:1rem; padding:1rem; border:1px solid var(--pico-muted-border-color); border-radius:var(--pico-border-radius);">
+                    <div style="display:flex; justify-content:space-between; align-items:start;">
+                        <div style="flex:1;">
+                            <label>
+                                <span th:text="#{accommodationpoll.candidateName}">Name</span>
+                                <input type="text" name="candidateName" required>
+                            </label>
+                            <div class="grid">
+                                <label>
+                                    <span th:text="#{accommodationpoll.candidateUrl}">URL</span>
+                                    <input type="url" name="candidateUrl">
+                                </label>
+                                <label>
+                                    <span th:text="#{accommodationpoll.candidateDescription}">Beschreibung</span>
+                                    <input type="text" name="candidateDescription">
+                                </label>
+                            </div>
+                        </div>
+                        <button type="button" class="outline secondary" style="margin-left:0.5rem;"
+                                onclick="this.closest('.candidate-entry').remove()">
+                            <span th:text="#{common.remove}">Entfernen</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <button type="button" class="outline" id="add-candidate-btn" th:text="#{accommodationpoll.addCandidate}">+ Unterkunft hinzufuegen</button>
+
+            <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+                <button type="submit" th:text="#{accommodationpoll.create}">Erstellen</button>
+                <a th:href="@{/{id}/accommodationpoll(id=${trip.tripId()})}" role="button" class="outline secondary"
+                   th:text="#{common.cancel}">Abbrechen</a>
+            </div>
+        </form>
+    </article>
+
+    <template id="candidate-template">
+        <div class="candidate-entry" style="margin-bottom:1rem; padding:1rem; border:1px solid var(--pico-muted-border-color); border-radius:var(--pico-border-radius);">
+            <div style="display:flex; justify-content:space-between; align-items:start;">
+                <div style="flex:1;">
+                    <label>
+                        <span th:text="#{accommodationpoll.candidateName}">Name</span>
+                        <input type="text" name="candidateName" required>
+                    </label>
+                    <div class="grid">
+                        <label>
+                            <span th:text="#{accommodationpoll.candidateUrl}">URL</span>
+                            <input type="url" name="candidateUrl">
+                        </label>
+                        <label>
+                            <span th:text="#{accommodationpoll.candidateDescription}">Beschreibung</span>
+                            <input type="text" name="candidateDescription">
+                        </label>
+                    </div>
+                </div>
+                <button type="button" class="outline secondary" style="margin-left:0.5rem;"
+                        onclick="this.closest('.candidate-entry').remove()">
+                    <span th:text="#{common.remove}">Entfernen</span>
+                </button>
+            </div>
+        </div>
+    </template>
+
+    <script>
+        document.getElementById('add-candidate-btn').addEventListener('click', function() {
+            var template = document.getElementById('candidate-template');
+            var clone = template.content.cloneNode(true);
+            document.getElementById('candidates').appendChild(clone);
+        });
+    </script>
+</div>
+</body>
+</html>

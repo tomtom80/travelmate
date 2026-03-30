@@ -23,12 +23,9 @@ public class MealPlanSteps {
     @Angenommen("es existiert eine Reise mit Startdatum und Enddatum")
     public void esExistiertEineReiseMitStartdatumUndEnddatum() {
         if (!tripCreated) {
-            navigateAndWait("/trips/new");
-            page.fill("input[name=name]", TRIP_NAME);
-            page.fill("input[name=startDate]", "2026-10-01");
-            page.fill("input[name=endDate]", "2026-10-03");
-            page.locator("main button[type=submit]").click();
-            page.waitForLoadState();
+            createTripWithoutDates(TRIP_NAME);
+            final String tripId = openTripFromList(TRIP_NAME);
+            createAndConfirmDatePoll(tripId, "2026-10-01", "2026-10-03", "2026-10-02", "2026-10-04");
             tripCreated = true;
         }
     }

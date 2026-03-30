@@ -43,21 +43,11 @@ class TripConsistencyIT extends E2ETestBase {
     @Test
     @Order(2)
     void createTripAndAddCompanionParticipant() {
-        navigateAndWait("/trips/new");
-        page.fill("input[name=name]", TRIP_NAME);
-        page.fill("#description", "Rename and lifecycle consistency");
-        page.fill("input[name=startDate]", "2026-10-01");
-        page.fill("input[name=endDate]", "2026-10-07");
-        page.locator("main button[type=submit]").click();
-        page.waitForLoadState();
-
-        navigateAndWait("/trips/");
-        page.locator("a", new Page.LocatorOptions().setHasText(TRIP_NAME)).click();
-        page.waitForLoadState(LoadState.NETWORKIDLE);
+        createTripWithoutDates(TRIP_NAME, "Rename and lifecycle consistency");
+        tripId = openTripFromList(TRIP_NAME);
 
         assertThat(page.url()).contains("/trips/");
         assertThat(page.content()).contains(TRIP_NAME);
-        tripId = extractTripId(page.url());
 
         if (!page.content().contains(COMPANION_NAME)) {
             waitForSelectOption(page, "form[action$='/participants'] select[name=participantId]", COMPANION_NAME);
@@ -73,6 +63,26 @@ class TripConsistencyIT extends E2ETestBase {
     @Test
     @Order(3)
     void completeTripAndExpenseInitiallyShowsOriginalPartyName() {
+        navigateAndWait("/trips/" + tripId);
+        createAndConfirmDatePoll(tripId, "2026-10-01", "2026-10-07", "2026-10-02", "2026-10-08");
+        createAndConfirmAccommodationPoll(
+            tripId,
+            "Konsistenz Lodge",
+            "https://consistency.example/lodge",
+            "Gemeinsam gewaehlt",
+            "Konsistenz Alternative",
+            "Zweiter Vorschlag"
+        );
+        createAccommodationAfterPollDecision(
+            tripId,
+            "Konsistenz Lodge",
+            "Testgasse 4",
+            "2026-10-01",
+            "2026-10-07",
+            "280.00",
+            "Familienzimmer",
+            "3"
+        );
         navigateAndWait("/trips/" + tripId);
 
         page.locator("form[action$='/confirm'] button[type=submit]").click();
@@ -137,7 +147,7 @@ class TripConsistencyIT extends E2ETestBase {
     }
 
     private String extractTripId(final String url) {
-        final String path = url.replaceFirst(".*/trips/", "");
+        final String path = url.replaceFirst(".*/(trips|expense)/", "");
         return path.replaceAll("[/?#].*", "");
     }
 }

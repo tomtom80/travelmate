@@ -23,12 +23,28 @@ class ExpenseLifecycleIT extends E2ETestBase {
         signUpAndLogin(TENANT_NAME, "Eva", "Expense", EMAIL, PASSWORD);
         waitForTripsReady();
 
-        navigateAndWait("/trips/new");
-        page.fill("input[name=name]", TRIP_NAME);
-        page.fill("input[name=startDate]", "2026-08-01");
-        page.fill("input[name=endDate]", "2026-08-14");
-        page.locator("main button[type=submit]").click();
-        page.waitForLoadState();
+        createTripWithoutDates(TRIP_NAME, null);
+        final String tripId = openTripFromList(TRIP_NAME);
+        createAndConfirmDatePoll(tripId, "2026-08-01", "2026-08-14", "2026-08-02", "2026-08-15");
+        createAndConfirmAccommodationPoll(
+            tripId,
+            "Expense Unterkunft",
+            "https://expense.example",
+            "Ferienhaus fuer die Abrechnung",
+            "Expense Alternative",
+            "Alternative Unterkunft"
+        );
+        createAccommodationAfterPollDecision(
+            tripId,
+            "Expense Unterkunft",
+            "Abrechnungsweg 1",
+            "2026-08-01",
+            "2026-08-14",
+            "300.00",
+            "Hauptraum",
+            "4"
+        );
+        navigateAndWait("/trips/" + tripId);
 
         assertThat(page.content()).contains(TRIP_NAME);
     }
@@ -176,8 +192,6 @@ class ExpenseLifecycleIT extends E2ETestBase {
     }
 
     private String extractTripId() {
-        final String url = tripDetailUrl != null ? tripDetailUrl : page.url();
-        final String path = url.replaceFirst(".*/(trips|expense)/", "");
-        return path.replaceAll("[/?#].*", "");
+        return extractTripId(page);
     }
 }

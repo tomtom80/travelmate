@@ -85,18 +85,8 @@ class ParticipantDeletionLifecycleIT extends E2ETestBase {
     @Test
     @Order(2)
     void createTripAndPrepareShoppingList() {
-        navigateAndWait("/trips/new");
-        page.fill("input[name=name]", TRIP_NAME);
-        page.fill("#description", "Participant deletion lifecycle");
-        page.fill("input[name=startDate]", "2026-11-01");
-        page.fill("input[name=endDate]", "2026-11-05");
-        page.locator("main button[type=submit]").click();
-        page.waitForLoadState();
-
-        navigateAndWait("/trips/");
-        page.locator("a", new Page.LocatorOptions().setHasText(TRIP_NAME)).click();
-        page.waitForLoadState(LoadState.NETWORKIDLE);
-        tripId = extractTripId(page.url());
+        createTripWithoutDates(TRIP_NAME, "Participant deletion lifecycle");
+        tripId = openTripFromList(TRIP_NAME);
 
         ensureParticipantOnTrip(MEMBER_NAME);
         ensureParticipantOnTrip(COMPANION_NAME);

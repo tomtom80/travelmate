@@ -24,12 +24,9 @@ class MealPlanLifecycleIT extends E2ETestBase {
         signUpAndLogin(TENANT_NAME, "Kai", "Planer", EMAIL, PASSWORD);
         waitForTripsReady();
 
-        navigateAndWait("/trips/new");
-        page.fill("input[name=name]", TRIP_NAME);
-        page.fill("input[name=startDate]", "2026-09-01");
-        page.fill("input[name=endDate]", "2026-09-03");
-        page.locator("main button[type=submit]").click();
-        page.waitForLoadState();
+        createTripWithoutDates(TRIP_NAME, null);
+        final String tripId = openTripFromList(TRIP_NAME);
+        createAndConfirmDatePoll(tripId, "2026-09-01", "2026-09-03", "2026-09-02", "2026-09-04");
 
         assertThat(page.content()).contains(TRIP_NAME);
     }

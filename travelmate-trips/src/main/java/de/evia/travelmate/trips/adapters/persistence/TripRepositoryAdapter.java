@@ -31,9 +31,12 @@ public class TripRepositoryAdapter implements TripRepository {
             .orElseGet(() -> new TripJpaEntity(
                 trip.tripId().value(), trip.tenantId().value(),
                 trip.name().value(), trip.description(),
-                trip.dateRange().startDate(), trip.dateRange().endDate(),
+                trip.dateRange() != null ? trip.dateRange().startDate() : null,
+                trip.dateRange() != null ? trip.dateRange().endDate() : null,
                 trip.status().name(), trip.organizerId(), trip.organizerIds()
             ));
+        entity.setStartDate(trip.dateRange() != null ? trip.dateRange().startDate() : null);
+        entity.setEndDate(trip.dateRange() != null ? trip.dateRange().endDate() : null);
         entity.setStatus(trip.status().name());
         syncOrganizerIds(entity, trip);
         syncParticipants(entity, trip);
@@ -103,7 +106,9 @@ public class TripRepositoryAdapter implements TripRepository {
             new TenantId(entity.getTenantId()),
             new TripName(entity.getName()),
             entity.getDescription(),
-            new DateRange(entity.getStartDate(), entity.getEndDate()),
+            entity.getStartDate() != null && entity.getEndDate() != null
+                ? new DateRange(entity.getStartDate(), entity.getEndDate())
+                : null,
             entity.getOrganizerId(),
             entity.getOrganizerIds().isEmpty() ? List.of(entity.getOrganizerId()) : entity.getOrganizerIds(),
             TripStatus.valueOf(entity.getStatus()),

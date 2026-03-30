@@ -22,6 +22,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.trips.application.AccommodationPollService;
 import de.evia.travelmate.trips.application.AccommodationService;
 import de.evia.travelmate.trips.application.TripService;
 import de.evia.travelmate.trips.application.command.AddRoomCommand;
@@ -43,13 +44,16 @@ import de.evia.travelmate.trips.domain.travelparty.TravelPartyRepository;
 public class AccommodationController {
 
     private final AccommodationService accommodationService;
+    private final AccommodationPollService accommodationPollService;
     private final TripService tripService;
     private final TravelPartyRepository travelPartyRepository;
 
     public AccommodationController(final AccommodationService accommodationService,
+                                    final AccommodationPollService accommodationPollService,
                                     final TripService tripService,
                                     final TravelPartyRepository travelPartyRepository) {
         this.accommodationService = accommodationService;
+        this.accommodationPollService = accommodationPollService;
         this.tripService = tripService;
         this.travelPartyRepository = travelPartyRepository;
     }
@@ -63,6 +67,9 @@ public class AccommodationController {
         final TripRepresentation trip = tripService.findById(new TripId(tripId));
         final Optional<AccommodationRepresentation> accommodation =
             accommodationService.findByTripId(new TripId(tripId));
+        if (accommodation.isEmpty() && !hasConfirmedAccommodationDecision(trip)) {
+            return "redirect:/" + tripId + "/planning";
+        }
         final boolean isOrganizer = trip.isOrganizer(identity.memberId());
         final boolean isEditable = isOrganizer
             && !"COMPLETED".equals(trip.status())
@@ -119,6 +126,7 @@ public class AccommodationController {
         final ResolvedIdentity identity = requireIdentity(jwt);
         validateTripAccess(tripId, identity);
         validateEditable(tripId, identity);
+        validateAccommodationDecisionReady(tripId);
 
         final List<RoomCommand> rooms = new ArrayList<>();
         for (int i = 0; i < roomNames.size(); i++) {
@@ -146,6 +154,7 @@ public class AccommodationController {
         final ResolvedIdentity identity = requireIdentity(jwt);
         validateTripAccess(tripId, identity);
         validateEditable(tripId, identity);
+        validateAccommodationDecisionReady(tripId);
 
         final AddRoomCommand command = new AddRoomCommand(
             identity.tenantId().value(), tripId, name, bedCount, pricePerNight
@@ -163,6 +172,7 @@ public class AccommodationController {
         final ResolvedIdentity identity = requireIdentity(jwt);
         validateTripAccess(tripId, identity);
         validateEditable(tripId, identity);
+        validateAccommodationDecisionReady(tripId);
 
         accommodationService.updateRoom(identity.tenantId(), tripId, roomId, name, bedCount);
         return "redirect:/" + tripId + "/accommodation";
@@ -175,6 +185,7 @@ public class AccommodationController {
         final ResolvedIdentity identity = requireIdentity(jwt);
         validateTripAccess(tripId, identity);
         validateEditable(tripId, identity);
+        validateAccommodationDecisionReady(tripId);
 
         final RemoveRoomCommand command = new RemoveRoomCommand(
             identity.tenantId().value(), tripId, roomId
@@ -193,6 +204,7 @@ public class AccommodationController {
         final ResolvedIdentity identity = requireIdentity(jwt);
         validateTripAccess(tripId, identity);
         validateEditable(tripId, identity);
+        validateAccommodationDecisionReady(tripId);
 
         final AssignPartyToRoomCommand command = new AssignPartyToRoomCommand(
             identity.tenantId().value(), tripId, roomId, partyTenantId, partyName, personCount
@@ -208,6 +220,7 @@ public class AccommodationController {
         final ResolvedIdentity identity = requireIdentity(jwt);
         validateTripAccess(tripId, identity);
         validateEditable(tripId, identity);
+        validateAccommodationDecisionReady(tripId);
 
         final RemoveRoomAssignmentCommand command = new RemoveRoomAssignmentCommand(
             identity.tenantId().value(), tripId, assignmentId
@@ -224,6 +237,7 @@ public class AccommodationController {
         final ResolvedIdentity identity = requireIdentity(jwt);
         validateTripAccess(tripId, identity);
         validateEditable(tripId, identity);
+        validateAccommodationDecisionReady(tripId);
 
         final TripRepresentation trip = tripService.findById(new TripId(tripId));
         model.addAttribute("view", "accommodation/overview");
@@ -264,6 +278,7 @@ public class AccommodationController {
         final ResolvedIdentity identity = requireIdentity(jwt);
         validateTripAccess(tripId, identity);
         validateEditable(tripId, identity);
+        validateAccommodationDecisionReady(tripId);
 
         accommodationService.removeAccommodation(new TripId(tripId));
         return "redirect:/" + tripId + "/accommodation";
@@ -324,6 +339,27 @@ public class AccommodationController {
         }
         if ("COMPLETED".equals(trip.status()) || "CANCELLED".equals(trip.status())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot modify accommodation for a completed or cancelled trip");
+        }
+    }
+
+    private void validateAccommodationDecisionReady(final UUID tripId) {
+        final TripRepresentation trip = tripService.findById(new TripId(tripId));
+        if (!hasConfirmedAccommodationDecision(trip)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Accommodation must be decided in the poll first.");
+        }
+    }
+
+    private boolean hasConfirmedAccommodationDecision(final TripRepresentation trip) {
+        if (accommodationService.existsByTripId(new TripId(trip.tripId()))) {
+            return true;
+        }
+        try {
+            return "CONFIRMED".equals(accommodationPollService.findLatestByTripId(
+                new TenantId(trip.tenantId()),
+                new TripId(trip.tripId())
+            ).status());
+        } catch (final Exception ignored) {
+            return false;
         }
     }
 

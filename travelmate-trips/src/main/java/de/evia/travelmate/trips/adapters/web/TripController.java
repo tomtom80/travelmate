@@ -23,7 +23,9 @@ import jakarta.servlet.http.HttpServletRequest;
 
 import de.evia.travelmate.common.domain.TenantId;
 
+import de.evia.travelmate.trips.application.AccommodationPollService;
 import de.evia.travelmate.trips.application.AccommodationService;
+import de.evia.travelmate.trips.application.DatePollService;
 import de.evia.travelmate.trips.application.InvitationService;
 import de.evia.travelmate.trips.application.MealPlanService;
 import de.evia.travelmate.trips.application.TripService;
@@ -54,6 +56,8 @@ public class TripController {
     private final InvitationService invitationService;
     private final MealPlanService mealPlanService;
     private final AccommodationService accommodationService;
+    private final DatePollService datePollService;
+    private final AccommodationPollService accommodationPollService;
     private final TravelPartyRepository travelPartyRepository;
     private final MessageSource messageSource;
 
@@ -61,12 +65,16 @@ public class TripController {
                           final InvitationService invitationService,
                           final MealPlanService mealPlanService,
                           final AccommodationService accommodationService,
+                          final DatePollService datePollService,
+                          final AccommodationPollService accommodationPollService,
                           final TravelPartyRepository travelPartyRepository,
                           final MessageSource messageSource) {
         this.tripService = tripService;
         this.invitationService = invitationService;
         this.mealPlanService = mealPlanService;
         this.accommodationService = accommodationService;
+        this.datePollService = datePollService;
+        this.accommodationPollService = accommodationPollService;
         this.travelPartyRepository = travelPartyRepository;
         this.messageSource = messageSource;
     }
@@ -119,6 +127,9 @@ public class TripController {
         model.addAttribute("isOrganizer", trip.isOrganizer(identity.memberId()));
         model.addAttribute("hasMealPlan", mealPlanService.existsByTripId(new TripId(tripId)));
         model.addAttribute("hasAccommodation", accommodationService.existsByTripId(new TripId(tripId)));
+        model.addAttribute("hasDatePoll", datePollService.existsOpenByTripId(new TenantId(trip.tenantId()), new TripId(tripId)));
+        model.addAttribute("hasAccommodationPoll", accommodationPollService.existsOpenByTripId(new TenantId(trip.tenantId()), new TripId(tripId)));
+        model.addAttribute("accommodationDecisionConfirmed", isAccommodationDecisionConfirmed(trip));
         return "layout/default";
     }
 
@@ -146,12 +157,10 @@ public class TripController {
     @PostMapping
     public String create(@AuthenticationPrincipal final Jwt jwt,
                          @RequestParam final String name,
-                         @RequestParam(required = false) final String description,
-                         @RequestParam final LocalDate startDate,
-                         @RequestParam final LocalDate endDate) {
+                         @RequestParam(required = false) final String description) {
         final ResolvedIdentity identity = requireIdentity(jwt);
         tripService.createTrip(
-            new CreateTripCommand(identity.tenantId().value(), name, description, startDate, endDate, identity.memberId())
+            new CreateTripCommand(identity.tenantId().value(), name, description, identity.memberId())
         );
         return "redirect:/";
     }
@@ -451,6 +460,17 @@ public class TripController {
     private void triggerSuccessToast(final HttpServletResponse response, final String message) {
         response.setHeader("HX-Trigger",
             "{\"showToast\":{\"level\":\"success\",\"message\":\"" + message.replace("\"", "\\\"") + "\"}}");
+    }
+
+    private boolean isAccommodationDecisionConfirmed(final TripRepresentation trip) {
+        try {
+            return "CONFIRMED".equals(accommodationPollService.findLatestByTripId(
+                new TenantId(trip.tenantId()),
+                new TripId(trip.tripId())
+            ).status());
+        } catch (final Exception ignored) {
+            return false;
+        }
     }
 
     private boolean isHtmxRequest(final HttpServletRequest request) {

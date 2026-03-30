@@ -103,8 +103,8 @@ public class InvitationService {
             invitee.email(),
             invitee.firstName(),
             trip.name().value(),
-            trip.dateRange().startDate(),
-            trip.dateRange().endDate(),
+            trip.dateRange() != null ? trip.dateRange().startDate() : null,
+            trip.dateRange() != null ? trip.dateRange().endDate() : null,
             inviter.firstName(),
             inviter.lastName(),
             LocalDate.now()
@@ -225,8 +225,8 @@ public class InvitationService {
                 invitee.email(),
                 invitee.firstName(),
                 trip.name().value(),
-                trip.dateRange().startDate(),
-                trip.dateRange().endDate(),
+                trip.dateRange() != null ? trip.dateRange().startDate() : null,
+                trip.dateRange() != null ? trip.dateRange().endDate() : null,
                 inviter.firstName(),
                 inviter.lastName(),
                 LocalDate.now()
@@ -249,8 +249,8 @@ public class InvitationService {
             normalizedEmail,
             command.firstName(),
             trip.name().value(),
-            trip.dateRange().startDate(),
-            trip.dateRange().endDate(),
+            trip.dateRange() != null ? trip.dateRange().startDate() : null,
+            trip.dateRange() != null ? trip.dateRange().endDate() : null,
             inviter.firstName(),
             inviter.lastName(),
             LocalDate.now()
