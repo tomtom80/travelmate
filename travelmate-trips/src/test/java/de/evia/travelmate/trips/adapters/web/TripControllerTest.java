@@ -100,6 +100,9 @@ class TripControllerTest {
         when(travelPartyRepository.findByMemberEmail(ORGANIZER_EMAIL)).thenReturn(Optional.of(party));
         when(travelPartyRepository.findByMemberEmail(INVITEE_EMAIL)).thenReturn(Optional.of(party));
         when(travelPartyRepository.findByTenantId(new TenantId(TENANT_UUID))).thenReturn(Optional.of(party));
+        when(travelPartyRepository.findByMemberId(ORGANIZER_UUID)).thenReturn(Optional.of(party));
+        when(travelPartyRepository.findByMemberId(INVITEE_UUID)).thenReturn(Optional.of(party));
+        when(travelPartyRepository.findByMemberId(OTHER_PARTY_MEMBER_UUID)).thenReturn(Optional.of(otherParty));
         when(travelPartyRepository.findAll()).thenReturn(List.of(party, otherParty));
     }
 
@@ -197,6 +200,36 @@ class TripControllerTest {
                     assertThat(inv.inviteeName()).isEqualTo("Ola Anders");
                     assertThat(inv.targetPartyName()).isEqualTo("Familie Anders");
                 });
+            });
+    }
+
+    @Test
+    void detailReflectsRenamedTargetParty() throws Exception {
+        otherParty.updateName("Familie Anders Neu");
+        final InvitationRepresentation invitation = new InvitationRepresentation(
+            UUID.randomUUID(), TENANT_UUID, TRIP_UUID, OTHER_PARTY_MEMBER_UUID, ORGANIZER_UUID,
+            OTHER_PARTY_MEMBER_EMAIL, OTHER_PARTY_TENANT_UUID, "MEMBER", "PENDING"
+        );
+        final TripRepresentation trip = new TripRepresentation(
+            TRIP_UUID, TENANT_UUID, "Skiurlaub", null,
+            LocalDate.of(2026, 3, 15), LocalDate.of(2026, 3, 22),
+            "PLANNING", ORGANIZER_UUID, List.of(ORGANIZER_UUID)
+        );
+
+        when(tripService.findById(new TripId(TRIP_UUID))).thenReturn(trip);
+        when(invitationService.findByTripId(new TripId(TRIP_UUID))).thenReturn(List.of(invitation));
+
+        mockMvc.perform(get("/" + TRIP_UUID)
+                .with(jwt().jwt(j -> j.claim("email", ORGANIZER_EMAIL))))
+            .andExpect(status().isOk())
+            .andDo(result -> {
+                @SuppressWarnings("unchecked")
+                final List<de.evia.travelmate.trips.application.representation.InvitationView> invitations =
+                    (List<de.evia.travelmate.trips.application.representation.InvitationView>)
+                        result.getModelAndView().getModel().get("invitations");
+                assertThat(invitations).singleElement()
+                    .extracting(de.evia.travelmate.trips.application.representation.InvitationView::targetPartyName)
+                    .isEqualTo("Familie Anders Neu");
             });
     }
 

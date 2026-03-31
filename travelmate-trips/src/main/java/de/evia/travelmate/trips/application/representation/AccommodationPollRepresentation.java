@@ -1,6 +1,7 @@
 package de.evia.travelmate.trips.application.representation;
 
 import java.util.List;
+import java.math.BigDecimal;
 import java.util.UUID;
 
 import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationCandidate;
@@ -35,6 +36,7 @@ public record AccommodationPollRepresentation(
         String url,
         String description,
         long voteCount
+        , List<RoomRepresentation> rooms
     ) {
         public CandidateRepresentation(final AccommodationCandidate candidate, final AccommodationPoll poll) {
             this(
@@ -42,9 +44,15 @@ public record AccommodationPollRepresentation(
                 candidate.name(),
                 candidate.url(),
                 candidate.description(),
-                poll.voteCountForCandidate(candidate.candidateId())
+                poll.voteCountForCandidate(candidate.candidateId()),
+                candidate.rooms().stream()
+                    .map(r -> new RoomRepresentation(r.name(), r.bedCount(), r.pricePerNight(), r.features()))
+                    .toList()
             );
         }
+    }
+
+    public record RoomRepresentation(String name, int bedCount, BigDecimal pricePerNight, String features) {
     }
 
     public record VoteRepresentation(
@@ -59,5 +67,11 @@ public record AccommodationPollRepresentation(
                 vote.selectedCandidateId().value()
             );
         }
+    }
+
+    public long totalVotes() {
+        return candidates().stream()
+            .mapToLong(CandidateRepresentation::voteCount)
+            .sum();
     }
 }

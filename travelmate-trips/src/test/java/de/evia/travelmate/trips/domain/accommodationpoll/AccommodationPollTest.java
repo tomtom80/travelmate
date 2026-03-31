@@ -9,7 +9,12 @@ import java.util.UUID;
 import org.junit.jupiter.api.Test;
 
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationCandidate;
+import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationVote;
+import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationVoteId;
+import de.evia.travelmate.trips.domain.accommodationpoll.CandidateRoom;
 import de.evia.travelmate.trips.domain.trip.TripId;
+import de.evia.travelmate.trips.domain.accommodationpoll.CandidateRoom;
 
 class AccommodationPollTest {
 
@@ -37,7 +42,7 @@ class AccommodationPollTest {
     void createWithOneCandidateFails() {
         assertThatThrownBy(() -> AccommodationPoll.create(
             TENANT_ID, TRIP_ID,
-            List.of(new CandidateProposal("Hotel A", null, null))))
+            List.of(new CandidateProposal("Hotel A", null, null, candidateRooms("Balcony")))))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("at least 2");
     }
@@ -55,7 +60,8 @@ class AccommodationPollTest {
     void addCandidateIncreasesCount() {
         final AccommodationPoll poll = createOpenPoll();
 
-        final AccommodationCandidateId newId = poll.addCandidate("Hotel C", "https://hotelc.com", "Nice pool");
+        final AccommodationCandidateId newId = poll.addCandidate("Hotel C", "https://hotelc.com", "Nice pool",
+            candidateRooms("Poolside"));
 
         assertThat(newId).isNotNull();
         assertThat(poll.candidates()).hasSize(3);
@@ -261,7 +267,7 @@ class AccommodationPollTest {
         final AccommodationPoll poll = createOpenPoll();
         poll.confirm(poll.candidates().getFirst().candidateId());
 
-        assertThatThrownBy(() -> poll.addCandidate("Hotel C", null, null))
+        assertThatThrownBy(() -> poll.addCandidate("Hotel C", null, null, candidateRooms("Poolside")))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("CONFIRMED");
     }
@@ -273,7 +279,7 @@ class AccommodationPollTest {
         final AccommodationPoll poll = createOpenPoll();
 
         assertThatThrownBy(() -> poll.candidates().add(
-            new AccommodationCandidate("Hotel C", null, null)))
+            new AccommodationCandidate("Hotel C", null, null, candidateRooms("Extra"))))
             .isInstanceOf(UnsupportedOperationException.class);
     }
 
@@ -293,8 +299,12 @@ class AccommodationPollTest {
 
     private AccommodationPoll createOpenPoll() {
         return AccommodationPoll.create(TENANT_ID, TRIP_ID, List.of(
-            new CandidateProposal("Hotel Alpenblick", "https://alpenblick.at", "Great view"),
-            new CandidateProposal("Berghuette Sonnstein", null, "Cozy cabin")
+            new CandidateProposal("Hotel Alpenblick", "https://alpenblick.at", "Great view", candidateRooms("Balcony view")),
+            new CandidateProposal("Berghuette Sonnstein", null, "Cozy cabin", candidateRooms("Wood stove"))
         ));
+    }
+
+    private static List<CandidateRoom> candidateRooms(final String features) {
+        return List.of(new CandidateRoom("Room", 2, null, features));
     }
 }

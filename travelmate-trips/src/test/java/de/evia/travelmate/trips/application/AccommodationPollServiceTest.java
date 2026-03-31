@@ -17,17 +17,22 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import de.evia.travelmate.common.domain.BusinessRuleViolationException;
 import de.evia.travelmate.common.domain.EntityNotFoundException;
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.trips.application.AccommodationService;
 import de.evia.travelmate.trips.application.command.CastAccommodationVoteCommand;
 import de.evia.travelmate.trips.application.command.ConfirmAccommodationPollCommand;
 import de.evia.travelmate.trips.application.command.CreateAccommodationPollCommand;
 import de.evia.travelmate.trips.application.command.CreateAccommodationPollCommand.CandidateProposalCommand;
+import de.evia.travelmate.trips.application.command.CreateAccommodationPollCommand.RoomProposalCommand;
+import de.evia.travelmate.trips.application.command.SetAccommodationCommand;
 import de.evia.travelmate.trips.application.representation.AccommodationPollRepresentation;
 import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationPoll;
 import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationPollId;
 import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationPollRepository;
 import de.evia.travelmate.trips.domain.accommodationpoll.CandidateProposal;
+import de.evia.travelmate.trips.domain.accommodationpoll.CandidateRoom;
 import de.evia.travelmate.trips.domain.trip.TripId;
 
 @ExtendWith(MockitoExtension.class)
@@ -40,6 +45,9 @@ class AccommodationPollServiceTest {
     @Mock
     private AccommodationPollRepository accommodationPollRepository;
 
+    @Mock
+    private AccommodationService accommodationService;
+
     @InjectMocks
     private AccommodationPollService accommodationPollService;
 
@@ -51,8 +59,8 @@ class AccommodationPollServiceTest {
         final CreateAccommodationPollCommand command = new CreateAccommodationPollCommand(
             TENANT_UUID, TRIP_UUID,
             List.of(
-                new CandidateProposalCommand("Hotel A", "https://a.com", "Nice"),
-                new CandidateProposalCommand("Hotel B", null, "Cozy")
+                new CandidateProposalCommand("Hotel A", "https://a.com", "Nice", rooms("Panorama view")),
+                new CandidateProposalCommand("Hotel B", null, "Cozy", rooms("Mountain sauna"))
             )
         );
 
@@ -77,8 +85,8 @@ class AccommodationPollServiceTest {
         final CreateAccommodationPollCommand command = new CreateAccommodationPollCommand(
             TENANT_UUID, TRIP_UUID,
             List.of(
-                new CandidateProposalCommand("Hotel A", null, null),
-                new CandidateProposalCommand("Hotel B", null, null)
+                new CandidateProposalCommand("Hotel A", null, null, rooms("Balcony")),
+                new CandidateProposalCommand("Hotel B", null, null, rooms("Terrace"))
             )
         );
 
@@ -133,13 +141,35 @@ class AccommodationPollServiceTest {
         when(accommodationPollRepository.save(any(AccommodationPoll.class))).thenAnswer(inv -> inv.getArgument(0));
 
         final ConfirmAccommodationPollCommand command = new ConfirmAccommodationPollCommand(
-            TENANT_UUID, poll.accommodationPollId().value(), candidateId
+            TENANT_UUID, TRIP_UUID, poll.accommodationPollId().value(), candidateId
         );
 
         final AccommodationPollRepresentation result = accommodationPollService.confirmPoll(command);
 
         assertThat(result.status()).isEqualTo("CONFIRMED");
         assertThat(result.selectedCandidateId()).isEqualTo(candidateId);
+
+        final ArgumentCaptor<SetAccommodationCommand> setCaptor =
+            ArgumentCaptor.forClass(SetAccommodationCommand.class);
+        verify(accommodationService).setAccommodation(setCaptor.capture());
+        final SetAccommodationCommand setCommand = setCaptor.getValue();
+        assertThat(setCommand.name()).isEqualTo("Hotel Alpenblick");
+        assertThat(setCommand.rooms()).hasSize(1);
+        assertThat(setCommand.rooms().get(0).name()).isEqualTo("Room");
+    }
+
+    @Test
+    void createPollRequiresRoomInformation() {
+        when(accommodationPollRepository.findOpenByTripId(any(), any())).thenReturn(Optional.empty());
+
+        final CreateAccommodationPollCommand command = new CreateAccommodationPollCommand(
+            TENANT_UUID, TRIP_UUID,
+            List.of(new CandidateProposalCommand("Hotel Empty", null, null, List.of()))
+        );
+
+        assertThatThrownBy(() -> accommodationPollService.createPoll(command))
+            .isInstanceOf(BusinessRuleViolationException.class)
+            .hasMessage("accommodationpoll.error.roomRequired");
     }
 
     @Test
@@ -158,9 +188,15 @@ class AccommodationPollServiceTest {
             new TenantId(TENANT_UUID),
             new TripId(TRIP_UUID),
             List.of(
-                new CandidateProposal("Hotel Alpenblick", "https://alpenblick.at", "Great"),
-                new CandidateProposal("Berghuette Sonnstein", null, "Cozy")
+                new CandidateProposal("Hotel Alpenblick", "https://alpenblick.at", "Great",
+                    List.of(new CandidateRoom("Room", 2, null, "Panorama"))),
+                new CandidateProposal("Berghuette Sonnstein", null, "Cozy",
+                    List.of(new CandidateRoom("Suite", 3, null, "Sauna")))
             )
         );
+    }
+
+    private static List<RoomProposalCommand> rooms(final String features) {
+        return List.of(new RoomProposalCommand("Room", 2, null, features));
     }
 }

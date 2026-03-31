@@ -63,4 +63,10 @@ public record DatePollRepresentation(
             );
         }
     }
+
+    public long totalVotes() {
+        return options().stream()
+            .mapToLong(DateOptionRepresentation::voteCount)
+            .sum();
+    }
 }

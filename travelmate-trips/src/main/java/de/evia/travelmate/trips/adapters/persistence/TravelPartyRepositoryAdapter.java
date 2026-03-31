@@ -2,6 +2,7 @@ package de.evia.travelmate.trips.adapters.persistence;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 import org.springframework.stereotype.Repository;
 
@@ -40,6 +41,11 @@ public class TravelPartyRepositoryAdapter implements TravelPartyRepository {
     @Override
     public Optional<TravelParty> findByMemberEmail(final String email) {
         return jpaRepository.findAllByMemberEmail(email).stream().findFirst().map(this::toDomain);
+    }
+
+    @Override
+    public Optional<TravelParty> findByMemberId(final UUID memberId) {
+        return jpaRepository.findByMemberId(memberId).map(this::toDomain);
     }
 
     @Override

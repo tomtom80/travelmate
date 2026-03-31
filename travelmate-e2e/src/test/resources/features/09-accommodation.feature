@@ -1,7 +1,7 @@
 # language: de
 Funktionalität: Unterkunft
   Als Organisator einer Reise
-  moechte ich eine Unterkunft mit Zimmern erfassen,
+  moechte ich die demokratisch gewaehlte Unterkunft verwalten,
   damit alle Teilnehmer die Unterkunftsdetails und Zimmerbelegung sehen.
 
   Hintergrund:
@@ -9,13 +9,13 @@ Funktionalität: Unterkunft
     Und es existiert eine Reise fuer die Unterkunftsverwaltung
 
   # S9-A: Unterkunft erfassen (US-TRIPS-060)
-  Szenario: Leere Unterkunftsseite anzeigen
+  Szenario: Unterkunftsseite verweist ohne Entscheidung auf die Planung
     Wenn ich die Unterkunftsseite der Reise oeffne
-    Dann sehe ich den Hinweis dass noch keine Unterkunft hinterlegt ist
+    Dann sehe ich den Hinweis dass zuerst eine Unterkunftsabstimmung noetig ist
 
-  Szenario: Unterkunft erfassen
+  Szenario: Gewinner der Unterkunftsabstimmung wird uebernommen
     Wenn ich die Unterkunftsseite der Reise oeffne
-    Und ich eine Unterkunft mit Name "Berghuette" und Adresse "Alpweg 7" und Gesamtpreis "1800" erfasse
+    Und ich die Unterkunftsabstimmung mit Gewinner "Berghuette" bestaetige
     Dann sehe ich die Unterkunftsdetails mit Name "Berghuette"
 
   # S9-A: Zimmer hinzufuegen

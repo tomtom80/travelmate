@@ -17,8 +17,6 @@ class AccommodationLifecycleIT extends E2ETestBase {
     private static final String PASSWORD = "Test1234!";
     private static final String TRIP_NAME = "Huettenreise " + RUN_ID;
     private static final String ACCOMMODATION_NAME = "Berghuette Alpenblick";
-    private static final String ACCOMMODATION_ADDRESS = "Alpweg 7";
-    private static final String ACCOMMODATION_PRICE = "1800";
     private static final String ROOM_1_NAME = "Familienzimmer";
     private static final String ROOM_2_NAME = "Doppelzimmer";
 
@@ -76,25 +74,10 @@ class AccommodationLifecycleIT extends E2ETestBase {
 
     @Test
     @Order(13)
-    void addAccommodationViaDialog() {
-        // Open the add accommodation dialog
-        page.locator("button:has-text('Unterkunft hinzufuegen')").click();
-        page.waitForSelector("dialog[open]");
-
-        // Fill in the accommodation form
-        page.locator("dialog input[name=name]").fill(ACCOMMODATION_NAME);
-        page.locator("dialog input[name=address]").fill(ACCOMMODATION_ADDRESS);
-        page.locator("dialog input[name=checkIn]").fill("2026-11-01");
-        page.locator("dialog input[name=checkOut]").fill("2026-11-05");
-        page.locator("dialog input[name=totalPrice]").fill(ACCOMMODATION_PRICE);
-
-        // Fill in the first room (required in add dialog)
-        page.locator("dialog input[name=roomName]").fill(ROOM_1_NAME);
-        page.locator("dialog input[name=roomBedCount]").fill("4");
-
-        // Submit the form
-        page.locator("dialog button[type=submit]").click();
-        page.waitForLoadState(LoadState.NETWORKIDLE);
+    void winningAccommodationIsShownAutomatically() {
+        assertThat(page.locator("button:has-text('Unterkunft hinzufuegen')").count()).isZero();
+        assertThat(page.content()).contains(ACCOMMODATION_NAME);
+        assertThat(page.content()).contains(ROOM_1_NAME);
     }
 
     @Test
@@ -102,8 +85,6 @@ class AccommodationLifecycleIT extends E2ETestBase {
     void accommodationDetailsShown() {
         final String content = page.content();
         assertThat(content).contains(ACCOMMODATION_NAME);
-        assertThat(content).contains(ACCOMMODATION_ADDRESS);
-        assertThat(content).contains(ACCOMMODATION_PRICE);
         assertThat(content).contains(ROOM_1_NAME);
     }
 

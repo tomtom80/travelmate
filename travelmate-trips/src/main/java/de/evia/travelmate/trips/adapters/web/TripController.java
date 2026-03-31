@@ -423,17 +423,31 @@ public class TripController {
                         .map(member -> member.firstName() + " " + member.lastName())
                         .orElse("Unknown");
                 }
-                final String targetPartyName = inv.targetPartyTenantId() == null
-                    ? null
-                    : allParties.stream()
-                        .filter(travelParty -> travelParty.tenantId().value().equals(inv.targetPartyTenantId()))
-                        .map(TravelParty::name)
-                        .findFirst()
-                        .orElse(null);
+                final String targetPartyName = resolveInviteePartyName(inv.inviteeId(), inv.targetPartyTenantId());
                 return new InvitationView(inv.invitationId(), inv.tripId(), inv.inviteeId(),
                     name, targetPartyName, inv.invitationType(), inv.status());
             })
             .toList();
+    }
+
+    private String resolveInviteePartyName(final UUID inviteeId,
+                                          final UUID fallbackPartyTenantId) {
+        if (inviteeId != null) {
+            final var party = travelPartyRepository.findByMemberId(inviteeId);
+            if (party.isPresent()) {
+                return party.get().name();
+            }
+        }
+        return resolvePartyName(fallbackPartyTenantId);
+    }
+
+    private String resolvePartyName(final UUID partyTenantId) {
+        if (partyTenantId == null) {
+            return null;
+        }
+        return travelPartyRepository.findByTenantId(new TenantId(partyTenantId))
+            .map(TravelParty::name)
+            .orElse(null);
     }
 
     private List<PendingInvitationView> toPendingInvitationViews(final ResolvedIdentity identity) {

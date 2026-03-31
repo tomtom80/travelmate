@@ -53,7 +53,9 @@ public class PlanningSteps {
 
     @Dann("sehe ich die neue Planungsueberschrift mit Ruecksprung zur Reise")
     public void seheIchDieNeuePlanungsueberschriftMitRuecksprungZurReise() {
-        assertThat(page.locator("h1").textContent()).containsIgnoringCase("planung");
+        final String heading = page.locator("h1").textContent();
+        assertThat(heading).containsIgnoringCase("plan");
+        assertThat(heading).containsIgnoringCase("tool");
         final var backLink = page.locator("hgroup a[href*='/trips/']").first();
         assertThat(backLink.count()).isPositive();
         assertThat(backLink.textContent()).contains(TRIP_NAME);

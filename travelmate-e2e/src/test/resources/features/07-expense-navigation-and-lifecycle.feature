@@ -53,7 +53,7 @@ Feature: Expense Settlement Navigation and Lifecycle
     And I have added accommodation price "300"
     When I open the expense page for the current trip
     Then the page shows the section "Reisekonto nach Reisepartei"
-    And the page shows the section "Kontoverlauf"
+    And the page shows the section "Vorauszahlungen"
     And the page shows participant "Tim Tester" in the party account
     Then the page shows the account line "Unterkunftsanteil"
     And the page shows amount "300,00"
@@ -65,7 +65,7 @@ Feature: Expense Settlement Navigation and Lifecycle
     And I have added accommodation price "300"
     When I open the expense page for the current trip
     And I confirm advance payments amount "300"
-    Then the page shows the section "Kontoverlauf"
+    Then the page shows the section "Vorauszahlungen"
     Then the page shows the account line "Offene Anzahlung"
     And the page shows amount "300,00"
     When I toggle the first advance payment as paid

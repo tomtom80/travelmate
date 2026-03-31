@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.support.StaticMessageSource;
 import org.springframework.stereotype.Controller;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -17,6 +18,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import de.evia.travelmate.common.domain.BusinessRuleViolationException;
 import de.evia.travelmate.common.domain.DuplicateEntityException;
 import de.evia.travelmate.common.domain.EntityNotFoundException;
+import java.util.Locale;
 
 class GlobalExceptionHandlerTest {
 
@@ -24,9 +26,11 @@ class GlobalExceptionHandlerTest {
 
     @BeforeEach
     void setUp() {
+        final StaticMessageSource messageSource = new StaticMessageSource();
+        messageSource.addMessage("trip.error.invalidTransition", Locale.getDefault(), "Trip transition not allowed");
         mockMvc = MockMvcBuilders
             .standaloneSetup(new TestErrorController())
-            .setControllerAdvice(new GlobalExceptionHandler())
+            .setControllerAdvice(new GlobalExceptionHandler(messageSource))
             .build();
     }
 

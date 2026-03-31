@@ -34,16 +34,6 @@ class ExpenseLifecycleIT extends E2ETestBase {
             "Expense Alternative",
             "Alternative Unterkunft"
         );
-        createAccommodationAfterPollDecision(
-            tripId,
-            "Expense Unterkunft",
-            "Abrechnungsweg 1",
-            "2026-08-01",
-            "2026-08-14",
-            "300.00",
-            "Hauptraum",
-            "4"
-        );
         navigateAndWait("/trips/" + tripId);
 
         assertThat(page.content()).contains(TRIP_NAME);

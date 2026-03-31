@@ -65,12 +65,15 @@ services:
       retries: 5
 
   rabbitmq:
-    image: rabbitmq:4.0-management-alpine
+    image: rabbitmq:3.13-management-alpine
     container_name: travelmate-demo-rabbitmq
     restart: unless-stopped
     environment:
+      RABBITMQ_ERLANG_COOKIE: travelmate-rabbitmq-cookie-for-local-dev
       RABBITMQ_DEFAULT_USER: ${RABBITMQ_USERNAME}
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_PASSWORD}
+    volumes:
+      - rabbitmq-demo-data:/var/lib/rabbitmq
     healthcheck:
       test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
       interval: 10s
@@ -247,3 +250,4 @@ volumes:
   postgres-trips-data:
   postgres-expense-data:
   postgres-keycloak-data:
+  rabbitmq-demo-data:

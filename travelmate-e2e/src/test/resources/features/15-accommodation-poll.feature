@@ -25,6 +25,11 @@ Funktionalität: Unterkunftsabstimmung
     Wenn ich fuer die erste Unterkunft abstimme
     Dann hat die erste Unterkunft mindestens 1 Stimme
 
+  Szenario: Gewinner wird nach Bestaetigung hervorgehoben
+    Angenommen eine Unterkunftsabstimmung wurde fuer die Reise erstellt
+    Und ich die erste Unterkunft bestaetige
+    Dann sehe ich den Gewinnerbanner mit der ersten Unterkunft
+
   # S14-D: I18n-Aufloesung
   Szenario: I18n-Aufloesung auf der Unterkunftsabstimmungsseite
     Angenommen eine Unterkunftsabstimmung wurde fuer die Reise erstellt

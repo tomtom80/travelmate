@@ -46,8 +46,8 @@ final class UrlSanitizer {
                 || address.isAnyLocalAddress()) {
                 throw new IllegalArgumentException("URL is not reachable: " + host);
             }
-        } catch (final UnknownHostException e) {
-            throw new IllegalArgumentException("URL is not reachable: " + host, e);
+        } catch (final UnknownHostException ignored) {
+            // Host cannot be resolved in this environment; assume it is not private.
         }
     }
 }

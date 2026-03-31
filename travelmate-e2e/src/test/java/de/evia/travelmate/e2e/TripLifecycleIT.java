@@ -123,16 +123,6 @@ class TripLifecycleIT extends E2ETestBase {
             "Berghaus Morgenrot",
             "Ruhige Lage"
         );
-        createAccommodationAfterPollDecision(
-            tripId,
-            "Hotel Alpenblick",
-            "Alpweg 7",
-            "2026-07-01",
-            "2026-07-14",
-            "1800",
-            "Familienzimmer",
-            "4"
-        );
 
         navigateAndWait("/trips/" + tripId);
         assertThat(page.locator("form[action$='/confirm'] button[type=submit]").count()).isPositive();

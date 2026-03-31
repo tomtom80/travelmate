@@ -1,6 +1,7 @@
 package de.evia.travelmate.trips.adapters.persistence;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -11,4 +12,7 @@ public interface TravelPartyJpaRepository extends JpaRepository<TravelPartyJpaEn
 
     @Query("SELECT tp FROM TravelPartyJpaEntity tp JOIN tp.members m WHERE m.email = :email")
     List<TravelPartyJpaEntity> findAllByMemberEmail(@Param("email") String email);
+
+    @Query("SELECT tp FROM TravelPartyJpaEntity tp JOIN tp.members m WHERE m.memberId = :memberId")
+    Optional<TravelPartyJpaEntity> findByMemberId(@Param("memberId") UUID memberId);
 }

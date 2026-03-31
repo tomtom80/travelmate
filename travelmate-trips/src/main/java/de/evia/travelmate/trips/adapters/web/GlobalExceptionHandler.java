@@ -2,6 +2,9 @@ package de.evia.travelmate.trips.adapters.web;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.MessageSource;
+import org.springframework.context.NoSuchMessageException;
+import org.springframework.context.i18n.LocaleContextHolder;
 import org.springframework.http.HttpStatus;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ControllerAdvice;
@@ -21,6 +24,11 @@ public class GlobalExceptionHandler {
 
     private static final Logger LOG = LoggerFactory.getLogger(GlobalExceptionHandler.class);
     private static final String GENERIC_ERROR_MESSAGE = "Ein unerwarteter Fehler ist aufgetreten.";
+    private final MessageSource messageSource;
+
+    public GlobalExceptionHandler(final MessageSource messageSource) {
+        this.messageSource = messageSource;
+    }
 
     @ExceptionHandler(EntityNotFoundException.class)
     public String handleEntityNotFound(final EntityNotFoundException ex,
@@ -57,13 +65,14 @@ public class GlobalExceptionHandler {
                                               final HttpServletRequest request,
                                               final HttpServletResponse response,
                                               final Model model) {
-        LOG.warn("Business rule violation: {}", ex.getMessage());
+        final String message = resolveMessage(ex.getMessage());
+        LOG.warn("Business rule violation: {}", message);
         response.setStatus(HttpStatus.UNPROCESSABLE_ENTITY.value());
         if (isHtmxRequest(request)) {
-            triggerErrorToast(response, ex.getMessage());
+            triggerErrorToast(response, message);
             return "fragments/empty :: empty";
         }
-        model.addAttribute("message", ex.getMessage());
+        model.addAttribute("message", message);
         return "error/error";
     }
 
@@ -101,6 +110,17 @@ public class GlobalExceptionHandler {
         response.setHeader("HX-Reswap", "none");
         response.setHeader("HX-Trigger",
             "{\"showToast\":{\"level\":\"error\",\"message\":\"" + escapeJson(message) + "\"}}");
+    }
+
+    private String resolveMessage(final String messageKey) {
+        if (messageKey == null || messageSource == null) {
+            return GENERIC_ERROR_MESSAGE;
+        }
+        try {
+            return messageSource.getMessage(messageKey, null, LocaleContextHolder.getLocale());
+        } catch (final NoSuchMessageException e) {
+            return messageKey;
+        }
     }
 
     private boolean isHtmxRequest(final HttpServletRequest request) {

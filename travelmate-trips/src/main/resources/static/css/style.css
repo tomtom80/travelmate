@@ -576,6 +576,114 @@ body > footer {
 }
 
 /* ========== Polls & Planning ========== */
+.poll-chart {
+    margin: 1rem 0;
+    padding: 1rem;
+    border: 1px solid var(--pico-border-color);
+    border-radius: var(--pico-border-radius);
+    background: var(--pico-surface);
+}
+.poll-chart__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 0.5rem;
+}
+.poll-chart__rows {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.poll-chart__row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+.poll-chart__row.winner .poll-chart__bar {
+    background: var(--pico-success);
+}
+.poll-chart__label {
+    flex: 0 0 160px;
+    font-size: 0.9rem;
+}
+.poll-chart__track {
+    flex: 1;
+    background: var(--pico-muted-border-color);
+    border-radius: var(--pico-border-radius);
+    overflow: hidden;
+    height: 0.75rem;
+}
+.poll-chart__bar {
+    height: 100%;
+    background: linear-gradient(90deg, var(--pico-primary) 0%, var(--pico-primary-80) 100%);
+}
+.poll-chart__value {
+    width: 48px;
+    text-align: right;
+    font-size: 0.85rem;
+}
+.poll-chart__legend {
+    margin-top: 0.75rem;
+    display: grid;
+    gap: 0.35rem;
+}
+.poll-chart__legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+}
+.poll-chart__legend-item.winner {
+    font-weight: 600;
+}
+.poll-chart__dot {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    background: linear-gradient(90deg, var(--pico-primary) 0%, var(--pico-primary-80) 100%);
+    flex-shrink: 0;
+}
+.poll-chart__legend-item.winner .poll-chart__dot {
+    background: var(--pico-success);
+}
+.poll-chart__legend-value {
+    margin-left: auto;
+    font-weight: 600;
+    color: var(--tm-text-soft);
+}
+.winner-banner {
+    margin: 1rem 0;
+    padding: 1rem;
+    border-radius: var(--pico-border-radius);
+    background: linear-gradient(135deg, var(--pico-success-20), var(--pico-success-10));
+    border: 1px solid var(--pico-success);
+}
+.winner-banner strong {
+    font-size: 1.1rem;
+}
+.room-summary {
+    margin-top: 0.25rem;
+    font-size: 0.85rem;
+    color: var(--pico-muted-text-color);
+    display: grid;
+    gap: 0.25rem;
+}
+.room-summary > span:first-child {
+    font-weight: 600;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--pico-primary);
+}
+.room-summary > div {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+.room-feature {
+    color: var(--tm-text-soft);
+    font-size: 0.8rem;
+}
 .poll-empty-state {
     display: grid;
     gap: 0.75rem;

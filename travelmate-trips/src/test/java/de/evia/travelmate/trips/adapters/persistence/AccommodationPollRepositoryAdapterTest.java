@@ -17,6 +17,7 @@ import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationPollId;
 import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationPollRepository;
 import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationPollStatus;
 import de.evia.travelmate.trips.domain.accommodationpoll.CandidateProposal;
+import de.evia.travelmate.trips.domain.accommodationpoll.CandidateRoom;
 import de.evia.travelmate.trips.domain.trip.TripId;
 
 @SpringBootTest
@@ -123,7 +124,7 @@ class AccommodationPollRepositoryAdapterTest {
         repository.save(poll);
 
         final AccommodationPoll loaded = repository.findById(TENANT_ID, poll.accommodationPollId()).orElseThrow();
-        loaded.addCandidate("Hotel C", "https://c.com", "Great pool");
+        loaded.addCandidate("Hotel C", "https://c.com", "Great pool", candidateRooms("Poolside"));
         repository.save(loaded);
 
         final AccommodationPoll reloaded = repository.findById(TENANT_ID, poll.accommodationPollId()).orElseThrow();
@@ -142,8 +143,12 @@ class AccommodationPollRepositoryAdapterTest {
 
     private AccommodationPoll createPoll(final TripId tripId) {
         return AccommodationPoll.create(TENANT_ID, tripId, List.of(
-            new CandidateProposal("Hotel A", "https://a.com", "Nice view"),
-            new CandidateProposal("Hotel B", null, "Cozy cabin")
+            new CandidateProposal("Hotel A", "https://a.com", "Nice view", candidateRooms("Balcony")),
+            new CandidateProposal("Hotel B", null, "Cozy cabin", candidateRooms("Fireplace"))
         ));
+    }
+
+    private static List<CandidateRoom> candidateRooms(final String features) {
+        return List.of(new CandidateRoom("Room", 2, null, features));
     }
 }

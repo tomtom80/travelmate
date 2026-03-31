@@ -1,5 +1,6 @@
 package de.evia.travelmate.trips.adapters.persistence;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -9,6 +10,9 @@ import java.util.stream.Collectors;
 import org.springframework.stereotype.Repository;
 
 import de.evia.travelmate.common.domain.TenantId;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
 import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationCandidate;
 import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationCandidateId;
 import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationPoll;
@@ -17,10 +21,13 @@ import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationPollReposi
 import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationPollStatus;
 import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationVote;
 import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationVoteId;
+import de.evia.travelmate.trips.domain.accommodationpoll.CandidateRoom;
 import de.evia.travelmate.trips.domain.trip.TripId;
 
 @Repository
 public class AccommodationPollRepositoryAdapter implements AccommodationPollRepository {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     private final AccommodationPollJpaRepository jpaRepository;
 
@@ -84,10 +91,17 @@ public class AccommodationPollRepositoryAdapter implements AccommodationPollRepo
             final boolean exists = entity.getCandidates().stream()
                 .anyMatch(e -> e.getCandidateId().equals(candidate.candidateId().value()));
             if (!exists) {
-                entity.getCandidates().add(new AccommodationCandidateJpaEntity(
+                final AccommodationCandidateJpaEntity candidateEntity = new AccommodationCandidateJpaEntity(
                     candidate.candidateId().value(), entity,
-                    candidate.name(), candidate.url(), candidate.description()
-                ));
+                    candidate.name(), candidate.url(), candidate.description(),
+                    serializeRooms(candidate.rooms())
+                );
+                entity.getCandidates().add(candidateEntity);
+            } else {
+                entity.getCandidates().stream()
+                    .filter(e -> e.getCandidateId().equals(candidate.candidateId().value()))
+                    .findFirst()
+                    .ifPresent(e -> e.setRoomsJson(serializeRooms(candidate.rooms())));
             }
         }
     }
@@ -119,7 +133,8 @@ public class AccommodationPollRepositoryAdapter implements AccommodationPollRepo
         final var candidates = entity.getCandidates().stream()
             .map(c -> new AccommodationCandidate(
                 new AccommodationCandidateId(c.getCandidateId()),
-                c.getName(), c.getUrl(), c.getDescription()
+                c.getName(), c.getUrl(), c.getDescription(),
+                readRooms(c.getRoomsJson())
             ))
             .toList();
 
@@ -142,5 +157,27 @@ public class AccommodationPollRepositoryAdapter implements AccommodationPollRepo
                 ? new AccommodationCandidateId(entity.getSelectedCandidateId())
                 : null
         );
+    }
+
+    private static String serializeRooms(final List<CandidateRoom> rooms) {
+        if (rooms == null || rooms.isEmpty()) {
+            return null;
+        }
+        try {
+            return OBJECT_MAPPER.writeValueAsString(rooms);
+        } catch (final Exception e) {
+            throw new IllegalStateException("Failed to serialize candidate rooms", e);
+        }
+    }
+
+    private static List<CandidateRoom> readRooms(final String json) {
+        if (json == null || json.isBlank()) {
+            return List.of();
+        }
+        try {
+            return OBJECT_MAPPER.readValue(json, new TypeReference<List<CandidateRoom>>() {});
+        } catch (final Exception e) {
+            throw new IllegalStateException("Failed to parse candidate rooms", e);
+        }
     }
 }

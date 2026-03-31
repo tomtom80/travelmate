@@ -187,18 +187,23 @@ public class ExpenseLifecycleSteps {
             page.locator("dialog input[name=roomBedCount]").fill("2");
             page.locator("dialog button[type=submit]").click();
             page.waitForLoadState(LoadState.NETWORKIDLE);
+        } else if (page.locator("button[onclick*='edit-accommodation-dialog']").count() > 0) {
+            page.locator("button[onclick*='edit-accommodation-dialog']").first().click();
+            page.waitForSelector("#edit-accommodation-dialog[open]");
+            page.locator("#edit-accommodation-dialog input[name=totalPrice]").fill(totalPrice);
+            page.locator("#edit-accommodation-dialog button[type=submit]").click();
+            page.waitForLoadState(LoadState.NETWORKIDLE);
         }
         for (int i = 0; i < 20; i++) {
             final String content = page.content();
-            if (content.contains("BDD Expense Unterkunft")
-                || content.contains(totalPrice)
+            if (content.contains(totalPrice)
                 || content.contains("300,00")) {
                 return;
             }
             page.waitForTimeout(500);
             navigateAndWait("/trips/" + tripId + "/accommodation");
         }
-        assertThat(page.content()).contains("BDD Expense Unterkunft");
+        assertThat(page.content()).containsAnyOf(totalPrice, "300,00");
     }
 
     private void ensureAccommodationManagementReady(final String tripId) {

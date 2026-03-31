@@ -37,7 +37,6 @@ public class AccommodationSteps {
             createTripWithoutDates(TRIP_NAME);
             final String tripId = openTripFromList(TRIP_NAME);
             createAndConfirmDatePoll(tripId, "2026-12-01", "2026-12-05", "2026-12-02", "2026-12-06");
-            createAndConfirmAccommodationPoll(tripId, "Berghuette", "Ferienhaus");
             tripDetailPath = page.url().replace(BASE_URL, "");
 
             tripCreated = true;
@@ -50,29 +49,17 @@ public class AccommodationSteps {
         navigateAndWait("/trips/" + tripId + "/accommodation");
     }
 
-    @Dann("sehe ich den Hinweis dass noch keine Unterkunft hinterlegt ist")
-    public void seheIchDenHinweisDassNochKeineUnterkunftHinterlegtIst() {
-        assertThat(page.content()).contains("Unterkunft hinzufuegen");
+    @Dann("sehe ich den Hinweis dass zuerst eine Unterkunftsabstimmung noetig ist")
+    public void seheIchDenHinweisDassZuerstEineUnterkunftsabstimmungNoetigIst() {
+        assertThat(page.url()).contains("/planning");
+        assertThat(page.content()).containsAnyOf("Unterkunft", "Planung");
     }
 
-    @Und("ich eine Unterkunft mit Name {string} und Adresse {string} und Gesamtpreis {string} erfasse")
-    public void ichEineUnterkunftErfasse(final String name, final String address, final String price) {
-        // Open dialog
-        page.locator("button:has-text('Unterkunft hinzufuegen')").click();
-        page.waitForSelector("dialog[open]");
-
-        // Fill form
-        page.locator("dialog input[name=name]").fill(name);
-        page.locator("dialog input[name=address]").fill(address);
-        page.locator("dialog input[name=totalPrice]").fill(price);
-
-        // Fill first room (required in add dialog)
-        page.locator("dialog input[name=roomName]").fill("Standardzimmer");
-        page.locator("dialog input[name=roomBedCount]").fill("2");
-
-        // Submit
-        page.locator("dialog button[type=submit]").click();
-        page.waitForLoadState(LoadState.NETWORKIDLE);
+    @Und("ich die Unterkunftsabstimmung mit Gewinner {string} bestaetige")
+    public void ichDieUnterkunftsabstimmungMitGewinnerBestaetige(final String name) {
+        final String tripId = extractTripId();
+        createAndConfirmAccommodationPoll(tripId, name, "Alternative Unterkunft");
+        navigateAndWait("/trips/" + tripId + "/accommodation");
         accommodationCreated = true;
     }
 
@@ -85,7 +72,7 @@ public class AccommodationSteps {
     public void eineUnterkunftWurdeFuerDieReiseErfasst() {
         if (!accommodationCreated) {
             ichDieUnterkunftsseiteOeffne();
-            ichEineUnterkunftErfasse("BDD-Huette", "Testweg 1", "1200");
+            ichDieUnterkunftsabstimmungMitGewinnerBestaetige("BDD-Huette");
         } else {
             final String tripId = extractTripId();
             navigateAndWait("/trips/" + tripId + "/accommodation");

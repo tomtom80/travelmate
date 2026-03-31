@@ -73,16 +73,6 @@ class TripConsistencyIT extends E2ETestBase {
             "Konsistenz Alternative",
             "Zweiter Vorschlag"
         );
-        createAccommodationAfterPollDecision(
-            tripId,
-            "Konsistenz Lodge",
-            "Testgasse 4",
-            "2026-10-01",
-            "2026-10-07",
-            "280.00",
-            "Familienzimmer",
-            "3"
-        );
         navigateAndWait("/trips/" + tripId);
 
         page.locator("form[action$='/confirm'] button[type=submit]").click();

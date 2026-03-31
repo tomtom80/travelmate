@@ -13,6 +13,7 @@ Diese Dokumentation beschreibt Architektur, Produktzuschnitt, Design-Artefakte u
 
 ## Aktuelle Release-Dokumente
 
+- [`backlog/release-v0.14.1.md`](./backlog/release-v0.14.1.md)
 - [`backlog/release-v0.12.3.md`](./backlog/release-v0.12.3.md)
 - [`backlog/release-v0.12.2.md`](./backlog/release-v0.12.2.md)
 - [`backlog/release-v0.12.0.md`](./backlog/release-v0.12.0.md)

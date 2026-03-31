@@ -147,10 +147,26 @@ abstract class E2ETestBase {
         if (candidate1Description != null) {
             page.locator("input[name=candidateDescription]").nth(0).fill(candidate1Description);
         }
+        page.locator(".candidate-entry").nth(0).locator("input[name=roomName]").first().fill("Familienzimmer");
+        page.locator(".candidate-entry").nth(0).locator("input[name=roomBedCount]").first().fill("4");
+        page.locator(".candidate-entry").nth(0).locator("input[name=roomFeatures]").first().fill("Seeblick, Balkon");
         page.locator("input[name=candidateName]").nth(1).fill(candidate2Name);
         if (candidate2Description != null) {
             page.locator("input[name=candidateDescription]").nth(1).fill(candidate2Description);
         }
+        page.locator(".candidate-entry").nth(1).locator("input[name=roomName]").first().fill("Doppelzimmer");
+        page.locator(".candidate-entry").nth(1).locator("input[name=roomBedCount]").first().fill("2");
+        page.locator(".candidate-entry").nth(1).locator("input[name=roomFeatures]").first().fill("Bergblick");
+        page.evaluate("""
+            ([first, second]) => {
+                const inputs = document.querySelectorAll('input.candidate-rooms-data');
+                inputs[0].value = first;
+                inputs[1].value = second;
+            }
+            """, List.of(
+            "[{\"name\":\"Familienzimmer\",\"bedCount\":4,\"features\":\"Seeblick, Balkon\"}]",
+            "[{\"name\":\"Doppelzimmer\",\"bedCount\":2,\"features\":\"Bergblick\"}]"
+        ));
         page.locator("button[type=submit]:not(.outline)").first().click();
         page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
 

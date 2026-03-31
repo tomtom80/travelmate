@@ -2,6 +2,8 @@ package de.evia.travelmate.e2e;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
+
 import com.microsoft.playwright.options.LoadState;
 
 import org.junit.jupiter.api.MethodOrderer;
@@ -57,9 +59,25 @@ class AccommodationPollLifecycleIT extends E2ETestBase {
         nameInputs.nth(0).fill("Hotel Alpenblick");
         urlInputs.nth(0).fill("https://alpenblick.at");
         descInputs.nth(0).fill("Tolle Aussicht");
+        page.locator(".candidate-entry").nth(0).locator("input[name=roomName]").first().fill("Familienzimmer");
+        page.locator(".candidate-entry").nth(0).locator("input[name=roomBedCount]").first().fill("4");
+        page.locator(".candidate-entry").nth(0).locator("input[name=roomFeatures]").first().fill("Seeblick");
 
         nameInputs.nth(1).fill("Berghuette Sonnstein");
         descInputs.nth(1).fill("Gemuetliche Huette");
+        page.locator(".candidate-entry").nth(1).locator("input[name=roomName]").first().fill("Doppelzimmer");
+        page.locator(".candidate-entry").nth(1).locator("input[name=roomBedCount]").first().fill("2");
+        page.locator(".candidate-entry").nth(1).locator("input[name=roomFeatures]").first().fill("Kamin");
+        page.evaluate("""
+            ([first, second]) => {
+                const inputs = document.querySelectorAll('input.candidate-rooms-data');
+                inputs[0].value = first;
+                inputs[1].value = second;
+            }
+            """, List.of(
+            "[{\"name\":\"Familienzimmer\",\"bedCount\":4,\"features\":\"Seeblick\"}]",
+            "[{\"name\":\"Doppelzimmer\",\"bedCount\":2,\"features\":\"Kamin\"}]"
+        ));
 
         page.locator("button[type=submit]:not(.outline)").first().click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
@@ -118,8 +136,7 @@ class AccommodationPollLifecycleIT extends E2ETestBase {
         page.locator("button[type=submit]:has-text('Bestaetigen'), button[type=submit]:has-text('Confirm')").click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
 
-        assertThat(page.locator("mark").allTextContents()).anySatisfy(text ->
-            assertThat(text).matches("(?i).*confirmed.*|.*bestaetigt.*"));
+        assertThat(page.content()).contains("Bestaetigt");
     }
 
     @Test

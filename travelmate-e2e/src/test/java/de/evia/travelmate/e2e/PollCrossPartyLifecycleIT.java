@@ -2,6 +2,8 @@ package de.evia.travelmate.e2e;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import java.util.List;
+
 import com.microsoft.playwright.BrowserContext;
 import com.microsoft.playwright.Page;
 import com.microsoft.playwright.options.LoadState;
@@ -115,8 +117,24 @@ class PollCrossPartyLifecycleIT extends E2ETestBase {
         page.locator("input[name=candidateName]").nth(0).fill("Hotel Alpenblick");
         page.locator("input[name=candidateUrl]").nth(0).fill("https://alpenblick.example");
         page.locator("input[name=candidateDescription]").nth(0).fill("Direkt am See");
+        page.locator(".candidate-entry").nth(0).locator("input[name=roomName]").first().fill("Familienzimmer");
+        page.locator(".candidate-entry").nth(0).locator("input[name=roomBedCount]").first().fill("4");
+        page.locator(".candidate-entry").nth(0).locator("input[name=roomFeatures]").first().fill("Seeblick");
         page.locator("input[name=candidateName]").nth(1).fill("Berghaus Morgenrot");
         page.locator("input[name=candidateDescription]").nth(1).fill("Ruhige Lage");
+        page.locator(".candidate-entry").nth(1).locator("input[name=roomName]").first().fill("Doppelzimmer");
+        page.locator(".candidate-entry").nth(1).locator("input[name=roomBedCount]").first().fill("2");
+        page.locator(".candidate-entry").nth(1).locator("input[name=roomFeatures]").first().fill("Bergblick");
+        page.evaluate("""
+            ([first, second]) => {
+                const inputs = document.querySelectorAll('input.candidate-rooms-data');
+                inputs[0].value = first;
+                inputs[1].value = second;
+            }
+            """, List.of(
+            "[{\"name\":\"Familienzimmer\",\"bedCount\":4,\"features\":\"Seeblick\"}]",
+            "[{\"name\":\"Doppelzimmer\",\"bedCount\":2,\"features\":\"Bergblick\"}]"
+        ));
         page.locator("button[type=submit]").first().click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
         assertThat(page.content()).contains("Hotel Alpenblick");
@@ -162,8 +180,7 @@ class PollCrossPartyLifecycleIT extends E2ETestBase {
             page.locator("select[name=confirmedCandidateId] option:not([value=''])").first().getAttribute("value"));
         page.locator("button[type=submit]:has-text('Bestaetigen')").click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
-        assertThat(page.locator("mark").allTextContents()).anySatisfy(text ->
-            assertThat(text).containsIgnoringCase("bestaetigt"));
+        assertThat(page.content()).contains("Bestaetigt");
 
         navigateAndWait(party2Page, "/trips/" + tripId + "/planning");
         assertThat(party2Page.content()).contains("Bestaetigt");
@@ -171,21 +188,17 @@ class PollCrossPartyLifecycleIT extends E2ETestBase {
 
         navigateAndWait(party2Page, "/trips/" + tripId + "/datepoll");
         assertThat(party2Page.content()).contains("Bestaetigt");
+        assertThat(party2Page.locator(".poll-chart__row").count()).isGreaterThan(0);
         navigateAndWait(party2Page, "/trips/" + tripId + "/accommodationpoll");
         assertThat(party2Page.content()).contains("Hotel Alpenblick");
         assertThat(party2Page.content()).contains("Bestaetigt");
+        assertThat(party2Page.locator(".poll-chart__row").count()).isGreaterThan(0);
+        assertThat(party2Page.locator(".poll-chart__row.winner").count()).isGreaterThan(0);
+        assertThat(party2Page.locator(".winner-banner strong").allTextContents()).anySatisfy(text ->
+            assertThat(text).containsIgnoringCase("Hotel Alpenblick"));
 
-        createAccommodationAfterPollDecision(
-            tripId,
-            "Hotel Alpenblick",
-            "Alpweg 7",
-            "2026-10-01",
-            "2026-10-10",
-            "1800",
-            "Familienzimmer",
-            "4"
-        );
         navigateAndWait(party2Page, "/trips/" + tripId + "/accommodation");
         assertThat(party2Page.content()).contains("Hotel Alpenblick");
+        assertThat(party2Page.content()).contains("Familienzimmer");
     }
 }

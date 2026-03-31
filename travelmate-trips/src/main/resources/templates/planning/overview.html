@@ -3,7 +3,8 @@
 <body>
 <div th:fragment="content">
     <hgroup>
-        <h1 th:text="#{planning.title}">Reiseplanung</h1>
+        <h1 th:text="#{planning.tool.title}">Planungstool</h1>
+        <p th:text="#{planning.tool.subtitle}">Legt den Reisezeitraum und die Unterkunft gemeinsam fest.</p>
         <p><a th:href="@{/{id}(id=${trip.tripId()})}" th:text="${trip.name()}">Reise</a></p>
     </hgroup>
 

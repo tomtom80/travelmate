@@ -1,5 +1,6 @@
 package de.evia.travelmate.trips.adapters.web;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -18,6 +19,7 @@ import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
@@ -53,6 +55,7 @@ class AccommodationPollControllerTest {
     private static final UUID CANDIDATE_1_UUID = UUID.randomUUID();
     private static final UUID CANDIDATE_2_UUID = UUID.randomUUID();
     private static final String MEMBER_EMAIL = "organizer@test.de";
+    private static final String ROOM_JSON = "[{\"name\":\"Room\",\"bedCount\":2,\"pricePerNight\":null,\"features\":\"Panorama\"}]";
 
     @Autowired
     private MockMvc mockMvc;
@@ -122,11 +125,16 @@ class AccommodationPollControllerTest {
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
                 .param("candidateName", "Hotel A", "Hotel B")
                 .param("candidateUrl", "https://a.com", "")
-                .param("candidateDescription", "Nice", "Cozy"))
+                .param("candidateDescription", "Nice", "Cozy")
+                .param("candidateRoomsJson", ROOM_JSON, ROOM_JSON))
             .andExpect(status().is3xxRedirection())
             .andExpect(redirectedUrl("/" + TRIP_UUID + "/accommodationpoll"));
 
-        verify(accommodationPollService).createPoll(any(CreateAccommodationPollCommand.class));
+        final ArgumentCaptor<CreateAccommodationPollCommand> commandCaptor =
+            ArgumentCaptor.forClass(CreateAccommodationPollCommand.class);
+        verify(accommodationPollService).createPoll(commandCaptor.capture());
+        assertThat(commandCaptor.getValue().candidates()).allSatisfy(candidate ->
+            assertThat(candidate.rooms()).isNotEmpty());
     }
 
     @Test
@@ -138,11 +146,15 @@ class AccommodationPollControllerTest {
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
                 .param("name", "Hotel C")
                 .param("url", "https://c.com")
-                .param("description", "Lake view"))
+                .param("description", "Lake view")
+                .param("roomsJson", ROOM_JSON))
             .andExpect(status().is3xxRedirection())
             .andExpect(redirectedUrl("/" + TRIP_UUID + "/accommodationpoll"));
 
-        verify(accommodationPollService).addCandidate(any(AddAccommodationCandidateCommand.class));
+        final ArgumentCaptor<AddAccommodationCandidateCommand> addCaptor =
+            ArgumentCaptor.forClass(AddAccommodationCandidateCommand.class);
+        verify(accommodationPollService).addCandidate(addCaptor.capture());
+        assertThat(addCaptor.getValue().rooms()).isNotEmpty();
     }
 
     @Test
@@ -199,7 +211,10 @@ class AccommodationPollControllerTest {
             .andExpect(redirectedUrl("/" + TRIP_UUID + "/accommodationpoll"));
 
         verify(accommodationService).importFromUrl("https://example.com/hotel");
-        verify(accommodationPollService).addCandidate(any(AddAccommodationCandidateCommand.class));
+        final ArgumentCaptor<AddAccommodationCandidateCommand> importCaptor =
+            ArgumentCaptor.forClass(AddAccommodationCandidateCommand.class);
+        verify(accommodationPollService).addCandidate(importCaptor.capture());
+        assertThat(importCaptor.getValue().rooms()).isNotEmpty();
     }
 
     @Test
@@ -260,9 +275,13 @@ class AccommodationPollControllerTest {
             POLL_UUID, TENANT_UUID, TRIP_UUID, "OPEN", null,
             List.of(
                 new AccommodationPollRepresentation.CandidateRepresentation(
-                    CANDIDATE_1_UUID, "Hotel A", "https://a.com", "Nice", 0),
+                    CANDIDATE_1_UUID, "Hotel A", "https://a.com", "Nice", 0,
+                    List.of(new AccommodationPollRepresentation.RoomRepresentation("Room A", 2, null, "Balcony"))
+                ),
                 new AccommodationPollRepresentation.CandidateRepresentation(
-                    CANDIDATE_2_UUID, "Hotel B", null, "Cozy", 0)
+                    CANDIDATE_2_UUID, "Hotel B", null, "Cozy", 0,
+                    List.of(new AccommodationPollRepresentation.RoomRepresentation("Room B", 3, null, "Sauna"))
+                )
             ),
             List.of()
         );
