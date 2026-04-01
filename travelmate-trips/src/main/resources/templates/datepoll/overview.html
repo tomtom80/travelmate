@@ -79,26 +79,16 @@
             <div th:with="total=${datePoll.totalVotes()}">
                 <div class="poll-chart__rows">
                     <div class="poll-chart__row"
-                         th:each="option : ${datePoll.options()}"
+                         th:each="option, iterStat : ${datePoll.options()}"
                          th:classappend="${datePoll.confirmedOptionId() != null && datePoll.confirmedOptionId().equals(option.dateOptionId())} ? 'winner' : ''">
                         <span class="poll-chart__label">
                             <strong th:text="${option.startDate() + ' - ' + option.endDate()}">Zeitraum</strong>
                         </span>
                         <div class="poll-chart__track">
                             <div class="poll-chart__bar"
-                                 th:style="|width:${total > 0 ? (option.voteCount() * 100.0 / total) : 4}%;|"></div>
+                                 th:style="|width:${total > 0 ? (option.voteCount() * 100.0 / total) : 4}%;background:var(--tm-poll-c${iterStat.index % 6});|"></div>
                         </div>
                         <span class="poll-chart__value"
-                              th:text="${total > 0 ? T(java.lang.Math).round(option.voteCount() * 100.0 / total) : 0} + '%'">0%</span>
-                    </div>
-                </div>
-                <div class="poll-chart__legend">
-                    <div class="poll-chart__legend-item"
-                         th:each="option : ${datePoll.options()}"
-                         th:classappend="${datePoll.confirmedOptionId() != null && datePoll.confirmedOptionId().equals(option.dateOptionId())} ? 'winner' : ''">
-                        <span class="poll-chart__dot"></span>
-                        <span th:text="${option.startDate() + ' - ' + option.endDate()}">Zeitraum</span>
-                        <span class="poll-chart__legend-value"
                               th:text="${total > 0 ? T(java.lang.Math).round(option.voteCount() * 100.0 / total) : 0} + '%'">0%</span>
                     </div>
                 </div>

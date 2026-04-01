@@ -93,7 +93,8 @@ public class AccommodationPollController {
                          @RequestParam("candidateName") final List<String> names,
                          @RequestParam(value = "candidateUrl", required = false) final List<String> urls,
                          @RequestParam(value = "candidateDescription", required = false) final List<String> descriptions,
-                         @RequestParam(value = "candidateRoomsJson", required = false) final List<String> roomsJson) {
+                         @RequestParam(value = "candidateRoomsJson", required = false) final List<String> roomsJson,
+                         @RequestParam(value = "candidateAmenitiesJson", required = false) final List<String> amenitiesJson) {
         final ResolvedIdentity identity = requireIdentity(jwt);
         final TripRepresentation trip = validateTripAccess(tripId, identity);
         requireOrganizer(trip, identity);
@@ -102,10 +103,11 @@ public class AccommodationPollController {
         for (int i = 0; i < names.size(); i++) {
             final String url = urls != null && i < urls.size() ? emptyToNull(urls.get(i)) : null;
             final String desc = descriptions != null && i < descriptions.size() ? emptyToNull(descriptions.get(i)) : null;
+            final String amenJson = amenitiesJson != null && i < amenitiesJson.size() ? amenitiesJson.get(i) : null;
             candidates.add(new CandidateProposalCommand(
                 names.get(i), url, desc,
                 parseRoomCommands(i < roomsJsonSize(roomsJson) ? roomsJson.get(i) : null),
-                Set.of()
+                parseAmenitiesJson(amenJson)
             ));
         }
 
@@ -254,6 +256,19 @@ public class AccommodationPollController {
 
     private String emptyToNull(final String value) {
         return value != null && !value.isBlank() ? value : null;
+    }
+
+    private Set<Amenity> parseAmenitiesJson(final String json) {
+        if (json == null || json.isBlank() || "[]".equals(json.trim())) {
+            return Set.of();
+        }
+        try {
+            final List<String> names = OBJECT_MAPPER.readValue(json,
+                new com.fasterxml.jackson.core.type.TypeReference<List<String>>() {});
+            return parseAmenities(names);
+        } catch (final Exception e) {
+            return Set.of();
+        }
     }
 
     private Set<Amenity> parseAmenities(final List<String> amenityNames) {

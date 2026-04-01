@@ -55,6 +55,17 @@
             </div>
         </div>
 
+        <div class="accommodation-map" th:if="${accommodation.address() != null or accommodation.name() != null}">
+            <iframe class="accommodation-map__frame"
+                    th:src="${'https://www.openstreetmap.org/export/embed.html?bbox=&layer=mapnik&marker=&query=' + #strings.replace(accommodation.address() != null ? accommodation.address() : accommodation.name(), ' ', '+')}"
+                    loading="lazy"
+                    referrerpolicy="no-referrer"></iframe>
+            <a class="accommodation-map__link"
+               th:href="${'https://www.openstreetmap.org/search?query=' + #strings.replace(accommodation.address() != null ? accommodation.address() : accommodation.name(), ' ', '+')}"
+               target="_blank" rel="noopener noreferrer"
+               th:text="#{accommodationpoll.showOnMap}">Auf Karte anzeigen</a>
+        </div>
+
         <!-- Unassigned parties warning -->
         <div th:if="${isOrganizer && unassignedParties != null && !unassignedParties.isEmpty()}"
              class="alert alert-warning">

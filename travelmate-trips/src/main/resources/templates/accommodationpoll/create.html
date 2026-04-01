@@ -59,6 +59,7 @@
             </div>
 
             <input type="hidden" name="candidateRoomsJson" class="candidate-rooms-data" value="[]">
+            <input type="hidden" name="candidateAmenitiesJson" class="candidate-amenities-data" value="[]">
 
             <div class="amenity-grid" th:if="${allAmenities != null}">
                 <strong th:text="#{accommodationpoll.amenities}">Ausstattung</strong>
@@ -167,6 +168,12 @@
             entry.querySelector('.candidate-rooms-data').value = JSON.stringify(rooms);
         }
 
+        function updateAmenityData(entry) {
+            const amenities = Array.from(entry.querySelectorAll('.candidate-amenity:checked'))
+                .map(cb => cb.value);
+            entry.querySelector('.candidate-amenities-data').value = JSON.stringify(amenities);
+        }
+
         function addCandidateEntry() {
             const clone = candidateTemplate.content.cloneNode(true);
             candidatesContainer.appendChild(clone);
@@ -175,7 +182,10 @@
         }
 
         document.getElementById('accommodationpoll-form').addEventListener('submit', function() {
-            document.querySelectorAll('.candidate-entry').forEach(entry => updateRoomData(entry));
+            document.querySelectorAll('.candidate-entry').forEach(entry => {
+                updateRoomData(entry);
+                updateAmenityData(entry);
+            });
         });
 
         addCandidateEntry();

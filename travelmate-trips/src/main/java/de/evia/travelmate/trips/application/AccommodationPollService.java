@@ -173,7 +173,11 @@ public class AccommodationPollService {
             .toList();
         final SetAccommodationCommand command = new SetAccommodationCommand(
             tenantId.value(), tripId.value(),
-            winner.name(), null, winner.url(), null, null, null, rooms
+            winner.name(),
+            winner.description(),
+            winner.url(),
+            null, null, null,
+            rooms
         );
         accommodationService.setAccommodation(command);
     }

@@ -591,9 +591,16 @@ body > footer {
 }
 .poll-chart__header {
     display: flex;
+    flex-wrap: wrap;
     justify-content: space-between;
     align-items: baseline;
+    gap: 0.25rem 1rem;
     margin-bottom: 0.5rem;
+}
+
+.poll-chart__header p {
+    margin-bottom: 0;
+    color: var(--tm-text-soft);
 }
 .poll-chart__rows {
     display: flex;
@@ -991,7 +998,7 @@ body > footer {
 .room-row__grid {
     flex: 1;
     display: grid;
-    grid-template-columns: minmax(0, 1.5fr) repeat(2, minmax(0, 0.8fr)) minmax(0, 1.3fr);
+    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.5fr);
     gap: 0.75rem;
 }
 
@@ -1211,6 +1218,14 @@ body > footer {
     .room-row__grid {
         grid-template-columns: 1fr;
     }
+
+    .room-row > .btn-icon {
+        width: 100%;
+        max-width: 100%;
+        height: auto;
+        padding: 0.5rem;
+        font-size: 0.85rem;
+    }
 }
 
 /* ── Ingredient Card ────────────────────────────────── */
@@ -1304,6 +1319,30 @@ body > footer {
 
 .poll-chart__row.bar--leading .poll-chart__value {
     font-weight: 700;
+}
+
+/* ── Accommodation Map Embed ────────────────────────── */
+.accommodation-map {
+    margin: 1rem 0;
+    border-radius: var(--pico-border-radius);
+    overflow: hidden;
+    border: 1px solid var(--tm-border-strong);
+}
+
+.accommodation-map__frame {
+    width: 100%;
+    height: 14rem;
+    border: none;
+    display: block;
+}
+
+.accommodation-map__link {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    text-align: center;
+    background: var(--tm-surface-muted);
+    border-top: 1px solid var(--tm-border-strong);
 }
 
 /* ── Utility Classes ────────────────────────────────── */

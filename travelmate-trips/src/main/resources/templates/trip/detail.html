@@ -246,32 +246,6 @@
             <p th:text="#{trip.tools.hint}">Alle Reisefunktionen folgen demselben Karten- und Aktionsmuster.</p>
         </div>
         <div class="feature-grid">
-            <article class="feature-card">
-                <div class="feature-card__body">
-                    <p class="feature-card__eyebrow" th:text="#{trip.tools.category.organize}">Organisation</p>
-                    <h3 th:text="#{accommodation.title}">Unterkunft</h3>
-                    <p th:if="${hasAccommodation}" th:text="#{accommodation.view}">Unterkunft anzeigen</p>
-                    <p th:if="${!hasAccommodation}" th:text="#{accommodation.empty}">Noch keine Unterkunft hinterlegt.</p>
-                </div>
-                <div class="feature-card__actions">
-                    <a th:if="${hasAccommodation}"
-                       th:href="@{/{id}/accommodation(id=${trip.tripId()})}"
-                       role="button"
-                       class="feature-card__cta"
-                       th:text="#{trip.tools.open}">Oeffnen</a>
-                    <a th:if="${!hasAccommodation && isOrganizer && accommodationDecisionConfirmed}"
-                       th:href="@{/{id}/accommodation(id=${trip.tripId()})}"
-                       role="button"
-                       class="feature-card__cta"
-                       th:text="#{trip.tools.create}">Erstellen</a>
-                    <a th:if="${!hasAccommodation && isOrganizer && !accommodationDecisionConfirmed && trip.status() == 'PLANNING'}"
-                       th:href="@{/{id}/planning(id=${trip.tripId()})}"
-                       role="button"
-                       class="feature-card__cta"
-                       th:text="#{planning.vote}">Abstimmen</a>
-                </div>
-            </article>
-
             <article class="feature-card" th:if="${trip.status() == 'PLANNING'}">
                 <div class="feature-card__body">
                     <p class="feature-card__eyebrow" th:text="#{trip.tools.category.plan}">Planung</p>
@@ -330,6 +304,32 @@
                        role="button"
                        class="feature-card__cta"
                        th:text="#{trip.tools.open}">Oeffnen</a>
+                </div>
+            </article>
+
+            <article class="feature-card">
+                <div class="feature-card__body">
+                    <p class="feature-card__eyebrow" th:text="#{trip.tools.category.organize}">Organisation</p>
+                    <h3 th:text="#{accommodation.title}">Unterkunft</h3>
+                    <p th:if="${hasAccommodation}" th:text="#{accommodation.view}">Unterkunft anzeigen</p>
+                    <p th:if="${!hasAccommodation}" th:text="#{accommodation.empty}">Noch keine Unterkunft hinterlegt.</p>
+                </div>
+                <div class="feature-card__actions">
+                    <a th:if="${hasAccommodation}"
+                       th:href="@{/{id}/accommodation(id=${trip.tripId()})}"
+                       role="button"
+                       class="feature-card__cta"
+                       th:text="#{trip.tools.open}">Oeffnen</a>
+                    <a th:if="${!hasAccommodation && isOrganizer && accommodationDecisionConfirmed}"
+                       th:href="@{/{id}/accommodation(id=${trip.tripId()})}"
+                       role="button"
+                       class="feature-card__cta"
+                       th:text="#{trip.tools.create}">Erstellen</a>
+                    <a th:if="${!hasAccommodation && isOrganizer && !accommodationDecisionConfirmed && trip.status() == 'PLANNING'}"
+                       th:href="@{/{id}/planning(id=${trip.tripId()})}"
+                       role="button"
+                       class="feature-card__cta"
+                       th:text="#{planning.vote}">Abstimmen</a>
                 </div>
             </article>
 
