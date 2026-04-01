@@ -4,17 +4,13 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
 import de.evia.travelmate.common.domain.TenantId;
-import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationCandidate;
-import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationVote;
-import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationVoteId;
-import de.evia.travelmate.trips.domain.accommodationpoll.CandidateRoom;
 import de.evia.travelmate.trips.domain.trip.TripId;
-import de.evia.travelmate.trips.domain.accommodationpoll.CandidateRoom;
 
 class AccommodationPollTest {
 
@@ -42,7 +38,7 @@ class AccommodationPollTest {
     void createWithOneCandidateFails() {
         assertThatThrownBy(() -> AccommodationPoll.create(
             TENANT_ID, TRIP_ID,
-            List.of(new CandidateProposal("Hotel A", null, null, candidateRooms("Balcony")))))
+            List.of(new CandidateProposal("Hotel A", null, null, candidateRooms(), Set.of()))))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("at least 2");
     }
@@ -54,6 +50,28 @@ class AccommodationPollTest {
             .hasMessageContaining("at least 2");
     }
 
+    @Test
+    void createPreservesAmenities() {
+        final AccommodationPoll poll = AccommodationPoll.create(TENANT_ID, TRIP_ID, List.of(
+            new CandidateProposal("Hotel A", null, null, candidateRooms(), Set.of(Amenity.WIFI, Amenity.POOL)),
+            new CandidateProposal("Hotel B", null, null, candidateRooms(), Set.of(Amenity.KITCHEN))
+        ));
+
+        assertThat(poll.candidates().get(0).amenities()).containsExactlyInAnyOrder(Amenity.WIFI, Amenity.POOL);
+        assertThat(poll.candidates().get(1).amenities()).containsExactly(Amenity.KITCHEN);
+    }
+
+    @Test
+    void createWithEmptyAmenitiesIsValid() {
+        final AccommodationPoll poll = AccommodationPoll.create(TENANT_ID, TRIP_ID, List.of(
+            new CandidateProposal("Hotel A", null, null, candidateRooms(), Set.of()),
+            new CandidateProposal("Hotel B", null, null, candidateRooms(), null)
+        ));
+
+        assertThat(poll.candidates().get(0).amenities()).isEmpty();
+        assertThat(poll.candidates().get(1).amenities()).isEmpty();
+    }
+
     // --- Add/Remove Candidates ---
 
     @Test
@@ -61,10 +79,11 @@ class AccommodationPollTest {
         final AccommodationPoll poll = createOpenPoll();
 
         final AccommodationCandidateId newId = poll.addCandidate("Hotel C", "https://hotelc.com", "Nice pool",
-            candidateRooms("Poolside"));
+            candidateRooms(), Set.of(Amenity.POOL));
 
         assertThat(newId).isNotNull();
         assertThat(poll.candidates()).hasSize(3);
+        assertThat(poll.candidates().get(2).amenities()).containsExactly(Amenity.POOL);
     }
 
     @Test
@@ -188,35 +207,59 @@ class AccommodationPollTest {
     // --- Confirm ---
 
     @Test
-    void confirmSetsStatusAndSelectedCandidate() {
+    void selectSetsAwaitingBookingAndSelectedCandidate() {
         final AccommodationPoll poll = createOpenPoll();
         final AccommodationCandidateId candidateId = poll.candidates().getFirst().candidateId();
 
-        poll.confirm(candidateId);
+        poll.select(candidateId);
 
-        assertThat(poll.status()).isEqualTo(AccommodationPollStatus.CONFIRMED);
+        assertThat(poll.status()).isEqualTo(AccommodationPollStatus.AWAITING_BOOKING);
         assertThat(poll.selectedCandidateId()).isEqualTo(candidateId);
     }
 
     @Test
-    void confirmWithUnknownCandidateFails() {
+    void selectWithUnknownCandidateFails() {
         final AccommodationPoll poll = createOpenPoll();
         final AccommodationCandidateId unknownId = new AccommodationCandidateId(UUID.randomUUID());
 
-        assertThatThrownBy(() -> poll.confirm(unknownId))
+        assertThatThrownBy(() -> poll.select(unknownId))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("not found");
     }
 
     @Test
-    void confirmOnAlreadyConfirmedPollFails() {
+    void selectOnAlreadyAwaitingBookingPollFails() {
         final AccommodationPoll poll = createOpenPoll();
         final AccommodationCandidateId candidateId = poll.candidates().getFirst().candidateId();
-        poll.confirm(candidateId);
+        poll.select(candidateId);
 
-        assertThatThrownBy(() -> poll.confirm(candidateId))
+        assertThatThrownBy(() -> poll.select(candidateId))
             .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("CONFIRMED");
+            .hasMessageContaining("AWAITING_BOOKING");
+    }
+
+    @Test
+    void bookingSuccessSetsBookedStatus() {
+        final AccommodationPoll poll = createOpenPoll();
+        poll.select(poll.candidates().getFirst().candidateId());
+
+        poll.recordBookingSuccess();
+
+        assertThat(poll.status()).isEqualTo(AccommodationPollStatus.BOOKED);
+    }
+
+    @Test
+    void bookingFailureReopensPollAndStoresFailureContext() {
+        final AccommodationPoll poll = createOpenPoll();
+        final AccommodationCandidateId candidateId = poll.candidates().getFirst().candidateId();
+        poll.select(candidateId);
+
+        poll.recordBookingFailure("Listing unavailable");
+
+        assertThat(poll.status()).isEqualTo(AccommodationPollStatus.OPEN);
+        assertThat(poll.selectedCandidateId()).isNull();
+        assertThat(poll.lastFailedCandidateId()).isEqualTo(candidateId);
+        assertThat(poll.lastFailedCandidateNote()).isEqualTo("Listing unavailable");
     }
 
     // --- Cancel ---
@@ -231,25 +274,26 @@ class AccommodationPollTest {
     }
 
     @Test
-    void cancelOnConfirmedPollFails() {
+    void cancelOnBookedPollFails() {
         final AccommodationPoll poll = createOpenPoll();
-        poll.confirm(poll.candidates().getFirst().candidateId());
+        poll.select(poll.candidates().getFirst().candidateId());
+        poll.recordBookingSuccess();
 
         assertThatThrownBy(() -> poll.cancel())
             .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("CONFIRMED");
+            .hasMessageContaining("BOOKED");
     }
 
     // --- Status Guards ---
 
     @Test
-    void castVoteOnConfirmedPollFails() {
+    void castVoteOnAwaitingBookingPollFails() {
         final AccommodationPoll poll = createOpenPoll();
-        poll.confirm(poll.candidates().getFirst().candidateId());
+        poll.select(poll.candidates().getFirst().candidateId());
 
         assertThatThrownBy(() -> poll.castVote(VOTER_A, poll.candidates().get(1).candidateId()))
             .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("CONFIRMED");
+            .hasMessageContaining("AWAITING_BOOKING");
     }
 
     @Test
@@ -263,13 +307,13 @@ class AccommodationPollTest {
     }
 
     @Test
-    void addCandidateOnConfirmedPollFails() {
+    void addCandidateOnAwaitingBookingPollFails() {
         final AccommodationPoll poll = createOpenPoll();
-        poll.confirm(poll.candidates().getFirst().candidateId());
+        poll.select(poll.candidates().getFirst().candidateId());
 
-        assertThatThrownBy(() -> poll.addCandidate("Hotel C", null, null, candidateRooms("Poolside")))
+        assertThatThrownBy(() -> poll.addCandidate("Hotel C", null, null, candidateRooms(), Set.of()))
             .isInstanceOf(IllegalStateException.class)
-            .hasMessageContaining("CONFIRMED");
+            .hasMessageContaining("AWAITING_BOOKING");
     }
 
     // --- Encapsulation ---
@@ -279,7 +323,7 @@ class AccommodationPollTest {
         final AccommodationPoll poll = createOpenPoll();
 
         assertThatThrownBy(() -> poll.candidates().add(
-            new AccommodationCandidate("Hotel C", null, null, candidateRooms("Extra"))))
+            new AccommodationCandidate("Hotel C", null, null, candidateRooms(), Set.of())))
             .isInstanceOf(UnsupportedOperationException.class);
     }
 
@@ -295,16 +339,47 @@ class AccommodationPollTest {
             .isInstanceOf(UnsupportedOperationException.class);
     }
 
+    @Test
+    void candidateAmenitiesSetIsUnmodifiable() {
+        final AccommodationPoll poll = AccommodationPoll.create(TENANT_ID, TRIP_ID, List.of(
+            new CandidateProposal("Hotel A", null, null, candidateRooms(), Set.of(Amenity.WIFI)),
+            new CandidateProposal("Hotel B", null, null, candidateRooms(), Set.of())
+        ));
+
+        assertThatThrownBy(() -> poll.candidates().get(0).amenities().add(Amenity.POOL))
+            .isInstanceOf(UnsupportedOperationException.class);
+    }
+
+    // --- CandidateRoom bedDescription ---
+
+    @Test
+    void candidateRoomWithBedDescription() {
+        final CandidateRoom room = new CandidateRoom("Suite", 3, null, "King bed + sofa bed");
+
+        assertThat(room.name()).isEqualTo("Suite");
+        assertThat(room.bedCount()).isEqualTo(3);
+        assertThat(room.bedDescription()).isEqualTo("King bed + sofa bed");
+    }
+
+    @Test
+    void candidateRoomWithNullBedDescriptionIsValid() {
+        final CandidateRoom room = new CandidateRoom("Room", 2, null, null);
+
+        assertThat(room.bedDescription()).isNull();
+    }
+
     // --- Helper ---
 
     private AccommodationPoll createOpenPoll() {
         return AccommodationPoll.create(TENANT_ID, TRIP_ID, List.of(
-            new CandidateProposal("Hotel Alpenblick", "https://alpenblick.at", "Great view", candidateRooms("Balcony view")),
-            new CandidateProposal("Berghuette Sonnstein", null, "Cozy cabin", candidateRooms("Wood stove"))
+            new CandidateProposal("Hotel Alpenblick", "https://alpenblick.at", "Great view",
+                candidateRooms(), Set.of(Amenity.WIFI, Amenity.BALCONY)),
+            new CandidateProposal("Berghuette Sonnstein", null, "Cozy cabin",
+                candidateRooms(), Set.of(Amenity.FIREPLACE, Amenity.SAUNA))
         ));
     }
 
-    private static List<CandidateRoom> candidateRooms(final String features) {
-        return List.of(new CandidateRoom("Room", 2, null, features));
+    private static List<CandidateRoom> candidateRooms() {
+        return List.of(new CandidateRoom("Room", 2, null, null));
     }
 }

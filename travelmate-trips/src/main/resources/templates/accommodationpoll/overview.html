@@ -30,27 +30,19 @@
                             <p th:if="${accommodationPoll.status() == 'OPEN'}" th:text="#{planning.accommodationpoll.openHint}">
                                 Die Abstimmung laeuft — waehle deine bevorzugte Unterkunft.
                             </p>
-                            <th:block th:if="${accommodationPoll.status() == 'CONFIRMED'}" th:each="candidate : ${accommodationPoll.candidates()}">
-                                <p th:if="${accommodationPoll.selectedCandidateId() != null && accommodationPoll.selectedCandidateId().equals(candidate.candidateId())}">
-                                    <span th:text="#{planning.accommodationpoll.confirmed}">Bestaetigt</span>:
-                                    <strong th:text="${candidate.name()}">Hotel</strong>
-                                </p>
-                            </th:block>
+                            <p th:if="${accommodationPoll.status() == 'AWAITING_BOOKING' and accommodationPoll.selectedCandidate() != null}">
+                                <span th:text="#{accommodationpoll.awaitingBooking}">Buchung ausstehend</span>:
+                                <strong th:text="${accommodationPoll.selectedCandidate().name()}">Unterkunft</strong>
+                            </p>
+                            <p th:if="${accommodationPoll.status() == 'BOOKED' and accommodationPoll.selectedCandidate() != null}">
+                                <span th:text="#{planning.accommodationpoll.confirmed}">Bestaetigt</span>:
+                                <strong th:text="${accommodationPoll.selectedCandidate().name()}">Unterkunft</strong>
+                            </p>
                             <p th:if="${accommodationPoll.status() == 'CANCELLED'}" th:text="#{planning.accommodationpoll.cancelled}">
                                 Die Unterkunftsabstimmung wurde abgebrochen.
                             </p>
                         </div>
                         <mark th:text="#{${'accommodationpoll.status.' + accommodationPoll.status()}}">Status</mark>
-                    </div>
-                    <div class="poll-hero__stats">
-                        <div class="poll-stat">
-                            <strong th:text="${accommodationPoll.candidates().size()}">0</strong>
-                            <span th:text="#{accommodationpoll.candidateName}">Unterkunft</span>
-                        </div>
-                        <div class="poll-stat">
-                            <strong th:text="${accommodationPoll.votes().size()}">0</strong>
-                            <span th:text="#{accommodationpoll.votes}">Stimmen</span>
-                        </div>
                     </div>
                 </div>
                 <div class="poll-hero__art" aria-hidden="true">
@@ -67,52 +59,82 @@
             </div>
         </article>
 
-        <article class="winner-banner" th:if="${accommodationPoll.selectedCandidateId() != null}">
-            <div th:each="winner : ${accommodationPoll.candidates()}"
-                 th:if="${accommodationPoll.selectedCandidateId().equals(winner.candidateId())}">
-                <p class="poll-hero__eyebrow" th:text="#{accommodationpoll.winnerTitle}">Aktueller Favorit</p>
-                <strong th:text="${winner.name()}">Gewinner</strong>
-                <div th:if="${winner.rooms().size() > 0}" class="room-summary">
-                    <span th:text="#{accommodationpoll.rooms}">Zimmer:</span>
-                    <div th:each="room : ${winner.rooms()}">
-                        <strong th:text="${room.name() + ' (' + room.bedCount() + ' Betten' + (room.pricePerNight() != null ? ' | ' + room.pricePerNight() + ' €/Nacht' : '') + ')'}">
-                            Zimmer info
-                        </strong>
-                        <span class="room-feature" th:if="${room.features()}" th:text="${room.features()}">Ausstattung</span>
-                    </div>
+        <section class="poll-kpi-grid" aria-label="Poll summary">
+            <article class="poll-kpi">
+                <span class="poll-kpi__value" th:text="${accommodationPoll.candidates().size()}">0</span>
+                <span class="poll-kpi__label" th:text="#{accommodationpoll.kpi.candidates}">Kandidaten</span>
+            </article>
+            <article class="poll-kpi">
+                <span class="poll-kpi__value" th:text="${accommodationPoll.totalVotes()}">0</span>
+                <span class="poll-kpi__label" th:text="#{accommodationpoll.kpi.votes}">Stimmen</span>
+            </article>
+            <article class="poll-kpi">
+                <span class="poll-kpi__value"
+                      th:text="${accommodationPoll.leadingCandidateName() != null ? accommodationPoll.leadingCandidateName() : #messages.msg('accommodationpoll.kpi.open')}">Noch offen</span>
+                <span class="poll-kpi__label" th:text="#{accommodationpoll.kpi.leading}">Fuehrender Kandidat</span>
+            </article>
+            <article class="poll-kpi">
+                <span class="poll-kpi__value" th:text="#{${'accommodationpoll.status.' + accommodationPoll.status()}}">Offen</span>
+                <span class="poll-kpi__label" th:text="#{accommodationpoll.kpi.status}">Status</span>
+            </article>
+        </section>
+
+        <details class="booking-failed-section" th:if="${accommodationPoll.lastFailedCandidate() != null}">
+            <summary>
+                <strong>
+                    <span th:text="${accommodationPoll.lastFailedCandidate().name()}">Unterkunft</span>
+                    <span th:text="#{accommodationpoll.booking.failedHint}">konnte nicht gebucht werden.</span>
+                </strong>
+            </summary>
+            <p th:text="${accommodationPoll.lastFailedCandidateNote() != null ? accommodationPoll.lastFailedCandidateNote() : #messages.msg('accommodationpoll.booking.failedAction')}">
+                Waehle eine andere Unterkunft oder fuege neue Vorschlaege hinzu.
+            </p>
+        </details>
+
+        <article class="winner-banner" th:if="${accommodationPoll.selectedCandidate() != null}">
+            <p class="poll-hero__eyebrow" th:text="#{accommodationpoll.winnerTitle}">Aktueller Favorit</p>
+            <strong th:text="${accommodationPoll.selectedCandidate().name()}">Gewinner</strong>
+            <p class="winner-banner__copy" th:text="#{accommodationpoll.currentWinnerHint}">
+                Diese Unterkunft ist aktuell als Ergebnis der Abstimmung markiert.
+            </p>
+            <div class="candidate-card__amenities" th:if="${accommodationPoll.selectedCandidate().amenities() != null and !accommodationPoll.selectedCandidate().amenities().isEmpty()}">
+                <span class="amenity-chip" th:each="amenity : ${accommodationPoll.selectedCandidate().amenities()}"
+                      th:data-amenity="${amenity.name()}"
+                      th:text="#{${'amenity.' + amenity.name()}}">WLAN</span>
+            </div>
+            <div class="candidate-card__room-list"
+                 th:if="${accommodationPoll.selectedCandidate().rooms() != null and !accommodationPoll.selectedCandidate().rooms().isEmpty()}">
+                <div class="candidate-card__room-chip" th:each="room : ${accommodationPoll.selectedCandidate().rooms()}">
+                    <strong th:text="${room.name()}">Zimmer</strong>
+                    <span th:text="${room.bedCount() + ' ' + #messages.msg('accommodationpoll.roomBeds')}">2 Betten</span>
+                    <span th:if="${room.pricePerNight() != null}" th:text="${room.pricePerNight() + ' EUR'}">120 EUR</span>
+                    <span th:if="${room.bedDescription() != null and !room.bedDescription().isBlank()}" th:text="${room.bedDescription()}">Details</span>
                 </div>
             </div>
         </article>
 
         <article class="poll-chart" th:if="${accommodationPoll.candidates() != null}">
             <div class="poll-chart__header">
-                <h3 th:text="#{planning.accommodationchart.title}">Stimmenverteilung</h3>
-                <p th:text="#{planning.accommodationchart.hint}">Das Gewinnerhotel ist hervor gehoben.</p>
+                <h3 th:text="#{planning.accommodationchart.title}">Unterkunftsverteilung</h3>
+                <p th:text="#{planning.accommodationchart.hint}">Der Gewinner ist hervorgehoben.</p>
             </div>
             <div th:with="total=${accommodationPoll.totalVotes()}">
                 <div class="poll-chart__rows">
-                    <div class="poll-chart__row"
-                         th:each="candidate : ${accommodationPoll.candidates()}"
-                         th:classappend="${accommodationPoll.selectedCandidateId() != null && accommodationPoll.selectedCandidateId().equals(candidate.candidateId())} ? 'winner' : ''">
+                    <div th:each="candidate, iterStat : ${accommodationPoll.candidates()}"
+                         class="poll-chart__row"
+                         th:classappend="${(accommodationPoll.selectedCandidateId() != null and accommodationPoll.selectedCandidateId().equals(candidate.candidateId())) ? 'winner' : (accommodationPoll.leadingCandidate() != null and accommodationPoll.leadingCandidate().candidateId().equals(candidate.candidateId()) and total > 0) ? 'bar--leading' : ''}">
                         <span class="poll-chart__label" th:text="${candidate.name()}">Hotel</span>
                         <div class="poll-chart__track">
                             <div class="poll-chart__bar"
-                                 th:style="|width:${total > 0 ? (candidate.voteCount() * 100.0 / total) : 4}%;|"></div>
+                                 th:style="|width:${total > 0 ? (candidate.voteCount() * 100.0 / total) : 4}%;background:var(--tm-poll-c${iterStat.index % 6});|"></div>
                         </div>
                         <span class="poll-chart__value"
-                              th:text="${total > 0 ? T(java.lang.Math).round(candidate.voteCount() * 100.0 / total) : 0} + '%'">0%</span>
+                              th:text="${(total > 0 ? T(java.lang.Math).round(candidate.voteCount() * 100.0 / total) : 0) + '%'}">0%</span>
                     </div>
                 </div>
-                <div class="poll-chart__legend">
-                    <div class="poll-chart__legend-item"
-                         th:each="candidate : ${accommodationPoll.candidates()}"
-                         th:classappend="${accommodationPoll.selectedCandidateId() != null && accommodationPoll.selectedCandidateId().equals(candidate.candidateId())} ? 'winner' : ''">
-                        <span class="poll-chart__dot"></span>
-                        <span th:text="${candidate.name()}">Hotel</span>
-                        <span class="poll-chart__legend-value"
-                              th:text="${total > 0 ? T(java.lang.Math).round(candidate.voteCount() * 100.0 / total) : 0} + '%'">0%</span>
-                    </div>
-                </div>
+                <p th:if="${total == 0}" class="poll-chart__no-votes" th:text="#{accommodationpoll.chart.noVotes}">
+                    Noch keine Stimmen abgegeben.
+                </p>
             </div>
         </article>
 
@@ -123,62 +145,34 @@
                     <p th:if="${accommodationPoll.status() == 'OPEN'}" th:text="#{planning.accommodationpoll.hint}">
                         Schlagt Unterkuenfte vor und stimmt gemeinsam ab.
                     </p>
+                    <p th:if="${accommodationPoll.status() == 'AWAITING_BOOKING'}" th:text="#{accommodationpoll.awaitingBookingHint}">
+                        Die Unterkunft wurde ausgewaehlt. Die eigentliche Buchung steht noch aus.
+                    </p>
+                    <p th:if="${accommodationPoll.status() == 'BOOKED' || accommodationPoll.status() == 'CANCELLED'}" th:text="#{accommodationpoll.readonlyHint}">
+                        Die Abstimmung ist abgeschlossen und wird nur noch lesbar angezeigt.
+                    </p>
                 </div>
             </div>
 
             <form th:if="${accommodationPoll.status() == 'OPEN'}"
                   method="post"
                   th:action="@{/{tid}/accommodationpoll/{pid}/vote(tid=${trip.tripId()},pid=${accommodationPoll.accommodationPollId()})}">
-                <figure class="table-cards">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th th:text="#{accommodationpoll.candidateName}">Unterkunft</th>
-                                <th th:text="#{accommodationpoll.votes}">Stimmen</th>
-                                <th th:text="#{datepoll.yourVote}">Deine Stimme</th>
-                                <th th:if="${isOrganizer}" class="table-actions-header" th:text="#{common.actions}">Aktionen</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr th:each="candidate : ${accommodationPoll.candidates()}">
-                                <td th:data-label="#{accommodationpoll.candidateName}">
-                                <div class="poll-row-copy">
-                                    <strong th:text="${candidate.name()}">Hotel Name</strong>
-                                    <a th:if="${candidate.url()}" class="poll-inline-link"
-                                       th:href="${candidate.url()}" target="_blank" rel="noopener"
-                                       th:text="${candidate.url()}">URL</a>
-                                    <small th:if="${candidate.description()}" th:text="${candidate.description()}">Beschreibung</small>
-                                    <small th:if="${candidate.rooms().size() > 0}" class="room-summary">
-                                        <span th:text="#{accommodationpoll.rooms}">Zimmer:</span>
-                                        <span th:each="room : ${candidate.rooms()}">
-                                            <strong th:text="${room.name() + ' (' + room.bedCount() + ' Betten)'}">Zimmer</strong>
-                                            <span class="room-feature" th:if="${room.features()}" th:text="${room.features()}">Ausstattung</span>
-                                        </span>
-                                    </small>
-                                </div>
-                            </td>
-                                <td th:data-label="#{accommodationpoll.votes}" th:text="${candidate.voteCount()}">0</td>
-                                <td th:data-label="#{datepoll.yourVote}">
-                                    <input type="radio" name="selectedCandidateId"
-                                           th:value="${candidate.candidateId()}"
-                                           th:checked="${currentVoteCandidateId != null && currentVoteCandidateId.equals(candidate.candidateId())}">
-                                </td>
-                                <td th:if="${isOrganizer}" th:data-label="#{common.actions}">
-                                    <button type="submit"
-                                            class="btn-icon btn-icon--danger"
-                                            th:attr="form=${'remove-candidate-' + candidate.candidateId()}"
-                                            th:title="#{common.remove}" th:aria-label="#{common.remove}">
-                                        <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </figure>
+                <div class="candidate-card-grid">
+                    <th:block th:each="candidate : ${accommodationPoll.candidates()}">
+                        <div th:replace="~{accommodationpoll/candidate-card :: candidateCard(candidate=${candidate}, canVote=${true}, currentVoteCandidateId=${currentVoteCandidateId}, isOrganizer=${isOrganizer}, allowRemove=${isOrganizer})}"></div>
+                    </th:block>
+                </div>
                 <div class="poll-footer-actions">
                     <button type="submit" th:text="#{accommodationpoll.submitVote}">Abstimmen</button>
                 </div>
             </form>
+
+            <div th:if="${accommodationPoll.status() != 'OPEN'}" class="candidate-card-grid">
+                <th:block th:each="candidate : ${accommodationPoll.candidates()}">
+                    <div th:replace="~{accommodationpoll/candidate-card :: candidateCard(candidate=${candidate}, canVote=${false}, currentVoteCandidateId=${currentVoteCandidateId}, isOrganizer=${false}, allowRemove=${false})}"></div>
+                </th:block>
+            </div>
+
             <th:block th:if="${isOrganizer}">
                 <form th:each="candidate : ${accommodationPoll.candidates()}"
                       method="post"
@@ -186,59 +180,30 @@
                       th:action="@{/{tid}/accommodationpoll/{pid}/candidates/{cid}/remove(tid=${trip.tripId()},pid=${accommodationPoll.accommodationPollId()},cid=${candidate.candidateId()})}">
                 </form>
             </th:block>
-
-            <figure th:if="${accommodationPoll.status() != 'OPEN'}" class="table-cards">
-                <table>
-                    <thead>
-                        <tr>
-                            <th th:text="#{accommodationpoll.candidateName}">Unterkunft</th>
-                            <th th:text="#{accommodationpoll.votes}">Stimmen</th>
-                            <th th:if="${accommodationPoll.status() == 'CONFIRMED'}"></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr th:each="candidate : ${accommodationPoll.candidates()}"
-                            th:classappend="${accommodationPoll.selectedCandidateId() != null && accommodationPoll.selectedCandidateId().equals(candidate.candidateId())} ? 'confirmed-option' : ''">
-                            <td th:data-label="#{accommodationpoll.candidateName}">
-                                <div class="poll-row-copy">
-                                    <strong th:text="${candidate.name()}">Hotel</strong>
-                                    <a th:if="${candidate.url()}" class="poll-inline-link"
-                                       th:href="${candidate.url()}" target="_blank" rel="noopener"
-                                       th:text="${candidate.url()}">URL</a>
-                                    <small th:if="${candidate.description()}" th:text="${candidate.description()}">Beschreibung</small>
-                                    <small th:if="${candidate.rooms().size() > 0}" class="room-summary">
-                                        <span th:text="#{accommodationpoll.rooms}">Zimmer:</span>
-                                        <span th:each="room : ${candidate.rooms()}"
-                                              th:text="${room.name() + ' (' + room.bedCount() + ' Betten)'}">Zimmer</span>
-                                    </small>
-                                </div>
-                            </td>
-                            <td th:data-label="#{accommodationpoll.votes}" th:text="${candidate.voteCount()}">0</td>
-                            <td th:if="${accommodationPoll.status() == 'CONFIRMED'}">
-                                <mark th:if="${accommodationPoll.selectedCandidateId() != null && accommodationPoll.selectedCandidateId().equals(candidate.candidateId())}"
-                                      th:text="#{accommodationpoll.confirmed}">Bestaetigt</mark>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
-            </figure>
         </article>
 
-        <article th:if="${accommodationPoll.status() == 'OPEN'}">
+        <article th:if="${accommodationPoll.status() == 'OPEN' or accommodationPoll.status() == 'AWAITING_BOOKING'}">
             <div class="poll-section__header">
                 <div>
                     <h3 th:text="#{common.actions}">Aktionen</h3>
-                    <p>Vorschlaege pflegen, per URL importieren und die finale Unterkunft festlegen.</p>
+                    <p th:if="${accommodationPoll.status() == 'OPEN'}" th:text="#{accommodationpoll.manageHint}">
+                        Vorschlaege pflegen, per URL importieren und die finale Unterkunft festlegen.
+                    </p>
+                    <p th:if="${accommodationPoll.status() == 'AWAITING_BOOKING'}" th:text="#{accommodationpoll.awaitingBookingHint}">
+                        Die Unterkunft wurde ausgewaehlt. Die eigentliche Buchung steht noch aus.
+                    </p>
                 </div>
             </div>
+
             <div th:if="${importSuccess}" class="alert alert-success" th:text="#{${importSuccess}}">
                 Daten importiert. Bitte pruefen und anpassen.
             </div>
             <div th:if="${importError}" class="alert alert-error" th:text="#{${importError}}">
                 Auf dieser Seite konnten keine Unterkunftsdaten erkannt werden.
             </div>
+
             <div class="poll-management-grid">
-                <section class="poll-panel">
+                <section class="poll-panel" id="add-candidate-panel" th:if="${accommodationPoll.status() == 'OPEN'}">
                     <h4 th:text="#{accommodationpoll.addCandidate}">Unterkunft hinzufuegen</h4>
                     <form method="post"
                           th:action="@{/{tid}/accommodationpoll/{pid}/candidates/add(tid=${trip.tripId()},pid=${accommodationPoll.accommodationPollId()})}">
@@ -246,23 +211,40 @@
                             <span th:text="#{accommodationpoll.candidateName}">Name</span>
                             <input type="text" name="name" required>
                         </label>
-                        <label>
-                            <span th:text="#{accommodationpoll.candidateUrl}">URL</span>
-                            <input type="url" name="url">
-                        </label>
-                        <label>
-                            <span th:text="#{accommodationpoll.candidateDescription}">Beschreibung</span>
-                            <input type="text" name="description">
-                        </label>
+                        <div class="grid">
+                            <label>
+                                <span th:text="#{accommodationpoll.candidateUrl}">URL</span>
+                                <input type="url" name="url">
+                            </label>
+                            <label>
+                                <span th:text="#{accommodationpoll.candidateDescription}">Beschreibung</span>
+                                <input type="text" name="description">
+                            </label>
+                        </div>
+                        <div class="amenity-grid" th:if="${allAmenities != null}">
+                            <strong th:text="#{accommodationpoll.amenities}">Ausstattung</strong>
+                            <div class="amenity-checkbox-grid">
+                                <label class="amenity-checkbox" th:each="amenity : ${allAmenities}">
+                                    <input type="checkbox" name="amenities" th:value="${amenity.name()}">
+                                    <span th:text="#{${'amenity.' + amenity.name()}}">Amenity</span>
+                                </label>
+                            </div>
+                        </div>
                         <input type="hidden" id="add-candidate-rooms" name="roomsJson" value="[]">
-                        <div id="add-candidate-room-rows"></div>
-                        <button type="button" class="outline secondary"
-                                id="add-candidate-room-btn"
-                                th:text="#{accommodationpoll.addRoom}">Zimmer hinzufügen</button>
+                        <div class="candidate-entry__rooms-section">
+                            <div class="candidate-entry__rooms-header">
+                                <strong th:text="#{accommodationpoll.rooms}">Zimmer</strong>
+                                <button type="button" class="outline secondary"
+                                        id="add-candidate-room-btn"
+                                        th:text="#{accommodationpoll.addRoom}">Zimmer hinzufuegen</button>
+                            </div>
+                            <div id="add-candidate-room-rows"></div>
+                        </div>
                         <button type="submit" th:text="#{accommodationpoll.addCandidate}">Hinzufuegen</button>
                     </form>
                 </section>
-                <section class="poll-panel">
+
+                <section class="poll-panel" th:if="${accommodationPoll.status() == 'OPEN'}">
                     <h4 th:text="#{accommodation.import}">URL importieren</h4>
                     <form method="post"
                           th:action="@{/{tid}/accommodationpoll/{pid}/import(tid=${trip.tripId()},pid=${accommodationPoll.accommodationPollId()})}">
@@ -273,13 +255,14 @@
                         <button type="submit" th:text="#{accommodation.import.button}">Importieren</button>
                     </form>
                 </section>
-                <section class="poll-panel" th:if="${isOrganizer}">
-                    <h4 th:text="#{accommodationpoll.confirmTitle}">Unterkunft bestaetigen</h4>
+
+                <section class="poll-panel" th:if="${isOrganizer and accommodationPoll.status() == 'OPEN'}">
+                    <h4 th:text="#{accommodationpoll.selectTitle}">Unterkunft auswaehlen</h4>
                     <form method="post"
-                          th:action="@{/{tid}/accommodationpoll/{pid}/confirm(tid=${trip.tripId()},pid=${accommodationPoll.accommodationPollId()})}">
+                          th:action="@{/{tid}/accommodationpoll/{pid}/select(tid=${trip.tripId()},pid=${accommodationPoll.accommodationPollId()})}">
                         <label>
                             <span th:text="#{accommodationpoll.selectCandidate}">Unterkunft waehlen</span>
-                            <select name="confirmedCandidateId" required>
+                            <select name="selectedCandidateId" required>
                                 <option value="" th:text="#{accommodationpoll.selectCandidate}">-- Unterkunft waehlen --</option>
                                 <option th:each="candidate : ${accommodationPoll.candidates()}"
                                         th:value="${candidate.candidateId()}"
@@ -287,12 +270,39 @@
                                 </option>
                             </select>
                         </label>
-                        <button type="submit" th:text="#{accommodationpoll.confirmAction}">Bestaetigen</button>
+                        <button type="submit" th:text="#{accommodationpoll.selectAction}">Auswaehlen</button>
                     </form>
+                </section>
+
+                <section class="poll-panel" th:if="${isOrganizer and accommodationPoll.status() == 'AWAITING_BOOKING' and accommodationPoll.selectedCandidate() != null}">
+                    <h4 th:text="#{accommodationpoll.booking.title}">Unterkunft buchen</h4>
+                    <p>
+                        <strong th:text="${accommodationPoll.selectedCandidate().name()}">Unterkunft</strong>
+                        <span th:text="#{accommodationpoll.booking.hint}">wurde ausgewaehlt. Bitte buche die Unterkunft und markiere das Ergebnis hier.</span>
+                    </p>
+                    <a th:if="${accommodationPoll.selectedCandidate().url()}"
+                       th:href="${accommodationPoll.selectedCandidate().url()}"
+                       role="button" class="outline secondary"
+                       target="_blank" rel="noopener noreferrer"
+                       th:text="#{accommodationpoll.booking.openListing}">Inserat oeffnen</a>
+                    <div class="poll-footer-actions">
+                        <form method="post"
+                              th:action="@{/{tid}/accommodationpoll/{pid}/book(tid=${trip.tripId()},pid=${accommodationPoll.accommodationPollId()})}">
+                            <button type="submit" th:text="#{accommodationpoll.booking.success}">Buchung erfolgreich bestaetigen</button>
+                        </form>
+                        <form method="post"
+                              th:action="@{/{tid}/accommodationpoll/{pid}/fail(tid=${trip.tripId()},pid=${accommodationPoll.accommodationPollId()})}">
+                            <label>
+                                <span th:text="#{accommodationpoll.booking.failureNote}">Notiz</span>
+                                <input type="text" name="note">
+                            </label>
+                            <button type="submit" class="outline secondary" th:text="#{accommodationpoll.booking.fail}">Buchung fehlgeschlagen</button>
+                        </form>
+                    </div>
                 </section>
             </div>
 
-            <form th:if="${isOrganizer}"
+            <form th:if="${isOrganizer and (accommodationPoll.status() == 'OPEN' or accommodationPoll.status() == 'AWAITING_BOOKING')}"
                   method="post"
                   th:action="@{/{tid}/accommodationpoll/{pid}/cancel(tid=${trip.tripId()},pid=${accommodationPoll.accommodationPollId()})}">
                 <div class="poll-footer-actions">
@@ -303,30 +313,42 @@
     </th:block>
 
     <template id="room-row-template">
-        <div class="room-row" style="display:flex; gap:0.5rem; align-items:flex-start; margin-top:0.5rem;">
-            <label>
-                <span>Zimmername</span>
-                <input type="text" name="roomName" required>
-            </label>
-            <label>
-                <span>Betten</span>
-                <input type="number" min="1" name="roomBedCount" required>
-            </label>
-            <label>
-                <span>Preis/Nacht</span>
-                <input type="number" step="0.01" min="0" name="roomPricePerNight">
-            </label>
-            <label>
-                <span>Ausstattung</span>
-                <input type="text" name="roomFeatures" required>
-            </label>
-            <button type="button" class="outline secondary remove-room-btn" aria-label="Zimmer entfernen">&times;</button>
+        <div class="room-row">
+            <div class="room-row__grid">
+                <div class="room-row__field">
+                    <label>
+                        <span th:text="#{accommodationpoll.room.name}">Zimmername</span>
+                        <input type="text" name="roomName" required>
+                    </label>
+                </div>
+                <div class="room-row__field room-row__field--narrow">
+                    <label>
+                        <span th:text="#{accommodationpoll.room.bedCount}">Betten</span>
+                        <input type="number" min="1" name="roomBedCount" required>
+                    </label>
+                </div>
+                <div class="room-row__field room-row__field--narrow">
+                    <label>
+                        <span th:text="#{accommodationpoll.room.pricePerNight}">Preis/Nacht</span>
+                        <input type="number" step="0.01" min="0" name="roomPricePerNight">
+                    </label>
+                </div>
+                <div class="room-row__field">
+                    <label>
+                        <span th:text="#{accommodationpoll.room.bedDescription}">Details</span>
+                        <input type="text" name="roomBedDescription">
+                    </label>
+                </div>
+            </div>
+            <button type="button" class="btn-icon btn-icon--danger remove-room-btn" th:aria-label="#{common.remove}">
+                <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+            </button>
         </div>
     </template>
 
     <script>
         (function() {
-            const addCandidateForm = document.querySelector('form[action*=\"/candidates/add\"]');
+            const addCandidateForm = document.querySelector('form[action*="/candidates/add"]');
             const roomRowsHolder = document.getElementById('add-candidate-room-rows');
             const roomsInput = document.getElementById('add-candidate-rooms');
             const addRoomButton = document.getElementById('add-candidate-room-btn');
@@ -338,26 +360,23 @@
 
             function updateAddCandidateRoomData() {
                 const rooms = Array.from(roomRowsHolder.querySelectorAll('.room-row')).map(row => ({
-                    name: row.querySelector('input[name=\"roomName\"]').value,
-                    bedCount: parseInt(row.querySelector('input[name=\"roomBedCount\"]').value, 10),
-                    pricePerNight: row.querySelector('input[name=\"roomPricePerNight\"]').value,
-                    features: row.querySelector('input[name=\"roomFeatures\"]').value
-                })).filter(room => room.name || room.bedCount || room.pricePerNight || room.features);
+                    name: row.querySelector('input[name="roomName"]').value,
+                    bedCount: parseInt(row.querySelector('input[name="roomBedCount"]').value, 10),
+                    pricePerNight: row.querySelector('input[name="roomPricePerNight"]').value,
+                    bedDescription: row.querySelector('input[name="roomBedDescription"]').value
+                })).filter(room => room.name || room.bedCount || room.pricePerNight || room.bedDescription);
                 roomsInput.value = JSON.stringify(rooms);
             }
 
             function addCandidateRoomRow() {
                 const clone = roomTemplate.content.cloneNode(true);
-                const row = clone.querySelector('.room-row');
-                row.querySelectorAll('input').forEach(input => input.addEventListener('input', updateAddCandidateRoomData));
                 roomRowsHolder.appendChild(clone);
                 updateAddCandidateRoomData();
             }
 
             addRoomButton.addEventListener('click', addCandidateRoomRow);
-
             roomRowsHolder.addEventListener('click', function(event) {
-                if (event.target.matches('.remove-room-btn')) {
+                if (event.target.closest('.remove-room-btn')) {
                     const row = event.target.closest('.room-row');
                     if (row) {
                         row.remove();
@@ -365,7 +384,6 @@
                     }
                 }
             });
-
             roomRowsHolder.addEventListener('input', updateAddCandidateRoomData);
             addCandidateForm.addEventListener('submit', updateAddCandidateRoomData);
 

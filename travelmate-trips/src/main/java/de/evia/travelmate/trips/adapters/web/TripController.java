@@ -478,7 +478,7 @@ public class TripController {
 
     private boolean isAccommodationDecisionConfirmed(final TripRepresentation trip) {
         try {
-            return "CONFIRMED".equals(accommodationPollService.findLatestByTripId(
+            return "BOOKED".equals(accommodationPollService.findLatestByTripId(
                 new TenantId(trip.tenantId()),
                 new TripId(trip.tripId())
             ).status());

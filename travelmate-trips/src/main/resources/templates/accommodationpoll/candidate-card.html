@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<body>
+<article th:fragment="candidateCard(candidate, canVote, currentVoteCandidateId, isOrganizer, allowRemove)"
+         class="candidate-card"
+         th:classappend="${
+            accommodationPoll.selectedCandidateId() != null and accommodationPoll.selectedCandidateId().equals(candidate.candidateId())
+         } ? ' candidate-card--winner' : ''">
+    <div class="candidate-card__header">
+        <div class="candidate-card__title-group">
+            <h4 th:text="${candidate.name()}">Unterkunft</h4>
+            <div class="candidate-card__links">
+                <a th:if="${candidate.url()}"
+                   class="candidate-card__link"
+                   th:href="${candidate.url()}"
+                   target="_blank" rel="noopener noreferrer"
+                   th:text="#{accommodationpoll.viewListing}">Angebot oeffnen</a>
+                <a class="candidate-card__map-link"
+                   th:href="${'https://maps.google.com/?q=' + #strings.replace(candidate.name(), ' ', '+')}"
+                   target="_blank" rel="noopener noreferrer"
+                   th:text="#{accommodationpoll.showOnMap}">Auf Karte anzeigen</a>
+            </div>
+        </div>
+        <mark th:if="${accommodationPoll.selectedCandidateId() != null and accommodationPoll.selectedCandidateId().equals(candidate.candidateId())}"
+              th:text="#{accommodationpoll.confirmed}">Bestaetigt</mark>
+    </div>
+
+    <p class="candidate-card__desc"
+       th:if="${candidate.description() != null and !candidate.description().isBlank()}"
+       th:text="${candidate.description()}">Kurzbeschreibung</p>
+
+    <div class="candidate-card__amenities" th:if="${candidate.amenities() != null and !candidate.amenities().isEmpty()}">
+        <span class="amenity-chip" th:each="amenity : ${candidate.amenities()}"
+              th:data-amenity="${amenity.name()}"
+              th:text="#{${'amenity.' + amenity.name()}}">WLAN</span>
+    </div>
+
+    <div class="candidate-card__meta">
+        <div class="candidate-card__metric">
+            <span class="candidate-card__metric-value" th:text="${candidate.voteCount()}">0</span>
+            <span class="candidate-card__metric-label" th:text="#{accommodationpoll.votes}">Stimmen</span>
+        </div>
+        <div class="candidate-card__metric"
+             th:if="${accommodationPoll.totalVotes() > 0}">
+            <span class="candidate-card__metric-value"
+                  th:text="${T(java.lang.Math).round(candidate.voteCount() * 100.0 / accommodationPoll.totalVotes()) + '%'}">0%</span>
+            <span class="candidate-card__metric-label" th:text="#{planning.summary}">Zusammenfassung</span>
+        </div>
+    </div>
+
+    <div class="candidate-card__rooms" th:if="${candidate.rooms() != null and !candidate.rooms().isEmpty()}">
+        <p class="candidate-card__section-title" th:text="#{accommodationpoll.rooms}">Zimmer</p>
+        <div class="candidate-card__room-list">
+            <div class="candidate-card__room-chip" th:each="room : ${candidate.rooms()}">
+                <strong th:text="${room.name()}">Zimmer</strong>
+                <span th:text="${room.bedCount() + ' ' + #messages.msg('accommodationpoll.roomBeds')}">2 Betten</span>
+                <span th:if="${room.pricePerNight() != null}"
+                      th:text="${room.pricePerNight() + ' EUR'}">120 EUR</span>
+                <span th:if="${room.bedDescription() != null and !room.bedDescription().isBlank()}"
+                      th:text="${room.bedDescription()}">Doppelbett, ruhig</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="candidate-card__footer">
+        <label th:if="${canVote}" class="candidate-card__vote-option">
+            <input type="radio" name="selectedCandidateId"
+                   th:value="${candidate.candidateId()}"
+                   th:checked="${currentVoteCandidateId != null and currentVoteCandidateId.equals(candidate.candidateId())}">
+            <span th:text="#{datepoll.yourVote}">Deine Stimme</span>
+        </label>
+        <span th:unless="${canVote}" class="candidate-card__status-copy"
+              th:text="${accommodationPoll.selectedCandidateId() != null and accommodationPoll.selectedCandidateId().equals(candidate.candidateId()) ? #messages.msg('accommodationpoll.currentWinner') : #messages.msg('accommodationpoll.readonlyResult')}">
+            Ergebnis
+        </span>
+
+        <button th:if="${isOrganizer and allowRemove}"
+                type="submit"
+                class="btn-icon btn-icon--danger"
+                th:attr="form=${'remove-candidate-' + candidate.candidateId()}"
+                th:title="#{common.remove}" th:aria-label="#{common.remove}">
+            <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+        </button>
+    </div>
+</article>
+</body>
+</html>

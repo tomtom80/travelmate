@@ -50,12 +50,12 @@ public class AccommodationImportSteps {
             page.locator("input[name=candidateDescription]").nth(0).fill("Basis fuer den Import");
             page.locator(".candidate-entry").nth(0).locator("input[name=roomName]").first().fill("Familienzimmer");
             page.locator(".candidate-entry").nth(0).locator("input[name=roomBedCount]").first().fill("4");
-            page.locator(".candidate-entry").nth(0).locator("input[name=roomFeatures]").first().fill("Seeblick");
+            page.locator(".candidate-entry").nth(0).locator("input[name=roomBedDescription]").first().fill("Seeblick");
             page.locator("input[name=candidateName]").nth(1).fill("Alternative");
             page.locator("input[name=candidateDescription]").nth(1).fill("Zweiter Vorschlag");
             page.locator(".candidate-entry").nth(1).locator("input[name=roomName]").first().fill("Doppelzimmer");
             page.locator(".candidate-entry").nth(1).locator("input[name=roomBedCount]").first().fill("2");
-            page.locator(".candidate-entry").nth(1).locator("input[name=roomFeatures]").first().fill("Balkon");
+            page.locator(".candidate-entry").nth(1).locator("input[name=roomBedDescription]").first().fill("Balkon");
             page.evaluate("""
                 ([first, second]) => {
                     const inputs = document.querySelectorAll('input.candidate-rooms-data');
@@ -63,8 +63,8 @@ public class AccommodationImportSteps {
                     inputs[1].value = second;
                 }
                 """, List.of(
-                "[{\"name\":\"Familienzimmer\",\"bedCount\":4,\"features\":\"Seeblick\"}]",
-                "[{\"name\":\"Doppelzimmer\",\"bedCount\":2,\"features\":\"Balkon\"}]"
+                "[{\"name\":\"Familienzimmer\",\"bedCount\":4,\"bedDescription\":null}]",
+                "[{\"name\":\"Doppelzimmer\",\"bedCount\":2,\"bedDescription\":null}]"
             ));
             page.locator("button[type=submit]:not(.outline)").first().click();
             page.waitForLoadState(LoadState.NETWORKIDLE);

@@ -86,7 +86,7 @@ class AccommodationControllerTest {
             "PLANNING", MEMBER_UUID, List.of(MEMBER_UUID));
         when(tripService.findById(new TripId(TRIP_UUID))).thenReturn(tripRepr);
         when(accommodationPollService.findLatestByTripId(new TenantId(TENANT_UUID), new TripId(TRIP_UUID)))
-            .thenReturn(accommodationPollRepresentation("CONFIRMED"));
+            .thenReturn(accommodationPollRepresentation("BOOKED"));
     }
 
     @Test
@@ -127,7 +127,7 @@ class AccommodationControllerTest {
         when(accommodationService.setAccommodation(any(SetAccommodationCommand.class)))
             .thenReturn(accommodationRepresentation());
         when(accommodationPollService.findLatestByTripId(new TenantId(TENANT_UUID), new TripId(TRIP_UUID)))
-            .thenReturn(accommodationPollRepresentation("CONFIRMED"));
+            .thenReturn(accommodationPollRepresentation("BOOKED"));
 
         mockMvc.perform(post("/" + TRIP_UUID + "/accommodation")
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
@@ -146,7 +146,7 @@ class AccommodationControllerTest {
         when(accommodationService.addRoom(any(AddRoomCommand.class)))
             .thenReturn(accommodationRepresentation());
         when(accommodationPollService.findLatestByTripId(new TenantId(TENANT_UUID), new TripId(TRIP_UUID)))
-            .thenReturn(accommodationPollRepresentation("CONFIRMED"));
+            .thenReturn(accommodationPollRepresentation("BOOKED"));
 
         mockMvc.perform(post("/" + TRIP_UUID + "/accommodation/rooms")
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
@@ -163,7 +163,7 @@ class AccommodationControllerTest {
         when(accommodationService.updateRoom(any(), any(UUID.class), any(UUID.class), anyString(), anyInt()))
             .thenReturn(accommodationRepresentation());
         when(accommodationPollService.findLatestByTripId(new TenantId(TENANT_UUID), new TripId(TRIP_UUID)))
-            .thenReturn(accommodationPollRepresentation("CONFIRMED"));
+            .thenReturn(accommodationPollRepresentation("BOOKED"));
 
         mockMvc.perform(post("/" + TRIP_UUID + "/accommodation/rooms/" + ROOM_UUID + "/update")
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
@@ -180,7 +180,7 @@ class AccommodationControllerTest {
         when(accommodationService.removeRoom(any(RemoveRoomCommand.class)))
             .thenReturn(accommodationRepresentation());
         when(accommodationPollService.findLatestByTripId(new TenantId(TENANT_UUID), new TripId(TRIP_UUID)))
-            .thenReturn(accommodationPollRepresentation("CONFIRMED"));
+            .thenReturn(accommodationPollRepresentation("BOOKED"));
 
         mockMvc.perform(post("/" + TRIP_UUID + "/accommodation/rooms/" + ROOM_UUID + "/delete")
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL))))
@@ -195,7 +195,7 @@ class AccommodationControllerTest {
         when(accommodationService.assignPartyToRoom(any(AssignPartyToRoomCommand.class)))
             .thenReturn(accommodationRepresentation());
         when(accommodationPollService.findLatestByTripId(new TenantId(TENANT_UUID), new TripId(TRIP_UUID)))
-            .thenReturn(accommodationPollRepresentation("CONFIRMED"));
+            .thenReturn(accommodationPollRepresentation("BOOKED"));
 
         mockMvc.perform(post("/" + TRIP_UUID + "/accommodation/rooms/" + ROOM_UUID + "/assign")
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
@@ -214,7 +214,7 @@ class AccommodationControllerTest {
         when(accommodationService.removeRoomAssignment(any(RemoveRoomAssignmentCommand.class)))
             .thenReturn(accommodationRepresentation());
         when(accommodationPollService.findLatestByTripId(new TenantId(TENANT_UUID), new TripId(TRIP_UUID)))
-            .thenReturn(accommodationPollRepresentation("CONFIRMED"));
+            .thenReturn(accommodationPollRepresentation("BOOKED"));
 
         mockMvc.perform(post("/" + TRIP_UUID + "/accommodation/assignments/" + assignmentId + "/delete")
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL))))
@@ -227,7 +227,7 @@ class AccommodationControllerTest {
     @Test
     void removeAccommodationRedirectsToOverview() throws Exception {
         when(accommodationPollService.findLatestByTripId(new TenantId(TENANT_UUID), new TripId(TRIP_UUID)))
-            .thenReturn(accommodationPollRepresentation("CONFIRMED"));
+            .thenReturn(accommodationPollRepresentation("BOOKED"));
         mockMvc.perform(post("/" + TRIP_UUID + "/accommodation/delete")
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL))))
             .andExpect(status().is3xxRedirection())
@@ -260,7 +260,7 @@ class AccommodationControllerTest {
             "PLANNING", otherMember, List.of(MEMBER_UUID, otherMember));
         when(tripService.findById(new TripId(TRIP_UUID))).thenReturn(trip);
         when(accommodationPollService.findLatestByTripId(new TenantId(TENANT_UUID), new TripId(TRIP_UUID)))
-            .thenReturn(accommodationPollRepresentation("CONFIRMED"));
+            .thenReturn(accommodationPollRepresentation("BOOKED"));
 
         mockMvc.perform(post("/" + TRIP_UUID + "/accommodation")
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
@@ -279,7 +279,7 @@ class AccommodationControllerTest {
             "COMPLETED", MEMBER_UUID, List.of(MEMBER_UUID));
         when(tripService.findById(new TripId(TRIP_UUID))).thenReturn(completedTrip);
         when(accommodationPollService.findLatestByTripId(new TenantId(TENANT_UUID), new TripId(TRIP_UUID)))
-            .thenReturn(accommodationPollRepresentation("CONFIRMED"));
+            .thenReturn(accommodationPollRepresentation("BOOKED"));
 
         mockMvc.perform(post("/" + TRIP_UUID + "/accommodation")
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
@@ -453,6 +453,8 @@ class AccommodationControllerTest {
             TRIP_UUID,
             status,
             UUID.randomUUID(),
+            null,
+            null,
             List.of(),
             List.of()
         );

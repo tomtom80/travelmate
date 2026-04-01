@@ -34,18 +34,22 @@ public class AccommodationCandidateJpaEntity {
     @Column(name = "rooms_json", columnDefinition = "text")
     private String roomsJson;
 
+    @Column(name = "amenities_json", columnDefinition = "text")
+    private String amenitiesJson;
+
     protected AccommodationCandidateJpaEntity() {
     }
 
     public AccommodationCandidateJpaEntity(final UUID candidateId, final AccommodationPollJpaEntity poll,
                                            final String name, final String url, final String description,
-                                           final String roomsJson) {
+                                           final String roomsJson, final String amenitiesJson) {
         this.candidateId = candidateId;
         this.poll = poll;
         this.name = name;
         this.url = url;
         this.description = description;
         this.roomsJson = roomsJson;
+        this.amenitiesJson = amenitiesJson;
     }
 
     public UUID getCandidateId() { return candidateId; }
@@ -55,4 +59,6 @@ public class AccommodationCandidateJpaEntity {
     public String getDescription() { return description; }
     public String getRoomsJson() { return roomsJson; }
     public void setRoomsJson(final String roomsJson) { this.roomsJson = roomsJson; }
+    public String getAmenitiesJson() { return amenitiesJson; }
+    public void setAmenitiesJson(final String amenitiesJson) { this.amenitiesJson = amenitiesJson; }
 }

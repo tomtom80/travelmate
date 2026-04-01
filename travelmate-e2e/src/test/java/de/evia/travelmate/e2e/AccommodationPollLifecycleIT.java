@@ -61,13 +61,11 @@ class AccommodationPollLifecycleIT extends E2ETestBase {
         descInputs.nth(0).fill("Tolle Aussicht");
         page.locator(".candidate-entry").nth(0).locator("input[name=roomName]").first().fill("Familienzimmer");
         page.locator(".candidate-entry").nth(0).locator("input[name=roomBedCount]").first().fill("4");
-        page.locator(".candidate-entry").nth(0).locator("input[name=roomFeatures]").first().fill("Seeblick");
 
         nameInputs.nth(1).fill("Berghuette Sonnstein");
         descInputs.nth(1).fill("Gemuetliche Huette");
         page.locator(".candidate-entry").nth(1).locator("input[name=roomName]").first().fill("Doppelzimmer");
         page.locator(".candidate-entry").nth(1).locator("input[name=roomBedCount]").first().fill("2");
-        page.locator(".candidate-entry").nth(1).locator("input[name=roomFeatures]").first().fill("Kamin");
         page.evaluate("""
             ([first, second]) => {
                 const inputs = document.querySelectorAll('input.candidate-rooms-data');
@@ -75,8 +73,8 @@ class AccommodationPollLifecycleIT extends E2ETestBase {
                 inputs[1].value = second;
             }
             """, List.of(
-            "[{\"name\":\"Familienzimmer\",\"bedCount\":4,\"features\":\"Seeblick\"}]",
-            "[{\"name\":\"Doppelzimmer\",\"bedCount\":2,\"features\":\"Kamin\"}]"
+            "[{\"name\":\"Familienzimmer\",\"bedCount\":4,\"bedDescription\":null}]",
+            "[{\"name\":\"Doppelzimmer\",\"bedCount\":2,\"bedDescription\":null}]"
         ));
 
         page.locator("button[type=submit]:not(.outline)").first().click();
@@ -119,24 +117,80 @@ class AccommodationPollLifecycleIT extends E2ETestBase {
     @Order(21)
     void voteIsPreselectedOnReload() {
         navigateAndWait("/trips/" + tripId + "/accommodationpoll");
-        // After voting, the page should show the poll with candidates
         assertThat(page.content()).contains("Hotel Alpenblick");
-        // Verify the vote was persisted by checking the radio button state via JS
         final boolean anyChecked = (boolean) page.evaluate(
             "document.querySelector('input[name=selectedCandidateId]:checked') !== null");
         assertThat(anyChecked).isTrue();
     }
 
+    // --- S15-B: Booking Workflow ---
+
     @Test
     @Order(30)
-    void confirmAccommodationPoll() {
-        page.locator("select[name=confirmedCandidateId]").selectOption(
-            page.locator("select[name=confirmedCandidateId] option:not([value=''])").first().getAttribute("value")
+    void selectCandidateSetsAwaitingBookingStatus() {
+        page.locator("select[name=selectedCandidateId]").selectOption(
+            page.locator("select[name=selectedCandidateId] option:not([value=''])").first().getAttribute("value")
         );
-        page.locator("button[type=submit]:has-text('Bestaetigen'), button[type=submit]:has-text('Confirm')").click();
+        page.locator("button[type=submit]:has-text('Auswaehlen'), button[type=submit]:has-text('Select')").click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
 
-        assertThat(page.content()).contains("Bestaetigt");
+        final String content = page.content();
+        assertThat(content).satisfiesAnyOf(
+            c -> assertThat(c).containsIgnoringCase("Buchung ausstehend"),
+            c -> assertThat(c).containsIgnoringCase("Awaiting booking")
+        );
+        assertThat(content).satisfiesAnyOf(
+            c -> assertThat(c).containsIgnoringCase("Buchung erfolgreich"),
+            c -> assertThat(c).containsIgnoringCase("Booking success")
+        );
+    }
+
+    // --- S15-C: Booking Failure ---
+
+    @Test
+    @Order(31)
+    void bookingFailureReturnsToOpen() {
+        page.locator("input[name=note]").fill("Ausgebucht");
+        page.locator("button[type=submit]:has-text('fehlgeschlagen'), button[type=submit]:has-text('failed')").click();
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+
+        final String content = page.content();
+        assertThat(content).satisfiesAnyOf(
+            c -> assertThat(c).contains("Offen"),
+            c -> assertThat(c).contains("Open")
+        );
+        assertThat(content).satisfiesAnyOf(
+            c -> assertThat(c).containsIgnoringCase("konnte nicht gebucht"),
+            c -> assertThat(c).containsIgnoringCase("Ausgebucht")
+        );
+    }
+
+    @Test
+    @Order(32)
+    void selectAnotherCandidateAfterFailure() {
+        page.locator("select[name=selectedCandidateId]").selectOption(
+            page.locator("select[name=selectedCandidateId] option:not([value=''])").first().getAttribute("value")
+        );
+        page.locator("button[type=submit]:has-text('Auswaehlen'), button[type=submit]:has-text('Select')").click();
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+
+        assertThat(page.content()).satisfiesAnyOf(
+            c -> assertThat(c).containsIgnoringCase("Buchung ausstehend"),
+            c -> assertThat(c).containsIgnoringCase("Awaiting booking")
+        );
+    }
+
+    @Test
+    @Order(33)
+    void bookingSuccessSetsPollToBooked() {
+        page.locator("button[type=submit]:has-text('Buchung erfolgreich'), button[type=submit]:has-text('Booking success')").click();
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+
+        final String content = page.content();
+        assertThat(content).satisfiesAnyOf(
+            c -> assertThat(c).containsIgnoringCase("Gebucht"),
+            c -> assertThat(c).containsIgnoringCase("Booked")
+        );
     }
 
     @Test
@@ -145,6 +199,9 @@ class AccommodationPollLifecycleIT extends E2ETestBase {
         navigateAndWait("/trips/" + tripId + "/planning");
 
         final String content = page.content();
-        assertThat(content).contains("Hotel Alpenblick");
+        assertThat(content).satisfiesAnyOf(
+            c -> assertThat(c).contains("Hotel Alpenblick"),
+            c -> assertThat(c).contains("Berghuette Sonnstein")
+        );
     }
 }

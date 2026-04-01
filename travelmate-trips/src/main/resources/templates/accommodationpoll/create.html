@@ -7,13 +7,21 @@
         <p><a th:href="@{/{id}(id=${trip.tripId()})}" th:text="${trip.name()}">Reise</a></p>
     </hgroup>
 
-    <article>
+    <article class="poll-panel poll-panel--form">
+        <p class="candidate-entry__intro" th:text="#{accommodationpoll.createHint}">
+            Erfasse mindestens zwei Unterkuenfte mit Zimmern, damit die Gruppe sinnvoll vergleichen kann.
+        </p>
+
         <form method="post" th:action="@{/{id}/accommodationpoll/create(id=${trip.tripId()})}" id="accommodationpoll-form">
-            <div id="candidates"></div>
+            <div id="candidates" class="candidate-entry-list"></div>
 
-            <button type="button" class="outline" id="add-candidate-btn" th:text="#{accommodationpoll.addCandidate}">+ Unterkunft hinzufuegen</button>
+            <div class="poll-footer-actions">
+                <button type="button" class="outline" id="add-candidate-btn" th:text="#{accommodationpoll.addCandidate}">
+                    Unterkunft hinzufuegen
+                </button>
+            </div>
 
-            <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+            <div class="poll-footer-actions">
                 <button type="submit" th:text="#{accommodationpoll.create}">Erstellen</button>
                 <a th:href="@{/{id}/accommodationpoll(id=${trip.tripId()})}" role="button" class="outline secondary"
                    th:text="#{common.cancel}">Abbrechen</a>
@@ -21,55 +29,91 @@
         </form>
     </article>
 
-            <template id="candidate-template">
-                <div class="candidate-entry" style="margin-bottom:1rem; padding:1rem; border:1px solid var(--pico-muted-border-color); border-radius:var(--pico-border-radius);">
-                    <div style="display:flex; justify-content:space-between; align-items:start;">
-                        <div style="flex:1;">
-                            <label>
-                                <span th:text="#{accommodationpoll.candidateName}">Name</span>
-                                <input type="text" name="candidateName" required>
-                            </label>
-                            <input type="hidden" name="candidateRoomsJson" class="candidate-rooms-data" value="[]">
-                            <div class="grid">
-                                <label>
-                                    <span th:text="#{accommodationpoll.candidateUrl}">URL</span>
-                                    <input type="url" name="candidateUrl">
-                                </label>
-                                <label>
-                                    <span th:text="#{accommodationpoll.candidateDescription}">Beschreibung</span>
-                                    <input type="text" name="candidateDescription">
-                                </label>
-                            </div>
-                            <div class="room-rows"></div>
-                            <button type="button" class="outline secondary add-room-btn" style="margin-top:0.5rem;">Zimmer hinzufügen</button>
-                        </div>
-                        <button type="button" class="outline secondary remove-candidate-btn" aria-label="Kandidat entfernen">
-                            <span th:text="#{common.remove}">Entfernen</span>
-                        </button>
-                    </div>
+    <template id="candidate-template">
+        <section class="candidate-entry">
+            <div class="candidate-entry__header">
+                <div>
+                    <h3 th:text="#{accommodationpoll.addCandidate}">Unterkunft hinzufuegen</h3>
+                    <p th:text="#{accommodationpoll.candidateHint}">Lege Name, Link, Beschreibung und Zimmer an.</p>
                 </div>
-            </template>
+                <button type="button" class="btn-icon btn-icon--danger remove-candidate-btn" th:aria-label="#{common.remove}">
+                    <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                </button>
+            </div>
+
+            <div class="candidate-entry__fields">
+                <label>
+                    <span th:text="#{accommodationpoll.candidateName}">Name</span>
+                    <input type="text" name="candidateName" required>
+                </label>
+                <div class="grid">
+                    <label>
+                        <span th:text="#{accommodationpoll.candidateUrl}">URL</span>
+                        <input type="url" name="candidateUrl">
+                    </label>
+                    <label>
+                        <span th:text="#{accommodationpoll.candidateDescription}">Beschreibung</span>
+                        <input type="text" name="candidateDescription">
+                    </label>
+                </div>
+            </div>
+
+            <input type="hidden" name="candidateRoomsJson" class="candidate-rooms-data" value="[]">
+
+            <div class="amenity-grid" th:if="${allAmenities != null}">
+                <strong th:text="#{accommodationpoll.amenities}">Ausstattung</strong>
+                <div class="amenity-checkbox-grid">
+                    <label class="amenity-checkbox" th:each="amenity : ${allAmenities}">
+                        <input type="checkbox" class="candidate-amenity" th:value="${amenity.name()}">
+                        <span th:text="#{${'amenity.' + amenity.name()}}">Amenity</span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="candidate-entry__rooms-section">
+                <div class="candidate-entry__rooms-header">
+                    <strong th:text="#{accommodationpoll.rooms}">Zimmer</strong>
+                    <button type="button" class="outline secondary add-room-btn" th:text="#{accommodationpoll.addRoom}">
+                        Zimmer hinzufuegen
+                    </button>
+                </div>
+                <div class="room-rows"></div>
+            </div>
+        </section>
+    </template>
 
     <template id="room-row-template">
-            <div class="room-row" style="display:flex; gap:0.5rem; align-items:flex-start; margin-top:0.5rem;">
-                <label>
-                    <span>Zimmername</span>
-                    <input type="text" name="roomName" required>
-                </label>
-                <label>
-                    <span>Betten</span>
-                    <input type="number" min="1" name="roomBedCount" required>
-                </label>
-                <label>
-                    <span>Preis/Nacht</span>
-                    <input type="number" step="0.01" min="0" name="roomPricePerNight">
-                </label>
-                <label>
-                    <span>Ausstattung</span>
-                    <input type="text" name="roomFeatures" required>
-                </label>
-                <button type="button" class="outline secondary remove-room-btn" aria-label="Zimmer entfernen">&times;</button>
+        <div class="room-row">
+            <div class="room-row__grid">
+                <div class="room-row__field">
+                    <label>
+                        <span th:text="#{accommodationpoll.room.name}">Zimmer</span>
+                        <input type="text" name="roomName" required>
+                    </label>
+                </div>
+                <div class="room-row__field room-row__field--narrow">
+                    <label>
+                        <span th:text="#{accommodationpoll.room.bedCount}">Betten</span>
+                        <input type="number" min="1" name="roomBedCount" required>
+                    </label>
+                </div>
+                <div class="room-row__field room-row__field--narrow">
+                    <label>
+                        <span th:text="#{accommodationpoll.room.pricePerNight}">Preis/Nacht</span>
+                        <input type="number" step="0.01" min="0" name="roomPricePerNight">
+                    </label>
+                </div>
+                <div class="room-row__field">
+                    <label>
+                        <span th:text="#{accommodationpoll.room.bedDescription}">Details</span>
+                        <input type="text" name="roomBedDescription">
+                    </label>
+                </div>
             </div>
+            <button type="button" class="btn-icon btn-icon--danger remove-room-btn" th:aria-label="#{common.remove}">
+                <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+            </button>
+        </div>
     </template>
 
     <script>
@@ -90,23 +134,25 @@
 
         candidatesContainer.addEventListener('click', function(event) {
             const entry = event.target.closest('.candidate-entry');
-            if (event.target.matches('.add-room-btn') && entry) {
+            if (event.target.closest('.add-room-btn') && entry) {
                 addRoomRow(entry);
             }
-            if (event.target.matches('.remove-room-btn')) {
+            if (event.target.closest('.remove-room-btn')) {
                 const row = event.target.closest('.room-row');
-                row.remove();
-                if (entry) updateRoomData(entry);
+                if (row) {
+                    row.remove();
+                }
+                if (entry) {
+                    updateRoomData(entry);
+                }
             }
-            if (event.target.matches('.remove-candidate-btn') && entry) {
+            if (event.target.closest('.remove-candidate-btn') && entry) {
                 entry.remove();
             }
         });
 
         function addRoomRow(entry) {
             const clone = roomTemplate.content.cloneNode(true);
-            const row = clone.querySelector('.room-row');
-            row.querySelectorAll('input').forEach(input => input.addEventListener('input', () => updateRoomData(entry)));
             entry.querySelector('.room-rows').appendChild(clone);
             updateRoomData(entry);
         }
@@ -116,8 +162,8 @@
                 name: row.querySelector('input[name="roomName"]').value,
                 bedCount: row.querySelector('input[name="roomBedCount"]').value,
                 pricePerNight: row.querySelector('input[name="roomPricePerNight"]').value,
-                features: row.querySelector('input[name="roomFeatures"]').value
-            })).filter(room => room.name || room.bedCount || room.pricePerNight || room.features);
+                bedDescription: row.querySelector('input[name="roomBedDescription"]').value
+            })).filter(room => room.name || room.bedCount || room.pricePerNight || room.bedDescription);
             entry.querySelector('.candidate-rooms-data').value = JSON.stringify(rooms);
         }
 

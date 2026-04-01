@@ -10,9 +10,11 @@ import de.evia.travelmate.common.domain.EntityNotFoundException;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.trips.application.command.AddAccommodationCandidateCommand;
 import de.evia.travelmate.trips.application.command.CastAccommodationVoteCommand;
-import de.evia.travelmate.trips.application.command.ConfirmAccommodationPollCommand;
 import de.evia.travelmate.trips.application.command.CreateAccommodationPollCommand;
+import de.evia.travelmate.trips.application.command.RecordAccommodationBookingFailureCommand;
+import de.evia.travelmate.trips.application.command.RecordAccommodationBookingSuccessCommand;
 import de.evia.travelmate.trips.application.command.RemoveAccommodationCandidateCommand;
+import de.evia.travelmate.trips.application.command.SelectAccommodationCandidateCommand;
 import de.evia.travelmate.trips.application.command.SetAccommodationCommand;
 import de.evia.travelmate.trips.application.representation.AccommodationPollRepresentation;
 import de.evia.travelmate.trips.application.command.RoomCommand;
@@ -50,7 +52,7 @@ public class AccommodationPollService {
         final List<CandidateProposal> proposals = command.candidates().stream()
             .map(c -> new CandidateProposal(
                 c.name(), c.url(), c.description(),
-                mapRooms(c.rooms())
+                mapRooms(c.rooms()), c.amenities()
             ))
             .toList();
 
@@ -62,7 +64,7 @@ public class AccommodationPollService {
     public AccommodationPollRepresentation addCandidate(final AddAccommodationCandidateCommand command) {
         final AccommodationPoll poll = findPoll(
             new TenantId(command.tenantId()), new AccommodationPollId(command.accommodationPollId()));
-        poll.addCandidate(command.name(), command.url(), command.description(), mapRooms(command.rooms()));
+        poll.addCandidate(command.name(), command.url(), command.description(), mapRooms(command.rooms()), command.amenities());
         accommodationPollRepository.save(poll);
         return new AccommodationPollRepresentation(poll);
     }
@@ -92,13 +94,29 @@ public class AccommodationPollService {
         return new AccommodationPollRepresentation(poll);
     }
 
-    public AccommodationPollRepresentation confirmPoll(final ConfirmAccommodationPollCommand command) {
+    public AccommodationPollRepresentation selectCandidate(final SelectAccommodationCandidateCommand command) {
         final AccommodationPoll poll = findPoll(
             new TenantId(command.tenantId()), new AccommodationPollId(command.accommodationPollId()));
-        poll.confirm(new AccommodationCandidateId(command.confirmedCandidateId()));
+        poll.select(new AccommodationCandidateId(command.candidateId()));
+        accommodationPollRepository.save(poll);
+        return new AccommodationPollRepresentation(poll);
+    }
+
+    public AccommodationPollRepresentation recordBookingSuccess(final RecordAccommodationBookingSuccessCommand command) {
+        final AccommodationPoll poll = findPoll(
+            new TenantId(command.tenantId()), new AccommodationPollId(command.accommodationPollId()));
+        poll.recordBookingSuccess();
         accommodationPollRepository.save(poll);
         applyCandidateAsAccommodation(
             poll, new TenantId(command.tenantId()), new TripId(command.tripId()));
+        return new AccommodationPollRepresentation(poll);
+    }
+
+    public AccommodationPollRepresentation recordBookingFailure(final RecordAccommodationBookingFailureCommand command) {
+        final AccommodationPoll poll = findPoll(
+            new TenantId(command.tenantId()), new AccommodationPollId(command.accommodationPollId()));
+        poll.recordBookingFailure(command.note());
+        accommodationPollRepository.save(poll);
         return new AccommodationPollRepresentation(poll);
     }
 
@@ -175,10 +193,8 @@ public class AccommodationPollService {
         if (command == null) {
             throw new BusinessRuleViolationException("accommodationpoll.error.roomRequired");
         }
-        final String features = command.features();
-        if (features == null || features.isBlank()) {
-            throw new BusinessRuleViolationException("accommodationpoll.error.roomRequired");
-        }
-        return new CandidateRoom(command.name(), command.bedCount(), command.pricePerNight(), features.trim());
+        return new CandidateRoom(command.name(), command.bedCount(), command.pricePerNight(),
+            command.bedDescription() != null && !command.bedDescription().isBlank()
+                ? command.bedDescription().trim() : null);
     }
 }

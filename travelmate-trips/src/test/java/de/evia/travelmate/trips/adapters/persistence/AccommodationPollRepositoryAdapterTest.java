@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
@@ -16,6 +17,7 @@ import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationPoll;
 import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationPollId;
 import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationPollRepository;
 import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationPollStatus;
+import de.evia.travelmate.trips.domain.accommodationpoll.Amenity;
 import de.evia.travelmate.trips.domain.accommodationpoll.CandidateProposal;
 import de.evia.travelmate.trips.domain.accommodationpoll.CandidateRoom;
 import de.evia.travelmate.trips.domain.trip.TripId;
@@ -56,10 +58,11 @@ class AccommodationPollRepositoryAdapterTest {
     }
 
     @Test
-    void findOpenByTripIdIgnoresConfirmedPolls() {
+    void findOpenByTripIdIgnoresNonOpenPolls() {
         final TripId tripId = new TripId(UUID.randomUUID());
         final AccommodationPoll poll = createPoll(tripId);
-        poll.confirm(poll.candidates().getFirst().candidateId());
+        poll.select(poll.candidates().getFirst().candidateId());
+        poll.recordBookingSuccess();
         repository.save(poll);
 
         final Optional<AccommodationPoll> found = repository.findOpenByTripId(TENANT_ID, tripId);
@@ -106,14 +109,15 @@ class AccommodationPollRepositoryAdapterTest {
     }
 
     @Test
-    void savesConfirmedStatus() {
+    void savesBookedStatus() {
         final TripId tripId = new TripId(UUID.randomUUID());
         final AccommodationPoll poll = createPoll(tripId);
-        poll.confirm(poll.candidates().getFirst().candidateId());
+        poll.select(poll.candidates().getFirst().candidateId());
+        poll.recordBookingSuccess();
         repository.save(poll);
 
         final AccommodationPoll reloaded = repository.findById(TENANT_ID, poll.accommodationPollId()).orElseThrow();
-        assertThat(reloaded.status()).isEqualTo(AccommodationPollStatus.CONFIRMED);
+        assertThat(reloaded.status()).isEqualTo(AccommodationPollStatus.BOOKED);
         assertThat(reloaded.selectedCandidateId()).isEqualTo(poll.candidates().getFirst().candidateId());
     }
 
@@ -124,7 +128,7 @@ class AccommodationPollRepositoryAdapterTest {
         repository.save(poll);
 
         final AccommodationPoll loaded = repository.findById(TENANT_ID, poll.accommodationPollId()).orElseThrow();
-        loaded.addCandidate("Hotel C", "https://c.com", "Great pool", candidateRooms("Poolside"));
+        loaded.addCandidate("Hotel C", "https://c.com", "Great pool", candidateRooms(), Set.of(Amenity.POOL));
         repository.save(loaded);
 
         final AccommodationPoll reloaded = repository.findById(TENANT_ID, poll.accommodationPollId()).orElseThrow();
@@ -141,14 +145,28 @@ class AccommodationPollRepositoryAdapterTest {
         assertThat(repository.findById(TENANT_ID, poll.accommodationPollId())).isEmpty();
     }
 
+    @Test
+    void savesAndReloadsAmenities() {
+        final TripId tripId = new TripId(UUID.randomUUID());
+        final AccommodationPoll poll = AccommodationPoll.create(TENANT_ID, tripId, List.of(
+            new CandidateProposal("Hotel A", null, null, candidateRooms(), Set.of(Amenity.WIFI, Amenity.POOL)),
+            new CandidateProposal("Hotel B", null, null, candidateRooms(), Set.of())
+        ));
+        repository.save(poll);
+
+        final AccommodationPoll reloaded = repository.findById(TENANT_ID, poll.accommodationPollId()).orElseThrow();
+        assertThat(reloaded.candidates().get(0).amenities()).containsExactlyInAnyOrder(Amenity.WIFI, Amenity.POOL);
+        assertThat(reloaded.candidates().get(1).amenities()).isEmpty();
+    }
+
     private AccommodationPoll createPoll(final TripId tripId) {
         return AccommodationPoll.create(TENANT_ID, tripId, List.of(
-            new CandidateProposal("Hotel A", "https://a.com", "Nice view", candidateRooms("Balcony")),
-            new CandidateProposal("Hotel B", null, "Cozy cabin", candidateRooms("Fireplace"))
+            new CandidateProposal("Hotel A", "https://a.com", "Nice view", candidateRooms(), Set.of(Amenity.BALCONY)),
+            new CandidateProposal("Hotel B", null, "Cozy cabin", candidateRooms(), Set.of(Amenity.FIREPLACE))
         ));
     }
 
-    private static List<CandidateRoom> candidateRooms(final String features) {
-        return List.of(new CandidateRoom("Room", 2, null, features));
+    private static List<CandidateRoom> candidateRooms() {
+        return List.of(new CandidateRoom("Room", 2, null, null));
     }
 }

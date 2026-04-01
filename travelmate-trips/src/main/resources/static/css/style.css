@@ -10,6 +10,12 @@
     --tm-primary: #3366CC;
     --tm-primary-hover: #2952a3;
     --tm-icon-size: 2.25rem;
+    --tm-poll-c0: #3366CC;
+    --tm-poll-c1: #E07B00;
+    --tm-poll-c2: #1E9E5A;
+    --tm-poll-c3: #CC3333;
+    --tm-poll-c4: #7B3FCC;
+    --tm-poll-c5: #009999;
 }
 
 /* ── Icon Buttons ────────────────────────────────────── */
@@ -599,11 +605,9 @@ body > footer {
     align-items: center;
     gap: 0.75rem;
 }
-.poll-chart__row.winner .poll-chart__bar {
-    background: var(--pico-success);
-}
+.poll-chart__row.winner .poll-chart__label { font-weight: 700; }
 .poll-chart__label {
-    flex: 0 0 160px;
+    flex: 0 0 140px;
     font-size: 0.9rem;
 }
 .poll-chart__track {
@@ -615,40 +619,15 @@ body > footer {
 }
 .poll-chart__bar {
     height: 100%;
-    background: linear-gradient(90deg, var(--pico-primary) 0%, var(--pico-primary-80) 100%);
 }
 .poll-chart__value {
     width: 48px;
     text-align: right;
     font-size: 0.85rem;
 }
-.poll-chart__legend {
-    margin-top: 0.75rem;
-    display: grid;
-    gap: 0.35rem;
-}
-.poll-chart__legend-item {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    font-size: 0.85rem;
-}
-.poll-chart__legend-item.winner {
-    font-weight: 600;
-}
-.poll-chart__dot {
-    width: 0.75rem;
-    height: 0.75rem;
-    border-radius: 50%;
-    background: linear-gradient(90deg, var(--pico-primary) 0%, var(--pico-primary-80) 100%);
-    flex-shrink: 0;
-}
-.poll-chart__legend-item.winner .poll-chart__dot {
-    background: var(--pico-success);
-}
-.poll-chart__legend-value {
-    margin-left: auto;
-    font-weight: 600;
+.poll-chart__no-votes {
+    margin: 0.75rem 0 0;
+    text-align: center;
     color: var(--tm-text-soft);
 }
 .winner-banner {
@@ -660,6 +639,10 @@ body > footer {
 }
 .winner-banner strong {
     font-size: 1.1rem;
+}
+.winner-banner__copy {
+    margin: 0.35rem 0 0.75rem;
+    color: var(--tm-text-soft);
 }
 .room-summary {
     margin-top: 0.25rem;
@@ -733,6 +716,34 @@ body > footer {
     flex-wrap: wrap;
     gap: 0.75rem;
     margin-top: 1rem;
+}
+
+.poll-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+    gap: 0.85rem;
+    margin: 1rem 0 1.25rem;
+}
+
+.poll-kpi {
+    display: grid;
+    gap: 0.15rem;
+    padding: 1rem 1.1rem;
+    border: 1px solid var(--tm-border-strong);
+    border-radius: 1rem;
+    background: var(--pico-surface);
+    box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.poll-kpi__value {
+    font-size: 1.45rem;
+    font-weight: 700;
+    line-height: 1.1;
+}
+
+.poll-kpi__label {
+    color: var(--tm-text-soft);
+    font-size: 0.85rem;
 }
 
 .poll-stat {
@@ -819,6 +830,183 @@ body > footer {
     flex-wrap: wrap;
     gap: 0.75rem;
     margin-top: 1rem;
+}
+
+.candidate-card-grid,
+.candidate-entry-list {
+    display: grid;
+    gap: 1rem;
+}
+
+.candidate-card {
+    display: grid;
+    gap: 0.9rem;
+    padding: 1rem;
+    border: 1px solid var(--tm-border-strong);
+    border-radius: 1rem;
+    background: var(--pico-surface);
+    box-shadow: 0 8px 20px rgba(15, 23, 42, 0.05);
+}
+
+.candidate-card--winner {
+    border-color: var(--tm-primary);
+    box-shadow: 0 10px 26px rgba(51, 102, 204, 0.16);
+}
+
+.candidate-card__header,
+.candidate-entry__header,
+.candidate-entry__rooms-header,
+.candidate-card__footer {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.candidate-card__title-group,
+.candidate-entry__fields {
+    display: grid;
+    gap: 0.45rem;
+    min-width: 0;
+}
+
+.candidate-card__title-group h4,
+.candidate-entry__header h3 {
+    margin: 0;
+}
+
+.candidate-card__links {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.85rem;
+}
+
+.candidate-card__link,
+.candidate-card__map-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-size: 0.88rem;
+    color: var(--tm-primary);
+    text-decoration: none;
+}
+
+.candidate-card__link:hover,
+.candidate-card__map-link:hover {
+    text-decoration: underline;
+}
+
+.candidate-card__desc,
+.candidate-entry__intro,
+.candidate-entry__header p {
+    margin: 0;
+    color: var(--tm-text-soft);
+}
+
+.candidate-card__meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+    gap: 0.75rem;
+}
+
+.candidate-card__metric {
+    padding: 0.75rem 0.85rem;
+    border-radius: 0.85rem;
+    background: var(--tm-surface-muted);
+    border: 1px solid var(--tm-border-strong);
+}
+
+.candidate-card__metric-value,
+.candidate-card__metric-label {
+    display: block;
+}
+
+.candidate-card__metric-value {
+    font-size: 1.05rem;
+    font-weight: 700;
+}
+
+.candidate-card__metric-label,
+.candidate-card__section-title,
+.candidate-card__status-copy {
+    color: var(--tm-text-soft);
+    font-size: 0.85rem;
+}
+
+.candidate-card__section-title {
+    margin: 0;
+    font-weight: 600;
+}
+
+.candidate-card__room-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.candidate-card__room-chip {
+    display: grid;
+    gap: 0.1rem;
+    min-width: min(100%, 11rem);
+    padding: 0.6rem 0.75rem;
+    border-radius: 0.85rem;
+    border: 1px solid var(--tm-border-strong);
+    background: var(--tm-surface-muted);
+    font-size: 0.84rem;
+    color: var(--tm-text-soft);
+}
+
+.candidate-card__room-chip strong {
+    color: var(--pico-color);
+}
+
+.candidate-card__vote-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin: 0;
+}
+
+.candidate-entry {
+    display: grid;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--tm-border-strong);
+    border-radius: 1rem;
+    background: linear-gradient(180deg, #ffffff, var(--tm-surface-muted));
+}
+
+.candidate-entry__rooms-section {
+    display: grid;
+    gap: 0.75rem;
+}
+
+.room-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+}
+
+.room-row__grid {
+    flex: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1.5fr) repeat(2, minmax(0, 0.8fr)) minmax(0, 1.3fr);
+    gap: 0.75rem;
+}
+
+.room-row__field {
+    min-width: 0;
+}
+
+.room-row__field label {
+    margin-bottom: 0;
+}
+
+.poll-panel--form {
+    background:
+        radial-gradient(circle at top right, rgba(51, 102, 204, 0.06), transparent 35%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(248, 250, 252, 0.98));
 }
 
 .planning-hero h2 {
@@ -990,6 +1178,39 @@ body > footer {
     .poll-footer-actions > * {
         width: 100%;
     }
+
+    .poll-chart__row {
+        align-items: flex-start;
+        flex-wrap: wrap;
+    }
+
+    .poll-chart__label,
+    .poll-chart__value {
+        width: auto;
+        flex: 1 1 100%;
+        text-align: left;
+    }
+
+    .candidate-card__footer > * {
+        width: 100%;
+    }
+
+    .candidate-card__vote-option {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .candidate-card__room-chip {
+        min-width: 100%;
+    }
+
+    .room-row {
+        flex-direction: column;
+    }
+
+    .room-row__grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* ── Ingredient Card ────────────────────────────────── */
@@ -1005,6 +1226,84 @@ body > footer {
 }
 .btn-icon--danger-text:hover {
     background: #fef2f2 !important;
+}
+
+/* ── Amenity Chips & Checkbox Grid ──────────────────── */
+.candidate-card__amenities {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+}
+
+.amenity-chip {
+    display: inline-block;
+    padding: 0.2rem 0.55rem;
+    font-size: 0.78rem;
+    border-radius: 2rem;
+    background: var(--tm-surface-muted);
+    border: 1px solid var(--tm-border-strong);
+    color: var(--tm-text-soft);
+    white-space: nowrap;
+}
+
+.amenity-grid {
+    margin-bottom: 0.75rem;
+}
+
+.amenity-grid > strong {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-size: 0.9rem;
+}
+
+.amenity-checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+    gap: 0.35rem;
+}
+
+.amenity-checkbox {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin: 0;
+    font-size: 0.88rem;
+    cursor: pointer;
+}
+
+.amenity-checkbox input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    margin: 0;
+}
+
+/* ── Booking Failed Section (collapsible) ──────────── */
+.booking-failed-section {
+    padding: 0.75rem 1rem;
+    border-radius: 0.5rem;
+    border-left: 4px solid #f59e0b;
+    background: #fffbeb;
+    color: #92400e;
+    margin-bottom: 1rem;
+}
+
+.booking-failed-section summary {
+    cursor: pointer;
+    list-style: revert;
+}
+
+.booking-failed-section p {
+    margin: 0.5rem 0 0;
+}
+
+/* ── Leading Bar Emphasis ──────────────────────────── */
+.poll-chart__row.bar--leading .poll-chart__label {
+    font-weight: 700;
+    color: var(--tm-primary);
+}
+
+.poll-chart__row.bar--leading .poll-chart__value {
+    font-weight: 700;
 }
 
 /* ── Utility Classes ────────────────────────────────── */

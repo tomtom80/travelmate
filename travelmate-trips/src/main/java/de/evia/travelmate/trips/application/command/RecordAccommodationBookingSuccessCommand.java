@@ -2,10 +2,9 @@ package de.evia.travelmate.trips.application.command;
 
 import java.util.UUID;
 
-public record ConfirmAccommodationPollCommand(
+public record RecordAccommodationBookingSuccessCommand(
     UUID tenantId,
     UUID tripId,
-    UUID accommodationPollId,
-    UUID confirmedCandidateId
+    UUID accommodationPollId
 ) {
 }

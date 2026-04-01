@@ -1,6 +1,12 @@
 # Requirements Engineer Agent Memory
 
 ## Iteration History
+- Iteration 15 (v0.15.0): Stories written 2026-03-31 — AccommodationPoll Redesign (Amenity model, Booking Workflow, UI)
+  - Refined story document: docs/backlog/iteration-15-stories.md
+  - S15-A (M): Ausstattungsmodell korrigieren — Amenity enum (13 values), CandidateRoom loses features/gains bedDescription, Flyway V20 adds accommodation_candidate_amenity table
+  - S15-B (L): Buchungsbestaetigung nach Abstimmung — new AWAITING_BOOKING status, BookingAttempt entity, Accommodation NOT created on confirm() but on recordBookingSuccess(); CONFIRMED→AWAITING_BOOKING rename (V21)
+  - S15-C (M): Fallback bei Buchungsfehlschlag — BOOKING_FAILED candidate status, poll reopens on failure, votes on failed candidate removed by aggregate, empty-candidates warning (V22)
+  - S15-D (L): UI-Redesign Unterkunftsabstimmung — .card-grid per candidate, amenity icons, map link, AWAITING_BOOKING status banner, HTMX outerHTML swap on vote card, room form via HTML lists not JSON blob
 - Iteration 14 (v0.14.0): Stories written 2026-03-29 — Collaborative Trip Planning (DatePoll + AccommodationPoll)
   - Refined story document: docs/backlog/iteration-14-stories.md
   - S14-A (L): Create Date Poll with Options (US-TRIPS-080) — DatePoll aggregate, Flyway V13, CreateDatePoll/AddDateOption/RemoveDateOption commands, DatePollCreated event
@@ -56,6 +62,26 @@
 - SN-B## = Trips stories
 - SN-C## = Expense stories
 - SN-D## = Gateway/Infra stories
+
+## Key Design Decisions (Iteration 15 — 2026-03-31)
+- Theme: AccommodationPoll Redesign — Amenity model correction, Booking Workflow, UI redesign
+- Iteration 15 touches ONLY the Trips SCS AccommodationPoll domain; DatePoll unchanged
+- Amenity enum (13 values: WiFi, Pool, Kitchen, Parking, Garden, WashingMachine, AirConditioning, Pets, Sauna, Fireplace, Dishwasher, TV, Balcony) belongs to AccommodationCandidate (not CandidateRoom)
+- CandidateRoom: features field REMOVED, bedDescription (optional, free text) added; signature: (name, bedCount, bedDescription, pricePerNight)
+- CONFIRMED status renamed to AWAITING_BOOKING (Breaking Change — Flyway V21 migrates enum value)
+- New status BOOKED added; Accommodation aggregate created only on recordBookingSuccess(), NOT on confirm/select
+- BookingAttempt: new entity within AccommodationPoll (BookingAttemptId, candidateId, BookingAttemptStatus PENDING/SUCCESS/FAILED, notes, attemptedAt, resolvedAt)
+- CandidateStatus: explicit field on accommodation_candidate (ACTIVE, SELECTED, ARCHIVED, BOOKING_FAILED) — Flyway V21
+- Booking failure: aggregate removes all votes for failed candidate, sets candidate to BOOKING_FAILED, reopens poll
+- Empty-candidates warning: AccommodationPollService detects no remaining ACTIVE candidates after failure, raises BC-internal event for UI hint
+- Room form: JSON-blob hidden input approach REPLACED by HTML list params (name="roomName[]" etc.) — controller refactor required in S15-D
+- UI: .card-grid per candidate-card, amenity icons via data-amenity CSS, colored bar charts, map link (Google Maps), AWAITING_BOOKING status banner
+- Flyway: V20 (amenity table + features removal), V21 (candidate_status + booking_attempt + CONFIRMED→AWAITING_BOOKING), V22 (BOOKING_FAILED status)
+- OD-1 (open): candidate_status as explicit column — recommended YES
+- OD-2 (open): features migration strategy — recommended: drop existing data (dev stage, clean cut preferred)
+- OD-3 (open): room form serialization — recommended: HTML lists not JSON blob
+- BEFORE IMPLEMENTATION: check AccommodationCandidateJpaEntity for @ElementCollection vs separate table for rooms (affects V20 migration)
+- Implementation order: S15-A → S15-B → S15-C → S15-D
 
 ## Key Design Decisions (Iteration 14 — 2026-03-29)
 - Two separate aggregates (DatePoll, AccommodationPoll) — NOT a generic Poll<T>; differences in voting mode, option type, result action, and candidate lifecycle justify separate aggregates (ADR-0019 candidate)

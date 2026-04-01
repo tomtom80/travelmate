@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -33,8 +34,8 @@ import de.evia.travelmate.trips.application.AccommodationPollService;
 import de.evia.travelmate.trips.application.TripService;
 import de.evia.travelmate.trips.application.command.AddAccommodationCandidateCommand;
 import de.evia.travelmate.trips.application.command.CastAccommodationVoteCommand;
-import de.evia.travelmate.trips.application.command.ConfirmAccommodationPollCommand;
 import de.evia.travelmate.trips.application.command.CreateAccommodationPollCommand;
+import de.evia.travelmate.trips.application.command.SelectAccommodationCandidateCommand;
 import de.evia.travelmate.trips.application.representation.AccommodationPollRepresentation;
 import de.evia.travelmate.trips.application.representation.TripRepresentation;
 import de.evia.travelmate.trips.domain.accommodation.AccommodationImportResult;
@@ -55,7 +56,7 @@ class AccommodationPollControllerTest {
     private static final UUID CANDIDATE_1_UUID = UUID.randomUUID();
     private static final UUID CANDIDATE_2_UUID = UUID.randomUUID();
     private static final String MEMBER_EMAIL = "organizer@test.de";
-    private static final String ROOM_JSON = "[{\"name\":\"Room\",\"bedCount\":2,\"pricePerNight\":null,\"features\":\"Panorama\"}]";
+    private static final String ROOM_JSON = "[{\"name\":\"Room\",\"bedCount\":2,\"pricePerNight\":null,\"bedDescription\":null}]";
 
     @Autowired
     private MockMvc mockMvc;
@@ -172,13 +173,13 @@ class AccommodationPollControllerTest {
     }
 
     @Test
-    void confirmRedirectsToOverview() throws Exception {
-        when(accommodationPollService.confirmPoll(any(ConfirmAccommodationPollCommand.class)))
+    void selectRedirectsToOverview() throws Exception {
+        when(accommodationPollService.selectCandidate(any(SelectAccommodationCandidateCommand.class)))
             .thenReturn(createPollRepresentation());
 
-        mockMvc.perform(post("/" + TRIP_UUID + "/accommodationpoll/" + POLL_UUID + "/confirm")
+        mockMvc.perform(post("/" + TRIP_UUID + "/accommodationpoll/" + POLL_UUID + "/select")
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
-                .param("confirmedCandidateId", CANDIDATE_1_UUID.toString()))
+                .param("selectedCandidateId", CANDIDATE_1_UUID.toString()))
             .andExpect(status().is3xxRedirection())
             .andExpect(redirectedUrl("/" + TRIP_UUID + "/accommodationpoll"));
     }
@@ -272,15 +273,17 @@ class AccommodationPollControllerTest {
 
     private AccommodationPollRepresentation createPollRepresentation() {
         return new AccommodationPollRepresentation(
-            POLL_UUID, TENANT_UUID, TRIP_UUID, "OPEN", null,
+            POLL_UUID, TENANT_UUID, TRIP_UUID, "OPEN", null, null, null,
             List.of(
                 new AccommodationPollRepresentation.CandidateRepresentation(
                     CANDIDATE_1_UUID, "Hotel A", "https://a.com", "Nice", 0,
-                    List.of(new AccommodationPollRepresentation.RoomRepresentation("Room A", 2, null, "Balcony"))
+                    List.of(new AccommodationPollRepresentation.RoomRepresentation("Room A", 2, null, null)),
+                    Set.of()
                 ),
                 new AccommodationPollRepresentation.CandidateRepresentation(
                     CANDIDATE_2_UUID, "Hotel B", null, "Cozy", 0,
-                    List.of(new AccommodationPollRepresentation.RoomRepresentation("Room B", 3, null, "Sauna"))
+                    List.of(new AccommodationPollRepresentation.RoomRepresentation("Room B", 3, null, null)),
+                    Set.of()
                 )
             ),
             List.of()

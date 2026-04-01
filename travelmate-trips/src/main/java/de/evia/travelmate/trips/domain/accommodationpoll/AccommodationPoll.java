@@ -6,6 +6,7 @@ import static de.evia.travelmate.common.domain.Assertion.argumentIsTrue;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import de.evia.travelmate.common.domain.AggregateRoot;
@@ -21,6 +22,8 @@ public class AccommodationPoll extends AggregateRoot {
     private final List<AccommodationVote> votes;
     private AccommodationPollStatus status;
     private AccommodationCandidateId selectedCandidateId;
+    private AccommodationCandidateId lastFailedCandidateId;
+    private String lastFailedCandidateNote;
 
     public AccommodationPoll(final AccommodationPollId accommodationPollId,
                              final TenantId tenantId,
@@ -28,7 +31,9 @@ public class AccommodationPoll extends AggregateRoot {
                              final AccommodationPollStatus status,
                              final List<AccommodationCandidate> candidates,
                              final List<AccommodationVote> votes,
-                             final AccommodationCandidateId selectedCandidateId) {
+                             final AccommodationCandidateId selectedCandidateId,
+                             final AccommodationCandidateId lastFailedCandidateId,
+                             final String lastFailedCandidateNote) {
         argumentIsNotNull(accommodationPollId, "accommodationPollId");
         argumentIsNotNull(tenantId, "tenantId");
         argumentIsNotNull(tripId, "tripId");
@@ -42,6 +47,8 @@ public class AccommodationPoll extends AggregateRoot {
         this.candidates = new ArrayList<>(candidates);
         this.votes = new ArrayList<>(votes);
         this.selectedCandidateId = selectedCandidateId;
+        this.lastFailedCandidateId = lastFailedCandidateId;
+        this.lastFailedCandidateNote = lastFailedCandidateNote;
     }
 
     public static AccommodationPoll create(final TenantId tenantId,
@@ -54,7 +61,7 @@ public class AccommodationPoll extends AggregateRoot {
             "An accommodation poll requires at least 2 candidates.");
 
         final List<AccommodationCandidate> candidates = proposals.stream()
-            .map(p -> new AccommodationCandidate(p.name(), p.url(), p.description(), p.rooms()))
+            .map(p -> new AccommodationCandidate(p.name(), p.url(), p.description(), p.rooms(), p.amenities()))
             .toList();
 
         return new AccommodationPoll(
@@ -63,15 +70,18 @@ public class AccommodationPoll extends AggregateRoot {
             AccommodationPollStatus.OPEN,
             candidates,
             List.of(),
+            null,
+            null,
             null
         );
     }
 
     public AccommodationCandidateId addCandidate(final String name, final String url,
-                                                 final String description, final List<CandidateRoom> rooms) {
+                                                 final String description, final List<CandidateRoom> rooms,
+                                                 final Set<Amenity> amenities) {
         assertOpen();
         final AccommodationCandidate candidate = new AccommodationCandidate(
-            name, url, description, rooms != null ? rooms : List.of()
+            name, url, description, rooms != null ? rooms : List.of(), amenities
         );
         candidates.add(candidate);
         return candidate.candidateId();
@@ -125,16 +135,32 @@ public class AccommodationPoll extends AggregateRoot {
         vote.changeSelection(newCandidateId);
     }
 
-    public void confirm(final AccommodationCandidateId candidateId) {
+    public void select(final AccommodationCandidateId candidateId) {
         assertOpen();
         argumentIsNotNull(candidateId, "candidateId");
         findCandidate(candidateId);
         this.selectedCandidateId = candidateId;
-        this.status = AccommodationPollStatus.CONFIRMED;
+        this.status = AccommodationPollStatus.AWAITING_BOOKING;
+    }
+
+    public void recordBookingSuccess() {
+        assertStatus(AccommodationPollStatus.AWAITING_BOOKING);
+        this.status = AccommodationPollStatus.BOOKED;
+    }
+
+    public void recordBookingFailure(final String note) {
+        assertStatus(AccommodationPollStatus.AWAITING_BOOKING);
+        this.lastFailedCandidateId = this.selectedCandidateId;
+        this.lastFailedCandidateNote = note != null && !note.isBlank() ? note.trim() : null;
+        this.selectedCandidateId = null;
+        this.status = AccommodationPollStatus.OPEN;
     }
 
     public void cancel() {
-        assertOpen();
+        if (this.status != AccommodationPollStatus.OPEN && this.status != AccommodationPollStatus.AWAITING_BOOKING) {
+            throw new IllegalStateException(
+                "Accommodation poll is " + this.status + ", expected OPEN or AWAITING_BOOKING.");
+        }
         this.status = AccommodationPollStatus.CANCELLED;
     }
 
@@ -160,9 +186,13 @@ public class AccommodationPoll extends AggregateRoot {
     }
 
     private void assertOpen() {
-        if (this.status != AccommodationPollStatus.OPEN) {
+        assertStatus(AccommodationPollStatus.OPEN);
+    }
+
+    private void assertStatus(final AccommodationPollStatus expectedStatus) {
+        if (this.status != expectedStatus) {
             throw new IllegalStateException(
-                "Accommodation poll is " + this.status + ", expected OPEN.");
+                "Accommodation poll is " + this.status + ", expected " + expectedStatus + ".");
         }
     }
 
@@ -192,5 +222,13 @@ public class AccommodationPoll extends AggregateRoot {
 
     public AccommodationCandidateId selectedCandidateId() {
         return selectedCandidateId;
+    }
+
+    public AccommodationCandidateId lastFailedCandidateId() {
+        return lastFailedCandidateId;
+    }
+
+    public String lastFailedCandidateNote() {
+        return lastFailedCandidateNote;
     }
 }

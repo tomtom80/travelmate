@@ -2,6 +2,7 @@ package de.evia.travelmate.trips.domain.accommodationpoll;
 
 public enum AccommodationPollStatus {
     OPEN,
-    CONFIRMED,
+    AWAITING_BOOKING,
+    BOOKED,
     CANCELLED
 }

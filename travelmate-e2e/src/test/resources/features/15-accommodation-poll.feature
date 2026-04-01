@@ -25,9 +25,26 @@ Funktionalität: Unterkunftsabstimmung
     Wenn ich fuer die erste Unterkunft abstimme
     Dann hat die erste Unterkunft mindestens 1 Stimme
 
-  Szenario: Gewinner wird nach Bestaetigung hervorgehoben
+  # S15-B: Buchungs-Workflow (select → AWAITING_BOOKING)
+  Szenario: Kandidat auswaehlen setzt Buchung-ausstehend-Status
     Angenommen eine Unterkunftsabstimmung wurde fuer die Reise erstellt
-    Und ich die erste Unterkunft bestaetige
+    Wenn ich den ersten Kandidaten auswaehle
+    Dann sehe ich den Status "Buchung ausstehend"
+    Und ich sehe die Buchungsaktionen
+
+  # S15-C: Buchungsfehlschlag und Wiederherstellung
+  Szenario: Buchungsfehlschlag kehrt zur offenen Abstimmung zurueck
+    Angenommen eine Unterkunftsabstimmung wurde fuer die Reise erstellt
+    Und ich den ersten Kandidaten auswaehle
+    Wenn ich die Buchung als fehlgeschlagen mit Notiz "Ausgebucht" markiere
+    Dann sehe ich die Unterkunftsabstimmung mit Status "Offen"
+    Und ich sehe den Fehlschlag-Hinweis
+
+  # S15-B: Buchungserfolg (AWAITING_BOOKING → BOOKED)
+  Szenario: Buchungserfolg setzt Gebucht-Status und zeigt Gewinnerbanner
+    Angenommen eine Unterkunftsabstimmung wurde fuer die Reise erstellt
+    Und ich den ersten Kandidaten auswaehle
+    Wenn ich die Buchung als erfolgreich markiere
     Dann sehe ich den Gewinnerbanner mit der ersten Unterkunft
 
   # S14-D: I18n-Aufloesung

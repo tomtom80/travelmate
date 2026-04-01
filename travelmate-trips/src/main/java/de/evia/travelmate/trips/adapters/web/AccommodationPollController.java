@@ -1,8 +1,10 @@
 package de.evia.travelmate.trips.adapters.web;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.springframework.http.HttpStatus;
@@ -24,16 +26,19 @@ import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.evia.travelmate.trips.application.command.CastAccommodationVoteCommand;
-import de.evia.travelmate.trips.application.command.ConfirmAccommodationPollCommand;
 import de.evia.travelmate.trips.application.command.CreateAccommodationPollCommand;
 import de.evia.travelmate.trips.application.command.CreateAccommodationPollCommand.CandidateProposalCommand;
 import de.evia.travelmate.trips.application.command.AddAccommodationCandidateCommand;
+import de.evia.travelmate.trips.application.command.RecordAccommodationBookingFailureCommand;
+import de.evia.travelmate.trips.application.command.RecordAccommodationBookingSuccessCommand;
 import de.evia.travelmate.trips.application.command.RemoveAccommodationCandidateCommand;
+import de.evia.travelmate.trips.application.command.SelectAccommodationCandidateCommand;
 import de.evia.travelmate.trips.application.representation.AccommodationPollRepresentation;
 import de.evia.travelmate.trips.application.representation.TripRepresentation;
 import de.evia.travelmate.trips.domain.accommodation.AccommodationImportResult;
 import de.evia.travelmate.trips.domain.accommodation.ImportedRoom;
 import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationPollId;
+import de.evia.travelmate.trips.domain.accommodationpoll.Amenity;
 import de.evia.travelmate.trips.domain.trip.TripId;
 import de.evia.travelmate.trips.domain.travelparty.TravelPartyRepository;
 
@@ -78,6 +83,7 @@ public class AccommodationPollController {
 
         model.addAttribute("view", "accommodationpoll/create");
         model.addAttribute("trip", trip);
+        model.addAttribute("allAmenities", Amenity.values());
         return "layout/default";
     }
 
@@ -98,7 +104,8 @@ public class AccommodationPollController {
             final String desc = descriptions != null && i < descriptions.size() ? emptyToNull(descriptions.get(i)) : null;
             candidates.add(new CandidateProposalCommand(
                 names.get(i), url, desc,
-                parseRoomCommands(i < roomsJsonSize(roomsJson) ? roomsJson.get(i) : null)
+                parseRoomCommands(i < roomsJsonSize(roomsJson) ? roomsJson.get(i) : null),
+                Set.of()
             ));
         }
 
@@ -115,13 +122,14 @@ public class AccommodationPollController {
                                @RequestParam final String name,
                                @RequestParam(required = false) final String url,
                                @RequestParam(required = false) final String description,
-                               @RequestParam(value = "roomsJson", required = false) final String roomsJson) {
+                               @RequestParam(value = "roomsJson", required = false) final String roomsJson,
+                               @RequestParam(value = "amenities", required = false) final List<String> amenityNames) {
         final ResolvedIdentity identity = requireIdentity(jwt);
         final TripRepresentation trip = validateTripAccess(tripId, identity);
 
         accommodationPollService.addCandidate(new AddAccommodationCandidateCommand(
             trip.tenantId(), pollId, name, emptyToNull(url), emptyToNull(description),
-            parseRoomCommands(roomsJson)));
+            parseRoomCommands(roomsJson), parseAmenities(amenityNames)));
 
         return "redirect:/" + tripId + "/accommodationpoll";
     }
@@ -178,7 +186,8 @@ public class AccommodationPollController {
                 candidateName(imported),
                 emptyToNull(imported.bookingUrl()),
                 candidateDescription(imported),
-                roomsFromImport(imported)));
+                roomsFromImport(imported),
+                Set.of()));
             return "redirect:/" + tripId + "/accommodationpoll";
         } catch (final IllegalArgumentException e) {
             populateOverviewModel(model, trip, identity, "accommodation.import.error.url", null);
@@ -186,17 +195,46 @@ public class AccommodationPollController {
         }
     }
 
-    @PostMapping("/{tripId}/accommodationpoll/{pollId}/confirm")
-    public String confirm(@AuthenticationPrincipal final Jwt jwt,
-                          @PathVariable final UUID tripId,
-                          @PathVariable final UUID pollId,
-                          @RequestParam final UUID confirmedCandidateId) {
+    @PostMapping("/{tripId}/accommodationpoll/{pollId}/select")
+    public String select(@AuthenticationPrincipal final Jwt jwt,
+                         @PathVariable final UUID tripId,
+                         @PathVariable final UUID pollId,
+                         @RequestParam final UUID selectedCandidateId) {
         final ResolvedIdentity identity = requireIdentity(jwt);
         final TripRepresentation trip = validateTripAccess(tripId, identity);
         requireOrganizer(trip, identity);
 
-        accommodationPollService.confirmPoll(new ConfirmAccommodationPollCommand(
-            trip.tenantId(), tripId, pollId, confirmedCandidateId));
+        accommodationPollService.selectCandidate(new SelectAccommodationCandidateCommand(
+            trip.tenantId(), tripId, pollId, selectedCandidateId));
+
+        return "redirect:/" + tripId + "/accommodationpoll";
+    }
+
+    @PostMapping("/{tripId}/accommodationpoll/{pollId}/book")
+    public String recordBookingSuccess(@AuthenticationPrincipal final Jwt jwt,
+                                       @PathVariable final UUID tripId,
+                                       @PathVariable final UUID pollId) {
+        final ResolvedIdentity identity = requireIdentity(jwt);
+        final TripRepresentation trip = validateTripAccess(tripId, identity);
+        requireOrganizer(trip, identity);
+
+        accommodationPollService.recordBookingSuccess(new RecordAccommodationBookingSuccessCommand(
+            trip.tenantId(), tripId, pollId));
+
+        return "redirect:/" + tripId + "/accommodationpoll";
+    }
+
+    @PostMapping("/{tripId}/accommodationpoll/{pollId}/fail")
+    public String recordBookingFailure(@AuthenticationPrincipal final Jwt jwt,
+                                       @PathVariable final UUID tripId,
+                                       @PathVariable final UUID pollId,
+                                       @RequestParam(required = false) final String note) {
+        final ResolvedIdentity identity = requireIdentity(jwt);
+        final TripRepresentation trip = validateTripAccess(tripId, identity);
+        requireOrganizer(trip, identity);
+
+        accommodationPollService.recordBookingFailure(new RecordAccommodationBookingFailureCommand(
+            trip.tenantId(), pollId, emptyToNull(note)));
 
         return "redirect:/" + tripId + "/accommodationpoll";
     }
@@ -216,6 +254,22 @@ public class AccommodationPollController {
 
     private String emptyToNull(final String value) {
         return value != null && !value.isBlank() ? value : null;
+    }
+
+    private Set<Amenity> parseAmenities(final List<String> amenityNames) {
+        if (amenityNames == null || amenityNames.isEmpty()) {
+            return Set.of();
+        }
+        final EnumSet<Amenity> result = EnumSet.noneOf(Amenity.class);
+        for (final String name : amenityNames) {
+            if (name != null && !name.isBlank()) {
+                try {
+                    result.add(Amenity.valueOf(name));
+                } catch (final IllegalArgumentException ignored) {
+                }
+            }
+        }
+        return result;
     }
 
     private void populateOverviewModel(final Model model,
@@ -246,6 +300,7 @@ public class AccommodationPollController {
         model.addAttribute("currentVoteCandidateId", currentVoteCandidateId);
         model.addAttribute("importError", importError);
         model.addAttribute("importSuccess", importSuccess);
+        model.addAttribute("allAmenities", Amenity.values());
     }
 
     private String candidateName(final AccommodationImportResult imported) {
@@ -271,7 +326,6 @@ public class AccommodationPollController {
     }
 
     private List<CreateAccommodationPollCommand.RoomProposalCommand> roomsFromImport(final AccommodationImportResult imported) {
-        final String features = importFeatures(imported);
         final List<ImportedRoom> importedRooms = imported.rooms();
         if (importedRooms != null && !importedRooms.isEmpty()) {
             return importedRooms.stream()
@@ -279,28 +333,15 @@ public class AccommodationPollController {
                     emptyToNull(room.name()) != null ? room.name() : "Zimmer",
                     Math.max(room.bedCount(), 1),
                     room.pricePerNight(),
-                    features))
+                    null))
                 .toList();
         }
         return List.of(new CreateAccommodationPollCommand.RoomProposalCommand(
             "Zimmer",
             2,
             null,
-            features
+            null
         ));
-    }
-
-    private String importFeatures(final AccommodationImportResult imported) {
-        if (imported.notes() != null && !imported.notes().isBlank()) {
-            return imported.notes();
-        }
-        if (imported.address() != null && !imported.address().isBlank()) {
-            return imported.address();
-        }
-        if (imported.name() != null && !imported.name().isBlank()) {
-            return imported.name();
-        }
-        return "Imported accommodation";
     }
 
     private Optional<ResolvedIdentity> resolveIdentity(final Jwt jwt) {

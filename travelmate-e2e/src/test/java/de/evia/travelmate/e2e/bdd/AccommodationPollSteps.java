@@ -22,6 +22,7 @@ public class AccommodationPollSteps {
     private static String tripDetailPath;
     private static boolean tripCreated = false;
     private static boolean pollCreated = false;
+    private static boolean pollInAwaitingBooking = false;
 
     @Angenommen("es existiert eine Reise fuer die Unterkunftsabstimmung")
     public void esExistiertEineReiseFuerDieUnterkunftsabstimmung() {
@@ -75,13 +76,11 @@ public class AccommodationPollSteps {
         nameInputs.nth(1).fill("Berghuette Sonnstein");
         descInputs.nth(1).fill("Gemuetliche Huette");
         final var entries = page.locator(".candidate-entry");
-        final var features = new String[]{"Panorama-Balkon, WLAN", "Holzofen, Sauna"};
         final var roomNames = new String[]{"Doppelzimmer Alpenblick", "Suite Sonnstein"};
         for (int i = 0; i < 2; i++) {
             final var entry = entries.nth(i);
             entry.locator("input[name=roomName]").first().fill(roomNames[i]);
             entry.locator("input[name=roomBedCount]").first().fill("2");
-            entry.locator("input[name=roomFeatures]").first().fill(features[i]);
         }
         page.evaluate("""
             ([first, second]) => {
@@ -90,14 +89,15 @@ public class AccommodationPollSteps {
                 inputs[1].value = second;
             }
             """, List.of(
-            "[{\"name\":\"Doppelzimmer Alpenblick\",\"bedCount\":2,\"features\":\"Panorama-Balkon, WLAN\"}]",
-            "[{\"name\":\"Suite Sonnstein\",\"bedCount\":2,\"features\":\"Holzofen, Sauna\"}]"
+            "[{\"name\":\"Doppelzimmer Alpenblick\",\"bedCount\":2,\"bedDescription\":null}]",
+            "[{\"name\":\"Suite Sonnstein\",\"bedCount\":2,\"bedDescription\":null}]"
         ));
 
         page.locator("button[type=submit]:not(.outline)").click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
 
         pollCreated = true;
+        pollInAwaitingBooking = false;
     }
 
     @Dann("sehe ich die Unterkunftsabstimmung mit Status {string}")
@@ -134,14 +134,65 @@ public class AccommodationPollSteps {
         assertThat(content).contains("Hotel Alpenblick");
     }
 
-    @Und("ich die erste Unterkunft bestaetige")
-    public void ichDieErsteUnterkunftBestaetige() {
-        final var select = page.locator("select[name=confirmedCandidateId]");
-        final var optionValue = select.locator("option").nth(1).getAttribute("value");
+    // --- S15-B: Select candidate ---
+
+    @Wenn("ich den ersten Kandidaten auswaehle")
+    public void ichDenErstenKandidatenAuswaehle() {
+        if (pollInAwaitingBooking) {
+            // Previous scenario left the poll in AWAITING_BOOKING — fail first to reopen
+            page.locator("input[name=note]").fill("Reset");
+            page.locator("button[type=submit]:has-text('fehlgeschlagen'), button[type=submit]:has-text('failed')").click();
+            page.waitForLoadState(LoadState.NETWORKIDLE);
+            pollInAwaitingBooking = false;
+        }
+        final var select = page.locator("select[name=selectedCandidateId]");
+        final var optionValue = select.locator("option:not([value=''])").first().getAttribute("value");
         select.selectOption(optionValue);
-        page.locator("button[type=submit]:has-text('Bestaetigen'), button[type=submit]:has-text('Confirm')")
-            .click();
+        page.locator("button[type=submit]:has-text('Auswaehlen'), button[type=submit]:has-text('Select')").click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
+        pollInAwaitingBooking = true;
+    }
+
+    @Dann("sehe ich den Status {string}")
+    public void seheIchDenStatus(final String status) {
+        assertThat(page.content()).containsIgnoringCase(status);
+    }
+
+    @Und("ich sehe die Buchungsaktionen")
+    public void ichSeheDieBuchungsaktionen() {
+        final String content = page.content();
+        assertThat(content).satisfiesAnyOf(
+            c -> assertThat(c).containsIgnoringCase("Buchung erfolgreich"),
+            c -> assertThat(c).containsIgnoringCase("Booking success")
+        );
+    }
+
+    // --- S15-C: Booking failure ---
+
+    @Wenn("ich die Buchung als fehlgeschlagen mit Notiz {string} markiere")
+    public void ichDieBuchungAlsFehlgeschlagenMitNotizMarkiere(final String note) {
+        page.locator("input[name=note]").fill(note);
+        page.locator("button[type=submit]:has-text('fehlgeschlagen'), button[type=submit]:has-text('failed')").click();
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+        pollInAwaitingBooking = false;
+    }
+
+    @Und("ich sehe den Fehlschlag-Hinweis")
+    public void ichSeheDenFehlschlagHinweis() {
+        final String content = page.content();
+        assertThat(content).satisfiesAnyOf(
+            c -> assertThat(c).containsIgnoringCase("konnte nicht gebucht"),
+            c -> assertThat(c).containsIgnoringCase("Ausgebucht")
+        );
+    }
+
+    // --- S15-B: Booking success ---
+
+    @Wenn("ich die Buchung als erfolgreich markiere")
+    public void ichDieBuchungAlsErfolgreichMarkiere() {
+        page.locator("button[type=submit]:has-text('Buchung erfolgreich'), button[type=submit]:has-text('Booking success')").click();
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+        pollInAwaitingBooking = false;
     }
 
     @Dann("sehe ich den Gewinnerbanner mit der ersten Unterkunft")
@@ -149,7 +200,6 @@ public class AccommodationPollSteps {
         final var banner = page.locator(".winner-banner");
         assertThat(banner.count()).isGreaterThan(0);
         assertThat(banner.locator("strong").first().textContent()).containsIgnoringCase("Hotel");
-        assertThat(banner.locator(".room-summary").count()).isGreaterThan(0);
     }
 
     private String extractTripId() {

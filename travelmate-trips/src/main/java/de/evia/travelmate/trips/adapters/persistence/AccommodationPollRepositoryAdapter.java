@@ -3,7 +3,6 @@ package de.evia.travelmate.trips.adapters.persistence;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.UUID;
 import java.util.Comparator;
 import java.util.stream.Collectors;
 
@@ -11,6 +10,7 @@ import org.springframework.stereotype.Repository;
 
 import de.evia.travelmate.common.domain.TenantId;
 import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationCandidate;
@@ -21,13 +21,15 @@ import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationPollReposi
 import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationPollStatus;
 import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationVote;
 import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationVoteId;
+import de.evia.travelmate.trips.domain.accommodationpoll.Amenity;
 import de.evia.travelmate.trips.domain.accommodationpoll.CandidateRoom;
 import de.evia.travelmate.trips.domain.trip.TripId;
 
 @Repository
 public class AccommodationPollRepositoryAdapter implements AccommodationPollRepository {
 
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     private final AccommodationPollJpaRepository jpaRepository;
 
@@ -48,6 +50,10 @@ public class AccommodationPollRepositoryAdapter implements AccommodationPollRepo
         entity.setSelectedCandidateId(
             poll.selectedCandidateId() != null ? poll.selectedCandidateId().value() : null
         );
+        entity.setLastFailedCandidateId(
+            poll.lastFailedCandidateId() != null ? poll.lastFailedCandidateId().value() : null
+        );
+        entity.setLastFailedCandidateNote(poll.lastFailedCandidateNote());
         syncCandidates(entity, poll);
         syncVotes(entity, poll);
         jpaRepository.save(entity);
@@ -81,7 +87,7 @@ public class AccommodationPollRepositoryAdapter implements AccommodationPollRepo
     }
 
     private void syncCandidates(final AccommodationPollJpaEntity entity, final AccommodationPoll poll) {
-        final Set<UUID> currentIds = poll.candidates().stream()
+        final Set<java.util.UUID> currentIds = poll.candidates().stream()
             .map(c -> c.candidateId().value())
             .collect(Collectors.toSet());
 
@@ -94,20 +100,24 @@ public class AccommodationPollRepositoryAdapter implements AccommodationPollRepo
                 final AccommodationCandidateJpaEntity candidateEntity = new AccommodationCandidateJpaEntity(
                     candidate.candidateId().value(), entity,
                     candidate.name(), candidate.url(), candidate.description(),
-                    serializeRooms(candidate.rooms())
+                    serializeRooms(candidate.rooms()),
+                    serializeAmenities(candidate.amenities())
                 );
                 entity.getCandidates().add(candidateEntity);
             } else {
                 entity.getCandidates().stream()
                     .filter(e -> e.getCandidateId().equals(candidate.candidateId().value()))
                     .findFirst()
-                    .ifPresent(e -> e.setRoomsJson(serializeRooms(candidate.rooms())));
+                    .ifPresent(e -> {
+                        e.setRoomsJson(serializeRooms(candidate.rooms()));
+                        e.setAmenitiesJson(serializeAmenities(candidate.amenities()));
+                    });
             }
         }
     }
 
     private void syncVotes(final AccommodationPollJpaEntity entity, final AccommodationPoll poll) {
-        final Set<UUID> currentVoteIds = poll.votes().stream()
+        final Set<java.util.UUID> currentVoteIds = poll.votes().stream()
             .map(v -> v.voteId().value())
             .collect(Collectors.toSet());
 
@@ -134,7 +144,8 @@ public class AccommodationPollRepositoryAdapter implements AccommodationPollRepo
             .map(c -> new AccommodationCandidate(
                 new AccommodationCandidateId(c.getCandidateId()),
                 c.getName(), c.getUrl(), c.getDescription(),
-                readRooms(c.getRoomsJson())
+                readRooms(c.getRoomsJson()),
+                readAmenities(c.getAmenitiesJson())
             ))
             .toList();
 
@@ -155,7 +166,11 @@ public class AccommodationPollRepositoryAdapter implements AccommodationPollRepo
             votes,
             entity.getSelectedCandidateId() != null
                 ? new AccommodationCandidateId(entity.getSelectedCandidateId())
-                : null
+                : null,
+            entity.getLastFailedCandidateId() != null
+                ? new AccommodationCandidateId(entity.getLastFailedCandidateId())
+                : null,
+            entity.getLastFailedCandidateNote()
         );
     }
 
@@ -178,6 +193,28 @@ public class AccommodationPollRepositoryAdapter implements AccommodationPollRepo
             return OBJECT_MAPPER.readValue(json, new TypeReference<List<CandidateRoom>>() {});
         } catch (final Exception e) {
             throw new IllegalStateException("Failed to parse candidate rooms", e);
+        }
+    }
+
+    private static String serializeAmenities(final Set<Amenity> amenities) {
+        if (amenities == null || amenities.isEmpty()) {
+            return null;
+        }
+        try {
+            return OBJECT_MAPPER.writeValueAsString(amenities);
+        } catch (final Exception e) {
+            throw new IllegalStateException("Failed to serialize candidate amenities", e);
+        }
+    }
+
+    private static Set<Amenity> readAmenities(final String json) {
+        if (json == null || json.isBlank()) {
+            return Set.of();
+        }
+        try {
+            return OBJECT_MAPPER.readValue(json, new TypeReference<Set<Amenity>>() {});
+        } catch (final Exception e) {
+            return Set.of();
         }
     }
 }

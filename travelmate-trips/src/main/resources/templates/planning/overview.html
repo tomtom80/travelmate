@@ -130,7 +130,15 @@
                             </li>
                         </ul>
                     </th:block>
-                    <th:block th:if="${accommodationPoll != null && accommodationPoll.status() == 'CONFIRMED'}">
+                    <th:block th:if="${accommodationPoll != null && accommodationPoll.status() == 'AWAITING_BOOKING'}">
+                        <th:block th:each="candidate : ${accommodationPoll.candidates()}">
+                            <p th:if="${accommodationPoll.selectedCandidateId() != null && accommodationPoll.selectedCandidateId().equals(candidate.candidateId())}">
+                                <span th:text="#{planning.accommodationpoll.awaitingBooking}">Buchung ausstehend</span>:
+                                <strong th:text="${candidate.name()}">Hotel</strong>
+                            </p>
+                        </th:block>
+                    </th:block>
+                    <th:block th:if="${accommodationPoll != null && accommodationPoll.status() == 'BOOKED'}">
                         <th:block th:each="candidate : ${accommodationPoll.candidates()}">
                             <p th:if="${accommodationPoll.selectedCandidateId() != null && accommodationPoll.selectedCandidateId().equals(candidate.candidateId())}">
                                 <span th:text="#{planning.accommodationpoll.confirmed}">Bestaetigt</span>:
@@ -157,7 +165,7 @@
         </div>
     </section>
 
-    <article th:if="${datePoll != null && datePoll.status() == 'CONFIRMED' && accommodationPoll != null && accommodationPoll.status() == 'CONFIRMED'}">
+    <article th:if="${datePoll != null && datePoll.status() == 'CONFIRMED' && accommodationPoll != null && accommodationPoll.status() == 'BOOKED'}">
         <h3 th:text="#{planning.summary}">Zusammenfassung</h3>
         <p th:text="#{planning.allConfirmed}">Alle Abstimmungen sind abgeschlossen. Die Reise kann bestaetigt werden.</p>
     </article>

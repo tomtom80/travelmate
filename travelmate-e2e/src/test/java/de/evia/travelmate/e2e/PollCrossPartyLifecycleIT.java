@@ -119,12 +119,12 @@ class PollCrossPartyLifecycleIT extends E2ETestBase {
         page.locator("input[name=candidateDescription]").nth(0).fill("Direkt am See");
         page.locator(".candidate-entry").nth(0).locator("input[name=roomName]").first().fill("Familienzimmer");
         page.locator(".candidate-entry").nth(0).locator("input[name=roomBedCount]").first().fill("4");
-        page.locator(".candidate-entry").nth(0).locator("input[name=roomFeatures]").first().fill("Seeblick");
+        page.locator(".candidate-entry").nth(0).locator("input[name=roomBedDescription]").first().fill("Seeblick, 4 Betten");
         page.locator("input[name=candidateName]").nth(1).fill("Berghaus Morgenrot");
         page.locator("input[name=candidateDescription]").nth(1).fill("Ruhige Lage");
         page.locator(".candidate-entry").nth(1).locator("input[name=roomName]").first().fill("Doppelzimmer");
         page.locator(".candidate-entry").nth(1).locator("input[name=roomBedCount]").first().fill("2");
-        page.locator(".candidate-entry").nth(1).locator("input[name=roomFeatures]").first().fill("Bergblick");
+        page.locator(".candidate-entry").nth(1).locator("input[name=roomBedDescription]").first().fill("Bergblick, 2 Betten");
         page.evaluate("""
             ([first, second]) => {
                 const inputs = document.querySelectorAll('input.candidate-rooms-data');
@@ -132,8 +132,8 @@ class PollCrossPartyLifecycleIT extends E2ETestBase {
                 inputs[1].value = second;
             }
             """, List.of(
-            "[{\"name\":\"Familienzimmer\",\"bedCount\":4,\"features\":\"Seeblick\"}]",
-            "[{\"name\":\"Doppelzimmer\",\"bedCount\":2,\"features\":\"Bergblick\"}]"
+            "[{\"name\":\"Familienzimmer\",\"bedCount\":4,\"bedDescription\":\"Seeblick, 4 Betten\"}]",
+            "[{\"name\":\"Doppelzimmer\",\"bedCount\":2,\"bedDescription\":\"Bergblick, 2 Betten\"}]"
         ));
         page.locator("button[type=submit]").first().click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
@@ -176,11 +176,15 @@ class PollCrossPartyLifecycleIT extends E2ETestBase {
             assertThat(text).containsIgnoringCase("bestaetigt"));
 
         navigateAndWait("/trips/" + tripId + "/accommodationpoll");
-        page.locator("select[name=confirmedCandidateId]").selectOption(
-            page.locator("select[name=confirmedCandidateId] option:not([value=''])").first().getAttribute("value"));
-        page.locator("button[type=submit]:has-text('Bestaetigen')").click();
+        // Select candidate (OPEN → AWAITING_BOOKING)
+        page.locator("select[name=selectedCandidateId]").selectOption(
+            page.locator("select[name=selectedCandidateId] option:not([value=''])").first().getAttribute("value"));
+        page.locator("button[type=submit]:has-text('Auswaehlen')").click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
-        assertThat(page.content()).contains("Bestaetigt");
+        // Book candidate (AWAITING_BOOKING → BOOKED)
+        page.locator("button[type=submit]:has-text('Buchung erfolgreich')").click();
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+        assertThat(page.content()).containsIgnoringCase("Gebucht");
 
         navigateAndWait(party2Page, "/trips/" + tripId + "/planning");
         assertThat(party2Page.content()).contains("Bestaetigt");
@@ -191,7 +195,7 @@ class PollCrossPartyLifecycleIT extends E2ETestBase {
         assertThat(party2Page.locator(".poll-chart__row").count()).isGreaterThan(0);
         navigateAndWait(party2Page, "/trips/" + tripId + "/accommodationpoll");
         assertThat(party2Page.content()).contains("Hotel Alpenblick");
-        assertThat(party2Page.content()).contains("Bestaetigt");
+        assertThat(party2Page.content()).containsIgnoringCase("Gebucht");
         assertThat(party2Page.locator(".poll-chart__row").count()).isGreaterThan(0);
         assertThat(party2Page.locator(".poll-chart__row.winner").count()).isGreaterThan(0);
         assertThat(party2Page.locator(".winner-banner strong").allTextContents()).anySatisfy(text ->

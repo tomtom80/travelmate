@@ -11,6 +11,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -168,14 +169,16 @@ class PlanningControllerTest {
 
     private AccommodationPollRepresentation createAccommodationPollRepr() {
         return new AccommodationPollRepresentation(
-            UUID.randomUUID(), TENANT_UUID, TRIP_UUID, "OPEN", null,
+            UUID.randomUUID(), TENANT_UUID, TRIP_UUID, "OPEN", null, null, null,
             List.of(
                 new AccommodationPollRepresentation.CandidateRepresentation(
                     UUID.randomUUID(), "Hotel A", "https://a.com", "Nice", 1,
-                    List.of(new AccommodationPollRepresentation.RoomRepresentation("Room A", 2, null, "Balcony"))),
+                    List.of(new AccommodationPollRepresentation.RoomRepresentation("Room A", 2, null, null)),
+                    Set.of()),
                 new AccommodationPollRepresentation.CandidateRepresentation(
                     UUID.randomUUID(), "Hotel B", null, "Cozy", 0,
-                    List.of(new AccommodationPollRepresentation.RoomRepresentation("Room B", 3, null, "Sauna")))
+                    List.of(new AccommodationPollRepresentation.RoomRepresentation("Room B", 3, null, null)),
+                    Set.of())
             ),
             List.of()
         );

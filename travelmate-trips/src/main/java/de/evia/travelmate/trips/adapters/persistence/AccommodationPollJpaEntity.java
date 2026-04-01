@@ -32,6 +32,12 @@ public class AccommodationPollJpaEntity {
     @Column(name = "selected_candidate_id")
     private UUID selectedCandidateId;
 
+    @Column(name = "last_failed_candidate_id")
+    private UUID lastFailedCandidateId;
+
+    @Column(name = "last_failed_candidate_note", length = 2000)
+    private String lastFailedCandidateNote;
+
     @OneToMany(mappedBy = "poll", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<AccommodationCandidateJpaEntity> candidates = new ArrayList<>();
 
@@ -56,6 +62,10 @@ public class AccommodationPollJpaEntity {
     public void setStatus(final String status) { this.status = status; }
     public UUID getSelectedCandidateId() { return selectedCandidateId; }
     public void setSelectedCandidateId(final UUID selectedCandidateId) { this.selectedCandidateId = selectedCandidateId; }
+    public UUID getLastFailedCandidateId() { return lastFailedCandidateId; }
+    public void setLastFailedCandidateId(final UUID lastFailedCandidateId) { this.lastFailedCandidateId = lastFailedCandidateId; }
+    public String getLastFailedCandidateNote() { return lastFailedCandidateNote; }
+    public void setLastFailedCandidateNote(final String lastFailedCandidateNote) { this.lastFailedCandidateNote = lastFailedCandidateNote; }
     public List<AccommodationCandidateJpaEntity> getCandidates() { return candidates; }
     public List<AccommodationVoteJpaEntity> getVotes() { return votes; }
 }
