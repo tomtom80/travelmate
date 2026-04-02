@@ -75,6 +75,9 @@ public record ExpenseRepresentation(
 
         final List<WeightingRepresentation> weightings = expense.weightings().stream()
             .map(w -> toWeightingRepresentation(w, participants, tripStartDate))
+            .sorted(java.util.Comparator.comparing(
+                WeightingRepresentation::participantName,
+                java.util.Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER)))
             .toList();
 
         final BigDecimal receiptTotal = expense.receipts().stream()
@@ -156,8 +159,10 @@ public record ExpenseRepresentation(
             ? participant.ageOn(tripStartDate)
             : null;
         final String recommendationType = recommendationTypeFor(ageOnTripStart);
+        final String participantName = participant != null ? participant.name() : null;
         return new WeightingRepresentation(
             weighting.participantId(),
+            participantName,
             weighting.weight(),
             recommendedWeightFor(ageOnTripStart),
             ageOnTripStart,

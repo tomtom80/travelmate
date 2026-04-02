@@ -298,7 +298,7 @@ public class InvitationService {
                 invitation.tenantId().value(),
                 trip.tripId().value(),
                 memberId,
-                email,
+                firstName + " " + lastName,
                 partyTenantId,
                 partyName,
                 memberParty != null

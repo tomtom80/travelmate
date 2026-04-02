@@ -113,8 +113,8 @@ class ExpenseControllerTest {
                 LocalDate.of(2026, 3, 10), null, ReviewStatus.APPROVED, null, null
             )),
             List.of(
-                new WeightingRepresentation(PARTICIPANT_A, BigDecimal.ONE, BigDecimal.ONE, 34, "ADULT"),
-                new WeightingRepresentation(PARTICIPANT_B, BigDecimal.ONE, BigDecimal.ONE, 33, "ADULT")
+                new WeightingRepresentation(PARTICIPANT_A, "Alice Test", BigDecimal.ONE, BigDecimal.ONE, 34, "ADULT"),
+                new WeightingRepresentation(PARTICIPANT_B, "Bob Test", BigDecimal.ONE, BigDecimal.ONE, 33, "ADULT")
             ),
             Map.of(PARTICIPANT_A, new BigDecimal("21.25"), PARTICIPANT_B, new BigDecimal("-21.25")),
             List.of(new TransferRepresentation(PARTICIPANT_B, PARTICIPANT_A, new BigDecimal("21.25"))),

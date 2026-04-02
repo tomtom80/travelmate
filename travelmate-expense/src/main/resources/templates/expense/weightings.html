@@ -7,47 +7,46 @@
             <thead>
                 <tr>
                     <th th:text="#{expense.weighting.participant}">Teilnehmer</th>
+                    <th th:text="#{expense.weighting.ageOnTripStart}">Alter</th>
                     <th th:text="#{expense.weighting.weight}">Gewichtung</th>
-                    <th th:text="#{expense.weighting.recommendation}">Empfehlung</th>
-                    <th th:text="#{expense.weighting.update}">Aktualisieren</th>
                 </tr>
             </thead>
             <tbody>
                 <tr th:each="weighting : ${expense.weightings()}">
-                    <td th:data-label="#{expense.weighting.participant}" th:text="${participantNames[weighting.participantId()] != null ? participantNames[weighting.participantId()] : weighting.participantId()}"></td>
+                    <td th:data-label="#{expense.weighting.participant}">
+                        <div>
+                            <span th:text="${weighting.participantName() != null ? weighting.participantName() : participantNames[weighting.participantId()]}"></span>
+                            <small style="display:block; color:var(--tm-text-soft, #526071);"
+                                   th:if="${weighting.recommendationType() == 'INFANT'}" th:text="#{expense.weighting.recommendationInfant}">Kleinkind unter 3</small>
+                            <small style="display:block; color:var(--tm-text-soft, #526071);"
+                                   th:if="${weighting.recommendationType() == 'CHILD'}" th:text="#{expense.weighting.recommendationChild}">Kind 3-16</small>
+                        </div>
+                    </td>
+                    <td th:data-label="#{expense.weighting.ageOnTripStart}"
+                        th:text="${weighting.ageOnTripStart() != null ? weighting.ageOnTripStart() : '—'}"></td>
                     <td th:data-label="#{expense.weighting.weight}">
                         <form hx-post th:hx-post="@{/{tripId}/weightings(tripId=${tripId})}"
                               hx-target="#weightings" hx-swap="innerHTML" style="margin:0;">
                             <input type="hidden" name="participantId" th:value="${weighting.participantId()}">
-                            <div style="display:flex; gap:0.5rem; align-items:center; flex-wrap:wrap;">
+                            <div style="display:flex; gap:0.5rem; align-items:center;">
                                 <input type="number" name="weight" min="0" step="0.1"
                                        th:value="${#numbers.formatDecimal(weighting.weight(), 1, 1)}"
-                                       style="margin-bottom:0; max-width:7rem;">
-                                <button type="submit" class="outline" th:text="#{expense.weighting.update}"
-                                        style="margin-bottom:0;">Aktualisieren</button>
+                                       style="margin-bottom:0; max-width:5rem;">
+                                <button type="submit" class="btn-icon"
+                                        th:title="#{common.save}" th:aria-label="#{common.save}"
+                                        style="margin-bottom:0;">
+                                    <svg viewBox="0 0 24 24"><path d="M20 6L9 17l-5-5" stroke="currentColor" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                                </button>
                             </div>
                         </form>
-                    </td>
-                    <td th:data-label="#{expense.weighting.recommendation}">
-                        <div style="display:flex; flex-direction:column; gap:0.2rem;">
-                            <strong th:text="${#numbers.formatDecimal(weighting.recommendedWeight(), 1, 1)}">1.0</strong>
-                            <small th:if="${weighting.recommendationType() == 'INFANT'}" th:text="#{expense.weighting.recommendationInfant}">Kleinkind unter 3</small>
-                            <small th:if="${weighting.recommendationType() == 'CHILD'}" th:text="#{expense.weighting.recommendationChild}">Kind 3-16</small>
-                            <small th:if="${weighting.recommendationType() == 'ADULT'}" th:text="#{expense.weighting.recommendationAdult}">Erwachsen</small>
-                            <small th:if="${weighting.recommendationType() == 'UNKNOWN'}" th:text="#{expense.weighting.recommendationUnknown}">Keine Altersdaten</small>
-                            <small th:if="${weighting.ageOnTripStart() != null}"
-                                   th:text="#{expense.weighting.ageOnTripStart} + ': ' + ${weighting.ageOnTripStart()}">Alter zu Reisebeginn: 5</small>
-                        </div>
-                    </td>
-                    <td th:data-label="#{expense.weighting.update}">
-                        <small th:text="#{expense.weighting.durationHint}">Wirkt zusammen mit individueller Aufenthaltsdauer.</small>
                     </td>
                 </tr>
             </tbody>
         </table>
     </figure>
-    <p th:if="${!expense.weightings().isEmpty()}" th:text="#{expense.weighting.derivedHint}">
-        Verwende fuer Kinder typischerweise 0.0 oder 0.5, fuer Erwachsene 1.0. Die Unterkunftsverteilung nutzt Gewichtung und Aufenthaltsdauer gemeinsam.
+    <p th:if="${!expense.weightings().isEmpty()}" style="color:var(--tm-text-soft, #526071); font-size:0.85rem;"
+       th:text="#{expense.weighting.recommendationHint}">
+        Kinder unter 3: 0.0, 3-16: 0.5, Erwachsene: 1.0
     </p>
 </div>
 </body>
