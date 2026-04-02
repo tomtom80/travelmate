@@ -30,7 +30,7 @@ class ExpenseLifecycleIT extends E2ETestBase {
             tripId,
             "Expense Unterkunft",
             "https://expense.example",
-            "Ferienhaus fuer die Abrechnung",
+            "Ferienhaus für die Abrechnung",
             "Expense Alternative",
             "Alternative Unterkunft"
         );
@@ -114,7 +114,7 @@ class ExpenseLifecycleIT extends E2ETestBase {
         navigateAndWait("/expense/" + tripId);
 
         page.locator("button", new com.microsoft.playwright.Page.LocatorOptions()
-            .setHasText("Beleg hinzufuegen")).first().click();
+            .setHasText("Beleg hinzufügen")).first().click();
         page.waitForSelector("dialog[open]");
 
         page.locator("dialog input[name=description]").fill("Supermarkt");

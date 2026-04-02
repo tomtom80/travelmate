@@ -24,7 +24,7 @@ public class AccommodationPollSteps {
     private static boolean pollCreated = false;
     private static boolean pollInAwaitingBooking = false;
 
-    @Angenommen("es existiert eine Reise fuer die Unterkunftsabstimmung")
+    @Angenommen("es existiert eine Reise für die Unterkunftsabstimmung")
     public void esExistiertEineReiseFuerDieUnterkunftsabstimmung() {
         if (!tripCreated) {
             navigateAndWait("/trips/");
@@ -44,7 +44,7 @@ public class AccommodationPollSteps {
         }
     }
 
-    @Wenn("ich die Unterkunftsabstimmungsseite der Reise oeffne")
+    @Wenn("ich die Unterkunftsabstimmungsseite der Reise öffne")
     public void ichDieUnterkunftsabstimmungsseiteOeffne() {
         final String tripId = extractTripId();
         navigateAndWait("/trips/" + tripId + "/accommodationpoll");
@@ -60,7 +60,7 @@ public class AccommodationPollSteps {
         );
     }
 
-    @Und("ich eine Unterkunftsabstimmung mit zwei Vorschlaegen erstelle")
+    @Und("ich eine Unterkunftsabstimmung mit zwei Vorschlägen erstelle")
     public void ichEineUnterkunftsabstimmungMitZweiVorschlaegenErstelle() {
         page.locator("a[href*='accommodationpoll/create']").click();
         page.waitForLoadState();
@@ -105,13 +105,13 @@ public class AccommodationPollSteps {
         assertThat(page.content()).contains(status);
     }
 
-    @Und("die Abstimmung hat {int} Unterkunftsvorschlaege")
+    @Und("die Abstimmung hat {int} Unterkunftsvorschläge")
     public void dieAbstimmungHatUnterkunftsvorschlaege(final int count) {
         final int radioButtons = page.locator("input[name=selectedCandidateId]").count();
         assertThat(radioButtons).isEqualTo(count);
     }
 
-    @Angenommen("eine Unterkunftsabstimmung wurde fuer die Reise erstellt")
+    @Angenommen("eine Unterkunftsabstimmung wurde für die Reise erstellt")
     public void eineUnterkunftsabstimmungWurdeFuerDieReiseErstellt() {
         if (!pollCreated) {
             ichDieUnterkunftsabstimmungsseiteOeffne();
@@ -121,7 +121,7 @@ public class AccommodationPollSteps {
         }
     }
 
-    @Wenn("ich fuer die erste Unterkunft abstimme")
+    @Wenn("ich für die erste Unterkunft abstimme")
     public void ichFuerDieErsteUnterkunftAbstimme() {
         page.locator("input[name=selectedCandidateId]").first().check();
         page.locator("button[type=submit]:has-text('Abstimmen'), button[type=submit]:has-text('Submit Vote')").click();
@@ -136,7 +136,7 @@ public class AccommodationPollSteps {
 
     // --- S15-B: Select candidate ---
 
-    @Wenn("ich den ersten Kandidaten auswaehle")
+    @Wenn("ich den ersten Kandidaten auswähle")
     public void ichDenErstenKandidatenAuswaehle() {
         if (pollInAwaitingBooking) {
             // Previous scenario left the poll in AWAITING_BOOKING — fail first to reopen
@@ -148,7 +148,7 @@ public class AccommodationPollSteps {
         final var select = page.locator("select[name=selectedCandidateId]");
         final var optionValue = select.locator("option:not([value=''])").first().getAttribute("value");
         select.selectOption(optionValue);
-        page.locator("button[type=submit]:has-text('Auswaehlen'), button[type=submit]:has-text('Select')").click();
+        page.locator("button[type=submit]:has-text('Auswählen'), button[type=submit]:has-text('Select')").click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
         pollInAwaitingBooking = true;
     }

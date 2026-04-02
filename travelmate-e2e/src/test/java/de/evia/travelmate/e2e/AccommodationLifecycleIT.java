@@ -75,7 +75,7 @@ class AccommodationLifecycleIT extends E2ETestBase {
     @Test
     @Order(13)
     void winningAccommodationIsShownAutomatically() {
-        assertThat(page.locator("button:has-text('Unterkunft hinzufuegen')").count()).isZero();
+        assertThat(page.locator("button:has-text('Unterkunft hinzufügen')").count()).isZero();
         assertThat(page.content()).contains(ACCOMMODATION_NAME);
         assertThat(page.content()).contains(ROOM_1_NAME);
     }
@@ -98,7 +98,7 @@ class AccommodationLifecycleIT extends E2ETestBase {
     @Test
     @Order(20)
     void addSecondRoomViaForm() {
-        // Open the "Zimmer hinzufuegen" dialog
+        // Open the "Zimmer hinzufügen" dialog
         page.locator("button[onclick*='add-room-dialog'][onclick*='showModal']").click();
 
         // Fill in room form in dialog

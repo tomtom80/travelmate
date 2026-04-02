@@ -108,11 +108,11 @@ class DatePollLifecycleIT extends E2ETestBase {
         select.selectOption(
             page.locator("select[name=confirmedOptionId] option:not([value=''])").first().getAttribute("value")
         );
-        page.locator("button[type=submit]:has-text('Bestaetigen'), button[type=submit]:has-text('Confirm')").click();
+        page.locator("button[type=submit]:has-text('Bestätigen'), button[type=submit]:has-text('Confirm')").click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
 
         assertThat(page.locator("mark").allTextContents()).anySatisfy(text ->
-            assertThat(text).matches("(?i).*confirmed.*|.*bestaetigt.*"));
+            assertThat(text).matches("(?i).*confirmed.*|.*bestätigt.*"));
     }
 
     @Test
@@ -122,7 +122,7 @@ class DatePollLifecycleIT extends E2ETestBase {
 
         final String content = page.content();
         assertThat(content).satisfiesAnyOf(
-            c -> assertThat(c).contains("Bestaetigt"),
+            c -> assertThat(c).contains("Bestätigt"),
             c -> assertThat(c).contains("Confirmed")
         );
     }

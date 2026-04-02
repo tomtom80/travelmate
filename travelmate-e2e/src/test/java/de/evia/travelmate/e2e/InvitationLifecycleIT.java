@@ -76,7 +76,7 @@ class InvitationLifecycleIT extends E2ETestBase {
         invitedMemberPage = newPage(invitedMemberContext);
         navigateAndWait(invitedMemberPage, registrationLink);
 
-        assertThat(invitedMemberPage.content()).contains("Registrierung abschliessen");
+        assertThat(invitedMemberPage.content()).contains("Registrierung abschließen");
         assertThat(invitedMemberPage.content()).contains(INVITED_MEMBER_EMAIL);
 
         invitedMemberPage.fill("#password", INVITED_MEMBER_PASSWORD);

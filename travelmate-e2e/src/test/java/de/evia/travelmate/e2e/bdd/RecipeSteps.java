@@ -29,8 +29,8 @@ public class RecipeSteps {
     public void ichAufKlicke(final String buttonText) {
         switch (buttonText) {
             case "Neues Rezept" -> navigateAndWait("/trips/recipes/new");
-            case "Zutat hinzufuegen" -> page.click("#add-ingredient-btn");
-            case "Zurueck" -> {
+            case "Zutat hinzufügen" -> page.click("#add-ingredient-btn");
+            case "Zurück" -> {
                 final String tripId = extractTripIdFromPage();
                 page.locator("main a[href*='/" + tripId + "']").first().click();
                 page.waitForLoadState();
@@ -54,7 +54,7 @@ public class RecipeSteps {
 
     @Und("es gibt einen Button {string}")
     public void esGibtEinenButton(final String buttonText) {
-        if ("Zutat hinzufuegen".equals(buttonText)) {
+        if ("Zutat hinzufügen".equals(buttonText)) {
             assertThat(page.locator("#add-ingredient-btn").count()).isPositive();
         }
     }
@@ -76,7 +76,7 @@ public class RecipeSteps {
         page.locator("input[name=ingredientUnit]").first().fill(einheit);
     }
 
-    @Und("ich eine weitere Zutat {string} mit Menge {string} und Einheit {string} hinzufuege")
+    @Und("ich eine weitere Zutat {string} mit Menge {string} und Einheit {string} hinzufüge")
     public void ichEineWeitereZutatHinzufuege(final String zutat, final String menge, final String einheit) {
         page.click("#add-ingredient-btn");
         page.locator("input[name=ingredientName]").last().fill(zutat);
@@ -112,7 +112,7 @@ public class RecipeSteps {
         assertThat(page.content()).contains(anzahl);
     }
 
-    @Und("Buttons zum Bearbeiten und Loeschen")
+    @Und("Buttons zum Bearbeiten und Löschen")
     public void buttonsZumBearbeitenUndLoeschen() {
         assertThat(page.locator("a[href*='/edit']").count()).isPositive();
         assertThat(page.locator("form[action*='/delete'] button[type=submit]").count()).isPositive();
@@ -127,20 +127,20 @@ public class RecipeSteps {
         if ("Bearbeiten".equals(aktion)) {
             row.locator("a[href*='/edit']").click();
             page.waitForLoadState();
-        } else if ("Loeschen".equals(aktion)) {
+        } else if ("Löschen".equals(aktion)) {
             page.onDialog(dialog -> dialog.accept());
             row.locator("form[action*='/delete'] button[type=submit]").click();
             page.waitForLoadState();
         }
     }
 
-    @Dann("sehe ich das Formular mit den vorausgefuellten Werten")
+    @Dann("sehe ich das Formular mit den vorausgefüllten Werten")
     public void seheIchDasFormularMitDenVorausgefuelltenWerten() {
         assertThat(page.locator("input[name=name]").inputValue()).isNotEmpty();
         assertThat(page.locator("input[name=servings]").inputValue()).isNotEmpty();
     }
 
-    @Wenn("ich den Namen auf {string} aendere")
+    @Wenn("ich den Namen auf {string} ändere")
     public void ichDenNamenAufAendere(final String neuerName) {
         page.fill("input[name=name]", neuerName);
     }
@@ -155,7 +155,7 @@ public class RecipeSteps {
         assertThat(page.content()).contains(portionen);
     }
 
-    @Und("ich die Loeschbestaetigung akzeptiere")
+    @Und("ich die Löschbestätigung akzeptiere")
     public void ichDieLoeschbestaetigungAkzeptiere() {
         // Dialog acceptance already registered in ichBeimRezeptAufKlicke
     }
@@ -173,7 +173,7 @@ public class RecipeSteps {
         }
     }
 
-    @Dann("sehe ich eine zusaetzliche Zutatenzeile")
+    @Dann("sehe ich eine zusätzliche Zutatenzeile")
     public void seheIchEineZusaetzlicheZutatenzeile() {
         assertThat(page.locator(".ingredient-card").count()).isGreaterThanOrEqualTo(2);
     }

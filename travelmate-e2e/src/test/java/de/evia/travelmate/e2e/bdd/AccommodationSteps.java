@@ -21,7 +21,7 @@ public class AccommodationSteps {
     private static boolean tripCreated = false;
     private static boolean accommodationCreated = false;
 
-    @Angenommen("es existiert eine Reise fuer die Unterkunftsverwaltung")
+    @Angenommen("es existiert eine Reise für die Unterkunftsverwaltung")
     public void esExistiertEineReiseFuerDieUnterkunftsverwaltung() {
         if (!tripCreated) {
             // Verify session is still active
@@ -43,19 +43,19 @@ public class AccommodationSteps {
         }
     }
 
-    @Wenn("ich die Unterkunftsseite der Reise oeffne")
+    @Wenn("ich die Unterkunftsseite der Reise öffne")
     public void ichDieUnterkunftsseiteOeffne() {
         final String tripId = extractTripId();
         navigateAndWait("/trips/" + tripId + "/accommodation");
     }
 
-    @Dann("sehe ich den Hinweis dass zuerst eine Unterkunftsabstimmung noetig ist")
+    @Dann("sehe ich den Hinweis dass zuerst eine Unterkunftsabstimmung nötig ist")
     public void seheIchDenHinweisDassZuerstEineUnterkunftsabstimmungNoetigIst() {
         assertThat(page.url()).contains("/planning");
         assertThat(page.content()).containsAnyOf("Unterkunft", "Planung");
     }
 
-    @Und("ich die Unterkunftsabstimmung mit Gewinner {string} bestaetige")
+    @Und("ich die Unterkunftsabstimmung mit Gewinner {string} bestätige")
     public void ichDieUnterkunftsabstimmungMitGewinnerBestaetige(final String name) {
         final String tripId = extractTripId();
         createAndConfirmAccommodationPoll(tripId, name, "Alternative Unterkunft");
@@ -68,7 +68,7 @@ public class AccommodationSteps {
         assertThat(page.content()).contains(name);
     }
 
-    @Angenommen("eine Unterkunft wurde fuer die Reise erfasst")
+    @Angenommen("eine Unterkunft wurde für die Reise erfasst")
     public void eineUnterkunftWurdeFuerDieReiseErfasst() {
         if (!accommodationCreated) {
             ichDieUnterkunftsseiteOeffne();
@@ -79,9 +79,9 @@ public class AccommodationSteps {
         }
     }
 
-    @Wenn("ich ein Zimmer mit Name {string} und Betten {string} hinzufuege")
+    @Wenn("ich ein Zimmer mit Name {string} und Betten {string} hinzufüge")
     public void ichEinZimmerHinzufuege(final String name, final String beds) {
-        // Open "Zimmer hinzufuegen" dialog
+        // Open "Zimmer hinzufügen" dialog
         page.locator("button[onclick*='add-room-dialog'][onclick*='showModal']").click();
 
         // Fill room form in dialog

@@ -83,7 +83,7 @@ class MealPlanLifecycleIT extends E2ETestBase {
         final String content = page.content();
 
         assertThat(content).doesNotContain("??");
-        assertThat(content).contains("Fruehstueck");
+        assertThat(content).contains("Frühstück");
         assertThat(content).contains("Mittagessen");
         assertThat(content).contains("Abendessen");
     }
@@ -166,7 +166,7 @@ class MealPlanLifecycleIT extends E2ETestBase {
     @Test
     @Order(31)
     void eatingOutSlotShowsEatingOutLabel() {
-        assertThat(page.content()).contains("Auswaerts essen");
+        assertThat(page.content()).contains("Auswärts essen");
     }
 
     @Test

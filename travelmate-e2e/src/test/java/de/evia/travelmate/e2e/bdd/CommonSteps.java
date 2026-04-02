@@ -31,7 +31,7 @@ public class CommonSteps {
         page.waitForLoadState();
     }
 
-    @Dann("enthaelt die Seite keine unaufgeloesten Message-Keys {string}")
+    @Dann("enthält die Seite keine unaufgelösten Message-Keys {string}")
     public void enthaeltDieSeiteKeineUnaufgeloestenMessageKeys(final String marker) {
         assertThat(page.content()).doesNotContain(marker);
     }

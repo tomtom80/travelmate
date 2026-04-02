@@ -129,7 +129,7 @@ abstract class E2ETestBase {
         page.locator("select[name=confirmedOptionId]").selectOption(
             page.locator("select[name=confirmedOptionId] option:not([value=''])").first().getAttribute("value")
         );
-        page.locator("button[type=submit]:has-text('Bestaetigen'), button[type=submit]:has-text('Confirm')").click();
+        page.locator("button[type=submit]:has-text('Bestätigen'), button[type=submit]:has-text('Confirm')").click();
         page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
     }
 
@@ -172,7 +172,7 @@ abstract class E2ETestBase {
         page.locator("select[name=selectedCandidateId]").selectOption(
             page.locator("select[name=selectedCandidateId] option:not([value=''])").first().getAttribute("value")
         );
-        page.locator("button[type=submit]:has-text('Auswaehlen'), button[type=submit]:has-text('Select')").click();
+        page.locator("button[type=submit]:has-text('Auswählen'), button[type=submit]:has-text('Select')").click();
         page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
 
         // Book candidate (AWAITING_BOOKING → BOOKED)
@@ -189,7 +189,7 @@ abstract class E2ETestBase {
                                                      final String roomName,
                                                      final String roomBedCount) {
         navigateAndWait("/trips/" + tripId + "/accommodation");
-        page.locator("button:has-text('Unterkunft hinzufuegen'), button:has-text('Accommodation hinzufügen')").first().click();
+        page.locator("button:has-text('Unterkunft hinzufügen'), button:has-text('Accommodation hinzufügen')").first().click();
         page.waitForSelector("dialog[open]");
         page.locator("dialog input[name=name]").fill(name);
         if (address != null) {

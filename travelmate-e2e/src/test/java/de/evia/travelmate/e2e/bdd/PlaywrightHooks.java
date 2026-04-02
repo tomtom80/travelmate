@@ -121,7 +121,7 @@ public class PlaywrightHooks {
         page.locator("select[name=confirmedOptionId]").selectOption(
             page.locator("select[name=confirmedOptionId] option:not([value=''])").first().getAttribute("value")
         );
-        page.locator("button[type=submit]:has-text('Bestaetigen'), button[type=submit]:has-text('Confirm')").click();
+        page.locator("button[type=submit]:has-text('Bestätigen'), button[type=submit]:has-text('Confirm')").click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
     }
 
@@ -154,7 +154,7 @@ public class PlaywrightHooks {
         page.locator("select[name=selectedCandidateId]").selectOption(
             page.locator("select[name=selectedCandidateId] option:not([value=''])").first().getAttribute("value")
         );
-        page.locator("button[type=submit]:has-text('Auswaehlen'), button[type=submit]:has-text('Select')").click();
+        page.locator("button[type=submit]:has-text('Auswählen'), button[type=submit]:has-text('Select')").click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
 
         // Book candidate (AWAITING_BOOKING → BOOKED)

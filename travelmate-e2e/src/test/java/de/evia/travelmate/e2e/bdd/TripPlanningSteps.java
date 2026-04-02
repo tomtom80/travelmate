@@ -194,8 +194,8 @@ public class TripPlanningSteps {
     private boolean statusMatchesI18n(final String content, final String status) {
         return switch (status) {
             case "PLANNING" -> content.contains("In Planung") || content.contains("Planung");
-            case "CONFIRMED" -> content.contains("Bestaetigt") || content.contains("Bestätigt");
-            case "IN_PROGRESS" -> content.contains("Laeuft") || content.contains("Läuft");
+            case "CONFIRMED" -> content.contains("Bestätigt") || content.contains("Bestätigt");
+            case "IN_PROGRESS" -> content.contains("Läuft") || content.contains("Läuft");
             case "COMPLETED" -> content.contains("Abgeschlossen");
             case "CANCELLED" -> content.contains("Abgesagt");
             default -> false;
@@ -204,9 +204,9 @@ public class TripPlanningSteps {
 
     private String mapLifecycleAction(final String buttonText) {
         return switch (buttonText) {
-            case "Bestaetigen" -> "confirm";
+            case "Bestätigen" -> "confirm";
             case "Starten" -> "start";
-            case "Abschliessen" -> "complete";
+            case "Abschließen" -> "complete";
             case "Absagen" -> "cancel";
             default -> buttonText.toLowerCase();
         };

@@ -1,31 +1,31 @@
 # language: de
 Funktionalität: Terminabstimmung
   Als Organisator einer Reise
-  moechte ich eine Terminabstimmung erstellen,
-  damit alle Teilnehmer gemeinsam ueber den Reisezeitraum abstimmen koennen.
+  möchte ich eine Terminabstimmung erstellen,
+  damit alle Teilnehmer gemeinsam über den Reisezeitraum abstimmen können.
 
   Hintergrund:
     Angenommen ich bin als Mitglied einer Reisepartei eingeloggt
-    Und es existiert eine Reise fuer die Terminabstimmung
+    Und es existiert eine Reise für die Terminabstimmung
 
   # S14-A: Terminabstimmung erstellen
   Szenario: Leere Terminabstimmungsseite anzeigen
-    Wenn ich die Terminabstimmungsseite der Reise oeffne
+    Wenn ich die Terminabstimmungsseite der Reise öffne
     Dann sehe ich den Hinweis dass noch keine Terminabstimmung vorhanden ist
 
   Szenario: Terminabstimmung erstellen
-    Wenn ich die Terminabstimmungsseite der Reise oeffne
-    Und ich eine Terminabstimmung mit zwei Zeitraeumen erstelle
+    Wenn ich die Terminabstimmungsseite der Reise öffne
+    Und ich eine Terminabstimmung mit zwei Zeiträumen erstelle
     Dann sehe ich die Terminabstimmung mit Status "Offen"
     Und die Abstimmung hat 2 Zeitraumoptionen
 
   # S14-B: Abstimmen
-  Szenario: Fuer einen Zeitraum abstimmen
-    Angenommen eine Terminabstimmung wurde fuer die Reise erstellt
-    Wenn ich fuer den ersten Zeitraum abstimme
+  Szenario: Für einen Zeitraum abstimmen
+    Angenommen eine Terminabstimmung wurde für die Reise erstellt
+    Wenn ich für den ersten Zeitraum abstimme
     Dann hat der erste Zeitraum mindestens 1 Stimme
 
-  # S14-A: I18n-Aufloesung
-  Szenario: I18n-Aufloesung auf der Terminabstimmungsseite
-    Angenommen eine Terminabstimmung wurde fuer die Reise erstellt
-    Dann enthaelt die Seite keine unaufgeloesten Message-Keys "??"
+  # S14-A: I18n-Auflösung
+  Szenario: I18n-Auflösung auf der Terminabstimmungsseite
+    Angenommen eine Terminabstimmung wurde für die Reise erstellt
+    Dann enthält die Seite keine unaufgelösten Message-Keys "??"

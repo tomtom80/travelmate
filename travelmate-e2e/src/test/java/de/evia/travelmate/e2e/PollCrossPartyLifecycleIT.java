@@ -170,16 +170,16 @@ class PollCrossPartyLifecycleIT extends E2ETestBase {
         navigateAndWait("/trips/" + tripId + "/datepoll");
         page.locator("select[name=confirmedOptionId]").selectOption(
             page.locator("select[name=confirmedOptionId] option:not([value=''])").first().getAttribute("value"));
-        page.locator("button[type=submit]:has-text('Bestaetigen')").click();
+        page.locator("button[type=submit]:has-text('Bestätigen')").click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
         assertThat(page.locator("mark").allTextContents()).anySatisfy(text ->
-            assertThat(text).containsIgnoringCase("bestaetigt"));
+            assertThat(text).containsIgnoringCase("bestätigt"));
 
         navigateAndWait("/trips/" + tripId + "/accommodationpoll");
         // Select candidate (OPEN → AWAITING_BOOKING)
         page.locator("select[name=selectedCandidateId]").selectOption(
             page.locator("select[name=selectedCandidateId] option:not([value=''])").first().getAttribute("value"));
-        page.locator("button[type=submit]:has-text('Auswaehlen')").click();
+        page.locator("button[type=submit]:has-text('Auswählen')").click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
         // Book candidate (AWAITING_BOOKING → BOOKED)
         page.locator("button[type=submit]:has-text('Buchung erfolgreich')").click();
@@ -187,11 +187,11 @@ class PollCrossPartyLifecycleIT extends E2ETestBase {
         assertThat(page.content()).containsIgnoringCase("Gebucht");
 
         navigateAndWait(party2Page, "/trips/" + tripId + "/planning");
-        assertThat(party2Page.content()).contains("Bestaetigt");
+        assertThat(party2Page.content()).contains("Bestätigt");
         assertThat(party2Page.content()).contains("Hotel Alpenblick");
 
         navigateAndWait(party2Page, "/trips/" + tripId + "/datepoll");
-        assertThat(party2Page.content()).contains("Bestaetigt");
+        assertThat(party2Page.content()).contains("Bestätigt");
         assertThat(party2Page.locator(".poll-chart__row").count()).isGreaterThan(0);
         navigateAndWait(party2Page, "/trips/" + tripId + "/accommodationpoll");
         assertThat(party2Page.content()).contains("Hotel Alpenblick");

@@ -139,13 +139,13 @@ class ShoppingListLifecycleIT extends E2ETestBase {
     @Test
     @Order(30)
     void assignItemToSelf() {
-        final var assignButton = page.locator("button:has-text('Ich uebernehme')").first();
+        final var assignButton = page.locator("button:has-text('Ich übernehme')").first();
         assertThat(assignButton.isVisible()).as("Assign button should be visible").isTrue();
 
-        clickAndWaitForHtmx("button:has-text('Ich uebernehme')");
+        clickAndWaitForHtmx("button:has-text('Ich übernehme')");
 
         final String content = page.content();
-        assertThat(content).contains("Uebernommen");
+        assertThat(content).contains("Übernommen");
     }
 
     @Test
@@ -163,14 +163,14 @@ class ShoppingListLifecycleIT extends E2ETestBase {
     @Test
     @Order(50)
     void undoPurchase() {
-        final var undoButton = page.locator("button:has-text('Rueckgaengig')").first();
+        final var undoButton = page.locator("button:has-text('Rückgängig')").first();
         assertThat(undoButton.isVisible()).as("Undo button should be visible").isTrue();
 
-        clickAndWaitForHtmx("button:has-text('Rueckgaengig')");
+        clickAndWaitForHtmx("button:has-text('Rückgängig')");
 
         final String content = page.content();
         // Should be back to ASSIGNED state, not PURCHASED
-        assertThat(content).contains("Uebernommen");
+        assertThat(content).contains("Übernommen");
     }
 
     @Test

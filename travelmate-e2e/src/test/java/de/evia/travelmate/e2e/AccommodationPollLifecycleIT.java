@@ -131,7 +131,7 @@ class AccommodationPollLifecycleIT extends E2ETestBase {
         page.locator("select[name=selectedCandidateId]").selectOption(
             page.locator("select[name=selectedCandidateId] option:not([value=''])").first().getAttribute("value")
         );
-        page.locator("button[type=submit]:has-text('Auswaehlen'), button[type=submit]:has-text('Select')").click();
+        page.locator("button[type=submit]:has-text('Auswählen'), button[type=submit]:has-text('Select')").click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
 
         final String content = page.content();
@@ -171,7 +171,7 @@ class AccommodationPollLifecycleIT extends E2ETestBase {
         page.locator("select[name=selectedCandidateId]").selectOption(
             page.locator("select[name=selectedCandidateId] option:not([value=''])").first().getAttribute("value")
         );
-        page.locator("button[type=submit]:has-text('Auswaehlen'), button[type=submit]:has-text('Select')").click();
+        page.locator("button[type=submit]:has-text('Auswählen'), button[type=submit]:has-text('Select')").click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
 
         assertThat(page.content()).satisfiesAnyOf(

@@ -30,7 +30,7 @@ public class MealPlanSteps {
         }
     }
 
-    @Wenn("ich die Reisedetailseite oeffne")
+    @Wenn("ich die Reisedetailseite öffne")
     public void ichDieReisedetailseiteOeffne() {
         navigateAndWait("/trips/");
         page.locator("a",
@@ -57,20 +57,20 @@ public class MealPlanSteps {
         }
     }
 
-    @Dann("werde ich zur Essensplan-Uebersicht weitergeleitet")
+    @Dann("werde ich zur Essensplan-Übersicht weitergeleitet")
     public void werdeIchZurEssensplanUebersichtWeitergeleitet() {
         assertThat(page.url()).contains("/mealplan");
     }
 
-    @Und("ich sehe ein Tagesraster mit den Spalten Fruehstueck, Mittagessen und Abendessen")
+    @Und("ich sehe ein Tagesraster mit den Spalten Frühstück, Mittagessen und Abendessen")
     public void ichSeheEinTagesraster() {
         final String content = page.content();
-        assertThat(content).contains("Fruehstueck");
+        assertThat(content).contains("Frühstück");
         assertThat(content).contains("Mittagessen");
         assertThat(content).contains("Abendessen");
     }
 
-    @Und("fuer jeden Reisetag existiert eine Zeile")
+    @Und("für jeden Reisetag existiert eine Zeile")
     public void fuerJedenReisetagExistiertEineZeile() {
         final String content = page.content();
         assertThat(content).contains("2026-10-01");
@@ -78,7 +78,7 @@ public class MealPlanSteps {
         assertThat(content).contains("2026-10-03");
     }
 
-    @Angenommen("ein Essensplan wurde fuer die Reise erstellt")
+    @Angenommen("ein Essensplan wurde für die Reise erstellt")
     public void einEssensplanWurdeFuerDieReiseErstellt() {
         if (!mealPlanGenerated) {
             ichAufDerReisedetailseiteKlicke("Essensplan erstellen");
@@ -91,7 +91,7 @@ public class MealPlanSteps {
         assertThat(page.locator("form[action$='/mealplan/generate']").count()).isZero();
     }
 
-    @Angenommen("ich befinde mich auf der Essensplan-Uebersicht")
+    @Angenommen("ich befinde mich auf der Essensplan-Übersicht")
     public void ichBefindeMichAufDerEssensplanUebersicht() {
         if (!mealPlanGenerated) {
             ichAufDerReisedetailseiteKlicke("Essensplan erstellen");
@@ -100,7 +100,7 @@ public class MealPlanSteps {
         navigateAndWait("/trips/" + tripId + "/mealplan");
     }
 
-    @Wenn("ich den Status eines Mahlzeit-Slots auf {string} aendere")
+    @Wenn("ich den Status eines Mahlzeit-Slots auf {string} ändere")
     public void ichDenStatusEinesMahlzeitSlotsAendere(final String status) {
         final String optionValue = mapStatusToOption(status);
 
@@ -133,12 +133,12 @@ public class MealPlanSteps {
         ichBefindeMichAufDerEssensplanUebersicht();
     }
 
-    @Wenn("ich den Status auf {string} zuruecksetze")
+    @Wenn("ich den Status auf {string} zurücksetze")
     public void ichDenStatusAufZuruecksetze(final String status) {
         ichDenStatusEinesMahlzeitSlotsAendere(status);
     }
 
-    @Und("ich sehe eine Rezeptauswahl fuer diesen Slot")
+    @Und("ich sehe eine Rezeptauswahl für diesen Slot")
     public void ichSeheEineRezeptauswahlFuerDiesenSlot() {
         assertThat(recipePickers().count()).isPositive();
     }
@@ -162,7 +162,7 @@ public class MealPlanSteps {
         navigateAndWait("/trips/" + tripId + "/mealplan");
     }
 
-    @Wenn("ich fuer einen geplanten Slot ein Rezept auswaehle")
+    @Wenn("ich für einen geplanten Slot ein Rezept auswähle")
     public void ichFuerEinenGeplantenSlotEinRezeptAuswaehle() {
         final var recipePicker = recipePickers().first();
         final var options = recipePicker.locator("option");
@@ -200,10 +200,10 @@ public class MealPlanSteps {
         assertThat(page.content()).contains(RECIPE_NAME);
     }
 
-    @Dann("sehe ich eine Tabelle mit den Spalten Datum, Fruehstueck, Mittagessen, Abendessen")
+    @Dann("sehe ich eine Tabelle mit den Spalten Datum, Frühstück, Mittagessen, Abendessen")
     public void seheIchEineTabelleMitDenSpalten() {
         final String content = page.content();
-        assertThat(content).contains("Fruehstueck");
+        assertThat(content).contains("Frühstück");
         assertThat(content).contains("Mittagessen");
         assertThat(content).contains("Abendessen");
     }
@@ -234,7 +234,7 @@ public class MealPlanSteps {
     private String mapStatusToOption(final String displayStatus) {
         return switch (displayStatus) {
             case "Auslassen" -> "SKIP";
-            case "Auswaerts essen" -> "EATING_OUT";
+            case "Auswärts essen" -> "EATING_OUT";
             case "Geplant" -> "PLANNED";
             default -> displayStatus;
         };

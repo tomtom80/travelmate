@@ -154,7 +154,7 @@ class TripLifecycleIT extends E2ETestBase {
         page.locator("form[action$='/confirm'] button[type=submit]").click();
         page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
 
-        assertThat(page.content()).contains("Bestaetigt");
+        assertThat(page.content()).contains("Bestätigt");
     }
 
     @Test
@@ -163,7 +163,7 @@ class TripLifecycleIT extends E2ETestBase {
         page.locator("form[action$='/start'] button[type=submit]").click();
         page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
 
-        assertThat(page.content()).contains("Laeuft");
+        assertThat(page.content()).contains("Läuft");
     }
 
     @Test

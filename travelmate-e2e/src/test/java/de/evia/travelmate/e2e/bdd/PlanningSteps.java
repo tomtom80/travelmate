@@ -17,7 +17,7 @@ public class PlanningSteps {
     private static String tripDetailPath;
     private static boolean tripCreated = false;
 
-    @Angenommen("es existiert eine Reise fuer die Planungsuebersicht")
+    @Angenommen("es existiert eine Reise für die Planungsübersicht")
     public void esExistiertEineReiseFuerDiePlanungsuebersicht() {
         if (!tripCreated) {
             navigateAndWait("/trips/");
@@ -37,13 +37,13 @@ public class PlanningSteps {
         }
     }
 
-    @Wenn("ich die Planungsseite der Reise oeffne")
+    @Wenn("ich die Planungsseite der Reise öffne")
     public void ichDiePlanungsseiteOeffne() {
         final String tripId = extractTripId();
         navigateAndWait("/trips/" + tripId + "/planning");
     }
 
-    @Dann("sehe ich den Status {string} fuer beide Abstimmungen")
+    @Dann("sehe ich den Status {string} für beide Abstimmungen")
     public void seheIchDenStatusFuerBeideAbstimmungen(final String status) {
         final String content = page.content();
         // The planning page shows "Nicht gestartet" for each poll when none exist
@@ -51,7 +51,7 @@ public class PlanningSteps {
         assertThat(count).isGreaterThanOrEqualTo(2);
     }
 
-    @Dann("sehe ich die neue Planungsueberschrift mit Ruecksprung zur Reise")
+    @Dann("sehe ich die neue Planungsüberschrift mit Rücksprung zur Reise")
     public void seheIchDieNeuePlanungsueberschriftMitRuecksprungZurReise() {
         final String heading = page.locator("h1").textContent();
         assertThat(heading).containsIgnoringCase("plan");
@@ -61,7 +61,7 @@ public class PlanningSteps {
         assertThat(backLink.textContent()).contains(TRIP_NAME);
     }
 
-    @Dann("der Untertitel erwaehnt Reisezeitraum und Unterkunft")
+    @Dann("der Untertitel erwähnt Reisezeitraum und Unterkunft")
     public void derUntertitelErwaehntReisezeitraumUndUnterkunft() {
         final String content = page.content();
         assertThat(content).contains("Reisezeitraum");

@@ -21,7 +21,7 @@ public class DatePollSteps {
     private static boolean tripCreated = false;
     private static boolean pollCreated = false;
 
-    @Angenommen("es existiert eine Reise fuer die Terminabstimmung")
+    @Angenommen("es existiert eine Reise für die Terminabstimmung")
     public void esExistiertEineReiseFuerDieTerminabstimmung() {
         if (!tripCreated) {
             navigateAndWait("/trips/");
@@ -41,7 +41,7 @@ public class DatePollSteps {
         }
     }
 
-    @Wenn("ich die Terminabstimmungsseite der Reise oeffne")
+    @Wenn("ich die Terminabstimmungsseite der Reise öffne")
     public void ichDieTerminabstimmungsseiteOeffne() {
         final String tripId = extractTripId();
         navigateAndWait("/trips/" + tripId + "/datepoll");
@@ -57,7 +57,7 @@ public class DatePollSteps {
         );
     }
 
-    @Und("ich eine Terminabstimmung mit zwei Zeitraeumen erstelle")
+    @Und("ich eine Terminabstimmung mit zwei Zeiträumen erstelle")
     public void ichEineTerminabstimmungMitZweiZeitraeunenErstelle() {
         // Navigate to create form
         page.locator("a[href*='datepoll/create']").click();
@@ -90,7 +90,7 @@ public class DatePollSteps {
         assertThat(checkboxes).isEqualTo(count);
     }
 
-    @Angenommen("eine Terminabstimmung wurde fuer die Reise erstellt")
+    @Angenommen("eine Terminabstimmung wurde für die Reise erstellt")
     public void eineTerminabstimmungWurdeFuerDieReiseErstellt() {
         if (!pollCreated) {
             ichDieTerminabstimmungsseiteOeffne();
@@ -100,7 +100,7 @@ public class DatePollSteps {
         }
     }
 
-    @Wenn("ich fuer den ersten Zeitraum abstimme")
+    @Wenn("ich für den ersten Zeitraum abstimme")
     public void ichFuerDenErstenZeitraumAbstimme() {
         page.locator("input[name=selectedOptionIds]").first().check();
         page.locator("button[type=submit]:has-text('Abstimmen'), button[type=submit]:has-text('Submit Vote')").click();

@@ -108,7 +108,7 @@ public class ExpenseLifecycleSteps {
     @When("I add a receipt with description {string}, amount {string}, date {string}")
     public void iAddAReceipt(final String description, final String amount, final String date) {
         page.locator("button", new com.microsoft.playwright.Page.LocatorOptions()
-            .setHasText("Beleg hinzufuegen")).first().click();
+            .setHasText("Beleg hinzufügen")).first().click();
         page.waitForSelector("dialog[open]");
 
         page.locator("dialog input[name=description]").fill(description);
@@ -177,8 +177,8 @@ public class ExpenseLifecycleSteps {
         final String tripId = extractTripIdFromCurrentTrip();
         ensureAccommodationManagementReady(tripId);
         navigateAndWait("/trips/" + tripId + "/accommodation");
-        if (page.locator("button:has-text('Unterkunft hinzufuegen')").count() > 0) {
-            page.locator("button:has-text('Unterkunft hinzufuegen')").click();
+        if (page.locator("button:has-text('Unterkunft hinzufügen')").count() > 0) {
+            page.locator("button:has-text('Unterkunft hinzufügen')").click();
             page.waitForSelector("dialog[open]");
             page.locator("dialog input[name=name]").fill("BDD Expense Unterkunft");
             page.locator("dialog input[name=address]").fill("Testweg 5");
@@ -210,7 +210,7 @@ public class ExpenseLifecycleSteps {
         ensureDateDecisionReady(tripId);
 
         navigateAndWait("/trips/" + tripId + "/accommodation");
-        if (page.locator("button:has-text('Unterkunft hinzufuegen')").count() > 0
+        if (page.locator("button:has-text('Unterkunft hinzufügen')").count() > 0
             || page.content().contains("BDD Expense Unterkunft")) {
             return;
         }

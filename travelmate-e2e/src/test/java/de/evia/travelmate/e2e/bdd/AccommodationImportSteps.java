@@ -20,7 +20,7 @@ public class AccommodationImportSteps {
     private static boolean tripCreated = false;
     private static boolean pollCreated = false;
 
-    @Angenommen("es existiert eine Reise fuer den Unterkunfts-Import-Test")
+    @Angenommen("es existiert eine Reise für den Unterkunfts-Import-Test")
     public void esExistiertEineReiseFuerDenImportTest() {
         if (!tripCreated) {
             navigateAndWait("/trips/");
@@ -40,14 +40,14 @@ public class AccommodationImportSteps {
         }
     }
 
-    @Angenommen("eine Unterkunftsabstimmung fuer den Import-Test wurde erstellt")
+    @Angenommen("eine Unterkunftsabstimmung für den Import-Test wurde erstellt")
     public void eineUnterkunftsabstimmungFuerDenImportTestWurdeErstellt() {
         esExistiertEineReiseFuerDenImportTest();
         if (!pollCreated) {
             final String tripId = extractTripId();
             navigateAndWait("/trips/" + tripId + "/accommodationpoll/create");
             page.locator("input[name=candidateName]").nth(0).fill("Import Test Unterkunft");
-            page.locator("input[name=candidateDescription]").nth(0).fill("Basis fuer den Import");
+            page.locator("input[name=candidateDescription]").nth(0).fill("Basis für den Import");
             page.locator(".candidate-entry").nth(0).locator("input[name=roomName]").first().fill("Familienzimmer");
             page.locator(".candidate-entry").nth(0).locator("input[name=roomBedCount]").first().fill("4");
             page.locator(".candidate-entry").nth(0).locator("input[name=roomBedDescription]").first().fill("Seeblick");
@@ -72,7 +72,7 @@ public class AccommodationImportSteps {
         }
     }
 
-    @Wenn("ich die Unterkunftsabstimmungsseite fuer den Import-Test oeffne")
+    @Wenn("ich die Unterkunftsabstimmungsseite für den Import-Test öffne")
     public void ichDieUnterkunftsabstimmungsseiteOeffne() {
         eineUnterkunftsabstimmungFuerDenImportTestWurdeErstellt();
         final String tripId = extractTripId();
@@ -97,7 +97,7 @@ public class AccommodationImportSteps {
         clickAndWaitForHtmx("button:has-text('Importieren')");
     }
 
-    @Dann("sehe ich ein vorausgefuelltes Formular mit den erkannten Daten")
+    @Dann("sehe ich ein vorausgefülltes Formular mit den erkannten Daten")
     public void seheIchEinVorausgefuelltesFormular() {
         final String content = page.content();
         // The form should be pre-filled with at least the name
@@ -110,7 +110,7 @@ public class AccommodationImportSteps {
         assertThat(page.locator("button[type=submit]").count()).isPositive();
     }
 
-    @Wenn("ich eine ungueltige URL eingebe und auf Importieren klicke")
+    @Wenn("ich eine ungültige URL eingebe und auf Importieren klicke")
     public void ichEineUngueligeUrlEingebeUndAufImportierenKlicke() {
         page.locator("input[name=url]").fill("https://invalid.example.com/not-found");
         clickAndWaitForHtmx("button:has-text('Importieren')");

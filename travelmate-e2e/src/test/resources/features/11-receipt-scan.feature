@@ -1,7 +1,7 @@
 # language: de
 Funktionalität: Kassenzettel scannen
   Als Teilnehmer einer Reise
-  moechte ich einen Kassenzettel fotografieren und den Beleg automatisch erkennen lassen,
+  möchte ich einen Kassenzettel fotografieren und den Beleg automatisch erkennen lassen,
   damit ich Belege schnell und einfach einreichen kann.
 
   Hintergrund:
@@ -16,8 +16,8 @@ Funktionalität: Kassenzettel scannen
   Szenario: Kassenzettel fotografieren und Daten erkennen
     Angenommen ich befinde mich auf der Abrechnungsseite
     Wenn ich ein Foto eines Kassenzettels hochlade
-    Dann sehe ich ein vorausgefuelltes Beleg-Formular
-    Und der erkannte Betrag ist vorausgefuellt
+    Dann sehe ich ein vorausgefülltes Beleg-Formular
+    Und der erkannte Betrag ist vorausgefüllt
     Und ich kann den Betrag korrigieren und den Beleg einreichen
 
   @manuell

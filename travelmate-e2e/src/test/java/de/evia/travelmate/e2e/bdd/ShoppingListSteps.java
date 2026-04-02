@@ -95,7 +95,7 @@ public class ShoppingListSteps {
         assertThat(page.content()).contains("Einkaufsliste");
     }
 
-    @Wenn("ich die Einkaufsliste-Seite oeffne")
+    @Wenn("ich die Einkaufsliste-Seite öffne")
     public void ichDieEinkaufslisteSeiteOeffne() {
         final String tripId = extractTripId();
         navigateAndWait("/trips/" + tripId + "/shoppinglist");
@@ -113,8 +113,8 @@ public class ShoppingListSteps {
         assertThat(page.url()).contains("/shoppinglist");
     }
 
-    @Und("die Rezept-Zutaten werden als Eintraege angezeigt")
-    public void dieRezeptZutatenWerdenAlsEintraegeAngezeigt() {
+    @Und("die Rezept-Zutaten werden als Einträge angezeigt")
+    public void dieRezeptZutatenWerdenAlsEinträgeAngezeigt() {
         assertThat(page.content()).contains(INGREDIENT_NAME);
     }
 
@@ -134,7 +134,7 @@ public class ShoppingListSteps {
         assertThat(page.content()).contains(INGREDIENT_NAME);
     }
 
-    @Wenn("ich einen manuellen Eintrag {string} mit Menge {string} und Einheit {string} hinzufuege")
+    @Wenn("ich einen manuellen Eintrag {string} mit Menge {string} und Einheit {string} hinzufüge")
     public void ichEinenManuellenEintragHinzufuege(final String name, final String quantity, final String unit) {
         page.locator("form:has(input[name=unit]) input[name=name]").fill(name);
         page.locator("form:has(input[name=unit]) input[name=quantity]").fill(quantity);
@@ -147,8 +147,8 @@ public class ShoppingListSteps {
         assertThat(page.content()).contains(name);
     }
 
-    @Angenommen("die Einkaufsliste hat Eintraege")
-    public void dieEinkaufslisteHatEintraege() {
+    @Angenommen("die Einkaufsliste hat Einträge")
+    public void dieEinkaufslisteHatEinträge() {
         dieEinkaufslisteWurdeGeneriert();
     }
 
@@ -172,7 +172,7 @@ public class ShoppingListSteps {
 
     @Angenommen("ein Eintrag ist mir zugewiesen")
     public void einEintragIstMirZugewiesen() {
-        dieEinkaufslisteHatEintraege();
+        dieEinkaufslisteHatEinträge();
     }
 
     @Wenn("ich auf {string} bei diesem Eintrag klicke")
@@ -191,8 +191,8 @@ public class ShoppingListSteps {
         assertThat(page.content()).contains(INGREDIENT_NAME);
     }
 
-    @Und("manuelle Eintraege bleiben erhalten")
-    public void manuelleEintraegeBleibenerhalten() {
+    @Und("manuelle Einträge bleiben erhalten")
+    public void manuelleEinträgeBleibenerhalten() {
         assertThat(page.content()).contains("Bier");
     }
 

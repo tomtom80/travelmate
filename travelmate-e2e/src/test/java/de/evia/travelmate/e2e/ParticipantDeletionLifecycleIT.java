@@ -103,8 +103,8 @@ class ParticipantDeletionLifecycleIT extends E2ETestBase {
         clickAndWaitForHtmx("form:has(input[name=unit]) button[type=submit]");
 
         navigateAndWait(memberPage, "/trips/" + tripId + "/shoppinglist");
-        clickAndWaitForHtmx(memberPage, "tr:has-text('" + MANUAL_ITEM_NAME + "') button:has-text('Ich uebernehme')");
-        assertThat(memberPage.content()).contains("Uebernommen");
+        clickAndWaitForHtmx(memberPage, "tr:has-text('" + MANUAL_ITEM_NAME + "') button:has-text('Ich übernehme')");
+        assertThat(memberPage.content()).contains("Übernommen");
 
         navigateAndWait("/trips/" + tripId + "/shoppinglist");
         assertThat(page.locator("tr", new Page.LocatorOptions().setHasText(MANUAL_ITEM_NAME)).innerText())
@@ -117,7 +117,7 @@ class ParticipantDeletionLifecycleIT extends E2ETestBase {
         navigateAndWait("/iam/dashboard");
 
         final String blockedMessage =
-            "Mitglieder oder Mitreisende koennen nicht geloescht werden, solange sie in einer Reise verwendet werden.";
+            "Mitglieder oder Mitreisende können nicht gelöscht werden, solange sie in einer Reise verwendet werden.";
 
         assertCompanionDeletionBlocked(COMPANION_FIRST_NAME, blockedMessage);
         assertThat(page.locator("#companions").innerHTML()).contains(COMPANION_FIRST_NAME);
@@ -136,7 +136,7 @@ class ParticipantDeletionLifecycleIT extends E2ETestBase {
         navigateAndWait("/trips/" + tripId + "/shoppinglist");
         final String itemRow = page.locator("tr", new Page.LocatorOptions().setHasText(MANUAL_ITEM_NAME)).innerText();
         assertThat(itemRow).doesNotContain(MEMBER_FIRST_NAME);
-        assertThat(itemRow).contains("Ich uebernehme");
+        assertThat(itemRow).contains("Ich übernehme");
 
         deleteMemberWhenAllowed(MEMBER_FIRST_NAME);
         assertThat(page.locator("#members").innerHTML()).doesNotContain(MEMBER_FIRST_NAME);
