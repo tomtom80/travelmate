@@ -40,7 +40,7 @@
 
             <button type="button" class="outline" id="add-option-btn" th:text="#{datepoll.addOption}">+ Zeitraum hinzufuegen</button>
 
-            <div style="display:flex; gap:0.5rem; margin-top:1rem;">
+            <div class="poll-footer-actions">
                 <button type="submit" th:text="#{datepoll.create}">Erstellen</button>
                 <a th:href="@{/{id}/datepoll(id=${trip.tripId()})}" role="button" class="outline secondary"
                    th:text="#{common.cancel}">Abbrechen</a>

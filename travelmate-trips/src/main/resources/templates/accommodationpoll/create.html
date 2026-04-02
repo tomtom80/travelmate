@@ -36,9 +36,6 @@
                     <h3 th:text="#{accommodationpoll.addCandidate}">Unterkunft hinzufuegen</h3>
                     <p th:text="#{accommodationpoll.candidateHint}">Lege Name, Link, Beschreibung und Zimmer an.</p>
                 </div>
-                <button type="button" class="btn-icon btn-icon--danger remove-candidate-btn" th:aria-label="#{common.remove}">
-                    <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-                </button>
             </div>
 
             <div class="candidate-entry__fields">
@@ -84,6 +81,9 @@
                 </div>
                 <div class="room-rows"></div>
             </div>
+
+            <button type="button" class="outline secondary remove-candidate-btn"
+                    th:text="#{common.remove}">Entfernen</button>
         </section>
     </template>
 
@@ -115,9 +115,9 @@
                     </label>
                 </div>
             </div>
-            <button type="button" class="btn-icon btn-icon--danger remove-room-btn" th:aria-label="#{common.remove}">
-                <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-            </button>
+            <button type="button" class="outline secondary remove-room-btn"
+                    style="padding:0.25rem 0.75rem; font-size:0.85rem;"
+                    th:text="#{common.remove}">Entfernen</button>
         </div>
     </template>
 

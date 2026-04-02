@@ -15,11 +15,6 @@
                    th:href="${candidate.url()}"
                    target="_blank" rel="noopener noreferrer"
                    th:text="#{accommodationpoll.viewListing}">Angebot oeffnen</a>
-                <a th:if="${candidate.address() != null and !candidate.address().isBlank()}"
-                   class="candidate-card__map-link"
-                   th:href="${'https://maps.google.com/?q=' + #strings.replace(candidate.address(), ' ', '+')}"
-                   target="_blank" rel="noopener noreferrer"
-                   th:text="#{accommodationpoll.showOnMap}">Auf Karte anzeigen</a>
             </div>
         </div>
         <mark th:if="${accommodationPoll.selectedCandidateId() != null and accommodationPoll.selectedCandidateId().equals(candidate.candidateId())}"
@@ -29,6 +24,13 @@
     <p class="candidate-card__address"
        th:if="${candidate.address() != null and !candidate.address().isBlank()}"
        th:text="${candidate.address()}">Adresse</p>
+
+    <div class="accommodation-map" th:if="${candidate.address() != null and !candidate.address().isBlank()}">
+        <iframe class="accommodation-map__frame"
+                th:src="${'https://www.openstreetmap.org/export/embed.html?bbox=&layer=mapnik&marker=&query=' + #strings.replace(candidate.address(), ' ', '+')}"
+                loading="lazy"
+                referrerpolicy="no-referrer"></iframe>
+    </div>
 
     <p class="candidate-card__desc"
        th:if="${candidate.description() != null and !candidate.description().isBlank()}"
@@ -78,15 +80,14 @@
               th:text="${accommodationPoll.selectedCandidateId() != null and accommodationPoll.selectedCandidateId().equals(candidate.candidateId()) ? #messages.msg('accommodationpoll.currentWinner') : #messages.msg('accommodationpoll.readonlyResult')}">
             Ergebnis
         </span>
-
-        <button th:if="${isOrganizer and allowRemove}"
-                type="submit"
-                class="btn-icon btn-icon--danger"
-                th:attr="form=${'remove-candidate-' + candidate.candidateId()}"
-                th:title="#{common.remove}" th:aria-label="#{common.remove}">
-            <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
-        </button>
     </div>
+
+    <button th:if="${isOrganizer and allowRemove}"
+            type="submit"
+            class="outline secondary"
+            style="padding:0.25rem 0.75rem; font-size:0.85rem;"
+            th:attr="form=${'remove-candidate-' + candidate.candidateId()}"
+            th:text="#{common.remove}">Entfernen</button>
 </article>
 </body>
 </html>
