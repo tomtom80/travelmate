@@ -996,16 +996,19 @@ body > footer {
 }
 
 .room-row {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.75rem;
+    display: grid;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    border: 1px solid var(--tm-border-strong);
+    border-radius: 0.75rem;
+    margin-bottom: 0.5rem;
 }
 
 .room-row__grid {
     flex: 1;
     display: grid;
-    grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.5fr);
-    gap: 0.75rem;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
 }
 
 .room-row__field {
@@ -1217,20 +1220,8 @@ body > footer {
         min-width: 100%;
     }
 
-    .room-row {
-        flex-direction: column;
-    }
-
     .room-row__grid {
         grid-template-columns: 1fr;
-    }
-
-    .room-row > .btn-icon {
-        width: 100%;
-        max-width: 100%;
-        height: auto;
-        padding: 0.5rem;
-        font-size: 0.85rem;
     }
 }
 

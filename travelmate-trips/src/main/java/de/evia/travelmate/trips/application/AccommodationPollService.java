@@ -11,6 +11,7 @@ import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.trips.application.command.AddAccommodationCandidateCommand;
 import de.evia.travelmate.trips.application.command.CastAccommodationVoteCommand;
 import de.evia.travelmate.trips.application.command.CreateAccommodationPollCommand;
+import de.evia.travelmate.trips.application.command.EditAccommodationCandidateCommand;
 import de.evia.travelmate.trips.application.command.RecordAccommodationBookingFailureCommand;
 import de.evia.travelmate.trips.application.command.RecordAccommodationBookingSuccessCommand;
 import de.evia.travelmate.trips.application.command.RemoveAccommodationCandidateCommand;
@@ -65,6 +66,24 @@ public class AccommodationPollService {
         final AccommodationPoll poll = findPoll(
             new TenantId(command.tenantId()), new AccommodationPollId(command.accommodationPollId()));
         poll.addCandidate(command.name(), command.url(), command.address(), command.description(), mapRooms(command.rooms()), command.amenities());
+        accommodationPollRepository.save(poll);
+        return new AccommodationPollRepresentation(poll);
+    }
+
+    public AccommodationPollRepresentation editCandidate(final EditAccommodationCandidateCommand command) {
+        final AccommodationPoll poll = findPoll(
+            new TenantId(command.tenantId()), new AccommodationPollId(command.accommodationPollId()));
+        final List<CandidateRoom> rooms = (command.rooms() == null || command.rooms().isEmpty())
+            ? poll.candidates().stream()
+                .filter(c -> c.candidateId().value().equals(command.candidateId()))
+                .findFirst()
+                .map(de.evia.travelmate.trips.domain.accommodationpoll.AccommodationCandidate::rooms)
+                .orElse(List.of())
+            : mapRooms(command.rooms());
+        poll.editCandidate(
+            new AccommodationCandidateId(command.candidateId()),
+            command.name(), command.url(), command.address(), command.description(),
+            rooms, command.amenities());
         accommodationPollRepository.save(poll);
         return new AccommodationPollRepresentation(poll);
     }

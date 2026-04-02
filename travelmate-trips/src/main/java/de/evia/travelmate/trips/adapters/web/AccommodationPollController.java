@@ -29,6 +29,7 @@ import de.evia.travelmate.trips.application.command.CastAccommodationVoteCommand
 import de.evia.travelmate.trips.application.command.CreateAccommodationPollCommand;
 import de.evia.travelmate.trips.application.command.CreateAccommodationPollCommand.CandidateProposalCommand;
 import de.evia.travelmate.trips.application.command.AddAccommodationCandidateCommand;
+import de.evia.travelmate.trips.application.command.EditAccommodationCandidateCommand;
 import de.evia.travelmate.trips.application.command.RecordAccommodationBookingFailureCommand;
 import de.evia.travelmate.trips.application.command.RecordAccommodationBookingSuccessCommand;
 import de.evia.travelmate.trips.application.command.RemoveAccommodationCandidateCommand;
@@ -150,6 +151,28 @@ public class AccommodationPollController {
 
         accommodationPollService.removeCandidate(new RemoveAccommodationCandidateCommand(
             trip.tenantId(), pollId, candidateId));
+
+        return "redirect:/" + tripId + "/accommodationpoll";
+    }
+
+    @PostMapping("/{tripId}/accommodationpoll/{pollId}/candidates/{candidateId}/edit")
+    public String editCandidate(@AuthenticationPrincipal final Jwt jwt,
+                                @PathVariable final UUID tripId,
+                                @PathVariable final UUID pollId,
+                                @PathVariable final UUID candidateId,
+                                @RequestParam final String name,
+                                @RequestParam(required = false) final String url,
+                                @RequestParam(required = false) final String address,
+                                @RequestParam(required = false) final String description,
+                                @RequestParam(value = "roomsJson", required = false) final String roomsJson,
+                                @RequestParam(value = "amenities", required = false) final List<String> amenityNames) {
+        final ResolvedIdentity identity = requireIdentity(jwt);
+        final TripRepresentation trip = validateTripAccess(tripId, identity);
+
+        accommodationPollService.editCandidate(new EditAccommodationCandidateCommand(
+            trip.tenantId(), pollId, candidateId,
+            name, emptyToNull(url), emptyToNull(address), emptyToNull(description),
+            parseRoomCommands(roomsJson), parseAmenities(amenityNames)));
 
         return "redirect:/" + tripId + "/accommodationpoll";
     }

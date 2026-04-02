@@ -82,12 +82,18 @@
         </span>
     </div>
 
-    <button th:if="${isOrganizer and allowRemove}"
-            type="submit"
-            class="outline secondary"
-            style="padding:0.25rem 0.75rem; font-size:0.85rem;"
-            th:attr="form=${'remove-candidate-' + candidate.candidateId()}"
-            th:text="#{common.remove}">Entfernen</button>
+    <div th:if="${isOrganizer and allowRemove}" class="poll-footer-actions" style="margin-top:0.5rem;">
+        <button type="button" class="outline"
+                style="padding:0.25rem 0.75rem; font-size:0.85rem;"
+                th:data-dialog-id="'edit-candidate-' + ${candidate.candidateId()}"
+                onclick="document.getElementById(this.dataset.dialogId).showModal()"
+                th:text="#{common.edit}">Bearbeiten</button>
+        <button type="submit"
+                class="outline secondary"
+                style="padding:0.25rem 0.75rem; font-size:0.85rem;"
+                th:attr="form=${'remove-candidate-' + candidate.candidateId()}"
+                th:text="#{common.remove}">Entfernen</button>
+    </div>
 </article>
 </body>
 </html>

@@ -88,6 +88,20 @@ public class AccommodationPoll extends AggregateRoot {
         return candidate.candidateId();
     }
 
+    public void editCandidate(final AccommodationCandidateId candidateId,
+                              final String name, final String url, final String address,
+                              final String description, final List<CandidateRoom> rooms,
+                              final Set<Amenity> amenities) {
+        assertOpen();
+        argumentIsNotNull(candidateId, "candidateId");
+        final int index = findCandidateIndex(candidateId);
+        final AccommodationCandidate updated = new AccommodationCandidate(
+            candidateId, name, url, address, description,
+            rooms != null ? rooms : List.of(), amenities
+        );
+        candidates.set(index, updated);
+    }
+
     public void removeCandidate(final AccommodationCandidateId candidateId) {
         assertOpen();
         argumentIsNotNull(candidateId, "candidateId");
@@ -169,6 +183,16 @@ public class AccommodationPoll extends AggregateRoot {
         return votes.stream()
             .filter(v -> v.selectedCandidateId().equals(candidateId))
             .count();
+    }
+
+    private int findCandidateIndex(final AccommodationCandidateId candidateId) {
+        for (int i = 0; i < candidates.size(); i++) {
+            if (candidates.get(i).candidateId().equals(candidateId)) {
+                return i;
+            }
+        }
+        throw new IllegalArgumentException(
+            "Accommodation candidate " + candidateId.value() + " not found in this poll.");
     }
 
     private AccommodationCandidate findCandidate(final AccommodationCandidateId candidateId) {

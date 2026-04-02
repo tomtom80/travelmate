@@ -179,6 +179,50 @@
                       th:id="${'remove-candidate-' + candidate.candidateId()}"
                       th:action="@{/{tid}/accommodationpoll/{pid}/candidates/{cid}/remove(tid=${trip.tripId()},pid=${accommodationPoll.accommodationPollId()},cid=${candidate.candidateId()})}">
                 </form>
+                <dialog th:each="candidate : ${accommodationPoll.candidates()}"
+                        th:id="${'edit-candidate-' + candidate.candidateId()}">
+                    <article>
+                        <h3 th:text="#{common.edit} + ': ' + ${candidate.name()}">Bearbeiten</h3>
+                        <form method="post"
+                              th:action="@{/{tid}/accommodationpoll/{pid}/candidates/{cid}/edit(tid=${trip.tripId()},pid=${accommodationPoll.accommodationPollId()},cid=${candidate.candidateId()})}">
+                            <label>
+                                <span th:text="#{accommodationpoll.candidateName}">Name</span>
+                                <input type="text" name="name" required th:value="${candidate.name()}">
+                            </label>
+                            <div class="grid">
+                                <label>
+                                    <span th:text="#{accommodationpoll.candidateUrl}">URL</span>
+                                    <input type="url" name="url" th:value="${candidate.url()}">
+                                </label>
+                                <label>
+                                    <span th:text="#{accommodationpoll.candidateAddress}">Adresse</span>
+                                    <input type="text" name="address" th:value="${candidate.address()}">
+                                </label>
+                            </div>
+                            <label>
+                                <span th:text="#{accommodationpoll.candidateDescription}">Beschreibung</span>
+                                <input type="text" name="description" th:value="${candidate.description()}">
+                            </label>
+                            <div class="amenity-grid" th:if="${allAmenities != null}">
+                                <strong th:text="#{accommodationpoll.amenities}">Ausstattung</strong>
+                                <div class="amenity-checkbox-grid">
+                                    <label class="amenity-checkbox" th:each="amenity : ${allAmenities}">
+                                        <input type="checkbox" name="amenities" th:value="${amenity.name()}"
+                                               th:checked="${candidate.amenities() != null and candidate.amenities().contains(amenity)}">
+                                        <span th:text="#{${'amenity.' + amenity.name()}}">Amenity</span>
+                                    </label>
+                                </div>
+                            </div>
+                            <input type="hidden" name="roomsJson" value="">
+                            <div class="grid">
+                                <button type="button" class="outline"
+                                        onclick="this.closest('dialog').close()"
+                                        th:text="#{common.cancel}">Abbrechen</button>
+                                <button type="submit" th:text="#{common.save}">Speichern</button>
+                            </div>
+                        </form>
+                    </article>
+                </dialog>
             </th:block>
         </article>
 
