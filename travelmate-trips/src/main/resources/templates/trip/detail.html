@@ -47,23 +47,22 @@
               th:if="${!availableOwnPartyParticipants.isEmpty()}"
               th:action="@{/{tid}/participants(tid=${trip.tripId()})}"
               style="margin-bottom:1rem;">
-            <div class="grid" style="gap:0.5rem; align-items:end;">
-                <label style="margin-bottom:0;">
-                    <span th:text="#{trip.participants.addOwn}">Teilnehmer aus eigener Reisepartei hinzufuegen</span>
-                    <select name="participantId" required style="margin-bottom:0;">
-                        <option th:each="p : ${availableOwnPartyParticipants}"
-                                th:value="${p.participantId()}"
-                                th:text="${p.displayName()}"></option>
-                    </select>
-                </label>
-                <button type="submit" th:text="#{trip.participants.add}">Hinzufuegen</button>
-            </div>
+            <label style="margin-bottom:0.5rem;">
+                <span th:text="#{trip.participants.addOwn}">Teilnehmer aus eigener Reisepartei hinzuf\u00fcgen</span>
+                <select name="participantId" required style="margin-bottom:0;">
+                    <option th:each="p : ${availableOwnPartyParticipants}"
+                            th:value="${p.participantId()}"
+                            th:text="${p.displayName()}"></option>
+                </select>
+            </label>
+            <button type="submit" th:text="#{trip.participants.add}">Hinzuf\u00fcgen</button>
         </form>
         <figure class="table-cards" th:if="${!participants.isEmpty()}">
             <table>
                 <thead>
                     <tr>
                         <th th:text="#{invitation.member}">Mitglied</th>
+                        <th th:text="#{trip.participants.party}">Reisepartei</th>
                         <th th:text="#{trip.arrivalDate}">Anreise</th>
                         <th th:text="#{trip.departureDate}">Abreise</th>
                         <th class="table-actions-header" th:text="#{common.actions}">Aktionen</th>
@@ -74,9 +73,10 @@
                         <td th:data-label="#{invitation.member}">
                             <span th:text="${p.firstName() + ' ' + p.lastName()}">Name</span>
                             <small th:if="${trip.organizerIds().contains(p.participantId())}"
-                                   style="display:block;"
-                                   th:text="#{trip.organizer.role}">Organizer</small>
+                                   style="display:block; color:var(--tm-primary); font-weight:600;"
+                                   th:text="#{trip.organizer.role}">Organisator</small>
                         </td>
+                        <td th:data-label="#{trip.participants.party}" th:text="${p.partyName()}"></td>
                         <td th:data-label="#{trip.arrivalDate}" th:text="${p.arrivalDate()}"></td>
                         <td th:data-label="#{trip.departureDate}" th:text="${p.departureDate()}"></td>
                         <td th:data-label="#{common.actions}">
@@ -349,7 +349,7 @@
         </div>
     </section>
 
-    <a th:href="@{/}" th:text="#{common.back}">Zurueck</a>
+    <a th:href="@{/}" role="button" class="outline" th:text="#{common.back}">Zurück</a>
 </div>
 </body>
 </html>

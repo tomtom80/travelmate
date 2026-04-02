@@ -9,36 +9,42 @@
 
     <article>
         <form method="post" th:action="@{/{id}/datepoll/create(id=${trip.tripId()})}" id="datepoll-form">
-            <div id="date-options">
-                <div class="date-option grid" style="align-items:end;">
-                    <label>
-                        <span th:text="#{trip.startDate}">Von</span>
-                        <input type="date" name="startDate" required>
-                    </label>
-                    <label>
-                        <span th:text="#{trip.endDate}">Bis</span>
-                        <input type="date" name="endDate" required>
-                    </label>
-                    <div></div>
+            <div id="date-options" class="candidate-card-grid">
+                <div class="date-option candidate-card">
+                    <div class="grid" style="gap:0.5rem;">
+                        <label>
+                            <span th:text="#{trip.startDate}">Startdatum</span>
+                            <input type="date" name="startDate" required>
+                        </label>
+                        <label>
+                            <span th:text="#{trip.endDate}">Enddatum</span>
+                            <input type="date" name="endDate" required>
+                        </label>
+                    </div>
                 </div>
-                <div class="date-option grid" style="align-items:end;">
-                    <label>
-                        <span th:text="#{trip.startDate}">Von</span>
-                        <input type="date" name="startDate" required>
-                    </label>
-                    <label>
-                        <span th:text="#{trip.endDate}">Bis</span>
-                        <input type="date" name="endDate" required>
-                    </label>
-                    <div>
-                        <button type="button" class="outline secondary" onclick="this.closest('.date-option').remove()">
-                            <span th:text="#{common.remove}">Entfernen</span>
+                <div class="date-option candidate-card">
+                    <div class="grid" style="gap:0.5rem;">
+                        <label>
+                            <span th:text="#{trip.startDate}">Startdatum</span>
+                            <input type="date" name="startDate" required>
+                        </label>
+                        <label>
+                            <span th:text="#{trip.endDate}">Enddatum</span>
+                            <input type="date" name="endDate" required>
+                        </label>
+                    </div>
+                    <div style="display:flex; justify-content:flex-end;">
+                        <button type="button" class="btn-icon btn-icon--danger" onclick="this.closest('.date-option').remove()"
+                                th:title="#{common.remove}" th:aria-label="#{common.remove}">
+                            <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                         </button>
                     </div>
                 </div>
             </div>
 
-            <button type="button" class="outline" id="add-option-btn" th:text="#{datepoll.addOption}">+ Zeitraum hinzufuegen</button>
+            <div class="poll-footer-actions">
+                <button type="button" class="outline" id="add-option-btn" th:text="#{datepoll.addOption}">Zeitraum hinzufügen</button>
+            </div>
 
             <div class="poll-footer-actions">
                 <button type="submit" th:text="#{datepoll.create}">Erstellen</button>
@@ -49,18 +55,21 @@
     </article>
 
     <template id="date-option-template">
-        <div class="date-option grid" style="align-items:end;">
-            <label>
-                <span th:text="#{trip.startDate}">Von</span>
-                <input type="date" name="startDate" required>
-            </label>
-            <label>
-                <span th:text="#{trip.endDate}">Bis</span>
-                <input type="date" name="endDate" required>
-            </label>
-            <div>
-                <button type="button" class="outline secondary" onclick="this.closest('.date-option').remove()">
-                    <span th:text="#{common.remove}">Entfernen</span>
+        <div class="date-option candidate-card">
+            <div class="grid" style="gap:0.5rem;">
+                <label>
+                    <span th:text="#{trip.startDate}">Startdatum</span>
+                    <input type="date" name="startDate" required>
+                </label>
+                <label>
+                    <span th:text="#{trip.endDate}">Enddatum</span>
+                    <input type="date" name="endDate" required>
+                </label>
+            </div>
+            <div style="display:flex; justify-content:flex-end;">
+                <button type="button" class="btn-icon btn-icon--danger" onclick="this.closest('.date-option').remove()"
+                        th:title="#{common.remove}" th:aria-label="#{common.remove}">
+                    <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
                 </button>
             </div>
         </div>

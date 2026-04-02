@@ -7,11 +7,11 @@
         <p><a th:href="@{/{id}(id=${trip.tripId()})}" th:text="${trip.name()}">Reise</a></p>
     </hgroup>
 
-    <article class="poll-panel poll-panel--form">
-        <p class="candidate-entry__intro" th:text="#{accommodationpoll.createHint}">
-            Erfasse mindestens zwei Unterkuenfte mit Zimmern, damit die Gruppe sinnvoll vergleichen kann.
-        </p>
+    <p th:text="#{accommodationpoll.createHint}" style="color:var(--tm-text-soft); margin-bottom:1rem;">
+        Erfasse mindestens zwei Unterkünfte mit Zimmern, damit die Gruppe sinnvoll vergleichen kann.
+    </p>
 
+    <article class="poll-panel poll-panel--form">
         <form method="post" th:action="@{/{id}/accommodationpoll/create(id=${trip.tripId()})}" id="accommodationpoll-form">
             <div id="candidates" class="candidate-entry-list"></div>
 

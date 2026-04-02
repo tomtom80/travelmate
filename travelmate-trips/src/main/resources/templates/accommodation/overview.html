@@ -46,7 +46,7 @@
 
         <div class="accommodation-map" th:if="${accommodation.address() != null and !accommodation.address().isBlank()}">
             <iframe class="accommodation-map__frame"
-                    th:src="${'https://www.openstreetmap.org/export/embed.html?bbox=&layer=mapnik&marker=&query=' + #strings.replace(accommodation.address(), ' ', '+')}"
+                    th:src="${'https://maps.google.com/maps?output=embed&q=' + #strings.replace(accommodation.address(), ' ', '+')}"
                     loading="lazy"
                     referrerpolicy="no-referrer"></iframe>
             <a class="accommodation-map__link"

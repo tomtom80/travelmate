@@ -359,17 +359,24 @@ public class TripController {
 
     private List<ParticipantView> toParticipantViews(final TripRepresentation trip,
                                                     final TravelParty party) {
-        final java.util.Set<UUID> accountHolderIds = travelPartyRepository.findAll().stream()
+        final List<TravelParty> allParties = travelPartyRepository.findAll();
+        final java.util.Set<UUID> accountHolderIds = allParties.stream()
             .flatMap(tp -> tp.members().stream())
             .map(Member::memberId)
             .collect(java.util.stream.Collectors.toSet());
+        final java.util.Map<UUID, String> participantToPartyName = new java.util.HashMap<>();
+        for (final TravelParty tp : allParties) {
+            tp.members().forEach(m -> participantToPartyName.put(m.memberId(), tp.name()));
+            tp.dependents().forEach(d -> participantToPartyName.put(d.dependentId(), tp.name()));
+        }
         return trip.participantDetails().stream()
             .map(pd -> {
                 final boolean manageableByCurrentParty = party.hasParticipant(pd.participantId());
                 final boolean organizerEligible = accountHolderIds.contains(pd.participantId());
+                final String partyName = participantToPartyName.getOrDefault(pd.participantId(), "");
                 if (pd.firstName() != null) {
                     return new ParticipantView(pd.participantId(), pd.firstName(), pd.lastName(),
-                        pd.arrivalDate(), pd.departureDate(), manageableByCurrentParty, organizerEligible);
+                        partyName, pd.arrivalDate(), pd.departureDate(), manageableByCurrentParty, organizerEligible);
                 }
                 final Member member = party.members().stream()
                     .filter(m -> m.memberId().equals(pd.participantId()))
@@ -377,7 +384,7 @@ public class TripController {
                     .orElse(null);
                 if (member != null) {
                     return new ParticipantView(pd.participantId(), member.firstName(), member.lastName(),
-                        pd.arrivalDate(), pd.departureDate(), true, true);
+                        partyName, pd.arrivalDate(), pd.departureDate(), true, true);
                 }
                 final TravelPartyDependent dependent = party.dependents().stream()
                     .filter(d -> d.dependentId().equals(pd.participantId()))
@@ -386,8 +393,11 @@ public class TripController {
                 final String firstName = dependent != null ? dependent.firstName() : "Unknown";
                 final String lastName = dependent != null ? dependent.lastName() : "";
                 return new ParticipantView(pd.participantId(), firstName, lastName,
-                    pd.arrivalDate(), pd.departureDate(), manageableByCurrentParty, organizerEligible);
+                    partyName, pd.arrivalDate(), pd.departureDate(), manageableByCurrentParty, organizerEligible);
             })
+            .sorted(java.util.Comparator.comparing(ParticipantView::partyName)
+                .thenComparing(ParticipantView::lastName)
+                .thenComparing(ParticipantView::firstName))
             .toList();
     }
 

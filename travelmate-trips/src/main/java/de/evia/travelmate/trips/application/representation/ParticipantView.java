@@ -7,6 +7,7 @@ public record ParticipantView(
     UUID participantId,
     String firstName,
     String lastName,
+    String partyName,
     LocalDate arrivalDate,
     LocalDate departureDate,
     boolean manageableByCurrentParty,
