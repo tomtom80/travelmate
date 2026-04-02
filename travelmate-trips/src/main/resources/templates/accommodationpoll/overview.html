@@ -189,16 +189,14 @@
                                 <span th:text="#{accommodationpoll.candidateName}">Name</span>
                                 <input type="text" name="name" required th:value="${candidate.name()}">
                             </label>
-                            <div class="grid">
-                                <label>
-                                    <span th:text="#{accommodationpoll.candidateUrl}">URL</span>
-                                    <input type="url" name="url" th:value="${candidate.url()}">
-                                </label>
-                                <label>
-                                    <span th:text="#{accommodationpoll.candidateAddress}">Adresse</span>
-                                    <input type="text" name="address" th:value="${candidate.address()}">
-                                </label>
-                            </div>
+                            <label>
+                                <span th:text="#{accommodationpoll.candidateUrl}">URL</span>
+                                <input type="url" name="url" th:value="${candidate.url()}">
+                            </label>
+                            <label>
+                                <span th:text="#{accommodationpoll.candidateAddress}">Adresse</span>
+                                <input type="text" name="address" th:value="${candidate.address()}">
+                            </label>
                             <label>
                                 <span th:text="#{accommodationpoll.candidateDescription}">Beschreibung</span>
                                 <input type="text" name="description" th:value="${candidate.description()}">
@@ -255,16 +253,14 @@
                             <span th:text="#{accommodationpoll.candidateName}">Name</span>
                             <input type="text" name="name" required>
                         </label>
-                        <div class="grid">
-                            <label>
-                                <span th:text="#{accommodationpoll.candidateUrl}">URL</span>
-                                <input type="url" name="url">
-                            </label>
-                            <label>
-                                <span th:text="#{accommodationpoll.candidateAddress}">Adresse</span>
-                                <input type="text" name="address">
-                            </label>
-                        </div>
+                        <label>
+                            <span th:text="#{accommodationpoll.candidateUrl}">URL</span>
+                            <input type="url" name="url">
+                        </label>
+                        <label>
+                            <span th:text="#{accommodationpoll.candidateAddress}">Adresse</span>
+                            <input type="text" name="address">
+                        </label>
                         <label>
                             <span th:text="#{accommodationpoll.candidateDescription}">Beschreibung</span>
                             <input type="text" name="description">

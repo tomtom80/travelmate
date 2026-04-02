@@ -71,10 +71,12 @@
                 <tbody>
                     <tr th:each="p : ${participants}">
                         <td th:data-label="#{invitation.member}">
-                            <span th:text="${p.firstName() + ' ' + p.lastName()}">Name</span>
-                            <small th:if="${trip.organizerIds().contains(p.participantId())}"
-                                   style="display:block; color:var(--tm-primary); font-weight:600;"
-                                   th:text="#{trip.organizer.role}">Organisator</small>
+                            <div>
+                                <span th:text="${p.firstName() + ' ' + p.lastName()}">Name</span>
+                                <small th:if="${trip.organizerIds().contains(p.participantId())}"
+                                       style="display:block; color:var(--tm-primary); font-weight:600;"
+                                       th:text="#{trip.organizer.role}">Organisator</small>
+                            </div>
                         </td>
                         <td th:data-label="#{trip.participants.party}" th:text="${p.partyName()}"></td>
                         <td th:data-label="#{trip.arrivalDate}" th:text="${p.arrivalDate()}"></td>
