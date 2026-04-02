@@ -276,12 +276,12 @@ class AccommodationPollControllerTest {
             POLL_UUID, TENANT_UUID, TRIP_UUID, "OPEN", null, null, null,
             List.of(
                 new AccommodationPollRepresentation.CandidateRepresentation(
-                    CANDIDATE_1_UUID, "Hotel A", "https://a.com", "Nice", 0,
+                    CANDIDATE_1_UUID, "Hotel A", "https://a.com", null, "Nice", 0,
                     List.of(new AccommodationPollRepresentation.RoomRepresentation("Room A", 2, null, null)),
                     Set.of()
                 ),
                 new AccommodationPollRepresentation.CandidateRepresentation(
-                    CANDIDATE_2_UUID, "Hotel B", null, "Cozy", 0,
+                    CANDIDATE_2_UUID, "Hotel B", null, null, "Cozy", 0,
                     List.of(new AccommodationPollRepresentation.RoomRepresentation("Room B", 3, null, null)),
                     Set.of()
                 )

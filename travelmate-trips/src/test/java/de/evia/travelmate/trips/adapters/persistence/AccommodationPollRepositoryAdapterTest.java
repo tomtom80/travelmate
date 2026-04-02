@@ -128,7 +128,7 @@ class AccommodationPollRepositoryAdapterTest {
         repository.save(poll);
 
         final AccommodationPoll loaded = repository.findById(TENANT_ID, poll.accommodationPollId()).orElseThrow();
-        loaded.addCandidate("Hotel C", "https://c.com", "Great pool", candidateRooms(), Set.of(Amenity.POOL));
+        loaded.addCandidate("Hotel C", "https://c.com", null, "Great pool", candidateRooms(), Set.of(Amenity.POOL));
         repository.save(loaded);
 
         final AccommodationPoll reloaded = repository.findById(TENANT_ID, poll.accommodationPollId()).orElseThrow();
@@ -149,8 +149,8 @@ class AccommodationPollRepositoryAdapterTest {
     void savesAndReloadsAmenities() {
         final TripId tripId = new TripId(UUID.randomUUID());
         final AccommodationPoll poll = AccommodationPoll.create(TENANT_ID, tripId, List.of(
-            new CandidateProposal("Hotel A", null, null, candidateRooms(), Set.of(Amenity.WIFI, Amenity.POOL)),
-            new CandidateProposal("Hotel B", null, null, candidateRooms(), Set.of())
+            new CandidateProposal("Hotel A", null, null, null, candidateRooms(), Set.of(Amenity.WIFI, Amenity.POOL)),
+            new CandidateProposal("Hotel B", null, null, null, candidateRooms(), Set.of())
         ));
         repository.save(poll);
 
@@ -161,8 +161,8 @@ class AccommodationPollRepositoryAdapterTest {
 
     private AccommodationPoll createPoll(final TripId tripId) {
         return AccommodationPoll.create(TENANT_ID, tripId, List.of(
-            new CandidateProposal("Hotel A", "https://a.com", "Nice view", candidateRooms(), Set.of(Amenity.BALCONY)),
-            new CandidateProposal("Hotel B", null, "Cozy cabin", candidateRooms(), Set.of(Amenity.FIREPLACE))
+            new CandidateProposal("Hotel A", "https://a.com", null, "Nice view", candidateRooms(), Set.of(Amenity.BALCONY)),
+            new CandidateProposal("Hotel B", null, null, "Cozy cabin", candidateRooms(), Set.of(Amenity.FIREPLACE))
         ));
     }
 

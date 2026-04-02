@@ -92,6 +92,7 @@ public class AccommodationPollController {
                          @PathVariable final UUID tripId,
                          @RequestParam("candidateName") final List<String> names,
                          @RequestParam(value = "candidateUrl", required = false) final List<String> urls,
+                         @RequestParam(value = "candidateAddress", required = false) final List<String> addresses,
                          @RequestParam(value = "candidateDescription", required = false) final List<String> descriptions,
                          @RequestParam(value = "candidateRoomsJson", required = false) final List<String> roomsJson,
                          @RequestParam(value = "candidateAmenitiesJson", required = false) final List<String> amenitiesJson) {
@@ -102,10 +103,11 @@ public class AccommodationPollController {
         final List<CandidateProposalCommand> candidates = new ArrayList<>();
         for (int i = 0; i < names.size(); i++) {
             final String url = urls != null && i < urls.size() ? emptyToNull(urls.get(i)) : null;
+            final String addr = addresses != null && i < addresses.size() ? emptyToNull(addresses.get(i)) : null;
             final String desc = descriptions != null && i < descriptions.size() ? emptyToNull(descriptions.get(i)) : null;
             final String amenJson = amenitiesJson != null && i < amenitiesJson.size() ? amenitiesJson.get(i) : null;
             candidates.add(new CandidateProposalCommand(
-                names.get(i), url, desc,
+                names.get(i), url, addr, desc,
                 parseRoomCommands(i < roomsJsonSize(roomsJson) ? roomsJson.get(i) : null),
                 parseAmenitiesJson(amenJson)
             ));
@@ -123,6 +125,7 @@ public class AccommodationPollController {
                                @PathVariable final UUID pollId,
                                @RequestParam final String name,
                                @RequestParam(required = false) final String url,
+                               @RequestParam(required = false) final String address,
                                @RequestParam(required = false) final String description,
                                @RequestParam(value = "roomsJson", required = false) final String roomsJson,
                                @RequestParam(value = "amenities", required = false) final List<String> amenityNames) {
@@ -130,7 +133,7 @@ public class AccommodationPollController {
         final TripRepresentation trip = validateTripAccess(tripId, identity);
 
         accommodationPollService.addCandidate(new AddAccommodationCandidateCommand(
-            trip.tenantId(), pollId, name, emptyToNull(url), emptyToNull(description),
+            trip.tenantId(), pollId, name, emptyToNull(url), emptyToNull(address), emptyToNull(description),
             parseRoomCommands(roomsJson), parseAmenities(amenityNames)));
 
         return "redirect:/" + tripId + "/accommodationpoll";
@@ -187,6 +190,7 @@ public class AccommodationPollController {
                 pollId,
                 candidateName(imported),
                 emptyToNull(imported.bookingUrl()),
+                emptyToNull(imported.address()),
                 candidateDescription(imported),
                 roomsFromImport(imported),
                 Set.of()));

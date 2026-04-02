@@ -14,17 +14,20 @@ public class AccommodationCandidate {
     private final AccommodationCandidateId candidateId;
     private final String name;
     private final String url;
+    private final String address;
     private final String description;
     private final List<CandidateRoom> rooms;
     private final Set<Amenity> amenities;
 
-    public AccommodationCandidate(final String name, final String url, final String description,
-                                  final List<CandidateRoom> rooms, final Set<Amenity> amenities) {
+    public AccommodationCandidate(final String name, final String url, final String address,
+                                  final String description, final List<CandidateRoom> rooms,
+                                  final Set<Amenity> amenities) {
         argumentIsNotNull(name, "name");
         argumentIsTrue(!name.isBlank(), "Candidate name must not be blank.");
         this.candidateId = new AccommodationCandidateId(UUID.randomUUID());
         this.name = name;
         this.url = url;
+        this.address = address;
         this.description = description;
         this.rooms = rooms == null ? List.of() : List.copyOf(rooms);
         this.amenities = amenities == null || amenities.isEmpty()
@@ -33,13 +36,15 @@ public class AccommodationCandidate {
     }
 
     public AccommodationCandidate(final AccommodationCandidateId candidateId,
-                                  final String name, final String url, final String description,
-                                  final List<CandidateRoom> rooms, final Set<Amenity> amenities) {
+                                  final String name, final String url, final String address,
+                                  final String description, final List<CandidateRoom> rooms,
+                                  final Set<Amenity> amenities) {
         argumentIsNotNull(candidateId, "candidateId");
         argumentIsNotNull(name, "name");
         this.candidateId = candidateId;
         this.name = name;
         this.url = url;
+        this.address = address;
         this.description = description;
         this.rooms = rooms == null ? List.of() : List.copyOf(rooms);
         this.amenities = amenities == null || amenities.isEmpty()
@@ -57,6 +62,10 @@ public class AccommodationCandidate {
 
     public String url() {
         return url;
+    }
+
+    public String address() {
+        return address;
     }
 
     public String description() {

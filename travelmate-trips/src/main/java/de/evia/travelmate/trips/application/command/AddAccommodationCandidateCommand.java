@@ -11,6 +11,7 @@ public record AddAccommodationCandidateCommand(
     UUID accommodationPollId,
     String name,
     String url,
+    String address,
     String description,
     List<CreateAccommodationPollCommand.RoomProposalCommand> rooms,
     Set<Amenity> amenities

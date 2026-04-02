@@ -61,7 +61,7 @@ public class AccommodationPoll extends AggregateRoot {
             "An accommodation poll requires at least 2 candidates.");
 
         final List<AccommodationCandidate> candidates = proposals.stream()
-            .map(p -> new AccommodationCandidate(p.name(), p.url(), p.description(), p.rooms(), p.amenities()))
+            .map(p -> new AccommodationCandidate(p.name(), p.url(), p.address(), p.description(), p.rooms(), p.amenities()))
             .toList();
 
         return new AccommodationPoll(
@@ -77,11 +77,12 @@ public class AccommodationPoll extends AggregateRoot {
     }
 
     public AccommodationCandidateId addCandidate(final String name, final String url,
-                                                 final String description, final List<CandidateRoom> rooms,
+                                                 final String address, final String description,
+                                                 final List<CandidateRoom> rooms,
                                                  final Set<Amenity> amenities) {
         assertOpen();
         final AccommodationCandidate candidate = new AccommodationCandidate(
-            name, url, description, rooms != null ? rooms : List.of(), amenities
+            name, url, address, description, rooms != null ? rooms : List.of(), amenities
         );
         candidates.add(candidate);
         return candidate.candidateId();

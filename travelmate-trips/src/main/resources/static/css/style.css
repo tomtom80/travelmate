@@ -904,6 +904,12 @@ body > footer {
     text-decoration: underline;
 }
 
+.candidate-card__address {
+    margin: 0;
+    font-size: 0.88rem;
+    color: var(--tm-text-soft);
+}
+
 .candidate-card__desc,
 .candidate-entry__intro,
 .candidate-entry__header p {

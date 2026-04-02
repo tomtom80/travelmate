@@ -12,7 +12,7 @@ public record CreateAccommodationPollCommand(
     UUID tripId,
     List<CandidateProposalCommand> candidates
 ) {
-    public record CandidateProposalCommand(String name, String url, String description,
+    public record CandidateProposalCommand(String name, String url, String address, String description,
                                            List<RoomProposalCommand> rooms, Set<Amenity> amenities) {
     }
 

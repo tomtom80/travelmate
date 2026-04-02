@@ -117,9 +117,9 @@ class AccommodationLifecycleIT extends E2ETestBase {
         assertThat(content).contains(ROOM_1_NAME);
         assertThat(content).contains(ROOM_2_NAME);
 
-        // Verify the room table has both rows
-        final int roomRows = page.locator("table tbody tr").count();
-        assertThat(roomRows).isGreaterThanOrEqualTo(2);
+        // Verify the room cards are rendered
+        final int roomCards = page.locator(".candidate-card-grid .candidate-card").count();
+        assertThat(roomCards).isGreaterThanOrEqualTo(2);
     }
 
     @Test

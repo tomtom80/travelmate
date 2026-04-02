@@ -217,10 +217,14 @@
                                 <input type="url" name="url">
                             </label>
                             <label>
-                                <span th:text="#{accommodationpoll.candidateDescription}">Beschreibung</span>
-                                <input type="text" name="description">
+                                <span th:text="#{accommodationpoll.candidateAddress}">Adresse</span>
+                                <input type="text" name="address">
                             </label>
                         </div>
+                        <label>
+                            <span th:text="#{accommodationpoll.candidateDescription}">Beschreibung</span>
+                            <input type="text" name="description">
+                        </label>
                         <div class="amenity-grid" th:if="${allAmenities != null}">
                             <strong th:text="#{accommodationpoll.amenities}">Ausstattung</strong>
                             <div class="amenity-checkbox-grid">

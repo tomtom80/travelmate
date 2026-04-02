@@ -6,7 +6,7 @@ import static de.evia.travelmate.common.domain.Assertion.argumentIsTrue;
 import java.util.List;
 import java.util.Set;
 
-public record CandidateProposal(String name, String url, String description,
+public record CandidateProposal(String name, String url, String address, String description,
                                  List<CandidateRoom> rooms, Set<Amenity> amenities) {
 
     public CandidateProposal {

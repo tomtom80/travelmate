@@ -38,7 +38,7 @@ class AccommodationPollTest {
     void createWithOneCandidateFails() {
         assertThatThrownBy(() -> AccommodationPoll.create(
             TENANT_ID, TRIP_ID,
-            List.of(new CandidateProposal("Hotel A", null, null, candidateRooms(), Set.of()))))
+            List.of(new CandidateProposal("Hotel A", null, null, null, candidateRooms(), Set.of()))))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("at least 2");
     }
@@ -53,8 +53,8 @@ class AccommodationPollTest {
     @Test
     void createPreservesAmenities() {
         final AccommodationPoll poll = AccommodationPoll.create(TENANT_ID, TRIP_ID, List.of(
-            new CandidateProposal("Hotel A", null, null, candidateRooms(), Set.of(Amenity.WIFI, Amenity.POOL)),
-            new CandidateProposal("Hotel B", null, null, candidateRooms(), Set.of(Amenity.KITCHEN))
+            new CandidateProposal("Hotel A", null, null, null, candidateRooms(), Set.of(Amenity.WIFI, Amenity.POOL)),
+            new CandidateProposal("Hotel B", null, null, null, candidateRooms(), Set.of(Amenity.KITCHEN))
         ));
 
         assertThat(poll.candidates().get(0).amenities()).containsExactlyInAnyOrder(Amenity.WIFI, Amenity.POOL);
@@ -64,8 +64,8 @@ class AccommodationPollTest {
     @Test
     void createWithEmptyAmenitiesIsValid() {
         final AccommodationPoll poll = AccommodationPoll.create(TENANT_ID, TRIP_ID, List.of(
-            new CandidateProposal("Hotel A", null, null, candidateRooms(), Set.of()),
-            new CandidateProposal("Hotel B", null, null, candidateRooms(), null)
+            new CandidateProposal("Hotel A", null, null, null, candidateRooms(), Set.of()),
+            new CandidateProposal("Hotel B", null, null, null, candidateRooms(), null)
         ));
 
         assertThat(poll.candidates().get(0).amenities()).isEmpty();
@@ -78,7 +78,7 @@ class AccommodationPollTest {
     void addCandidateIncreasesCount() {
         final AccommodationPoll poll = createOpenPoll();
 
-        final AccommodationCandidateId newId = poll.addCandidate("Hotel C", "https://hotelc.com", "Nice pool",
+        final AccommodationCandidateId newId = poll.addCandidate("Hotel C", "https://hotelc.com", null, "Nice pool",
             candidateRooms(), Set.of(Amenity.POOL));
 
         assertThat(newId).isNotNull();
@@ -311,7 +311,7 @@ class AccommodationPollTest {
         final AccommodationPoll poll = createOpenPoll();
         poll.select(poll.candidates().getFirst().candidateId());
 
-        assertThatThrownBy(() -> poll.addCandidate("Hotel C", null, null, candidateRooms(), Set.of()))
+        assertThatThrownBy(() -> poll.addCandidate("Hotel C", null, null, null, candidateRooms(), Set.of()))
             .isInstanceOf(IllegalStateException.class)
             .hasMessageContaining("AWAITING_BOOKING");
     }
@@ -323,7 +323,7 @@ class AccommodationPollTest {
         final AccommodationPoll poll = createOpenPoll();
 
         assertThatThrownBy(() -> poll.candidates().add(
-            new AccommodationCandidate("Hotel C", null, null, candidateRooms(), Set.of())))
+            new AccommodationCandidate("Hotel C", null, null, null, candidateRooms(), Set.of())))
             .isInstanceOf(UnsupportedOperationException.class);
     }
 
@@ -342,8 +342,8 @@ class AccommodationPollTest {
     @Test
     void candidateAmenitiesSetIsUnmodifiable() {
         final AccommodationPoll poll = AccommodationPoll.create(TENANT_ID, TRIP_ID, List.of(
-            new CandidateProposal("Hotel A", null, null, candidateRooms(), Set.of(Amenity.WIFI)),
-            new CandidateProposal("Hotel B", null, null, candidateRooms(), Set.of())
+            new CandidateProposal("Hotel A", null, null, null, candidateRooms(), Set.of(Amenity.WIFI)),
+            new CandidateProposal("Hotel B", null, null, null, candidateRooms(), Set.of())
         ));
 
         assertThatThrownBy(() -> poll.candidates().get(0).amenities().add(Amenity.POOL))
@@ -372,9 +372,9 @@ class AccommodationPollTest {
 
     private AccommodationPoll createOpenPoll() {
         return AccommodationPoll.create(TENANT_ID, TRIP_ID, List.of(
-            new CandidateProposal("Hotel Alpenblick", "https://alpenblick.at", "Great view",
+            new CandidateProposal("Hotel Alpenblick", "https://alpenblick.at", "Alpweg 12, Tirol", "Great view",
                 candidateRooms(), Set.of(Amenity.WIFI, Amenity.BALCONY)),
-            new CandidateProposal("Berghuette Sonnstein", null, "Cozy cabin",
+            new CandidateProposal("Berghuette Sonnstein", null, null, "Cozy cabin",
                 candidateRooms(), Set.of(Amenity.FIREPLACE, Amenity.SAUNA))
         ));
     }

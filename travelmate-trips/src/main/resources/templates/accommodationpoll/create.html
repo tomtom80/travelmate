@@ -52,10 +52,14 @@
                         <input type="url" name="candidateUrl">
                     </label>
                     <label>
-                        <span th:text="#{accommodationpoll.candidateDescription}">Beschreibung</span>
-                        <input type="text" name="candidateDescription">
+                        <span th:text="#{accommodationpoll.candidateAddress}">Adresse</span>
+                        <input type="text" name="candidateAddress">
                     </label>
                 </div>
+                <label>
+                    <span th:text="#{accommodationpoll.candidateDescription}">Beschreibung</span>
+                    <input type="text" name="candidateDescription">
+                </label>
             </div>
 
             <input type="hidden" name="candidateRoomsJson" class="candidate-rooms-data" value="[]">

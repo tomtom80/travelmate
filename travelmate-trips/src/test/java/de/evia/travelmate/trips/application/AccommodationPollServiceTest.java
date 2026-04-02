@@ -61,8 +61,8 @@ class AccommodationPollServiceTest {
         final CreateAccommodationPollCommand command = new CreateAccommodationPollCommand(
             TENANT_UUID, TRIP_UUID,
             List.of(
-                new CandidateProposalCommand("Hotel A", "https://a.com", "Nice", rooms(), Set.of(Amenity.WIFI)),
-                new CandidateProposalCommand("Hotel B", null, "Cozy", rooms(), Set.of(Amenity.SAUNA))
+                new CandidateProposalCommand("Hotel A", "https://a.com", null, "Nice", rooms(), Set.of(Amenity.WIFI)),
+                new CandidateProposalCommand("Hotel B", null, null, "Cozy", rooms(), Set.of(Amenity.SAUNA))
             )
         );
 
@@ -88,8 +88,8 @@ class AccommodationPollServiceTest {
         final CreateAccommodationPollCommand command = new CreateAccommodationPollCommand(
             TENANT_UUID, TRIP_UUID,
             List.of(
-                new CandidateProposalCommand("Hotel A", null, null, rooms(), Set.of()),
-                new CandidateProposalCommand("Hotel B", null, null, rooms(), Set.of())
+                new CandidateProposalCommand("Hotel A", null, null, null, rooms(), Set.of()),
+                new CandidateProposalCommand("Hotel B", null, null, null, rooms(), Set.of())
             )
         );
 
@@ -196,7 +196,7 @@ class AccommodationPollServiceTest {
 
         final CreateAccommodationPollCommand command = new CreateAccommodationPollCommand(
             TENANT_UUID, TRIP_UUID,
-            List.of(new CandidateProposalCommand("Hotel Empty", null, null, List.of(), Set.of()))
+            List.of(new CandidateProposalCommand("Hotel Empty", null, null, null, List.of(), Set.of()))
         );
 
         assertThatThrownBy(() -> accommodationPollService.createPoll(command))
@@ -220,9 +220,9 @@ class AccommodationPollServiceTest {
             new TenantId(TENANT_UUID),
             new TripId(TRIP_UUID),
             List.of(
-                new CandidateProposal("Hotel Alpenblick", "https://alpenblick.at", "Great",
+                new CandidateProposal("Hotel Alpenblick", "https://alpenblick.at", null, "Great",
                     List.of(new CandidateRoom("Room", 2, null, null)), Set.of(Amenity.WIFI)),
-                new CandidateProposal("Berghuette Sonnstein", null, "Cozy",
+                new CandidateProposal("Berghuette Sonnstein", null, null, "Cozy",
                     List.of(new CandidateRoom("Suite", 3, null, null)), Set.of(Amenity.SAUNA))
             )
         );

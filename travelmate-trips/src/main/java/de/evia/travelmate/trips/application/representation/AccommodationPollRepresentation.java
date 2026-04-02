@@ -40,6 +40,7 @@ public record AccommodationPollRepresentation(
         UUID candidateId,
         String name,
         String url,
+        String address,
         String description,
         long voteCount,
         List<RoomRepresentation> rooms,
@@ -50,6 +51,7 @@ public record AccommodationPollRepresentation(
                 candidate.candidateId().value(),
                 candidate.name(),
                 candidate.url(),
+                candidate.address(),
                 candidate.description(),
                 poll.voteCountForCandidate(candidate.candidateId()),
                 candidate.rooms().stream()

@@ -99,7 +99,7 @@ public class AccommodationPollRepositoryAdapter implements AccommodationPollRepo
             if (!exists) {
                 final AccommodationCandidateJpaEntity candidateEntity = new AccommodationCandidateJpaEntity(
                     candidate.candidateId().value(), entity,
-                    candidate.name(), candidate.url(), candidate.description(),
+                    candidate.name(), candidate.url(), candidate.address(), candidate.description(),
                     serializeRooms(candidate.rooms()),
                     serializeAmenities(candidate.amenities())
                 );
@@ -143,7 +143,7 @@ public class AccommodationPollRepositoryAdapter implements AccommodationPollRepo
         final var candidates = entity.getCandidates().stream()
             .map(c -> new AccommodationCandidate(
                 new AccommodationCandidateId(c.getCandidateId()),
-                c.getName(), c.getUrl(), c.getDescription(),
+                c.getName(), c.getUrl(), c.getAddress(), c.getDescription(),
                 readRooms(c.getRoomsJson()),
                 readAmenities(c.getAmenitiesJson())
             ))

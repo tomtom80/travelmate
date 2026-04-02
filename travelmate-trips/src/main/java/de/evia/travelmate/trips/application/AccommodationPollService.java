@@ -51,7 +51,7 @@ public class AccommodationPollService {
 
         final List<CandidateProposal> proposals = command.candidates().stream()
             .map(c -> new CandidateProposal(
-                c.name(), c.url(), c.description(),
+                c.name(), c.url(), c.address(), c.description(),
                 mapRooms(c.rooms()), c.amenities()
             ))
             .toList();
@@ -64,7 +64,7 @@ public class AccommodationPollService {
     public AccommodationPollRepresentation addCandidate(final AddAccommodationCandidateCommand command) {
         final AccommodationPoll poll = findPoll(
             new TenantId(command.tenantId()), new AccommodationPollId(command.accommodationPollId()));
-        poll.addCandidate(command.name(), command.url(), command.description(), mapRooms(command.rooms()), command.amenities());
+        poll.addCandidate(command.name(), command.url(), command.address(), command.description(), mapRooms(command.rooms()), command.amenities());
         accommodationPollRepository.save(poll);
         return new AccommodationPollRepresentation(poll);
     }
@@ -174,7 +174,7 @@ public class AccommodationPollService {
         final SetAccommodationCommand command = new SetAccommodationCommand(
             tenantId.value(), tripId.value(),
             winner.name(),
-            winner.description(),
+            winner.address(),
             winner.url(),
             null, null, null,
             rooms
