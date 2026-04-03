@@ -361,7 +361,7 @@ public class ExpenseController {
         final TenantId tenantId = projection.tenantId();
         final ExpenseRepresentation expense = expenseService.findByTripId(tenantId, tripId, true);
 
-        final byte[] pdfBytes = settlementPdfService.generatePdf(expense, projection, locale);
+        final byte[] pdfBytes = settlementPdfService.generatePdf(expense, projection, buildParticipantNames(projection), locale);
 
         final String safeTripName = projection.tripName().replaceAll("[^a-zA-Z0-9äöüÄÖÜß\\-_ ]", "");
         final String dateStr = LocalDate.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd"));

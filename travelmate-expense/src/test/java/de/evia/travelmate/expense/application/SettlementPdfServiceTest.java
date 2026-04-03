@@ -69,7 +69,7 @@ class SettlementPdfServiceTest {
         when(templateEngine.process(eq("expense/settlement-pdf"), any(IContext.class)))
             .thenReturn("<!DOCTYPE html><html><head><title>Test</title></head><body><p>Test PDF</p></body></html>");
 
-        final byte[] pdf = settlementPdfService.generatePdf(expense, projection, Locale.GERMAN);
+        final byte[] pdf = settlementPdfService.generatePdf(expense, projection, java.util.Map.of(), Locale.GERMAN);
 
         assertThat(pdf).isNotEmpty();
         // PDF files start with %PDF

@@ -74,7 +74,7 @@
                             <div>
                                 <span th:text="${p.firstName() + ' ' + p.lastName()}">Name</span>
                                 <small th:if="${trip.organizerIds().contains(p.participantId())}"
-                                       style="display:block; color:var(--tm-primary); font-weight:600;"
+                                       style="display:block; color:var(--tm-primary); font-weight:600; text-align:right;"
                                        th:text="#{trip.organizer.role}">Organisator</small>
                             </div>
                         </td>

@@ -378,7 +378,7 @@ class ExpenseControllerTest {
     void exportSettlementPdfReturnsPdf() throws Exception {
         when(expenseService.findByTripId(new TenantId(TENANT_UUID), TRIP_UUID, true))
             .thenReturn(expense);
-        when(settlementPdfService.generatePdf(any(), any(), any()))
+        when(settlementPdfService.generatePdf(any(), any(), any(), any()))
             .thenReturn(new byte[]{37, 80, 68, 70}); // %PDF
 
         mockMvc.perform(get("/" + TRIP_UUID + "/settlement.pdf")
@@ -387,6 +387,6 @@ class ExpenseControllerTest {
             .andExpect(content().contentType(MediaType.APPLICATION_PDF))
             .andExpect(header().exists("Content-Disposition"));
 
-        verify(settlementPdfService).generatePdf(any(), any(), any());
+        verify(settlementPdfService).generatePdf(any(), any(), any(), any());
     }
 }

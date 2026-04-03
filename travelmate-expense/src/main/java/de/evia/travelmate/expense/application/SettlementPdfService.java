@@ -29,9 +29,11 @@ public class SettlementPdfService {
 
     public byte[] generatePdf(final ExpenseRepresentation expense,
                                final TripProjection projection,
+                               final java.util.Map<java.util.UUID, String> participantNames,
                                final Locale locale) {
         final Context context = new Context(locale);
         context.setVariable("expense", expense);
+        context.setVariable("participantNames", participantNames);
         context.setVariable("tripName", projection.tripName());
         context.setVariable("tripStartDate", projection.startDate() != null
             ? projection.startDate().format(DATE_FORMAT) : "—");
