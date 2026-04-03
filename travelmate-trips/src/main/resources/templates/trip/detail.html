@@ -2,47 +2,73 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="content">
-    <hgroup>
-        <h1 th:text="${trip.name()}">Reisename</h1>
-        <p th:if="${trip.description()}" th:text="${trip.description()}"></p>
-    </hgroup>
+    <article class="page-hero page-hero--trip">
+        <div class="page-hero__layout">
+            <div class="page-hero__copy">
+                <p class="page-hero__eyebrow" th:text="#{nav.trips}">Reisen</p>
+                <hgroup>
+                    <h1 th:text="${trip.name()}">Reisename</h1>
+                    <p class="page-hero__lead" th:if="${trip.description()}" th:text="${trip.description()}"></p>
+                    <p class="page-hero__lead" th:if="${trip.startDate() == null || trip.endDate() == null}" th:text="#{trip.dateRange.pendingHint}">
+                        Den Reisezeitraum legt ihr spaeter gemeinsam in der Planung fest.
+                    </p>
+                </hgroup>
+                <div class="page-meta-list">
+                    <div class="page-stat">
+                        <strong th:text="#{${'trip.status.' + trip.status()}}">Status</strong>
+                        <span th:text="#{trip.status}">Status</span>
+                    </div>
+                    <div class="page-stat" th:if="${trip.startDate() != null && trip.endDate() != null}">
+                        <strong th:text="${trip.startDate() + ' - ' + trip.endDate()}">Zeitraum</strong>
+                        <span th:text="${#messages.msg('trip.startDate') + ' / ' + #messages.msg('trip.endDate')}">Von / Bis</span>
+                    </div>
+                    <div class="page-stat">
+                        <strong th:text="${participants.size()}">0</strong>
+                        <span th:text="#{trip.participants}">Teilnehmer</span>
+                    </div>
+                </div>
 
-    <!-- Trip Info Card -->
-    <article>
-        <p th:if="${trip.startDate() != null && trip.endDate() != null}">
-            <span th:text="#{trip.startDate}">Von</span>: <strong th:text="${trip.startDate()}"></strong> —
-            <span th:text="#{trip.endDate}">Bis</span>: <strong th:text="${trip.endDate()}"></strong>
-        </p>
-        <p th:if="${trip.startDate() == null || trip.endDate() == null}" th:text="#{trip.dateRange.pendingHint}">
-            Den Reisezeitraum legt ihr spaeter gemeinsam in der Planung fest.
-        </p>
-        <p><span th:text="#{trip.status}">Status</span>: <mark th:text="#{${'trip.status.' + trip.status()}}"></mark></p>
-
-        <div th:if="${isOrganizer}">
-            <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                <form th:if="${trip.status() == 'PLANNING' && trip.startDate() != null && trip.endDate() != null && hasAccommodation}" method="post"
-                      th:action="@{/{id}/confirm(id=${trip.tripId()})}">
-                    <button type="submit" th:text="#{trip.confirm}">Bestaetigen</button>
-                </form>
-                <form th:if="${trip.status() == 'CONFIRMED'}" method="post"
-                      th:action="@{/{id}/start(id=${trip.tripId()})}">
-                    <button type="submit" th:text="#{trip.start}">Starten</button>
-                </form>
-                <form th:if="${trip.status() == 'IN_PROGRESS'}" method="post"
-                      th:action="@{/{id}/complete(id=${trip.tripId()})}">
-                    <button type="submit" th:text="#{trip.complete}">Abschliessen</button>
-                </form>
-                <form th:if="${trip.status() != 'COMPLETED' && trip.status() != 'CANCELLED'}" method="post"
-                      th:action="@{/{id}/cancel(id=${trip.tripId()})}">
-                    <button type="submit" class="outline secondary" th:text="#{trip.cancel}">Absagen</button>
-                </form>
+                <div class="page-actions" th:if="${isOrganizer}">
+                    <form th:if="${trip.status() == 'PLANNING' && trip.startDate() != null && trip.endDate() != null && hasAccommodation}" method="post"
+                          th:action="@{/{id}/confirm(id=${trip.tripId()})}">
+                        <button type="submit" th:text="#{trip.confirm}">Bestaetigen</button>
+                    </form>
+                    <form th:if="${trip.status() == 'CONFIRMED'}" method="post"
+                          th:action="@{/{id}/start(id=${trip.tripId()})}">
+                        <button type="submit" th:text="#{trip.start}">Starten</button>
+                    </form>
+                    <form th:if="${trip.status() == 'IN_PROGRESS'}" method="post"
+                          th:action="@{/{id}/complete(id=${trip.tripId()})}">
+                        <button type="submit" th:text="#{trip.complete}">Abschliessen</button>
+                    </form>
+                    <form th:if="${trip.status() != 'COMPLETED' && trip.status() != 'CANCELLED'}" method="post"
+                          th:action="@{/{id}/cancel(id=${trip.tripId()})}">
+                        <button type="submit" class="outline secondary" th:text="#{trip.cancel}">Absagen</button>
+                    </form>
+                </div>
+            </div>
+            <div class="page-hero__art" aria-hidden="true">
+                <svg viewBox="0 0 240 160">
+                    <path d="M26 122h188"></path>
+                    <path d="M48 116 92 70l34 28 56-54 30 32"></path>
+                    <circle cx="92" cy="70" r="8"></circle>
+                    <circle cx="126" cy="98" r="8"></circle>
+                    <circle cx="182" cy="44" r="8"></circle>
+                    <rect x="34" y="34" width="48" height="22" rx="11"></rect>
+                    <path d="M46 45h24"></path>
+                </svg>
             </div>
         </div>
     </article>
 
     <!-- Participants Card -->
-    <article>
-        <h2 th:text="#{trip.participants}">Teilnehmer</h2>
+    <article class="section-card">
+        <div class="section-heading">
+            <div>
+                <h2 th:text="#{trip.participants}">Teilnehmer</h2>
+                <p th:text="#{trip.participants.addOwn}">Teilnehmer aus eigener Reisepartei hinzufuegen</p>
+            </div>
+        </div>
         <form method="post"
               th:if="${!availableOwnPartyParticipants.isEmpty()}"
               th:action="@{/{tid}/participants(tid=${trip.tripId()})}"
@@ -147,13 +173,18 @@
     </article>
 
     <!-- Invitations Card -->
-    <article>
-        <h2 th:text="#{invitation.title}">Einladungen</h2>
+    <article class="section-card">
+        <div class="section-heading">
+            <div>
+                <h2 th:text="#{invitation.title}">Einladungen</h2>
+                <p th:text="#{trip.tools.hint}">Alle Reisefunktionen folgen demselben Karten- und Aktionsmuster.</p>
+            </div>
+        </div>
         <div id="invitations">
             <div th:replace="~{trip/invitations :: invitationList}"></div>
         </div>
 
-        <div style="display:flex; gap:0.5rem; flex-wrap:wrap; margin-top:1rem;">
+        <div class="page-actions" style="margin-top:1rem;">
             <button th:if="${!invitableMembers.isEmpty()}"
                     onclick="document.getElementById('invite-member-dialog').showModal()"
                     th:text="#{invitation.invite}">Mitglied einladen</button>

@@ -2,25 +2,53 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="content">
-    <hgroup>
-        <h1 th:text="${tripName}">Reisename</h1>
-        <p>
-            <span th:text="#{expense.title}">Abrechnung</span> —
-            <mark th:text="#{${'expense.status.' + expense.status()}}">Offen</mark>
-        </p>
-    </hgroup>
-
-    <!-- Total Amount -->
-    <article>
-        <p>
-            <strong th:text="#{expense.totalAmount}">Gesamtbetrag</strong>:
-            <span th:text="${#numbers.formatDecimal(expense.totalAmount(), 1, 2)}">0.00</span> EUR
-        </p>
+    <article class="page-hero page-hero--expense">
+        <div class="page-hero__layout">
+            <div class="page-hero__copy">
+                <p class="page-hero__eyebrow" th:text="#{expense.title}">Abrechnung</p>
+                <hgroup>
+                    <h1 th:text="${tripName}">Reisename</h1>
+                    <p class="page-hero__lead">
+                        <span th:text="#{expense.status}">Status</span>:
+                        <mark th:text="#{${'expense.status.' + expense.status()}}">Offen</mark>
+                    </p>
+                </hgroup>
+                <div class="page-meta-list">
+                    <div class="page-stat">
+                        <strong th:text="${#numbers.formatDecimal(expense.totalAmount(), 1, 2) + ' EUR'}">0.00 EUR</strong>
+                        <span th:text="#{expense.totalAmount}">Gesamtbetrag</span>
+                    </div>
+                    <div class="page-stat">
+                        <strong th:text="${expense.receipts().size()}">0</strong>
+                        <span th:text="#{expense.receipts}">Belege</span>
+                    </div>
+                    <div class="page-stat">
+                        <strong th:text="${expense.partyAccounts().size()}">0</strong>
+                        <span th:text="#{expense.partyAccount}">Reisekonto nach Reisepartei</span>
+                    </div>
+                </div>
+            </div>
+            <div class="page-hero__art" aria-hidden="true">
+                <svg viewBox="0 0 240 160">
+                    <rect x="26" y="34" width="88" height="92" rx="18"></rect>
+                    <line x1="44" y1="58" x2="96" y2="58"></line>
+                    <line x1="44" y1="78" x2="86" y2="78"></line>
+                    <line x1="44" y1="98" x2="78" y2="98"></line>
+                    <circle cx="170" cy="70" r="34"></circle>
+                    <path d="M170 48v44"></path>
+                    <path d="M148 70h44"></path>
+                </svg>
+            </div>
+        </div>
     </article>
 
     <!-- Category Breakdown (S10-C) -->
-    <article th:if="${!expense.categoryBreakdown().isEmpty()}">
-        <h2 th:text="#{expense.categoryBreakdown}">Ausgaben nach Kategorie</h2>
+    <article class="section-card" th:if="${!expense.categoryBreakdown().isEmpty()}">
+        <div class="section-heading">
+            <div>
+                <h2 th:text="#{expense.categoryBreakdown}">Ausgaben nach Kategorie</h2>
+            </div>
+        </div>
         <figure class="table-cards">
             <table>
                 <thead>
@@ -50,8 +78,12 @@
     </article>
 
     <!-- Daily Costs -->
-    <article th:if="${!expense.dailyCosts().isEmpty()}">
-        <h2 th:text="#{expense.dailyCosts}">Tageskosten</h2>
+    <article class="section-card" th:if="${!expense.dailyCosts().isEmpty()}">
+        <div class="section-heading">
+            <div>
+                <h2 th:text="#{expense.dailyCosts}">Tageskosten</h2>
+            </div>
+        </div>
         <figure class="table-cards">
             <table>
                 <thead>
@@ -73,13 +105,17 @@
     </article>
 
     <!-- Receipts Section -->
-    <article>
-        <h2 th:text="#{expense.receipts}">Belege</h2>
+    <article class="section-card">
+        <div class="section-heading">
+            <div>
+                <h2 th:text="#{expense.receipts}">Belege</h2>
+            </div>
+        </div>
         <div id="receipts">
             <div th:replace="~{expense/receipts :: receiptList}"></div>
         </div>
 
-        <div th:if="${expense.status().name() != 'SETTLED'}" style="margin-top:1rem; display:flex; gap:0.5rem; flex-wrap:wrap;">
+        <div th:if="${expense.status().name() != 'SETTLED'}" class="page-actions" style="margin-top:1rem;">
             <button onclick="document.getElementById('add-receipt-dialog').showModal()"
                     th:text="#{expense.receipt.add}">Beleg hinzufuegen</button>
             <button class="outline" onclick="document.getElementById('scan-receipt-dialog').showModal()"
@@ -88,15 +124,23 @@
     </article>
 
     <!-- Weightings Section -->
-    <article>
-        <h2 th:text="#{expense.weightings}">Gewichtung</h2>
+    <article class="section-card">
+        <div class="section-heading">
+            <div>
+                <h2 th:text="#{expense.weightings}">Gewichtung</h2>
+            </div>
+        </div>
         <div id="weightings">
             <div th:replace="~{expense/weightings :: weightingList}"></div>
         </div>
     </article>
 
-    <article th:if="${!expense.partyAccounts().isEmpty()}">
-        <h2 th:text="#{expense.partyAccount}">Reisekonto nach Reisepartei</h2>
+    <article class="section-card" th:if="${!expense.partyAccounts().isEmpty()}">
+        <div class="section-heading">
+            <div>
+                <h2 th:text="#{expense.partyAccount}">Reisekonto nach Reisepartei</h2>
+            </div>
+        </div>
 
         <div th:each="account : ${expense.partyAccounts()}" class="party-account-card">
             <!-- Card Header: Party name + balance -->
@@ -176,8 +220,12 @@
     </article>
 
     <!-- Advance Payments -->
-    <article th:if="${expense.status().name() != 'SETTLED'}">
-        <h2 th:text="#{advance.title}">Vorauszahlungen</h2>
+    <article class="section-card" th:if="${expense.status().name() != 'SETTLED'}">
+        <div class="section-heading">
+            <div>
+                <h2 th:text="#{advance.title}">Vorauszahlungen</h2>
+            </div>
+        </div>
 
         <!-- No accommodation price set -->
         <div th:if="${accommodationPrice == null && expense.advancePayments().isEmpty()}">

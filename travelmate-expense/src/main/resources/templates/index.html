@@ -2,9 +2,31 @@
 <html xmlns:th="http://www.thymeleaf.org" lang="de">
 <body>
 <div th:fragment="content">
-    <h1 th:text="#{expense.title}">Abrechnung</h1>
-    <p th:text="#{expense.home.info}">Waehlen Sie eine Reise aus, um die Abrechnung einzusehen.</p>
-    <a href="/trips/" th:text="#{nav.trips}">Reisen</a>
+    <article class="page-hero page-hero--expense">
+        <div class="page-hero__layout">
+            <div class="page-hero__copy">
+                <p class="page-hero__eyebrow" th:text="#{expense.title}">Abrechnung</p>
+                <hgroup>
+                    <h1 th:text="#{expense.title}">Abrechnung</h1>
+                    <p class="page-hero__lead" th:text="#{expense.home.info}">Waehlen Sie eine Reise aus, um die Abrechnung einzusehen.</p>
+                </hgroup>
+                <div class="page-actions">
+                    <a href="/trips/" role="button" th:text="#{nav.trips}">Reisen</a>
+                </div>
+            </div>
+            <div class="page-hero__art" aria-hidden="true">
+                <svg viewBox="0 0 240 160">
+                    <rect x="28" y="30" width="88" height="92" rx="18"></rect>
+                    <path d="M48 58h48"></path>
+                    <path d="M48 78h34"></path>
+                    <path d="M48 98h28"></path>
+                    <circle cx="172" cy="78" r="30"></circle>
+                    <path d="M158 78h28"></path>
+                    <path d="M172 64v28"></path>
+                </svg>
+            </div>
+        </div>
+    </article>
 </div>
 </body>
 </html>

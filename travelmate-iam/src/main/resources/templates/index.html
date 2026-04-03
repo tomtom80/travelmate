@@ -2,9 +2,29 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="content">
-    <h1 th:text="#{nav.travelParty}">Reisepartei</h1>
-    <p th:text="#{travelParty.manageMembers}">Mitglieder verwalten</p>
-    <p><a href="/iam/dashboard" th:text="#{dashboard.title}">Meine Reisepartei</a></p>
+    <article class="page-hero page-hero--party">
+        <div class="page-hero__layout">
+            <div class="page-hero__copy">
+                <p class="page-hero__eyebrow" th:text="#{nav.travelParty}">Reisepartei</p>
+                <hgroup>
+                    <h1 th:text="#{nav.travelParty}">Reisepartei</h1>
+                    <p class="page-hero__lead" th:text="#{travelParty.manageMembers}">Mitglieder verwalten</p>
+                </hgroup>
+                <div class="page-actions">
+                    <a href="/iam/dashboard" role="button" th:text="#{dashboard.title}">Meine Reisepartei</a>
+                </div>
+            </div>
+            <div class="page-hero__art" aria-hidden="true">
+                <svg viewBox="0 0 240 160">
+                    <circle cx="74" cy="64" r="26"></circle>
+                    <circle cx="144" cy="58" r="22"></circle>
+                    <circle cx="182" cy="94" r="18"></circle>
+                    <path d="M42 118c12-18 24-26 40-26 15 0 28 8 40 26"></path>
+                    <path d="M118 114c7-13 18-20 30-20 14 0 25 7 34 20"></path>
+                </svg>
+            </div>
+        </div>
+    </article>
 </div>
 </body>
 </html>

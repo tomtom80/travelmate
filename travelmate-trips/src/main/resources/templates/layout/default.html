@@ -12,7 +12,7 @@
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <script src="https://unpkg.com/htmx.org@2.0.8"></script>
 </head>
-<body>
+<body class="app-shell section-trips">
     <nav class="container nav-bar">
         <ul>
             <li>
@@ -47,7 +47,7 @@
             </li>
         </ul>
     </nav>
-    <main class="container" th:insert="~{${view} :: content}">
+    <main class="container app-main" th:insert="~{${view} :: content}">
     </main>
     <div id="toast-container" aria-live="polite"></div>
     <footer class="container">

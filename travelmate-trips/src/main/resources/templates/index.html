@@ -2,10 +2,27 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="content">
-    <hgroup>
-        <h1 th:text="#{trip.plan}">Reiseplanung</h1>
-        <p th:text="#{trip.subtitle}">Reisen erstellen, Teilnehmer verwalten, Essensplan und Einkaufslisten.</p>
-    </hgroup>
+    <article class="page-hero page-hero--trip">
+        <div class="page-hero__layout">
+            <div class="page-hero__copy">
+                <p class="page-hero__eyebrow" th:text="#{trip.plan}">Reiseplanung</p>
+                <hgroup>
+                    <h1 th:text="#{trip.plan}">Reiseplanung</h1>
+                    <p class="page-hero__lead" th:text="#{trip.subtitle}">Reisen erstellen, Teilnehmer verwalten, Essensplan und Einkaufslisten.</p>
+                </hgroup>
+            </div>
+            <div class="page-hero__art" aria-hidden="true">
+                <svg viewBox="0 0 240 160">
+                    <rect x="24" y="30" width="86" height="92" rx="18"></rect>
+                    <path d="M46 56h42"></path>
+                    <path d="M46 76h34"></path>
+                    <path d="M46 96h24"></path>
+                    <path d="M132 112 162 54l20 30 20-18 14 46"></path>
+                    <circle cx="162" cy="54" r="8"></circle>
+                </svg>
+            </div>
+        </div>
+    </article>
 </div>
 </body>
 </html>

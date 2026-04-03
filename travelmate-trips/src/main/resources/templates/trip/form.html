@@ -2,18 +2,42 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="content">
-    <h1 th:text="#{trip.create}">Neue Reise planen</h1>
+    <article class="page-hero page-hero--trip">
+        <div class="page-hero__layout">
+            <div class="page-hero__copy">
+                <p class="page-hero__eyebrow" th:text="#{trip.plan}">Reiseplanung</p>
+                <hgroup>
+                    <h1 th:text="#{trip.create}">Neue Reise planen</h1>
+                    <p class="page-hero__lead" th:text="#{trip.dateRange.pendingHint}">Den Reisezeitraum legt ihr spaeter gemeinsam in der Planung fest.</p>
+                </hgroup>
+            </div>
+            <div class="page-hero__art" aria-hidden="true">
+                <svg viewBox="0 0 240 160">
+                    <rect x="30" y="28" width="78" height="96" rx="16"></rect>
+                    <path d="M54 52h30"></path>
+                    <path d="M54 72h30"></path>
+                    <path d="M54 92h22"></path>
+                    <rect x="128" y="44" width="82" height="58" rx="14"></rect>
+                    <path d="m148 74 12 12 26-30"></path>
+                </svg>
+            </div>
+        </div>
+    </article>
 
-    <form method="post" th:action="@{/}">
-        <label for="name" th:text="#{trip.name}">Name</label>
-        <input type="text" id="name" name="name" required>
+    <article class="section-card">
+        <form method="post" th:action="@{/}">
+            <label for="name" th:text="#{trip.name}">Name</label>
+            <input type="text" id="name" name="name" required>
 
-        <label for="description" th:text="#{trip.description}">Beschreibung</label>
-        <textarea id="description" name="description"></textarea>
-        <p th:text="#{trip.dateRange.pendingHint}">Den Reisezeitraum legt ihr spaeter gemeinsam in der Planung fest.</p>
+            <label for="description" th:text="#{trip.description}">Beschreibung</label>
+            <textarea id="description" name="description"></textarea>
+            <p th:text="#{trip.dateRange.pendingHint}">Den Reisezeitraum legt ihr spaeter gemeinsam in der Planung fest.</p>
 
-        <button type="submit" th:text="#{trip.submit}">Reise anlegen</button>
-    </form>
+            <div class="page-actions">
+                <button type="submit" th:text="#{trip.submit}">Reise anlegen</button>
+            </div>
+        </form>
+    </article>
 </div>
 </body>
 </html>

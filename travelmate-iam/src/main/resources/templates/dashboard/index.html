@@ -2,20 +2,38 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="content">
-    <div id="tenant-header" th:fragment="tenantHeader">
-        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem;">
-            <hgroup style="margin-bottom:0;">
-                <h1 style="margin-bottom:0;" th:text="#{dashboard.title}">Meine Reisepartei</h1>
-                <p th:text="${tenant.name()}">Reisepartei-Name</p>
-            </hgroup>
-            <button type="button" class="btn-icon"
-                    onclick="document.getElementById('rename-tenant-dialog').showModal()"
-                    th:title="#{travelParty.rename}" th:aria-label="#{travelParty.rename}">
-                <svg viewBox="0 0 24 24"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-            </button>
+    <div id="tenant-header" th:fragment="tenantHeader" class="page-hero page-hero--party">
+        <div class="page-hero__layout">
+            <div class="page-hero__copy">
+                <p class="page-hero__eyebrow" th:text="#{nav.travelParty}">Reisepartei</p>
+                <hgroup style="margin-bottom:0;">
+                    <h1 style="margin-bottom:0;" th:text="#{dashboard.title}">Meine Reisepartei</h1>
+                    <p th:text="${tenant.name()}">Reisepartei-Name</p>
+                </hgroup>
+                <p class="page-hero__lead"
+                   th:if="${tenant.description() != null and !tenant.description().isEmpty()}"
+                   th:text="${tenant.description()}"></p>
+                <div class="page-actions">
+                    <button type="button" class="btn-icon"
+                            onclick="document.getElementById('rename-tenant-dialog').showModal()"
+                            th:title="#{travelParty.rename}" th:aria-label="#{travelParty.rename}">
+                        <svg viewBox="0 0 24 24"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
+                        <span class="sr-only" th:text="#{travelParty.rename}">Reisepartei umbenennen</span>
+                    </button>
+                </div>
+            </div>
+            <div class="page-hero__art" aria-hidden="true">
+                <svg viewBox="0 0 240 160">
+                    <circle cx="72" cy="62" r="28"></circle>
+                    <circle cx="142" cy="56" r="22"></circle>
+                    <circle cx="176" cy="92" r="18"></circle>
+                    <path d="M42 118c10-18 24-28 40-28s30 10 40 28"></path>
+                    <path d="M116 114c8-14 18-22 31-22s25 8 34 22"></path>
+                    <path d="M48 48h24"></path>
+                    <path d="M128 32h20"></path>
+                </svg>
+            </div>
         </div>
-        <p th:if="${tenant.description() != null and !tenant.description().isEmpty()}"
-           th:text="${tenant.description()}"></p>
     </div>
 
     <!-- Rename Tenant Dialog -->
@@ -40,8 +58,12 @@
         </article>
     </dialog>
 
-    <section>
-        <h2 th:text="#{dashboard.members}">Mitglieder</h2>
+    <section class="section-card">
+        <div class="section-heading">
+            <div>
+                <h2 th:text="#{dashboard.members}">Mitglieder</h2>
+            </div>
+        </div>
         <div id="members">
             <div th:replace="~{dashboard/members :: memberList}"></div>
         </div>
@@ -76,8 +98,12 @@
         </form>
     </section>
 
-    <section>
-        <h2 th:text="#{dashboard.companions}">Mitreisende</h2>
+    <section class="section-card">
+        <div class="section-heading">
+            <div>
+                <h2 th:text="#{dashboard.companions}">Mitreisende</h2>
+            </div>
+        </div>
         <div id="companions">
             <div th:replace="~{dashboard/companions :: companionList}"></div>
         </div>
@@ -106,7 +132,7 @@
         </form>
     </section>
 
-    <section>
+    <section class="section-card">
         <h2 th:text="#{dashboard.dangerZone}">Gefahrenzone</h2>
         <p th:text="#{dashboard.deleteTenantHint}">Das Loeschen der Reisepartei entfernt alle Mitglieder und Mitreisenden.</p>
         <div id="delete-error"></div>

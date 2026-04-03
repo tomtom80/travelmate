@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     <link rel="stylesheet" th:href="@{/css/style.css}">
 </head>
-<body>
+<body class="app-shell section-iam">
     <nav class="container nav-bar">
         <ul>
             <li>
@@ -36,7 +36,7 @@
             <li><a href="/oauth2/authorization/keycloak" th:text="#{landing.login}">Anmelden</a></li>
         </ul>
     </nav>
-    <main class="container" th:insert="~{${view} :: content}">
+    <main class="container app-main" th:insert="~{${view} :: content}">
     </main>
     <footer class="container">
         <small>&copy; Travelmate</small>

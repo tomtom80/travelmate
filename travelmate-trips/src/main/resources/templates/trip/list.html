@@ -2,7 +2,43 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="content">
-    <section th:if="${!pendingInvitations.isEmpty()}">
+    <article class="page-hero page-hero--trip">
+        <div class="page-hero__layout">
+            <div class="page-hero__copy">
+                <p class="page-hero__eyebrow" th:text="#{trip.plan}">Reiseplanung</p>
+                <hgroup>
+                    <h1 th:text="#{trip.title}">Reisen</h1>
+                    <p class="page-hero__lead" th:text="#{trip.subtitle}">Reisen erstellen, Teilnehmer verwalten, Essensplan und Einkaufslisten.</p>
+                </hgroup>
+                <div class="page-meta-list">
+                    <div class="page-stat">
+                        <strong th:text="${trips.size()}">0</strong>
+                        <span th:text="#{nav.trips}">Reisen</span>
+                    </div>
+                    <div class="page-stat">
+                        <strong th:text="${pendingInvitations.size()}">0</strong>
+                        <span th:text="#{invitation.title}">Einladungen</span>
+                    </div>
+                </div>
+                <div class="page-actions">
+                    <a th:href="@{/new}" role="button" th:text="#{trip.create}">Neue Reise planen</a>
+                </div>
+            </div>
+            <div class="page-hero__art" aria-hidden="true">
+                <svg viewBox="0 0 240 160">
+                    <rect x="20" y="30" width="92" height="88" rx="18"></rect>
+                    <path d="M44 56h42"></path>
+                    <path d="M44 76h28"></path>
+                    <path d="M44 96h34"></path>
+                    <circle cx="170" cy="64" r="32"></circle>
+                    <path d="m154 64 12 12 22-28"></path>
+                    <path d="M136 118h68"></path>
+                </svg>
+            </div>
+        </div>
+    </article>
+
+    <section class="section-card" th:if="${!pendingInvitations.isEmpty()}">
         <h2 th:text="#{invitation.pending.title}">Offene Einladungen</h2>
         <div class="grid" th:each="inv : ${pendingInvitations}">
             <article>
@@ -35,14 +71,20 @@
         </div>
     </section>
 
-    <h1 th:text="#{trip.title}">Reisen</h1>
-    <div class="table-toolbar">
-        <a th:href="@{/new}" role="button" class="outline btn-add" th:text="#{trip.create}">
-            Neue Reise planen
-        </a>
-    </div>
+    <section class="section-card">
+        <div class="section-heading">
+            <div>
+                <h2 th:text="#{trip.title}">Reisen</h2>
+                <p th:text="#{trip.subtitle}">Reisen erstellen, Teilnehmer verwalten, Essensplan und Einkaufslisten.</p>
+            </div>
+            <div class="table-toolbar" style="margin-bottom:0;">
+                <a th:href="@{/new}" role="button" class="outline btn-add" th:text="#{trip.create}">
+                    Neue Reise planen
+                </a>
+            </div>
+        </div>
 
-    <figure class="table-cards">
+        <figure class="table-cards">
         <table th:if="${!trips.isEmpty()}">
             <thead>
                 <tr>
@@ -75,8 +117,9 @@
                 </tr>
             </tbody>
         </table>
-    </figure>
-    <p th:if="${trips.isEmpty()}" th:text="#{trip.empty}">Noch keine Reisen geplant.</p>
+        </figure>
+        <p th:if="${trips.isEmpty()}" th:text="#{trip.empty}">Noch keine Reisen geplant.</p>
+    </section>
 
 
 </div>
