@@ -2,10 +2,38 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="content">
-    <hgroup>
-        <h1 th:text="#{mealplan.title}">Essensplan</h1>
-        <p><a th:href="@{/{id}(id=${trip.tripId()})}" th:text="${trip.name()}">Reise</a></p>
-    </hgroup>
+    <article class="page-hero page-hero--trip">
+        <div class="page-hero__layout">
+            <div class="page-hero__copy">
+                <p class="page-hero__eyebrow" th:text="#{mealplan.title}">Essensplan</p>
+                <hgroup>
+                    <h1 th:text="#{mealplan.title}">Essensplan</h1>
+                    <p class="page-hero__lead"><a th:href="@{/{id}(id=${trip.tripId()})}" th:text="${trip.name()}">Reise</a></p>
+                </hgroup>
+                <div class="page-meta-list">
+                    <div class="page-stat">
+                        <strong th:text="${slotsByDate.size()}">0</strong>
+                        <span th:text="#{trip.stayPeriod}">Tage</span>
+                    </div>
+                </div>
+            </div>
+            <div class="page-hero__art" aria-hidden="true">
+                <svg viewBox="0 0 240 160">
+                    <!-- Stylized Calendar/Grid icon -->
+                    <rect x="50" y="40" width="140" height="90" rx="8" stroke-width="2.5"></rect>
+                    <line x1="50" y1="65" x2="190" y2="65" stroke-width="2.5"></line>
+                    <line x1="85" y1="40" x2="85" y2="130" stroke-width="2"></line>
+                    <line x1="120" y1="40" x2="120" y2="130" stroke-width="2"></line>
+                    <line x1="155" y1="40" x2="155" y2="130" stroke-width="2"></line>
+                    <circle cx="67" cy="85" r="8" stroke-width="2"></circle>
+                    <circle cx="102" cy="110" r="8" stroke-width="2"></circle>
+                </svg>
+            </div>
+        </div>
+    </article>
+
+    <section class="section-card">
+        <h2 th:text="#{mealplan.title}">Essensplan</h2>
 
     <!-- Desktop: Table layout (hidden on mobile) -->
     <figure class="mealplan-desktop">
@@ -41,7 +69,11 @@
         </article>
     </div>
 
-    <a th:href="@{/{id}(id=${trip.tripId()})}" role="button" class="outline" th:text="#{common.back}">Zurueck</a>
+    </section>
+
+    <div style="margin-top:1.5rem;">
+        <a th:href="@{/{id}(id=${trip.tripId()})}" role="button" class="outline" th:text="#{common.back}">Zurueck</a>
+    </div>
 </div>
 
 <!-- Shared fragment for slot content (used by both desktop and mobile) -->

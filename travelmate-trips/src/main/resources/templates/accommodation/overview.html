@@ -2,13 +2,35 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="content">
-    <hgroup>
-        <h1 th:text="#{accommodation.title}">Unterkunft</h1>
-        <p><a th:href="@{/{id}(id=${trip.tripId()})}" th:text="${trip.name()}">Reise</a></p>
-    </hgroup>
+    <article class="page-hero page-hero--trip">
+        <div class="page-hero__layout">
+            <div class="page-hero__copy">
+                <p class="page-hero__eyebrow" th:text="#{accommodation.title}">Unterkunft</p>
+                <hgroup>
+                    <h1 th:text="${accommodation != null ? accommodation.name() : #messages.msg('accommodation.title')}">Unterkunft</h1>
+                    <p class="page-hero__lead"><a th:href="@{/{id}(id=${trip.tripId()})}" th:text="${trip.name()}">Reise</a></p>
+                </hgroup>
+                <div class="page-meta-list" th:if="${accommodation != null}">
+                    <div class="page-stat" th:if="${accommodation.address() != null && !accommodation.address().isEmpty()}">
+                        <strong th:text="${accommodation.address()}">Adresse</strong>
+                        <span th:text="#{accommodation.address}">Adresse</span>
+                    </div>
+                </div>
+            </div>
+            <div class="page-hero__art" aria-hidden="true">
+                <svg viewBox="0 0 240 160">
+                    <!-- Stylized House icon -->
+                    <path d="M50 130h140V75L120 30 50 75v55z" stroke-width="2.5"></path>
+                    <rect x="105" y="95" width="30" height="35" stroke-width="2.5"></rect>
+                    <rect x="70" y="80" width="20" height="20" stroke-width="2.5"></rect>
+                    <rect x="150" y="80" width="20" height="20" stroke-width="2.5"></rect>
+                </svg>
+            </div>
+        </div>
+    </article>
 
     <!-- Accommodation exists: show details -->
-    <article th:if="${accommodation != null}">
+    <section class="section-card" th:if="${accommodation != null}">
         <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:0.5rem; margin-bottom:1rem;">
             <h2 style="margin-bottom:0;" th:text="${accommodation.name()}">Unterkunftsname</h2>
             <button th:if="${isEditable}" type="button" class="outline"
@@ -290,10 +312,10 @@
                 </form>
             </article>
         </dialog>
-    </article>
+    </section>
 
     <!-- Empty state: no accommodation yet -->
-    <article th:if="${accommodation == null && importSuccess == null}">
+    <section class="section-card" th:if="${accommodation == null && importSuccess == null}">
         <p th:if="${!isEditable}" th:text="#{accommodation.empty}">Noch keine Unterkunft hinterlegt.</p>
 
         <div th:if="${isEditable}">
@@ -320,10 +342,10 @@
             <button onclick="document.getElementById('add-accommodation-dialog').showModal()"
                     th:text="#{accommodation.add}">Unterkunft hinzufuegen</button>
         </div>
-    </article>
+    </section>
 
     <!-- Import success: pre-filled form -->
-    <article th:if="${importSuccess}">
+    <section class="section-card" th:if="${importSuccess}">
         <h3 th:text="#{accommodation.add}">Unterkunft hinzufuegen</h3>
         <div class="alert alert-success">
             <span th:text="#{accommodation.import.success}">Daten importiert.</span>
@@ -414,7 +436,7 @@
                 <button type="submit" th:text="#{accommodation.save}">Speichern</button>
             </div>
         </form>
-    </article>
+    </section>
 
     <!-- Add Accommodation Dialog -->
     <dialog id="add-accommodation-dialog" th:if="${accommodation == null && isEditable}">

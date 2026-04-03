@@ -69,7 +69,7 @@ class PollCrossPartyLifecycleIT extends E2ETestBase {
     void inviteSecondTravelPartyToTrip() {
         navigateAndWait("/trips/" + tripId);
 
-        page.locator("button.outline[onclick*='invite-external-dialog'][onclick*='showModal']").click();
+        page.locator("button[onclick*='invite-external-dialog'][onclick*='showModal']").click();
         page.locator("#invite-external-dialog input[name=firstName]").fill("Rita");
         page.locator("#invite-external-dialog input[name=lastName]").fill("Receiver");
         page.locator("#invite-external-dialog input[name=email]").fill(PARTY2_EMAIL);

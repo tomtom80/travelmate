@@ -34,7 +34,9 @@ UI verwendet Fachsprache, Code verwendet technische Namen. Siehe ADR-0011 fuer d
 | **Weighting** | Gewichtung | Faktor für die Kostenaufteilung pro Person: 1.0 = Erwachsener, 0.5 = Teilzeit-Teilnehmer, 0.0 = Kind unter 3 Jahren. |
 | **Settlement** | Abrechnung / Saldo | Der berechnete Saldo pro Familie nach Verrechnung aller Belege und Gewichtungen. |
 | **TripProjection (Expense)** | Trip-Projektion | Lokales Read-Model im Expense SCS, projiziert aus Trips-Events (TripCreated, ParticipantJoinedTrip, AccommodationPriceSet). Enthaelt Trip-Name, TenantId, Teilnehmerliste (mit partyTenantId/partyName), und accommodationTotalPrice. |
-| **LocationPoll** | Standort-Abstimmung | Eine Abstimmung unter den Teilnehmern zur Auswahl der Unterkunft. |
+| **Terminabstimmung** | Date Poll | DatePoll | Trips | Doodle-artige Mehrfach-Abstimmung über Reisezeiträume. Stimmrecht pro Account, nicht pro Dependent. Organizer bestätigt Gewinner → Trip.confirmDateRange(). |
+| **Unterkunftsabstimmung** | Accommodation Poll | AccommodationPoll | Trips | Abstimmung über Unterkunftskandidaten mit Einzelstimme und Re-Vote. Kandidaten haben Name, URL, Zimmer, Amenities, Adresse. Booking-Workflow mit BookingAttempt-Entities (ADR-0022). |
+| **Buchungsversuch** | Booking Attempt | BookingAttempt | Trips | Entity innerhalb AccommodationPoll: Dokumentiert einen Buchungsversuch mit Status (PENDING/CONFIRMED/FAILED) und optionalem Grund bei Fehlschlag. |
 | **Policy** | Rollenzuweisung | Die Zuordnung einer Rolle zu einem Benutzer (User-Role-Mapping). |
 | **Group** | Gruppe | Eine Zusammenfassung von Benutzern, z.B. eine Familie innerhalb eines Mandanten. |
 | **Role** | Rolle | Eine fachliche Berechtigung im System, z.B. `organizer` oder `participant`. |

@@ -49,7 +49,9 @@ body.app-shell.section-expense {
         linear-gradient(180deg, #fffaf4 0%, #f8f8fb 50%, #eef4fb 100%);
 }
 
-nav.container.nav-bar,
+nav.container.nav-bar {
+    max-width: 100%;
+}
 main.container.app-main,
 body > footer.container {
     max-width: var(--tm-page-max);
@@ -57,12 +59,11 @@ body > footer.container {
 
 nav.container.nav-bar {
     position: sticky;
-    top: 0.75rem;
+    top: 0;
     z-index: 20;
-    margin-top: 1rem;
+    margin-top: 0;
     padding: 0.75rem 1rem;
-    border: 1px solid rgba(216, 222, 233, 0.88);
-    border-radius: 1.25rem;
+    border-bottom: 1px solid rgba(216, 222, 233, 0.88);
     background: rgba(255, 255, 255, 0.82);
     backdrop-filter: blur(18px);
     box-shadow: var(--tm-shadow-soft);
@@ -126,6 +127,13 @@ nav.container.nav-bar {
         radial-gradient(circle at top right, rgba(224, 123, 0, 0.16), transparent 34%),
         radial-gradient(circle at 18% 0%, rgba(51, 102, 204, 0.12), transparent 28%),
         linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(255, 249, 240, 0.99));
+}
+
+.page-hero--recipe {
+    background:
+        radial-gradient(circle at top right, rgba(16, 185, 129, 0.16), transparent 34%),
+        radial-gradient(circle at 18% 0%, rgba(51, 102, 204, 0.12), transparent 28%),
+        linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(240, 253, 244, 0.99));
 }
 
 .page-hero__layout {
@@ -633,7 +641,7 @@ section h2 {
 }
 
 /* Danger zone */
-section:last-child h2 {
+.section--danger h2 {
     color: var(--tm-danger);
 }
 
@@ -1293,11 +1301,20 @@ body > footer {
 /* ========== Mobile Responsive (max-width: 767px) ========== */
 
 @media (max-width: 767px) {
+    body.app-shell {
+        overflow-x: hidden;
+    }
+
     nav.container.nav-bar {
-        top: 0.35rem;
-        margin-top: 0.5rem;
-        border-radius: 1rem;
-        padding: 0.65rem 0.8rem;
+        max-width: 100%;
+        width: 100%;
+        margin-top: 0;
+        top: 0;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        border-top: none;
+        padding: 0.75rem 1rem;
     }
 
     .app-main {
@@ -1314,7 +1331,10 @@ body > footer {
     .page-hero {
         padding: 1rem;
         border-radius: 1.1rem;
+        width: 100%;
+        box-sizing: border-box;
     }
+
 
     .page-hero__layout {
         grid-template-columns: 1fr;
@@ -1356,9 +1376,19 @@ body > footer {
     }
 
     /* 2. Navigation collapse */
+    nav.container.nav-bar {
+        max-width: 100%;
+        width: 100%;
+        margin-top: 0;
+        top: 0;
+        border-radius: 0;
+        border-left: none;
+        border-right: none;
+        border-top: none;
+        padding: 0.75rem 1rem;
+    }
     nav.container {
         flex-direction: column;
-        padding: 0.5rem;
     }
     nav.container > ul {
         flex-direction: column;

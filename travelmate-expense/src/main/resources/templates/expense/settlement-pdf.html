@@ -3,23 +3,67 @@
 <head>
     <meta charset="UTF-8" />
     <style>
+        @page { size: A4; margin: 1.5cm; }
         body {
             font-family: Helvetica, Arial, sans-serif;
-            font-size: 11pt;
+            font-size: 10pt;
             color: #333;
-            margin: 2cm;
+            margin: 0;
         }
-        h1 { font-size: 18pt; margin-bottom: 4pt; }
-        h2 { font-size: 13pt; margin-top: 16pt; margin-bottom: 6pt; border-bottom: 1px solid #ccc; padding-bottom: 4pt; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 12pt; }
-        th, td { padding: 4pt 6pt; text-align: left; border-bottom: 1px solid #eee; font-size: 10pt; }
-        th { background-color: #f5f5f5; font-weight: bold; border-bottom: 2px solid #ddd; }
+        h1 { font-size: 16pt; color: #3366CC; margin-bottom: 2pt; }
+        h2 {
+            font-size: 12pt;
+            margin-top: 14pt;
+            margin-bottom: 6pt;
+            color: #3366CC;
+            border-bottom: 2px solid #E07B00;
+            padding-bottom: 4pt;
+        }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 10pt; }
+        th, td { padding: 3pt 6pt; text-align: left; border-bottom: 1px solid #eee; font-size: 9pt; }
+        th { background-color: #f0f4fa; font-weight: bold; border-bottom: 2px solid #d1d8e6; }
         .amount { text-align: right; }
-        .positive { color: #16a34a; }
-        .negative { color: #dc2626; }
-        .footer { margin-top: 24pt; font-size: 9pt; color: #999; border-top: 1px solid #ddd; padding-top: 8pt; }
-        .header-meta { font-size: 10pt; color: #666; margin-bottom: 16pt; }
-        .transfer-row td { padding: 6pt; }
+        .positive { color: #16a34a; font-weight: bold; }
+        .negative { color: #dc2626; font-weight: bold; }
+        .header-meta {
+            font-size: 9pt;
+            color: #666;
+            margin-bottom: 14pt;
+            border-bottom: 1px solid #E07B00;
+            padding-bottom: 8pt;
+        }
+        .footer {
+            margin-top: 20pt;
+            font-size: 8pt;
+            color: #999;
+            border-top: 1px solid #ddd;
+            padding-top: 6pt;
+        }
+        .party-card {
+            border: 1pt solid #d1d8e6;
+            padding: 8pt 10pt;
+            margin-bottom: 8pt;
+            page-break-inside: avoid;
+        }
+        .party-card__name {
+            font-size: 10pt;
+            font-weight: bold;
+            color: #3366CC;
+            margin: 0 0 2pt 0;
+        }
+        .party-card__members {
+            font-size: 8pt;
+            color: #666;
+            margin: 0 0 6pt 0;
+        }
+        .kv-grid { width: 100%; }
+        .kv-grid td { padding: 2pt 4pt; font-size: 9pt; border-bottom: none; }
+        .kv-grid td:first-child { color: #666; width: 50%; }
+        .kv-grid td:last-child { text-align: right; font-weight: 600; }
+        .kv-total td { border-top: 1pt solid #ccc; font-weight: bold; }
+        .entry-table { margin-top: 6pt; }
+        .entry-table th { font-size: 8pt; }
+        .entry-table td { font-size: 8pt; }
     </style>
 </head>
 <body>
@@ -39,45 +83,41 @@
         <span th:text="${#numbers.formatDecimal(expense.totalAmount(), 1, 'POINT', 2, 'COMMA')}">0,00</span> EUR
     </p>
 
+    <!-- Party Accounts as Cards -->
     <div th:if="${!expense.partyAccounts().isEmpty()}">
         <h2 th:text="#{expense.partyAccount}">Reisekonto nach Reisepartei</h2>
-        <table>
-            <thead>
+
+        <div th:each="account : ${expense.partyAccounts()}" class="party-card">
+            <p class="party-card__name" th:text="${account.partyName()}">Familie Muster</p>
+            <p class="party-card__members">
+                <span th:each="name, iter : ${account.memberNames()}" th:text="${name + (iter.last ? '' : ', ')}"></span>
+            </p>
+
+            <!-- Key-Value Summary -->
+            <table class="kv-grid">
                 <tr>
-                    <th th:text="#{expense.partyAccount.party}">Reisepartei</th>
-                    <th th:text="#{expense.partyAccount.members}">Mitglieder</th>
-                    <th th:text="#{expense.partyAccount.entries}">Kontozeilen</th>
-                    <th class="amount" th:text="#{expense.partyAccount.receiptCredits}">Belegguthaben</th>
-                    <th class="amount" th:text="#{expense.partyAccount.advancePlanned}">Geplante Anzahlung</th>
-                    <th class="amount" th:text="#{expense.partyAccount.advancePaid}">Vorauszahlungen</th>
-                    <th class="amount" th:text="#{expense.partyAccount.advanceOutstanding}">Noch einzahlen</th>
-                    <th class="amount" th:text="#{expense.partyAccount.fairShare}">Aktueller Anteil</th>
-                    <th class="amount" th:text="#{expense.partyAccount.currentBalance}">Aktueller Stand</th>
+                    <td th:text="#{expense.partyAccount.fairShare}">Aktueller Anteil</td>
+                    <td th:text="${#numbers.formatDecimal(account.fairShare(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
                 </tr>
-            </thead>
-            <tbody>
-                <tr th:each="account : ${expense.partyAccounts()}">
-                    <td th:text="${account.partyName()}"></td>
+                <tr>
+                    <td th:text="#{expense.partyAccount.receiptCredits}">Belegguthaben</td>
+                    <td th:text="${#numbers.formatDecimal(account.receiptCredits(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
+                </tr>
+                <tr th:if="${account.advancePaymentsPlanned().signum() > 0}">
+                    <td th:text="#{expense.partyAccount.advancePlanned}">Geplante Anzahlung</td>
+                    <td th:text="${#numbers.formatDecimal(account.advancePaymentsPlanned(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
+                </tr>
+                <tr th:if="${account.advancePaymentsPaid().signum() > 0}">
+                    <td th:text="#{expense.partyAccount.advancePaid}">Vorauszahlungen</td>
+                    <td th:text="${#numbers.formatDecimal(account.advancePaymentsPaid(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
+                </tr>
+                <tr th:if="${account.advancePaymentsOutstanding().signum() > 0}">
+                    <td th:text="#{expense.partyAccount.advanceOutstanding}">Noch einzahlen</td>
+                    <td th:text="${#numbers.formatDecimal(account.advancePaymentsOutstanding(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
+                </tr>
+                <tr class="kv-total">
+                    <td th:text="#{expense.partyAccount.currentBalance}">Aktueller Stand</td>
                     <td>
-                        <span th:each="name, iter : ${account.memberNames()}" th:text="${name + (iter.last ? '' : ', ')}"></span>
-                    </td>
-                    <td>
-                        <span th:each="entry, iter : ${account.entries()}">
-                            <span th:text="#{${'expense.partyAccount.entry.' + entry.type()}}">Kontozeile</span><span>: </span>
-                            <span th:if="${!entry.label().isBlank()}" th:text="${entry.label()}"></span>
-                            <span th:if="${!entry.label().isBlank()}"> </span>
-                            <span th:text="${#numbers.formatDecimal(entry.amount(), 1, 'POINT', 2, 'COMMA')} + ' EUR'"></span>
-                            <span> -> </span>
-                            <span th:text="${#numbers.formatDecimal(entry.runningBalance(), 1, 'POINT', 2, 'COMMA')} + ' EUR'"></span>
-                            <span th:if="${!iter.last}"> | </span>
-                        </span>
-                    </td>
-                    <td class="amount" th:text="${#numbers.formatDecimal(account.receiptCredits(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
-                    <td class="amount" th:text="${#numbers.formatDecimal(account.advancePaymentsPlanned(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
-                    <td class="amount" th:text="${#numbers.formatDecimal(account.advancePaymentsPaid(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
-                    <td class="amount" th:text="${#numbers.formatDecimal(account.advancePaymentsOutstanding(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
-                    <td class="amount" th:text="${#numbers.formatDecimal(account.fairShare(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
-                    <td class="amount">
                         <span th:if="${account.creditAmount().signum() > 0}" class="positive"
                               th:text="'+' + ${#numbers.formatDecimal(account.creditAmount(), 1, 'POINT', 2, 'COMMA')} + ' EUR'"></span>
                         <span th:if="${account.outstandingAmount().signum() > 0}" class="negative"
@@ -86,8 +126,28 @@
                               th:text="${#numbers.formatDecimal(account.currentBalance(), 1, 'POINT', 2, 'COMMA')} + ' EUR'"></span>
                     </td>
                 </tr>
-            </tbody>
-        </table>
+            </table>
+
+            <!-- Account Entries sub-table -->
+            <table th:if="${!account.entries().isEmpty()}" class="entry-table">
+                <thead>
+                    <tr>
+                        <th>Typ</th>
+                        <th>Beschreibung</th>
+                        <th class="amount" th:text="#{expense.receipt.amount}">Betrag</th>
+                        <th class="amount" th:text="#{expense.partyAccount.currentBalance}">Saldo</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="entry : ${account.entries()}">
+                        <td th:text="#{${'expense.partyAccount.entry.' + entry.type()}}">Typ</td>
+                        <td th:text="${entry.label()}"></td>
+                        <td class="amount" th:text="${#numbers.formatDecimal(entry.amount(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
+                        <td class="amount" th:text="${#numbers.formatDecimal(entry.runningBalance(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
     </div>
 
     <!-- Category Breakdown -->

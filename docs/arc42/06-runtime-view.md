@@ -364,6 +364,70 @@ Browser                     IAM-SCS        PostgreSQL     RabbitMQ
 4. `DependentAddedToTenant`-Event wird via RabbitMQ publiziert
 5. Thymeleaf rendert das aktualisierte Fragment, HTMX tauscht den DOM-Bereich aus
 
+## Szenario 7: Kollaborative Reiseplanung — DatePoll und AccommodationPoll (Iteration 14)
+
+```
+Browser        Gateway        Trips-SCS      PostgreSQL
+  │               │              │               │
+  │──POST ────────▶              │               │
+  │  /{tripId}/   │──Route───────▶               │
+  │  datepoll/    │              │──DatePoll.create(tripId, dateOptions)
+  │  create       │              │──save──────────▶
+  │◀──Redirect to datepoll──────│               │
+  │               │              │               │
+  │──POST vote────▶              │               │
+  │  /{tripId}/   │──Route───────▶               │
+  │  datepoll/    │              │──datePoll.vote(memberId, selectedOptions)
+  │  vote         │              │──save──────────▶
+  │◀──HTML Fragment (HTMX)──────│               │
+  │               │              │               │
+  │──POST confirm─▶              │               │
+  │  /{tripId}/   │──Route───────▶               │
+  │  datepoll/    │              │──datePoll.confirm(winningOption)
+  │  confirm      │              │──trip.confirmDateRange(dateRange)
+  │               │              │──save both─────▶
+  │◀──Redirect to trip──────────│               │
+```
+
+1. Organisator erstellt eine DatePoll mit Terminoptionen (Doodle-Stil)
+2. Mitglieder stimmen ab — Mehrfachauswahl, Stimmrecht pro Account (nicht Dependent)
+3. Organisator bestätigt die Gewinner-Option → `Trip.confirmDateRange()` wird aufgerufen
+4. Trip-Status kann nun zu CONFIRMED wechseln
+
+```
+Browser        Gateway        Trips-SCS      PostgreSQL
+  │               │              │               │
+  │──POST ────────▶              │               │
+  │  /{tripId}/   │──Route───────▶               │
+  │  accommodation│              │──AccommodationPoll.create(tripId)
+  │  poll/create  │              │──save──────────▶
+  │◀──Redirect──  │              │               │
+  │               │              │               │
+  │──POST ────────▶              │               │
+  │  candidate/   │──Route───────▶               │
+  │  add          │              │──poll.addCandidate(name, url, rooms, amenities)
+  │               │              │──save──────────▶
+  │◀──HTML Fragment──────────────│               │
+  │               │              │               │
+  │──POST vote────▶              │               │
+  │  /{pollId}/   │──Route───────▶               │
+  │  vote         │              │──poll.vote(memberId, candidateId)
+  │               │              │──save──────────▶
+  │◀──HTML Fragment──────────────│               │
+  │               │              │               │
+  │──POST select──▶              │               │
+  │  /{pollId}/   │──Route───────▶               │
+  │  select       │              │──poll.selectWinner(candidateId)
+  │               │              │──poll.startBooking()
+  │               │              │──save──────────▶
+  │◀──Redirect to poll───────────│               │
+```
+
+1. Organisator erstellt eine AccommodationPoll und fügt Kandidaten hinzu (Name, URL, Zimmer, Amenities, Adresse)
+2. Mitglieder stimmen per Einzelstimme ab (Re-Vote möglich)
+3. Organisator wählt den Gewinner und startet den Buchungsversuch (BookingAttempt)
+4. Bei Buchungserfolg → Accommodation wird erstellt; bei Fehlschlag → Poll öffnet erneut (ADR-0022)
+
 ## Referenz
 
 ![Event Storming](../../design/evia.team.orc.thomas-klingler%20-%20Event%20Storming.jpg)

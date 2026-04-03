@@ -27,4 +27,8 @@ Die Architekturentscheidungen werden als Architecture Decision Records (ADRs) do
 | **OCR-Technologiewahl Kassenzettel-Scan** (ADR-0017) | ReceiptScanPort als austauschbarer Domain-Port; Tesseract (self-hosted) als Default-Implementierung; CategoryGuesser-Heuristik fuer automatische Kategorievorschlaege; DSGVO-konform (keine Cloud-Uebermittlung); Foto nur transient verarbeitet |
 | **Party-zentrierte Reiseverwaltung und Expense-Sicht** (Iteration 12) | Trips erlaubt parteibasierte Teilnehmerpflege, StayPeriods und Mehrfach-Organizer; Expense arbeitet mit `PartyAccount` als Hauptsicht, altersbasierten Gewichtungsvorschlaegen und laufendem Kontoverlauf statt person-zentrierter Ausgleichsliste |
 
+| **Separate Poll-Aggregat-Entwurf** (ADR-0019) | Zwei separate Aggregate (DatePoll, AccommodationPoll) statt generischem Poll&lt;T&gt; — unterschiedliche Abstimmungsmodi, Invarianten und Ergebnisaktionen erfordern eigene Aggregate nach DDD-Korrektheit |
+| **Trip als Planungscontainer** (ADR-0021, ersetzt ADR-0020) | Trip kann ohne finales dateRange existieren; DatePoll bestätigt dateRange, AccommodationPoll bestätigt Unterkunft; löst Widerspruch zwischen Pflichtfeld und Abstimmungslogik |
+| **Booking-Workflow im AccommodationPoll-Aggregat** (ADR-0022) | BookingAttempt-Entities innerhalb AccommodationPoll; Fallback-Logik auf Poll selbst; kein separates BookingWorkflow-Aggregate; atomare Zustandsübergänge |
+
 Detaillierte Begründungen, Alternativen und Konsequenzen sind in den einzelnen ADRs beschrieben.

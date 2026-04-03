@@ -43,19 +43,17 @@
                     </form>
                     <form th:if="${trip.status() != 'COMPLETED' && trip.status() != 'CANCELLED'}" method="post"
                           th:action="@{/{id}/cancel(id=${trip.tripId()})}">
-                        <button type="submit" class="outline secondary" th:text="#{trip.cancel}">Absagen</button>
+                        <button type="submit" class="contrast" th:text="#{trip.cancel}">Absagen</button>
                     </form>
                 </div>
             </div>
             <div class="page-hero__art" aria-hidden="true">
                 <svg viewBox="0 0 240 160">
-                    <path d="M26 122h188"></path>
-                    <path d="M48 116 92 70l34 28 56-54 30 32"></path>
-                    <circle cx="92" cy="70" r="8"></circle>
-                    <circle cx="126" cy="98" r="8"></circle>
-                    <circle cx="182" cy="44" r="8"></circle>
-                    <rect x="34" y="34" width="48" height="22" rx="11"></rect>
-                    <path d="M46 45h24"></path>
+                    <!-- Stylized Suitcase icon -->
+                    <rect x="70" y="50" width="100" height="70" rx="8" stroke-width="2.5"></rect>
+                    <path d="M100 50V35c0-3 2-5 5-5h30c3 0 5 2 5 5v15" stroke-width="2.5"></path>
+                    <line x1="100" y1="70" x2="140" y2="70" stroke-width="2"></line>
+                    <line x1="100" y1="85" x2="140" y2="85" stroke-width="2"></line>
                 </svg>
             </div>
         </div>
@@ -189,7 +187,6 @@
                     onclick="document.getElementById('invite-member-dialog').showModal()"
                     th:text="#{invitation.invite}">Mitglied einladen</button>
             <button th:if="${isOrganizer}"
-                    class="outline"
                     onclick="document.getElementById('invite-external-dialog').showModal()"
                     th:text="#{invitation.inviteByEmail}">Per E-Mail einladen</button>
         </div>

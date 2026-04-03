@@ -4,7 +4,7 @@
 **Target Version**: v0.15.0
 **Input**: [iteration-15-stories.md](./iteration-15-stories.md), [iteration-14-accommodationpoll-ux.md](../design/wireframes/iteration-14-accommodationpoll-ux.md), additional visual references for survey-style KPI/chart layout and listing-style accommodation detail presentation
 
-**Status**: REFINED
+**Status**: DONE (released v0.15.0–v0.15.8, 2026-03-31 bis 2026-04-03)
 
 ---
 

@@ -34,7 +34,7 @@ Das System besteht aus folgenden Bausteinen:
 |----------|--------------|
 | **Spring Cloud Gateway** | Zentrales Routing, Authentifizierungsprüfung |
 | **travelmate-iam** | Reisepartei-Verwaltung (Tenants), Mitglieder (Accounts), Mitreisende (Dependents), Sign-up via Keycloak Admin API |
-| **travelmate-trips** | Trip-Planung, Einladungen, Teilnehmer, Aufenthaltsdauer, Trip-Status-Lifecycle, Rezeptverwaltung, Essensplan, Einkaufsliste, Unterkunft |
+| **travelmate-trips** | Trip-Planung, Einladungen, Teilnehmer, Aufenthaltsdauer, Trip-Status-Lifecycle, Rezeptverwaltung, Essensplan, Einkaufsliste, Unterkunft, Termin-Abstimmung (DatePoll), Unterkunfts-Abstimmung (AccommodationPoll mit Booking-Workflow) |
 | **travelmate-expense** | Abrechnung abgeschlossener Trips: Belege (Receipts), gewichtete Kostenaufteilung (Weightings), Saldo-Berechnung (Settlement), Reisepartei-Abrechnung (Party Settlement), Vorauszahlungen (Advance Payments). Konsumiert Trip-Events fuer lokale TripProjection. Port 8083, Context-Path `/expense`, Datenbank `travelmate_expense` (Port 5434) |
 | **RabbitMQ (AMQP)** | Asynchroner Nachrichtenaustausch zwischen den SCS (Topic Exchange `travelmate.events`) |
 | **Keycloak** | Zentraler Identity Provider (OIDC) |
@@ -88,6 +88,8 @@ de.evia.travelmate.<service>/
 - MealPlan (Aggregate Root: MealPlanId, TenantId, TripId, MealSlots — Essensplan-Raster pro Trip, 3 Mahlzeiten/Tag)
 - ShoppingList (Aggregate Root: ShoppingListId, TenantId, TripId, ShoppingItems — persistierte Einkaufsliste pro Trip, generiert aus MealPlan-Rezepten + manuelle Items)
 - Accommodation (Aggregate Root: AccommodationId, TenantId, TripId, Rooms, RoomAssignments — Unterkunft pro Trip mit Zimmern und Belegungszuordnung)
+- DatePoll (Aggregate Root: DatePollId, TenantId, TripId — Doodle-artige Terminabstimmung mit Mehrfachauswahl, Stimmrecht pro Account)
+- AccommodationPoll (Aggregate Root: AccommodationPollId, TenantId, TripId — Unterkunftsabstimmung mit Kandidaten, Einzelstimme mit Re-Vote, BookingAttempt-Workflow, Amenities, Adresse)
 - IngredientAggregator (Domain Service: Skalierung und Aggregation von Rezept-Zutaten nach Teilnehmerzahl)
 
 **Trips Adapter-Erweiterungen (Iteration 4):**

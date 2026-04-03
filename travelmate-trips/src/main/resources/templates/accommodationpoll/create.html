@@ -2,10 +2,30 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="content">
-    <hgroup>
-        <h1 th:text="#{accommodationpoll.create}">Unterkunftsabstimmung erstellen</h1>
-        <p><a th:href="@{/{id}(id=${trip.tripId()})}" th:text="${trip.name()}">Reise</a></p>
-    </hgroup>
+    <article class="page-hero page-hero--trip">
+        <div class="page-hero__layout">
+            <div class="page-hero__copy">
+                <p class="page-hero__eyebrow" th:text="#{planning.step2}">Schritt 2</p>
+                <hgroup>
+                    <h1 th:text="#{accommodationpoll.create}">Unterkunftsabstimmung erstellen</h1>
+                    <p class="page-hero__lead">
+                        <a th:href="@{/{id}(id=${trip.tripId()})}" th:text="${trip.name()}">Reise</a>
+                    </p>
+                </hgroup>
+            </div>
+            <div class="page-hero__art" aria-hidden="true">
+                <svg viewBox="0 0 220 140">
+                    <path d="M28 108h164"></path>
+                    <path d="M52 108V60l30-18 28 17 28-17 30 18v48"></path>
+                    <path d="M66 108V74h30v34"></path>
+                    <path d="M126 108V74h26v34"></path>
+                    <path d="M82 42V24"></path>
+                    <circle cx="176" cy="38" r="12"></circle>
+                    <path d="m170 38 4 4 8-10"></path>
+                </svg>
+            </div>
+        </div>
+    </article>
 
     <p th:text="#{accommodationpoll.createHint}" style="color:var(--tm-text-soft); margin-bottom:1rem;">
         Erfasse mindestens zwei Unterkünfte mit Zimmern, damit die Gruppe sinnvoll vergleichen kann.

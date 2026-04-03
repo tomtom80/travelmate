@@ -4,7 +4,7 @@
 **Target Version**: v0.14.0
 **Input**: [iteration-14-stories.md](./iteration-14-stories.md), [iteration-14-scope.md](../design/eventstorming/iteration-14-scope.md)
 
-**Status**: REFINED
+**Status**: DONE (released v0.14.0 + v0.14.1, 2026-03-31)
 
 ---
 

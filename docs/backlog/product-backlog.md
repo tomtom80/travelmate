@@ -1,6 +1,6 @@
 # Product Backlog — Travelmate
 
-Stand: 2026-03-10
+Stand: 2026-04-03
 
 ---
 
@@ -65,7 +65,7 @@ IAM ──(U)──→ D. Conformist ──→ Trips ──→ Partnership ─�
 | E-TRIPS-05 | Trips | Recipe Management (Rezepte) | TODO |
 | E-TRIPS-06 | Trips | Shopping List (Einkaufsliste) | TODO |
 | E-TRIPS-07 | Trips | Location & Accommodation | TODO |
-| E-TRIPS-08 | Trips | Collaborative Trip Decision Making | TODO |
+| E-TRIPS-08 | Trips | Collaborative Trip Decision Making | ✅ Done (v0.14.0–v0.15.8) |
 | E-EXP-01 | Expense | Receipt Management (Kassenzettel) | TODO |
 | E-EXP-02 | Expense | Expense Tracking & Categories | TODO |
 | E-EXP-03 | Expense | Weighting & Splitting | TODO |

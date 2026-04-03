@@ -2,55 +2,87 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="content">
-    <hgroup>
-        <h1 th:text="#{recipe.title}">Rezepte</h1>
-        <p th:text="#{recipe.subtitle}">Deine Rezeptsammlung fuer die Reiseplanung.</p>
-    </hgroup>
+    <article class="page-hero page-hero--recipe">
+        <div class="page-hero__layout">
+            <div class="page-hero__copy">
+                <p class="page-hero__eyebrow" th:text="#{nav.recipes}">Rezepte</p>
+                <hgroup>
+                    <h1 th:text="#{recipe.title}">Rezepte</h1>
+                    <p class="page-hero__lead" th:text="#{recipe.subtitle}">Deine Rezeptsammlung fuer die Reiseplanung.</p>
+                </hgroup>
+                <div class="page-meta-list">
+                    <div class="page-stat">
+                        <strong th:text="${recipes.size()}">0</strong>
+                        <span th:text="#{recipe.title}">Rezepte</span>
+                    </div>
+                </div>
+                <div class="page-actions">
+                    <a th:href="@{/recipes/new}" role="button" th:text="#{recipe.create}">Neues Rezept</a>
+                </div>
+            </div>
+            <div class="page-hero__art" aria-hidden="true">
+                <svg viewBox="0 0 240 160">
+                    <!-- Stylized Food icon (Pot/Plate) -->
+                    <path d="M60 110h120c0 15-15 30-60 30s-60-15-60-30z" stroke-width="2.5"></path>
+                    <path d="M70 110V85c0-10 10-15 50-15s50 5 50 15v25" stroke-width="2.5"></path>
+                    <path d="M120 70V55" stroke-width="2.5"></path>
+                    <circle cx="120" cy="50" r="5" stroke-width="2.5"></circle>
+                </svg>
+            </div>
+        </div>
+    </article>
 
-    <div class="table-toolbar">
-        <a th:href="@{/recipes/new}" role="button" class="outline btn-add" th:text="#{recipe.create}">Neues Rezept</a>
+    <section class="section-card">
+        <div class="section-heading">
+            <h2 th:text="#{recipe.title}">Rezepte</h2>
+            <div class="table-toolbar" style="margin-bottom:0;">
+                <a th:href="@{/recipes/new}" role="button" class="outline btn-add" th:text="#{recipe.create}">Neues Rezept</a>
+            </div>
+        </div>
+
+        <figure class="table-cards" th:if="${!recipes.isEmpty()}">
+            <table>
+                <thead>
+                    <tr>
+                        <th th:text="#{recipe.name}">Name</th>
+                        <th th:text="#{recipe.servings}">Portionen</th>
+                        <th th:text="#{recipe.ingredients}">Zutaten</th>
+                        <th class="table-actions-header" th:text="#{common.actions}">Aktionen</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr th:each="r : ${recipes}">
+                        <td th:data-label="#{recipe.name}" th:text="${r.name()}"></td>
+                        <td th:data-label="#{recipe.servings}" th:text="${r.servings()}"></td>
+                        <td th:data-label="#{recipe.ingredients}" th:text="${r.ingredients().size()}"></td>
+                        <td th:data-label="#{common.actions}">
+                            <div class="action-col">
+                                <a th:href="@{/recipes/{id}/edit(id=${r.recipeId()})}"
+                                   class="btn-icon"
+                                   th:title="#{common.edit}" th:aria-label="#{common.edit}">
+                                    <svg viewBox="0 0 24 24"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                                </a>
+                                <form method="post" th:action="@{/recipes/{id}/delete(id=${r.recipeId()})}"
+                                      onsubmit="return confirm(this.dataset.confirmMsg);"
+                                      th:data-confirm-msg="#{recipe.delete.confirm}"
+                                      style="margin:0;">
+                                    <button type="submit" class="btn-icon btn-icon--danger"
+                                            th:title="#{common.delete}" th:aria-label="#{common.delete}">
+                                        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </figure>
+        <p th:if="${recipes.isEmpty()}" th:text="#{recipe.empty}">Noch keine Rezepte vorhanden.</p>
+    </section>
+
+    <div style="margin-top:1.5rem;">
+        <a th:href="@{/}" role="button" class="outline" th:text="#{common.back}">Zurück</a>
     </div>
-
-    <figure class="table-cards" th:if="${!recipes.isEmpty()}">
-        <table>
-            <thead>
-                <tr>
-                    <th th:text="#{recipe.name}">Name</th>
-                    <th th:text="#{recipe.servings}">Portionen</th>
-                    <th th:text="#{recipe.ingredients}">Zutaten</th>
-                    <th class="table-actions-header" th:text="#{common.actions}">Aktionen</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr th:each="r : ${recipes}">
-                    <td th:data-label="#{recipe.name}" th:text="${r.name()}"></td>
-                    <td th:data-label="#{recipe.servings}" th:text="${r.servings()}"></td>
-                    <td th:data-label="#{recipe.ingredients}" th:text="${r.ingredients().size()}"></td>
-                    <td th:data-label="#{common.actions}">
-                        <div class="action-col">
-                            <a th:href="@{/recipes/{id}/edit(id=${r.recipeId()})}"
-                               class="btn-icon"
-                               th:title="#{common.edit}" th:aria-label="#{common.edit}">
-                                <svg viewBox="0 0 24 24"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
-                            </a>
-                            <form method="post" th:action="@{/recipes/{id}/delete(id=${r.recipeId()})}"
-                                  onsubmit="return confirm(this.dataset.confirmMsg);"
-                                  th:data-confirm-msg="#{recipe.delete.confirm}"
-                                  style="margin:0;">
-                                <button type="submit" class="btn-icon btn-icon--danger"
-                                        th:title="#{common.delete}" th:aria-label="#{common.delete}">
-                                    <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                                </button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-    </figure>
-    <p th:if="${recipes.isEmpty()}" th:text="#{recipe.empty}">Noch keine Rezepte vorhanden.</p>
-
-    <a th:href="@{/}" role="button" class="outline" th:text="#{common.back}">Zurück</a>
 </div>
 </body>
 </html>
