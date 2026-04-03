@@ -25,7 +25,8 @@
                     <td th:data-label="#{expense.weighting.ageOnTripStart}"
                         th:text="${weighting.ageOnTripStart() != null ? weighting.ageOnTripStart() : '—'}"></td>
                     <td th:data-label="#{expense.weighting.weight}">
-                        <form hx-post th:hx-post="@{/{tripId}/weightings(tripId=${tripId})}"
+                        <form th:if="${expense.status().name() != 'SETTLED'}"
+                              hx-post th:hx-post="@{/{tripId}/weightings(tripId=${tripId})}"
                               hx-target="#weightings" hx-swap="innerHTML" style="margin:0;">
                             <input type="hidden" name="participantId" th:value="${weighting.participantId()}">
                             <div style="display:flex; gap:0.5rem; align-items:center;">
@@ -39,6 +40,8 @@
                                 </button>
                             </div>
                         </form>
+                        <span th:if="${expense.status().name() == 'SETTLED'}"
+                              th:text="${#numbers.formatDecimal(weighting.weight(), 1, 1)}">1.0</span>
                     </td>
                 </tr>
             </tbody>

@@ -18,6 +18,19 @@
     --tm-poll-c5: #009999;
 }
 
+/* ── Organizer Label ─────────────────────────────────── */
+.organizer-label {
+    display: block;
+    color: var(--tm-primary);
+    font-weight: 600;
+}
+
+@media (max-width: 767px) {
+    .organizer-label {
+        text-align: right;
+    }
+}
+
 /* ── Icon Buttons ────────────────────────────────────── */
 button.btn-icon,
 a.btn-icon {

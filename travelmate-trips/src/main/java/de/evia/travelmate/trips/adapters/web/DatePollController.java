@@ -107,6 +107,10 @@ public class DatePollController {
             dateRanges.add(new DateRangeCommand(startDates.get(i), endDates.get(i)));
         }
 
+        if (dateRanges.size() < 2) {
+            return "redirect:/" + tripId + "/datepoll/create";
+        }
+
         datePollService.createDatePoll(new CreateDatePollCommand(
             trip.tenantId(), tripId, dateRanges));
 
