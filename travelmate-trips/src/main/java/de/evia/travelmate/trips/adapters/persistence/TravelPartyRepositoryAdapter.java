@@ -26,6 +26,7 @@ public class TravelPartyRepositoryAdapter implements TravelPartyRepository {
         final TravelPartyJpaEntity entity = jpaRepository.findById(travelParty.tenantId().value())
             .orElseGet(() -> new TravelPartyJpaEntity(travelParty.tenantId().value(), travelParty.name()));
 
+        entity.setName(travelParty.name());
         syncMembers(entity, travelParty);
         syncDependents(entity, travelParty);
 

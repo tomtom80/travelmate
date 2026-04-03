@@ -76,4 +76,18 @@ class TravelPartyRepositoryAdapterTest {
         final Optional<TravelParty> found = repository.findByTenantId(new TenantId(UUID.randomUUID()));
         assertThat(found).isEmpty();
     }
+
+    @Test
+    void persistsRenamedTravelPartyName() {
+        final TenantId tenantId = new TenantId(UUID.randomUUID());
+        final TravelParty party = TravelParty.create(tenantId, tenantId.value().toString());
+
+        repository.save(party);
+
+        party.updateName("Familie Kressler");
+        repository.save(party);
+
+        final TravelParty found = repository.findByTenantId(tenantId).orElseThrow();
+        assertThat(found.name()).isEqualTo("Familie Kressler");
+    }
 }

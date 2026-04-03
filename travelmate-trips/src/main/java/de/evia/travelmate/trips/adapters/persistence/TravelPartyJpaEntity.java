@@ -45,6 +45,10 @@ public class TravelPartyJpaEntity {
         return name;
     }
 
+    public void setName(final String name) {
+        this.name = name;
+    }
+
     public List<MemberJpaEntity> getMembers() {
         return members;
     }

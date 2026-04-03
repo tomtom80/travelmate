@@ -34,4 +34,23 @@ public class TenantRenameSteps {
         navigateAndWait("/iam/dashboard");
         assertThat(page.content()).contains(name);
     }
+
+    @Then("the current trip participant list shows the party name {string}")
+    public void theCurrentTripParticipantListShowsThePartyName(final String name) {
+        final String tripDetailUrl = TripPlanningSteps.getCurrentTripDetailUrl();
+        assertThat(tripDetailUrl).as("Expected current trip detail URL to be available").isNotBlank();
+
+        for (int i = 0; i < 20; i++) {
+            navigateAndWait(tripDetailUrl.replace(BASE_URL, ""));
+            final String content = page.content();
+            if (content.contains("Teilnehmer") && content.contains(name)) {
+                return;
+            }
+            page.waitForTimeout(500);
+        }
+
+        navigateAndWait(tripDetailUrl.replace(BASE_URL, ""));
+        assertThat(page.content()).contains("Teilnehmer");
+        assertThat(page.content()).contains(name);
+    }
 }

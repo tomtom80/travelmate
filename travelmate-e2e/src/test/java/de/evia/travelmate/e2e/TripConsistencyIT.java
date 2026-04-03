@@ -104,7 +104,30 @@ class TripConsistencyIT extends E2ETestBase {
 
         assertThat(page.content()).contains(RENAMED_PARTY_NAME);
 
+        assertTripDetailEventuallyShowsRenamedParty();
         assertExpenseEventuallyShowsRenamedParty();
+    }
+
+    private void assertTripDetailEventuallyShowsRenamedParty() {
+        for (int i = 0; i < 30; i++) {
+            navigateAndWait("/trips/" + tripId);
+            final var participantRow = page.locator("tr", new Page.LocatorOptions().setHasText(COMPANION_NAME)).first();
+            if (participantRow.count() > 0) {
+                final String rowText = participantRow.innerText();
+                if (rowText.contains(RENAMED_PARTY_NAME)
+                    && !rowText.contains(ORIGINAL_PARTY_NAME)) {
+                    return;
+                }
+            }
+            final String content = page.content();
+            if (content.contains(RENAMED_PARTY_NAME)
+                && content.contains(COMPANION_NAME)
+                && !content.contains(">" + ORIGINAL_PARTY_NAME + "<")) {
+                return;
+            }
+            page.waitForTimeout(500);
+        }
+        throw new AssertionError("Trip detail did not show renamed party name: " + RENAMED_PARTY_NAME);
     }
 
     private void assertExpenseEventuallyShowsRenamedParty() {
