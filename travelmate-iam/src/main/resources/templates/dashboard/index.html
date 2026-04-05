@@ -17,21 +17,13 @@
                     <button type="button" class="btn-icon"
                             onclick="document.getElementById('rename-tenant-dialog').showModal()"
                             th:title="#{travelParty.rename}" th:aria-label="#{travelParty.rename}">
-                        <svg viewBox="0 0 24 24"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"></path><path d="m15 5 4 4"></path></svg>
+                        <svg th:replace="~{fragments/icons :: icon-edit}"></svg>
                         <span class="sr-only" th:text="#{travelParty.rename}">Reisepartei umbenennen</span>
                     </button>
                 </div>
             </div>
             <div class="page-hero__art" aria-hidden="true">
-                <svg viewBox="0 0 240 160">
-                    <!-- Stylized group of people icon -->
-                    <circle cx="120" cy="55" r="25"></circle>
-                    <path d="M70 120c0-20 20-35 50-35s50 15 50 35"></path>
-                    <circle cx="75" cy="75" r="18"></circle>
-                    <path d="M40 125c0-15 15-25 35-25s35 10 35 25"></path>
-                    <circle cx="165" cy="75" r="18"></circle>
-                    <path d="M130 125c0-15 15-25 35-25s35 10 35 25"></path>
-                </svg>
+                <svg th:replace="~{fragments/heroes :: hero-party}"></svg>
             </div>
         </div>
     </div>

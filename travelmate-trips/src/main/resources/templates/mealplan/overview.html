@@ -18,16 +18,7 @@
                 </div>
             </div>
             <div class="page-hero__art" aria-hidden="true">
-                <svg viewBox="0 0 240 160">
-                    <!-- Stylized Calendar/Grid icon -->
-                    <rect x="50" y="40" width="140" height="90" rx="8" stroke-width="2.5"></rect>
-                    <line x1="50" y1="65" x2="190" y2="65" stroke-width="2.5"></line>
-                    <line x1="85" y1="40" x2="85" y2="130" stroke-width="2"></line>
-                    <line x1="120" y1="40" x2="120" y2="130" stroke-width="2"></line>
-                    <line x1="155" y1="40" x2="155" y2="130" stroke-width="2"></line>
-                    <circle cx="67" cy="85" r="8" stroke-width="2"></circle>
-                    <circle cx="102" cy="110" r="8" stroke-width="2"></circle>
-                </svg>
+                <svg th:replace="~{fragments/heroes :: hero-mealplan}"></svg>
             </div>
         </div>
     </article>

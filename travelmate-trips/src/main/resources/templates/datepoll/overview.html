@@ -2,22 +2,55 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="content">
-    <hgroup>
+    <hgroup th:if="${datePoll != null}">
         <h1 th:text="#{datepoll.title}">Terminabstimmung</h1>
         <p><a th:href="@{/{id}(id=${trip.tripId()})}" th:text="${trip.name()}">Reise</a></p>
     </hgroup>
 
-    <article th:if="${datePoll == null}">
-        <div class="poll-empty-state">
-            <p class="poll-empty-state__eyebrow" th:text="#{planning.step1}">Schritt 1</p>
-            <h2 th:text="#{datepoll.title}">Terminabstimmung</h2>
-            <p th:text="#{datepoll.empty}">Noch keine Terminabstimmung vorhanden.</p>
-            <a th:if="${isOrganizer && trip.status() == 'PLANNING'}"
-               th:href="@{/{id}/datepoll/create(id=${trip.tripId()})}"
-               role="button"
-               th:text="#{datepoll.create}">Terminabstimmung erstellen</a>
-        </div>
-    </article>
+    <th:block th:if="${datePoll == null}">
+        <article class="page-hero page-hero--trip">
+            <div class="page-hero__layout">
+                <div class="page-hero__copy">
+                    <p class="page-hero__eyebrow" th:text="#{planning.step1}">Schritt 1</p>
+                    <hgroup>
+                        <h1 th:text="#{datepoll.title}">Terminabstimmung</h1>
+                        <p class="page-hero__lead" th:text="#{datepoll.empty}">
+                            Noch keine Terminabstimmung vorhanden.
+                        </p>
+                    </hgroup>
+                    <div class="page-meta-list">
+                        <div class="page-stat">
+                            <strong>0</strong>
+                            <span th:text="#{datepoll.option}">Zeitraum</span>
+                        </div>
+                        <div class="page-stat">
+                            <strong th:text="${trip.name()}">Reise</strong>
+                            <span th:text="#{nav.trips}">Reisen</span>
+                        </div>
+                    </div>
+                    <div class="page-actions" th:if="${isOrganizer && trip.status() == 'PLANNING'}">
+                        <a th:href="@{/{id}/datepoll/create(id=${trip.tripId()})}"
+                           role="button"
+                           th:text="#{datepoll.create}">Terminabstimmung erstellen</a>
+                    </div>
+                </div>
+                <div class="page-hero__art" aria-hidden="true">
+                    <svg th:replace="~{fragments/heroes :: hero-calendar-poll}"></svg>
+                </div>
+            </div>
+        </article>
+
+        <article class="section-card">
+            <div class="poll-empty-state">
+                <p class="poll-empty-state__eyebrow" th:text="#{planning.step1}">Schritt 1</p>
+                <h2 th:text="#{datepoll.title}">Terminabstimmung</h2>
+                <p th:text="#{datepoll.empty}">Noch keine Terminabstimmung vorhanden.</p>
+                <p>
+                    <a th:href="@{/{id}(id=${trip.tripId()})}" th:text="${trip.name()}">Reise</a>
+                </p>
+            </div>
+        </article>
+    </th:block>
 
     <th:block th:if="${datePoll != null}">
         <article class="poll-hero">
@@ -54,19 +87,7 @@
                     </div>
                 </div>
                 <div class="poll-hero__art" aria-hidden="true">
-                    <svg viewBox="0 0 220 140">
-                        <rect x="18" y="22" width="184" height="96" rx="18"></rect>
-                        <path d="M52 22v96"></path>
-                        <path d="M88 22v96"></path>
-                        <path d="M124 22v96"></path>
-                        <path d="M160 22v96"></path>
-                        <path d="M18 54h184"></path>
-                        <path d="M18 86h184"></path>
-                        <circle cx="70" cy="70" r="10"></circle>
-                        <path d="m66 70 3 3 6-7"></path>
-                        <circle cx="142" cy="102" r="10"></circle>
-                        <path d="m138 102 3 3 6-7"></path>
-                    </svg>
+                    <svg th:replace="~{fragments/heroes :: hero-calendar-poll}"></svg>
                 </div>
             </div>
         </article>
@@ -136,7 +157,7 @@
                                             class="btn-icon btn-icon--danger"
                                             th:attr="form=${'remove-option-' + option.dateOptionId()}"
                                             th:title="#{common.remove}" th:aria-label="#{common.remove}">
-                                        <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                                        <svg th:replace="~{fragments/icons :: icon-trash}"></svg>
                                     </button>
                                 </td>
                             </tr>

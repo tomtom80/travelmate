@@ -18,13 +18,7 @@
                 </div>
             </div>
             <div class="page-hero__art" aria-hidden="true">
-                <svg viewBox="0 0 240 160">
-                    <!-- Stylized House icon -->
-                    <path d="M50 130h140V75L120 30 50 75v55z" stroke-width="2.5"></path>
-                    <rect x="105" y="95" width="30" height="35" stroke-width="2.5"></rect>
-                    <rect x="70" y="80" width="20" height="20" stroke-width="2.5"></rect>
-                    <rect x="150" y="80" width="20" height="20" stroke-width="2.5"></rect>
-                </svg>
+                <svg th:replace="~{fragments/heroes :: hero-house}"></svg>
             </div>
         </div>
     </article>
@@ -109,7 +103,7 @@
                                 th:data-dialog-id="'edit-room-dialog-' + ${room.roomId()}"
                                 onclick="document.getElementById(this.dataset.dialogId).showModal()"
                                 th:title="#{common.edit}" th:aria-label="#{common.edit}">
-                            <svg viewBox="0 0 24 24"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                            <svg th:replace="~{fragments/icons :: icon-edit}"></svg>
                         </button>
                         <form method="post"
                               th:action="@{/{tid}/accommodation/rooms/{rid}/delete(tid=${trip.tripId()},rid=${room.roomId()})}"
@@ -117,7 +111,7 @@
                               onsubmit="return confirm(/*[[#{accommodation.room.delete.confirm}]]*/ 'Zimmer wirklich entfernen?')">
                             <button type="submit" class="btn-icon btn-icon--danger"
                                     th:title="#{common.remove}" th:aria-label="#{common.remove}">
-                                <svg viewBox="0 0 24 24"><path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2"/></svg>
+                                <svg th:replace="~{fragments/icons :: icon-trash}"></svg>
                             </button>
                         </form>
                     </div>
@@ -134,7 +128,7 @@
                               style="display:inline; margin:0;"
                               onsubmit="return confirm(/*[[#{accommodation.room.unassign.confirm}]]*/ 'Zuweisung wirklich entfernen?')">
                             <button type="submit" class="btn-icon btn-icon--danger" style="width:1.5rem; height:1.5rem; min-width:1.5rem; min-height:1.5rem; max-width:1.5rem; max-height:1.5rem;">
-                                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                <svg th:replace="~{fragments/icons :: icon-delete}"></svg>
                             </button>
                         </form>
                     </div>
@@ -389,7 +383,7 @@
                         <button type="button" class="btn-icon btn-icon--danger"
                                 style="position:absolute; top:0.5rem; right:0.5rem;"
                                 onclick="removeRoomRow(this)">
-                            <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            <svg th:replace="~{fragments/icons :: icon-delete}"></svg>
                         </button>
                         <div class="grid">
                             <label>
@@ -510,7 +504,7 @@
             <button type="button" class="btn-icon btn-icon--danger"
                     style="position:absolute; top:0.5rem; right:0.5rem;"
                     onclick="removeRoomRow(this)">
-                <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                <svg th:replace="~{fragments/icons :: icon-delete}"></svg>
             </button>
             <div class="grid">
                 <label>

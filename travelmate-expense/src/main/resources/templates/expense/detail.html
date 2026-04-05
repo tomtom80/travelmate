@@ -29,25 +29,7 @@
                 </div>
             </div>
             <div class="page-hero__art" aria-hidden="true">
-                <svg viewBox="0 0 240 160">
-                    <!-- Offenes Portemonnaie mit Geldscheinen + Münzstapel -->
-                    <rect x="40" y="52" width="100" height="65" rx="10" stroke-width="2.5"></rect>
-                    <path d="M40 75h100" stroke-width="1.5"></path>
-                    <path d="M40 52c0 0 10-22 50-22s50 22 50 22" stroke-width="2.5" fill="none"></path>
-                    <rect x="55" y="28" width="50" height="28" rx="3" stroke-width="2" fill="none"></rect>
-                    <line x1="68" y1="38" x2="92" y2="38" stroke-width="1.5"></line>
-                    <line x1="68" y1="46" x2="85" y2="46" stroke-width="1.5"></line>
-                    <rect x="70" y="22" width="45" height="26" rx="3" stroke-width="1.5" fill="none" opacity="0.5"></rect>
-                    <ellipse cx="175" cy="120" rx="28" ry="8" stroke-width="2.5"></ellipse>
-                    <ellipse cx="175" cy="112" rx="28" ry="8" stroke-width="2"></ellipse>
-                    <ellipse cx="175" cy="104" rx="28" ry="8" stroke-width="2"></ellipse>
-                    <ellipse cx="175" cy="96" rx="28" ry="8" stroke-width="2"></ellipse>
-                    <line x1="147" y1="96" x2="147" y2="120" stroke-width="2"></line>
-                    <line x1="203" y1="96" x2="203" y2="120" stroke-width="2"></line>
-                    <path d="M181 89c-2-3-5-5-9-5-6 0-11 5-11 12s5 12 11 12c4 0 7-2 9-5" stroke-width="2" fill="none"></path>
-                    <line x1="160" y1="93" x2="174" y2="93" stroke-width="1.5"></line>
-                    <line x1="160" y1="99" x2="174" y2="99" stroke-width="1.5"></line>
-                </svg>
+                <svg th:replace="~{fragments/heroes :: hero-wallet}"></svg>
             </div>
         </div>
     </article>
@@ -290,11 +272,11 @@
                                           style="margin:0;">
                                         <button th:if="${!ap.paid()}" type="submit" class="btn-icon"
                                                 th:title="#{advance.paid}" th:aria-label="#{advance.paid}">
-                                            <svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg>
+                                            <svg th:replace="~{fragments/icons :: icon-check}"></svg>
                                         </button>
                                         <button th:if="${ap.paid()}" type="submit" class="btn-icon"
                                                 th:title="#{advance.unpaid}" th:aria-label="#{advance.unpaid}">
-                                            <svg viewBox="0 0 24 24"><path d="M3 6h18"/><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6"/></svg>
+                                            <svg th:replace="~{fragments/icons :: icon-trash}"></svg>
                                         </button>
                                     </form>
                                 </div>

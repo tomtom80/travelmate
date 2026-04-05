@@ -21,13 +21,7 @@
                 </div>
             </div>
             <div class="page-hero__art" aria-hidden="true">
-                <svg viewBox="0 0 240 160">
-                    <!-- Stylized Food icon (Pot/Plate) -->
-                    <path d="M60 110h120c0 15-15 30-60 30s-60-15-60-30z" stroke-width="2.5"></path>
-                    <path d="M70 110V85c0-10 10-15 50-15s50 5 50 15v25" stroke-width="2.5"></path>
-                    <path d="M120 70V55" stroke-width="2.5"></path>
-                    <circle cx="120" cy="50" r="5" stroke-width="2.5"></circle>
-                </svg>
+                <svg th:replace="~{fragments/heroes :: hero-recipe}"></svg>
             </div>
         </div>
     </article>
@@ -60,7 +54,7 @@
                                 <a th:href="@{/recipes/{id}/edit(id=${r.recipeId()})}"
                                    class="btn-icon"
                                    th:title="#{common.edit}" th:aria-label="#{common.edit}">
-                                    <svg viewBox="0 0 24 24"><path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></svg>
+                                    <svg th:replace="~{fragments/icons :: icon-edit}"></svg>
                                 </a>
                                 <form method="post" th:action="@{/recipes/{id}/delete(id=${r.recipeId()})}"
                                       onsubmit="return confirm(this.dataset.confirmMsg);"
@@ -68,7 +62,7 @@
                                       style="margin:0;">
                                     <button type="submit" class="btn-icon btn-icon--danger"
                                             th:title="#{common.delete}" th:aria-label="#{common.delete}">
-                                        <svg viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                                        <svg th:replace="~{fragments/icons :: icon-delete}"></svg>
                                     </button>
                                 </form>
                             </div>

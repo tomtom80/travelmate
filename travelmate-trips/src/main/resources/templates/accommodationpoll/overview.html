@@ -2,22 +2,55 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="content">
-    <hgroup>
+    <hgroup th:if="${accommodationPoll != null}">
         <h1 th:text="#{accommodationpoll.title}">Unterkunftsabstimmung</h1>
         <p><a th:href="@{/{id}(id=${trip.tripId()})}" th:text="${trip.name()}">Reise</a></p>
     </hgroup>
 
-    <article th:if="${accommodationPoll == null}">
-        <div class="poll-empty-state">
-            <p class="poll-empty-state__eyebrow" th:text="#{planning.step2}">Schritt 2</p>
-            <h2 th:text="#{accommodationpoll.title}">Unterkunftsabstimmung</h2>
-            <p th:text="#{accommodationpoll.empty}">Noch keine Unterkunftsabstimmung vorhanden.</p>
-            <a th:if="${isOrganizer && trip.status() == 'PLANNING'}"
-               th:href="@{/{id}/accommodationpoll/create(id=${trip.tripId()})}"
-               role="button"
-               th:text="#{accommodationpoll.create}">Unterkunftsabstimmung erstellen</a>
-        </div>
-    </article>
+    <th:block th:if="${accommodationPoll == null}">
+        <article class="page-hero page-hero--trip">
+            <div class="page-hero__layout">
+                <div class="page-hero__copy">
+                    <p class="page-hero__eyebrow" th:text="#{planning.step2}">Schritt 2</p>
+                    <hgroup>
+                        <h1 th:text="#{accommodationpoll.title}">Unterkunftsabstimmung</h1>
+                        <p class="page-hero__lead" th:text="#{accommodationpoll.empty}">
+                            Noch keine Unterkunftsabstimmung vorhanden.
+                        </p>
+                    </hgroup>
+                    <div class="page-meta-list">
+                        <div class="page-stat">
+                            <strong>0</strong>
+                            <span th:text="#{accommodationpoll.kpi.candidates}">Kandidaten</span>
+                        </div>
+                        <div class="page-stat">
+                            <strong th:text="${trip.name()}">Reise</strong>
+                            <span th:text="#{nav.trips}">Reisen</span>
+                        </div>
+                    </div>
+                    <div class="page-actions" th:if="${isOrganizer && trip.status() == 'PLANNING'}">
+                        <a th:href="@{/{id}/accommodationpoll/create(id=${trip.tripId()})}"
+                           role="button"
+                           th:text="#{accommodationpoll.create}">Unterkunftsabstimmung erstellen</a>
+                    </div>
+                </div>
+                <div class="page-hero__art" aria-hidden="true">
+                    <svg th:replace="~{fragments/heroes :: hero-house-poll}"></svg>
+                </div>
+            </div>
+        </article>
+
+        <article class="section-card">
+            <div class="poll-empty-state">
+                <p class="poll-empty-state__eyebrow" th:text="#{planning.step2}">Schritt 2</p>
+                <h2 th:text="#{accommodationpoll.title}">Unterkunftsabstimmung</h2>
+                <p th:text="#{accommodationpoll.empty}">Noch keine Unterkunftsabstimmung vorhanden.</p>
+                <p>
+                    <a th:href="@{/{id}(id=${trip.tripId()})}" th:text="${trip.name()}">Reise</a>
+                </p>
+            </div>
+        </article>
+    </th:block>
 
     <th:block th:if="${accommodationPoll != null}">
         <article class="poll-hero">
@@ -46,15 +79,7 @@
                     </div>
                 </div>
                 <div class="poll-hero__art" aria-hidden="true">
-                    <svg viewBox="0 0 220 140">
-                        <path d="M28 108h164"></path>
-                        <path d="M52 108V60l30-18 28 17 28-17 30 18v48"></path>
-                        <path d="M66 108V74h30v34"></path>
-                        <path d="M126 108V74h26v34"></path>
-                        <path d="M82 42V24"></path>
-                        <circle cx="176" cy="38" r="12"></circle>
-                        <path d="m170 38 4 4 8-10"></path>
-                    </svg>
+                    <svg th:replace="~{fragments/heroes :: hero-house-poll}"></svg>
                 </div>
             </div>
         </article>
