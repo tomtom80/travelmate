@@ -65,6 +65,24 @@
         </dependencies>
     </dependencyManagement>
 
+    <!--
+      mockito-core is referenced unconditionally as a -javaagent in surefire's argLine
+      (see <build>/<plugins> below). Modules that don't otherwise depend on Mockito (e.g.
+      travelmate-common) would otherwise not trigger Maven to download mockito-core into
+      the local repo — and surefire would then fork the JVM with a -javaagent path that
+      doesn't yet exist, producing "Error opening zip file or JAR manifest missing".
+      Declaring mockito-core test-scoped at the parent level forces Maven to resolve it
+      for every module before tests run, guaranteeing the agent JAR is on disk.
+    -->
+    <dependencies>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>${mockito.version}</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
     <build>
         <plugins>
             <plugin>
