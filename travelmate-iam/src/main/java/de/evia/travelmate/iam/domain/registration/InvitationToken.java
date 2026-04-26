@@ -4,6 +4,7 @@ import static de.evia.travelmate.common.domain.Assertion.argumentIsNotBlank;
 import static de.evia.travelmate.common.domain.Assertion.argumentIsNotNull;
 
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 
 import de.evia.travelmate.iam.domain.account.AccountId;
@@ -26,7 +27,7 @@ public class InvitationToken {
         argumentIsNotNull(expiresAt, "expiresAt");
         this.tokenValue = tokenValue;
         this.accountId = accountId;
-        this.expiresAt = expiresAt;
+        this.expiresAt = expiresAt.truncatedTo(ChronoUnit.MICROS);
         this.used = used;
     }
 

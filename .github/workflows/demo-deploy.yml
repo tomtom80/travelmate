@@ -25,16 +25,6 @@ jobs:
           distribution: temurin
           java-version: '21'
           cache: maven
-      - name: Purge corrupt cached JARs (cache-restore safety net)
-        run: |
-          set +e                    
-          find ~/.m2/repository -name '*.jar' -print0 2>/dev/null | while IFS= read -r -d '' jar; do                                                                        
-            if ! unzip -tq "$jar" >/dev/null 2>&1; then                                                                                                                     
-              echo "Corrupt JAR detected, purging directory: $jar"                                                                                                          
-              rm -rf "$(dirname "$jar")"                                                                                                                                    
-            fi                                                                                                                                                              
-          done                                                                                                                                                              
-          exit 0     
 
       - name: Run Maven verify
         run: ./mvnw -B -ntp verify
