@@ -1,6 +1,20 @@
 # Requirements Engineer Agent Memory
 
 ## Iteration History
+- Iteration 18 (v0.18.0): Stories written 2026-04-26 — Multi-Organizer IAM + Trip-Invitation Email + GlobalExceptionHandler cleanup
+  - Story document: reports/iteration-18-stories.md
+  - S18-D01 (S): GlobalExceptionHandler vereinheitlichen — IAM fehlt MessageSource-Injection + ResponseStatusException-Handler; reiner Code-Abgleich, kein Shared-Modul
+  - S18-A01 (M): Organizer-Rolle vergeben (US-IAM-040) — AssignOrganizerRoleCommand; IdentityProviderService.assignRole() + RoleAssignedToUser event (beide bereits vorhanden); Guard: selber TenantId
+  - S18-A02 (S): Organizer-Rolle entziehen (US-IAM-041) — RoleUnassignedFromUser; Invariante: countOrganizersInTenant > 1; Self-Revocation blocked; Dependency: S18-A01
+  - S18-C01 (M): Einladungs-E-Mail (US-IAM-050) — EmailNotificationPort in Trips domain/invitation/; InvitationEmailAdapter mit Spring Mail; Mailpit in dev (:1025); Thymeleaf HTML-Mail; Fehler darf Transaktion nicht rollbacken
+  - DEFERRED to Iteration 19: S18-B01 Rezept-Import (US-TRIPS-041) — L-Größe passt nicht neben A01+A02+C01; Jsoup-Pattern aus S10-A wiederverwendbar
+  - Recommended scope: S18-D01 + S18-A01 + S18-A02 + S18-C01 (S+M+S+M)
+- Iteration 17 (v0.17.0): Stories written 2026-04-12 — Trip Lifecycle Completion (Edit, Delete+Cascade) + Küchendienst
+  - Story document: reports/glimmering-riding-canyon.md
+  - S17-A (S): Reise bearbeiten (US-TRIPS-005) — Trip.rename()/updateDescription(), EditTripCommand, GET+POST /{tripId}/edit
+  - S17-B (M): Reise löschen (US-TRIPS-006) — TripDeleted event in travelmate-common, cross-SCS cascade, Expense consumer
+  - S17-C (M): Küchendienst zuweisen (US-TRIPS-035) — MealSlot.assignKitchenDuty(), Flyway V25 kitchen_duty_participant_ids JSON
+  - S17-D (XS): Backlog-Abgleich
 - Iteration 15 (v0.15.0): Stories written 2026-03-31 — AccommodationPoll Redesign (Amenity model, Booking Workflow, UI)
   - Refined story document: docs/backlog/iteration-15-stories.md
   - S15-A (M): Ausstattungsmodell korrigieren — Amenity enum (13 values), CandidateRoom loses features/gains bedDescription, Flyway V20 adds accommodation_candidate_amenity table
