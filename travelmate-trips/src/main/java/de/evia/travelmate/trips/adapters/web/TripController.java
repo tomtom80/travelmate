@@ -339,6 +339,17 @@ public class TripController {
         return "redirect:/" + tripId;
     }
 
+    @PostMapping("/{tripId}/organizers/{participantId}/revoke")
+    public String revokeOrganizer(@AuthenticationPrincipal final Jwt jwt,
+                                  @PathVariable final UUID tripId,
+                                  @PathVariable final UUID participantId) {
+        final ResolvedIdentity identity = requireIdentity(jwt);
+        tripService.revokeTripOrganizer(new de.evia.travelmate.trips.application.command.RevokeTripOrganizerCommand(
+            tripId, participantId, identity.memberId()
+        ));
+        return "redirect:/" + tripId;
+    }
+
     private Optional<ResolvedIdentity> resolveIdentity(final Jwt jwt) {
         final String email = jwt.getClaimAsString("email");
         if (email == null) {

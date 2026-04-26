@@ -348,8 +348,9 @@ public class ExpenseLifecycleSteps {
 
     @When("I click the back link")
     public void iClickTheBackLink() {
-        page.locator("main a[href*='/trips/']").first().click();
-        page.waitForLoadState();
+        page.locator("main a[role='button'][href*='/trips/']").first().click();
+        page.waitForURL(url -> url.contains("/trips/") && !url.contains("/expense/"));
+        page.waitForLoadState(LoadState.NETWORKIDLE);
     }
 
     @Then("I am on the trips list page")

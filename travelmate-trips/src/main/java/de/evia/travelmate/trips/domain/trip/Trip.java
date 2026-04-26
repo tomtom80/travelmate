@@ -10,6 +10,9 @@ import java.util.UUID;
 
 import de.evia.travelmate.common.domain.AggregateRoot;
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.common.domain.BusinessRuleViolationException;
+import de.evia.travelmate.common.events.trips.OrganizerRoleGranted;
+import de.evia.travelmate.common.events.trips.OrganizerRoleRevoked;
 import de.evia.travelmate.common.events.trips.ParticipantRemovedFromTrip;
 import de.evia.travelmate.common.events.trips.StayPeriodUpdated;
 import de.evia.travelmate.common.events.trips.TripCompleted;
@@ -124,13 +127,36 @@ public class Trip extends AggregateRoot {
         ));
     }
 
-    public void grantOrganizerRights(final UUID participantId) {
-        if (!hasParticipant(participantId)) {
-            throw new IllegalArgumentException("Participant " + participantId + " not found in this trip.");
+    public void grantOrganizerRights(final UUID actorId, final UUID promotedAccountId) {
+        if (!isOrganizer(actorId)) {
+            throw new BusinessRuleViolationException("trip.error.grantOrganizerRequiresOrganizer");
         }
-        if (!organizerIds.contains(participantId)) {
-            organizerIds.add(participantId);
+        if (!hasParticipant(promotedAccountId)) {
+            throw new IllegalArgumentException("Participant " + promotedAccountId + " not found in this trip.");
         }
+        if (organizerIds.contains(promotedAccountId)) {
+            return;
+        }
+        organizerIds.add(promotedAccountId);
+        registerEvent(new OrganizerRoleGranted(
+            tenantId.value(), tripId.value(), promotedAccountId, LocalDate.now()
+        ));
+    }
+
+    public void revokeOrganizerRights(final UUID actorId, final UUID demotedAccountId) {
+        if (!isOrganizer(actorId)) {
+            throw new BusinessRuleViolationException("trip.error.revokeOrganizerRequiresOrganizer");
+        }
+        if (!isOrganizer(demotedAccountId)) {
+            throw new BusinessRuleViolationException("trip.error.revokeOrganizerNotOrganizer");
+        }
+        if (organizerIds.size() <= 1) {
+            throw new BusinessRuleViolationException("trip.error.revokeOrganizerLastOrganizer");
+        }
+        organizerIds.remove(demotedAccountId);
+        registerEvent(new OrganizerRoleRevoked(
+            tenantId.value(), tripId.value(), demotedAccountId, LocalDate.now()
+        ));
     }
 
     public void setParticipantStayPeriod(final UUID participantId, final StayPeriod stayPeriod) {

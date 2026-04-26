@@ -185,6 +185,16 @@ public class PlaywrightHooks {
         page.waitForURL(url -> !url.contains("realms/travelmate"));
     }
 
+    static void waitForHtmxSettle() {
+        page.waitForFunction("""
+            () => {
+                const pending = document.querySelectorAll('.htmx-request, .htmx-settling, .htmx-swapping');
+                return pending.length === 0;
+            }
+            """);
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+    }
+
     static void waitForTripsReady() {
         for (int i = 0; i < 10; i++) {
             navigateAndWait("/trips/");

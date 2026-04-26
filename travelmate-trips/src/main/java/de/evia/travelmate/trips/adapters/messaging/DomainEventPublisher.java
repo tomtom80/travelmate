@@ -10,6 +10,8 @@ import org.springframework.transaction.event.TransactionalEventListener;
 
 import de.evia.travelmate.common.events.trips.AccommodationPriceSet;
 import de.evia.travelmate.common.events.trips.ExternalUserInvitedToTrip;
+import de.evia.travelmate.common.events.trips.OrganizerRoleGranted;
+import de.evia.travelmate.common.events.trips.OrganizerRoleRevoked;
 import de.evia.travelmate.common.events.trips.ParticipantJoinedTrip;
 import de.evia.travelmate.common.events.trips.ParticipantRemovedFromTrip;
 import de.evia.travelmate.common.events.trips.StayPeriodUpdated;
@@ -68,6 +70,16 @@ public class DomainEventPublisher {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onAccommodationPriceSet(final AccommodationPriceSet event) {
         publishSafely(RoutingKeys.ACCOMMODATION_PRICE_SET, event);
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onOrganizerRoleGranted(final OrganizerRoleGranted event) {
+        publishSafely(RoutingKeys.ORGANIZER_ROLE_GRANTED, event);
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onOrganizerRoleRevoked(final OrganizerRoleRevoked event) {
+        publishSafely(RoutingKeys.ORGANIZER_ROLE_REVOKED, event);
     }
 
     private void publishSafely(final String routingKey, final Object event) {

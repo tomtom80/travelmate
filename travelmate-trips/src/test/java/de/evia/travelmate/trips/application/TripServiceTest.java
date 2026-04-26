@@ -430,6 +430,10 @@ class TripServiceTest {
 
     @Test
     void grantTripOrganizerRejectsNonOrganizerActor() {
+        final TravelParty party = TravelParty.create(new TenantId(TENANT_UUID), "Familie Test");
+        party.addMember(ORGANIZER_ID, "max@example.com", "Max", "Mustermann");
+        party.addMember(PARTY_MEMBER_ID, "lisa@example.com", "Lisa", "Mustermann");
+        when(travelPartyRepository.findAll()).thenReturn(List.of(party));
         final Trip trip = Trip.planWithParticipants(
             new TenantId(TENANT_UUID),
             new TripName("Skiurlaub"),
@@ -443,11 +447,12 @@ class TripServiceTest {
         );
         when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
 
+        // PARTY_MEMBER_ID (non-organizer) tries to promote ORGANIZER_ID
         assertThatThrownBy(() -> tripService.grantTripOrganizer(new GrantTripOrganizerCommand(
             trip.tripId().value(), ORGANIZER_ID, PARTY_MEMBER_ID
         )))
-            .isInstanceOf(IllegalArgumentException.class)
-            .hasMessageContaining("existing trip organizer");
+            .isInstanceOf(de.evia.travelmate.common.domain.BusinessRuleViolationException.class)
+            .hasMessageContaining("grantOrganizerRequiresOrganizer");
     }
 
     @Test

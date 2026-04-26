@@ -126,17 +126,20 @@ class TripTest {
         final UUID participantId = UUID.randomUUID();
         final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID, List.of(ORGANIZER_ID, participantId));
 
-        trip.grantOrganizerRights(participantId);
+        trip.grantOrganizerRights(ORGANIZER_ID, participantId);
 
         assertThat(trip.isOrganizer(participantId)).isTrue();
         assertThat(trip.organizerIds()).containsExactlyInAnyOrder(ORGANIZER_ID, participantId);
+        assertThat(trip.domainEvents())
+            .anyMatch(e -> e instanceof de.evia.travelmate.common.events.trips.OrganizerRoleGranted ev
+                && ev.accountId().equals(participantId));
     }
 
     @Test
     void grantOrganizerRightsIsIdempotent() {
         final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
 
-        trip.grantOrganizerRights(ORGANIZER_ID);
+        trip.grantOrganizerRights(ORGANIZER_ID, ORGANIZER_ID);
 
         assertThat(trip.organizerIds()).containsExactly(ORGANIZER_ID);
     }
@@ -145,9 +148,81 @@ class TripTest {
     void grantOrganizerRightsRejectsUnknownParticipant() {
         final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
 
-        assertThatThrownBy(() -> trip.grantOrganizerRights(UUID.randomUUID()))
+        assertThatThrownBy(() -> trip.grantOrganizerRights(ORGANIZER_ID, UUID.randomUUID()))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("not found");
+    }
+
+    @Test
+    void grantOrganizerRightsRejectsNonOrganizerActor() {
+        final UUID nonOrganizer = UUID.randomUUID();
+        final UUID promotee = UUID.randomUUID();
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID, List.of(ORGANIZER_ID, nonOrganizer, promotee));
+
+        assertThatThrownBy(() -> trip.grantOrganizerRights(nonOrganizer, promotee))
+            .isInstanceOf(de.evia.travelmate.common.domain.BusinessRuleViolationException.class)
+            .hasMessageContaining("grantOrganizerRequiresOrganizer");
+    }
+
+    @Test
+    void revokeOrganizerRightsRemovesOrganizerAndRegistersEvent() {
+        final UUID coOrganizer = UUID.randomUUID();
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID, List.of(ORGANIZER_ID, coOrganizer));
+        trip.grantOrganizerRights(ORGANIZER_ID, coOrganizer);
+        trip.clearDomainEvents();
+
+        trip.revokeOrganizerRights(ORGANIZER_ID, coOrganizer);
+
+        assertThat(trip.isOrganizer(coOrganizer)).isFalse();
+        assertThat(trip.organizerIds()).containsExactly(ORGANIZER_ID);
+        assertThat(trip.domainEvents())
+            .anyMatch(e -> e instanceof de.evia.travelmate.common.events.trips.OrganizerRoleRevoked ev
+                && ev.accountId().equals(coOrganizer));
+    }
+
+    @Test
+    void revokeOrganizerRightsRejectsLastOrganizer() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+
+        assertThatThrownBy(() -> trip.revokeOrganizerRights(ORGANIZER_ID, ORGANIZER_ID))
+            .isInstanceOf(de.evia.travelmate.common.domain.BusinessRuleViolationException.class)
+            .hasMessageContaining("revokeOrganizerLastOrganizer");
+    }
+
+    @Test
+    void revokeOrganizerRightsAllowsSelfDemotionWhenOthersRemain() {
+        final UUID coOrganizer = UUID.randomUUID();
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID, List.of(ORGANIZER_ID, coOrganizer));
+        trip.grantOrganizerRights(ORGANIZER_ID, coOrganizer);
+
+        trip.revokeOrganizerRights(ORGANIZER_ID, ORGANIZER_ID);
+
+        assertThat(trip.isOrganizer(ORGANIZER_ID)).isFalse();
+        assertThat(trip.organizerIds()).containsExactly(coOrganizer);
+    }
+
+    @Test
+    void revokeOrganizerRightsRejectsNonOrganizerActor() {
+        final UUID coOrganizer = UUID.randomUUID();
+        final UUID someoneElse = UUID.randomUUID();
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID, List.of(ORGANIZER_ID, coOrganizer, someoneElse));
+        trip.grantOrganizerRights(ORGANIZER_ID, coOrganizer);
+
+        assertThatThrownBy(() -> trip.revokeOrganizerRights(someoneElse, coOrganizer))
+            .isInstanceOf(de.evia.travelmate.common.domain.BusinessRuleViolationException.class)
+            .hasMessageContaining("revokeOrganizerRequiresOrganizer");
+    }
+
+    @Test
+    void revokeOrganizerRightsRejectsNonOrganizerTarget() {
+        final UUID coOrganizer = UUID.randomUUID();
+        final UUID notAnOrganizer = UUID.randomUUID();
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID, List.of(ORGANIZER_ID, coOrganizer, notAnOrganizer));
+        trip.grantOrganizerRights(ORGANIZER_ID, coOrganizer);
+
+        assertThatThrownBy(() -> trip.revokeOrganizerRights(ORGANIZER_ID, notAnOrganizer))
+            .isInstanceOf(de.evia.travelmate.common.domain.BusinessRuleViolationException.class)
+            .hasMessageContaining("revokeOrganizerNotOrganizer");
     }
 
     @Test

@@ -300,9 +300,6 @@ public class TripService {
 
     public void grantTripOrganizer(final GrantTripOrganizerCommand command) {
         final Trip trip = findTrip(new TripId(command.tripId()));
-        if (!trip.isOrganizer(command.actorId())) {
-            throw new IllegalArgumentException("Only an existing trip organizer can grant organizer rights.");
-        }
         final boolean participantHasAccount = travelPartyRepository.findAll().stream()
             .flatMap(party -> party.members().stream())
             .anyMatch(member -> member.memberId().equals(command.participantId()));
@@ -311,8 +308,16 @@ public class TripService {
                 "Only participants with an account can be granted organizer rights."
             );
         }
-        trip.grantOrganizerRights(command.participantId());
+        trip.grantOrganizerRights(command.actorId(), command.participantId());
         tripRepository.save(trip);
+        publishEvents(trip);
+    }
+
+    public void revokeTripOrganizer(final de.evia.travelmate.trips.application.command.RevokeTripOrganizerCommand command) {
+        final Trip trip = findTrip(new TripId(command.tripId()));
+        trip.revokeOrganizerRights(command.actorId(), command.accountId());
+        tripRepository.save(trip);
+        publishEvents(trip);
     }
 
     private Trip findTrip(final TripId tripId) {
