@@ -15,6 +15,7 @@ import de.evia.travelmate.common.events.trips.ParticipantRemovedFromTrip;
 import de.evia.travelmate.common.events.trips.StayPeriodUpdated;
 import de.evia.travelmate.common.events.trips.TripCompleted;
 import de.evia.travelmate.common.events.trips.TripCreated;
+import de.evia.travelmate.common.events.trips.TripDeleted;
 import de.evia.travelmate.expense.application.ExpenseService;
 
 @Component
@@ -29,6 +30,7 @@ public class TripEventConsumer {
     private final Timer participantRemovedTimer;
     private final Timer stayPeriodUpdatedTimer;
     private final Timer tripCompletedTimer;
+    private final Timer tripDeletedTimer;
     private final Timer accommodationPriceSetTimer;
 
     public TripEventConsumer(final ExpenseService expenseService, final MeterRegistry meterRegistry) {
@@ -38,6 +40,7 @@ public class TripEventConsumer {
         this.participantRemovedTimer = eventTimer(meterRegistry, "ParticipantRemovedFromTrip");
         this.stayPeriodUpdatedTimer = eventTimer(meterRegistry, "StayPeriodUpdated");
         this.tripCompletedTimer = eventTimer(meterRegistry, "TripCompleted");
+        this.tripDeletedTimer = eventTimer(meterRegistry, "TripDeleted");
         this.accommodationPriceSetTimer = eventTimer(meterRegistry, "AccommodationPriceSet");
     }
 
@@ -72,6 +75,12 @@ public class TripEventConsumer {
     public void onTripCompleted(final TripCompleted event) {
         LOG.info("Received TripCompleted for trip {} in tenant {}", event.tripId(), event.tenantId());
         tripCompletedTimer.record(() -> expenseService.onTripCompleted(event));
+    }
+
+    @RabbitListener(queues = RabbitMqConfig.QUEUE_TRIP_DELETED)
+    public void onTripDeleted(final TripDeleted event) {
+        LOG.info("Received TripDeleted for trip {} in tenant {}", event.tripId(), event.tenantId());
+        tripDeletedTimer.record(() -> expenseService.onTripDeleted(event));
     }
 
     @RabbitListener(queues = RabbitMqConfig.QUEUE_ACCOMMODATION_PRICE_SET)

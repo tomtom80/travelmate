@@ -10,4 +10,6 @@ public interface TripProjectionJpaRepository extends JpaRepository<TripProjectio
     boolean existsByTripId(UUID tripId);
 
     List<TripProjectionJpaEntity> findDistinctByParticipantsPartyTenantId(UUID partyTenantId);
+
+    void deleteByTripId(UUID tripId);
 }

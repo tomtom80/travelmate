@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -24,17 +25,26 @@ import org.springframework.context.ApplicationEventPublisher;
 
 import org.mockito.ArgumentCaptor;
 
+import de.evia.travelmate.common.domain.BusinessRuleViolationException;
 import de.evia.travelmate.common.domain.DuplicateEntityException;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.common.events.trips.ParticipantJoinedTrip;
 import de.evia.travelmate.common.events.trips.TripCompleted;
+import de.evia.travelmate.common.events.trips.TripDeleted;
 import de.evia.travelmate.trips.application.command.CreateTripCommand;
+import de.evia.travelmate.trips.application.command.EditTripCommand;
 import de.evia.travelmate.trips.application.command.AddParticipantToTripCommand;
 import de.evia.travelmate.trips.application.command.GrantTripOrganizerCommand;
 import de.evia.travelmate.trips.application.command.RemoveParticipantFromTripCommand;
 import de.evia.travelmate.trips.application.command.SetStayPeriodCommand;
 import de.evia.travelmate.trips.application.representation.TripRepresentation;
 import de.evia.travelmate.trips.domain.accommodation.AccommodationRepository;
+import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationPoll;
+import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationPollRepository;
+import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationPollStatus;
+import de.evia.travelmate.trips.domain.datepoll.DatePollRepository;
+import de.evia.travelmate.trips.domain.invitation.InvitationRepository;
+import de.evia.travelmate.trips.domain.mealplan.MealPlanRepository;
 import de.evia.travelmate.trips.domain.shoppinglist.ShoppingItem;
 import de.evia.travelmate.trips.domain.shoppinglist.ShoppingItemId;
 import de.evia.travelmate.trips.domain.shoppinglist.ShoppingList;
@@ -62,6 +72,18 @@ class TripServiceTest {
 
     @Mock
     private AccommodationRepository accommodationRepository;
+
+    @Mock
+    private AccommodationPollRepository accommodationPollRepository;
+
+    @Mock
+    private DatePollRepository datePollRepository;
+
+    @Mock
+    private InvitationRepository invitationRepository;
+
+    @Mock
+    private MealPlanRepository mealPlanRepository;
 
     @Mock
     private ShoppingListRepository shoppingListRepository;
@@ -164,6 +186,89 @@ class TripServiceTest {
         assertThatThrownBy(() -> tripService.createTrip(command))
             .isInstanceOf(IllegalArgumentException.class)
             .hasMessageContaining("not a member");
+    }
+
+    @Test
+    void editTripUpdatesNameAndDescription() {
+        final Trip trip = createTrip();
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+
+        tripService.editTrip(new EditTripCommand(
+            trip.tripId().value(), "Sommerurlaub 2026", "Neuer Beschreibungstext"
+        ));
+
+        assertThat(trip.name().value()).isEqualTo("Sommerurlaub 2026");
+        assertThat(trip.description()).isEqualTo("Neuer Beschreibungstext");
+        verify(tripRepository).save(trip);
+    }
+
+    @Test
+    void editTripRejectsInProgressTrip() {
+        final Trip trip = createTrip();
+        trip.confirm();
+        trip.start();
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+
+        assertThatThrownBy(() -> tripService.editTrip(new EditTripCommand(
+            trip.tripId().value(), "Nope", null
+        )))
+            .isInstanceOf(IllegalStateException.class);
+    }
+
+    @Test
+    void deleteTripCascadesAcrossAggregatesAndPublishesEvent() {
+        final Trip trip = createTrip();
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+        when(accommodationPollRepository.findLatestByTripId(trip.tenantId(), trip.tripId()))
+            .thenReturn(Optional.empty());
+        when(datePollRepository.findLatestByTripId(trip.tenantId(), trip.tripId()))
+            .thenReturn(Optional.empty());
+        when(shoppingListRepository.findByTripIdAndTenantId(trip.tripId(), trip.tenantId()))
+            .thenReturn(Optional.empty());
+
+        tripService.deleteTrip(trip.tripId());
+
+        verify(invitationRepository).deleteByTripId(trip.tripId());
+        verify(mealPlanRepository).deleteByTripId(trip.tripId());
+        verify(accommodationRepository).deleteByTripId(trip.tripId());
+        verify(tripRepository).delete(trip);
+
+        final ArgumentCaptor<TripDeleted> eventCaptor = ArgumentCaptor.forClass(TripDeleted.class);
+        verify(eventPublisher).publishEvent(eventCaptor.capture());
+        assertThat(eventCaptor.getValue().tripId()).isEqualTo(trip.tripId().value());
+        assertThat(eventCaptor.getValue().tenantId()).isEqualTo(TENANT_UUID);
+    }
+
+    @Test
+    void deleteTripRejectsConfirmedStatus() {
+        final Trip trip = createTrip();
+        trip.confirm();
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+
+        assertThatThrownBy(() -> tripService.deleteTrip(trip.tripId()))
+            .isInstanceOf(BusinessRuleViolationException.class)
+            .hasMessageContaining("deleteRequiresPlanningStatus");
+
+        verify(tripRepository, never()).delete(any(Trip.class));
+        verify(eventPublisher, never()).publishEvent(any(TripDeleted.class));
+    }
+
+    @Test
+    void deleteTripBlockedWhenPollAwaitingBooking() {
+        final Trip trip = createTrip();
+        when(tripRepository.findById(trip.tripId())).thenReturn(Optional.of(trip));
+        final AccommodationPoll bookingPoll = mock(AccommodationPoll.class);
+        when(bookingPoll.status()).thenReturn(AccommodationPollStatus.AWAITING_BOOKING);
+        when(accommodationPollRepository.findLatestByTripId(trip.tenantId(), trip.tripId()))
+            .thenReturn(Optional.of(bookingPoll));
+
+        assertThatThrownBy(() -> tripService.deleteTrip(trip.tripId()))
+            .isInstanceOf(BusinessRuleViolationException.class)
+            .hasMessageContaining("deleteBlockedByBookingAttempt");
+
+        verify(invitationRepository, never()).deleteByTripId(any());
+        verify(tripRepository, never()).delete(any(Trip.class));
+        verify(eventPublisher, never()).publishEvent(any(TripDeleted.class));
     }
 
     @Test

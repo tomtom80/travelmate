@@ -15,4 +15,6 @@ public interface TripRepository {
     List<Trip> findAllByTenantId(TenantId tenantId);
 
     List<Trip> findAllByParticipantId(UUID participantId);
+
+    void delete(Trip trip);
 }

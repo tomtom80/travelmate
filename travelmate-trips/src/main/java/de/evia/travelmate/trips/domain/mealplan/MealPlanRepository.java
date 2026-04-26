@@ -14,4 +14,6 @@ public interface MealPlanRepository {
     boolean existsByTripId(TripId tripId);
 
     boolean existsSlotWithRecipe(UUID recipeId);
+
+    void deleteByTripId(TripId tripId);
 }

@@ -15,6 +15,7 @@ import de.evia.travelmate.common.events.trips.ParticipantRemovedFromTrip;
 import de.evia.travelmate.common.events.trips.StayPeriodUpdated;
 import de.evia.travelmate.common.events.trips.TripCompleted;
 import de.evia.travelmate.common.events.trips.TripCreated;
+import de.evia.travelmate.common.events.trips.TripDeleted;
 import de.evia.travelmate.common.messaging.RoutingKeys;
 
 @Component
@@ -57,6 +58,11 @@ public class DomainEventPublisher {
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
     public void onExternalUserInvited(final ExternalUserInvitedToTrip event) {
         publishSafely(RoutingKeys.EXTERNAL_USER_INVITED, event);
+    }
+
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)
+    public void onTripDeleted(final TripDeleted event) {
+        publishSafely(RoutingKeys.TRIP_DELETED, event);
     }
 
     @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT)

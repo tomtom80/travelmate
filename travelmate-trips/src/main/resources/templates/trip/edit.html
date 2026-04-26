@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<body>
+<div th:fragment="content">
+    <article class="page-hero page-hero--trip">
+        <div class="page-hero__layout">
+            <div class="page-hero__copy">
+                <p class="page-hero__eyebrow" th:text="#{nav.trips}">Reisen</p>
+                <hgroup>
+                    <h1 th:text="#{trip.edit.title}">Reise bearbeiten</h1>
+                    <p class="page-hero__lead" th:text="${trip.name()}">Reisename</p>
+                </hgroup>
+            </div>
+            <div class="page-hero__art" aria-hidden="true">
+                <svg th:replace="~{fragments/heroes :: hero-form}"></svg>
+            </div>
+        </div>
+    </article>
+
+    <article class="section-card">
+        <form method="post" th:action="@{/{id}/edit(id=${trip.tripId()})}">
+            <label for="name" th:text="#{trip.name}">Name</label>
+            <input type="text" id="name" name="name" th:value="${trip.name()}" required>
+
+            <label for="description" th:text="#{trip.description}">Beschreibung</label>
+            <textarea id="description" name="description" th:text="${trip.description()}"></textarea>
+
+            <div class="page-actions">
+                <button type="submit" th:text="#{trip.edit.submit}">Aenderungen speichern</button>
+                <a th:href="@{/{id}(id=${trip.tripId()})}" role="button" class="secondary outline"
+                   th:text="#{common.cancel}">Abbrechen</a>
+            </div>
+        </form>
+    </article>
+</div>
+</body>
+</html>

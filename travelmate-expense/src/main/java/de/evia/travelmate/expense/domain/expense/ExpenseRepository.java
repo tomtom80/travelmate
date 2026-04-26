@@ -14,4 +14,6 @@ public interface ExpenseRepository {
     Optional<Expense> findByTripId(TenantId tenantId, UUID tripId);
 
     boolean existsByTripId(UUID tripId);
+
+    void deleteByTripId(UUID tripId);
 }

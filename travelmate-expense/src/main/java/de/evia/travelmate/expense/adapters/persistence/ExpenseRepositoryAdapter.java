@@ -61,6 +61,11 @@ public class ExpenseRepositoryAdapter implements ExpenseRepository {
         return jpaRepository.existsByTripId(tripId);
     }
 
+    @Override
+    public void deleteByTripId(final UUID tripId) {
+        jpaRepository.deleteByTripId(tripId);
+    }
+
     private void syncReceipts(final ExpenseJpaEntity entity, final Expense expense) {
         entity.getReceipts().removeIf(r ->
             expense.receipts().stream()

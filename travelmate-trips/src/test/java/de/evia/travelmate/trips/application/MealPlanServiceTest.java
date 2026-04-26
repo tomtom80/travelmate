@@ -20,6 +20,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import de.evia.travelmate.common.domain.EntityNotFoundException;
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.trips.application.command.AssignKitchenDutyCommand;
 import de.evia.travelmate.trips.application.command.AssignRecipeToSlotCommand;
 import de.evia.travelmate.trips.application.command.GenerateMealPlanCommand;
 import de.evia.travelmate.trips.application.command.UpdateMealSlotCommand;
@@ -167,6 +168,38 @@ class MealPlanServiceTest {
         // The assigned recipe won't match any recipe in the list (different UUID),
         // so the enrichment should show the deleted-recipe fallback
         assertThat(result.slots().getFirst().recipeName()).isEqualTo("[Geloeschtes Rezept]");
+    }
+
+    @Test
+    void assignKitchenDutyDelegatesToAggregate() {
+        final MealPlan mealPlan = createMealPlan();
+        final TripId tripId = mealPlan.tripId();
+        final UUID slotId = mealPlan.slots().getFirst().mealSlotId().value();
+        final UUID participantId = UUID.randomUUID();
+        when(mealPlanRepository.findByTripId(tripId)).thenReturn(Optional.of(mealPlan));
+        when(mealPlanRepository.save(any(MealPlan.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        mealPlanService.assignKitchenDuty(new AssignKitchenDutyCommand(
+            tripId.value(), slotId, List.of(participantId)));
+
+        assertThat(mealPlan.slots().getFirst().kitchenDutyParticipantIds())
+            .containsExactly(participantId);
+        verify(mealPlanRepository).save(mealPlan);
+    }
+
+    @Test
+    void assignKitchenDutyWithNullListClearsAssignment() {
+        final MealPlan mealPlan = createMealPlan();
+        final TripId tripId = mealPlan.tripId();
+        final UUID slotId = mealPlan.slots().getFirst().mealSlotId().value();
+        mealPlan.assignKitchenDuty(mealPlan.slots().getFirst().mealSlotId(), List.of(UUID.randomUUID()));
+        when(mealPlanRepository.findByTripId(tripId)).thenReturn(Optional.of(mealPlan));
+        when(mealPlanRepository.save(any(MealPlan.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        mealPlanService.assignKitchenDuty(new AssignKitchenDutyCommand(
+            tripId.value(), slotId, null));
+
+        assertThat(mealPlan.slots().getFirst().kitchenDutyParticipantIds()).isEmpty();
     }
 
     @Test

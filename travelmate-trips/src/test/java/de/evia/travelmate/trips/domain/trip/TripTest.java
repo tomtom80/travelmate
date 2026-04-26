@@ -334,4 +334,99 @@ class TripTest {
         assertThatThrownBy(() -> trip.updateDateRange(null))
             .isInstanceOf(IllegalArgumentException.class);
     }
+
+    // --- rename ---
+
+    @Test
+    void renameInPlanningSucceeds() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, "old desc", DATE_RANGE, ORGANIZER_ID);
+        final TripName newName = new TripName("Sommerurlaub 2026");
+
+        trip.rename(newName);
+
+        assertThat(trip.name()).isEqualTo(newName);
+    }
+
+    @Test
+    void renameInConfirmedSucceeds() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+        trip.confirm();
+        final TripName newName = new TripName("Sommerurlaub 2026");
+
+        trip.rename(newName);
+
+        assertThat(trip.name()).isEqualTo(newName);
+    }
+
+    @Test
+    void renameRejectsInProgressStatus() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+        trip.confirm();
+        trip.start();
+
+        assertThatThrownBy(() -> trip.rename(new TripName("Nope")))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("IN_PROGRESS");
+    }
+
+    @Test
+    void renameRejectsCompletedStatus() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+        trip.confirm();
+        trip.start();
+        trip.complete();
+
+        assertThatThrownBy(() -> trip.rename(new TripName("Nope")))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("COMPLETED");
+    }
+
+    @Test
+    void renameRejectsNull() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+
+        assertThatThrownBy(() -> trip.rename(null))
+            .isInstanceOf(IllegalArgumentException.class);
+    }
+
+    // --- updateDescription ---
+
+    @Test
+    void updateDescriptionInPlanningSucceeds() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, "old", DATE_RANGE, ORGANIZER_ID);
+
+        trip.updateDescription("Neuer Beschreibungstext");
+
+        assertThat(trip.description()).isEqualTo("Neuer Beschreibungstext");
+    }
+
+    @Test
+    void updateDescriptionInConfirmedSucceeds() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+        trip.confirm();
+
+        trip.updateDescription("Updated while confirmed");
+
+        assertThat(trip.description()).isEqualTo("Updated while confirmed");
+    }
+
+    @Test
+    void updateDescriptionToNullSucceeds() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, "has desc", DATE_RANGE, ORGANIZER_ID);
+
+        trip.updateDescription(null);
+
+        assertThat(trip.description()).isNull();
+    }
+
+    @Test
+    void updateDescriptionRejectsInProgressStatus() {
+        final Trip trip = Trip.plan(TENANT_ID, NAME, null, DATE_RANGE, ORGANIZER_ID);
+        trip.confirm();
+        trip.start();
+
+        assertThatThrownBy(() -> trip.updateDescription("Nope"))
+            .isInstanceOf(IllegalStateException.class)
+            .hasMessageContaining("IN_PROGRESS");
+    }
 }

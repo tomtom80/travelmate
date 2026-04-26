@@ -35,6 +35,8 @@ public class TripRepositoryAdapter implements TripRepository {
                 trip.dateRange() != null ? trip.dateRange().endDate() : null,
                 trip.status().name(), trip.organizerId(), trip.organizerIds()
             ));
+        entity.setName(trip.name().value());
+        entity.setDescription(trip.description());
         entity.setStartDate(trip.dateRange() != null ? trip.dateRange().startDate() : null);
         entity.setEndDate(trip.dateRange() != null ? trip.dateRange().endDate() : null);
         entity.setStatus(trip.status().name());
@@ -61,6 +63,11 @@ public class TripRepositoryAdapter implements TripRepository {
         return jpaRepository.findAllByParticipantId(participantId).stream()
             .map(this::toDomain)
             .toList();
+    }
+
+    @Override
+    public void delete(final Trip trip) {
+        jpaRepository.deleteById(trip.tripId().value());
     }
 
     private void syncParticipants(final TripJpaEntity entity, final Trip trip) {

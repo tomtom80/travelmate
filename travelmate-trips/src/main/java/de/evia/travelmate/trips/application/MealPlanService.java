@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import de.evia.travelmate.common.domain.EntityNotFoundException;
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.trips.application.command.AssignKitchenDutyCommand;
 import de.evia.travelmate.trips.application.command.AssignRecipeToSlotCommand;
 import de.evia.travelmate.trips.application.command.GenerateMealPlanCommand;
 import de.evia.travelmate.trips.application.command.UpdateMealSlotCommand;
@@ -77,6 +78,15 @@ public class MealPlanService {
     public void clearRecipe(final TripId tripId, final MealSlotId slotId) {
         final MealPlan mealPlan = findMealPlan(tripId);
         mealPlan.clearRecipe(slotId);
+        mealPlanRepository.save(mealPlan);
+    }
+
+    public void assignKitchenDuty(final AssignKitchenDutyCommand command) {
+        final MealPlan mealPlan = findMealPlan(new TripId(command.tripId()));
+        mealPlan.assignKitchenDuty(
+            new MealSlotId(command.mealSlotId()),
+            command.participantIds() != null ? command.participantIds() : List.of()
+        );
         mealPlanRepository.save(mealPlan);
     }
 

@@ -56,6 +56,11 @@ public class TripProjectionRepositoryAdapter implements TripProjectionRepository
         return jpaRepository.existsByTripId(tripId);
     }
 
+    @Override
+    public void deleteByTripId(final UUID tripId) {
+        jpaRepository.deleteByTripId(tripId);
+    }
+
     private void syncParticipants(final TripProjectionJpaEntity entity,
                                   final TripProjection projection) {
         entity.getParticipants().removeIf(p ->

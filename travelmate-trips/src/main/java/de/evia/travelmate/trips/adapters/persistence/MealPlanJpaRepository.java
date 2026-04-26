@@ -16,4 +16,6 @@ public interface MealPlanJpaRepository extends JpaRepository<MealPlanJpaEntity, 
     @Query("SELECT CASE WHEN COUNT(s) > 0 THEN true ELSE false END " +
            "FROM MealSlotJpaEntity s WHERE s.recipeId = :recipeId")
     boolean existsSlotWithRecipeId(@Param("recipeId") UUID recipeId);
+
+    void deleteByTripId(UUID tripId);
 }

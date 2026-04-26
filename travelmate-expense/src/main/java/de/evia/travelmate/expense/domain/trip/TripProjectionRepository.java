@@ -13,4 +13,6 @@ public interface TripProjectionRepository {
     List<TripProjection> findByPartyTenantId(UUID partyTenantId);
 
     boolean existsByTripId(UUID tripId);
+
+    void deleteByTripId(UUID tripId);
 }

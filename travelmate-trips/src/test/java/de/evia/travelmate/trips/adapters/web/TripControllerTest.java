@@ -33,9 +33,10 @@ import de.evia.travelmate.trips.application.DatePollService;
 import de.evia.travelmate.trips.application.InvitationService;
 import de.evia.travelmate.trips.application.MealPlanService;
 import de.evia.travelmate.trips.application.TripService;
-import de.evia.travelmate.trips.application.command.InviteParticipantCommand;
 import de.evia.travelmate.trips.application.command.AddParticipantToTripCommand;
+import de.evia.travelmate.trips.application.command.EditTripCommand;
 import de.evia.travelmate.trips.application.command.GrantTripOrganizerCommand;
+import de.evia.travelmate.trips.application.command.InviteParticipantCommand;
 import de.evia.travelmate.trips.application.command.RemoveParticipantFromTripCommand;
 import de.evia.travelmate.trips.application.command.SetStayPeriodCommand;
 import de.evia.travelmate.trips.application.representation.InvitationRepresentation;
@@ -453,5 +454,46 @@ class TripControllerTest {
         verify(tripService).grantTripOrganizer(new GrantTripOrganizerCommand(
             TRIP_UUID, INVITEE_UUID, ORGANIZER_UUID
         ));
+    }
+
+    @Test
+    void editFormRendersEditView() throws Exception {
+        final TripRepresentation trip = new TripRepresentation(
+            TRIP_UUID, TENANT_UUID, "Skiurlaub", null,
+            LocalDate.of(2026, 3, 15), LocalDate.of(2026, 3, 22),
+            "PLANNING", ORGANIZER_UUID, List.of(ORGANIZER_UUID)
+        );
+        when(tripService.findById(new TripId(TRIP_UUID))).thenReturn(trip);
+
+        mockMvc.perform(get("/" + TRIP_UUID + "/edit")
+                .with(jwt().jwt(j -> j.claim("email", ORGANIZER_EMAIL))))
+            .andExpect(status().isOk())
+            .andExpect(view().name("layout/default"))
+            .andExpect(model().attribute("view", "trip/edit"))
+            .andExpect(model().attributeExists("trip"));
+    }
+
+    @Test
+    void editSubmitInvokesServiceAndRedirectsToDetail() throws Exception {
+        mockMvc.perform(post("/" + TRIP_UUID + "/edit")
+                .with(jwt().jwt(j -> j.claim("email", ORGANIZER_EMAIL)))
+                .param("name", "Skiurlaub 2026")
+                .param("description", "Aktualisierte Beschreibung"))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/" + TRIP_UUID));
+
+        verify(tripService).editTrip(new EditTripCommand(
+            TRIP_UUID, "Skiurlaub 2026", "Aktualisierte Beschreibung"
+        ));
+    }
+
+    @Test
+    void deleteInvokesServiceAndRedirectsToList() throws Exception {
+        mockMvc.perform(post("/" + TRIP_UUID + "/delete")
+                .with(jwt().jwt(j -> j.claim("email", ORGANIZER_EMAIL))))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/"));
+
+        verify(tripService).deleteTrip(new TripId(TRIP_UUID));
     }
 }

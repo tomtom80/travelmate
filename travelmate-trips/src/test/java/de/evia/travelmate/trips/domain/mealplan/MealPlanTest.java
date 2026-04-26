@@ -4,10 +4,12 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.UUID;
 
 import org.junit.jupiter.api.Test;
 
+import de.evia.travelmate.common.domain.BusinessRuleViolationException;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.trips.domain.trip.DateRange;
 import de.evia.travelmate.trips.domain.trip.TripId;
@@ -154,5 +156,69 @@ class MealPlanTest {
 
         assertThatThrownBy(() -> mealPlan.slots().clear())
             .isInstanceOf(UnsupportedOperationException.class);
+    }
+
+    @Test
+    void assignKitchenDutyAddsParticipantsToPlannedSlot() {
+        final MealPlan mealPlan = MealPlan.generate(TENANT_ID, TRIP_ID, THREE_DAY_RANGE);
+        final MealSlotId slotId = mealPlan.slots().getFirst().mealSlotId();
+        final UUID alice = UUID.randomUUID();
+        final UUID bob = UUID.randomUUID();
+
+        mealPlan.assignKitchenDuty(slotId, List.of(alice, bob));
+
+        assertThat(mealPlan.slots().getFirst().kitchenDutyParticipantIds())
+            .containsExactly(alice, bob);
+    }
+
+    @Test
+    void assignKitchenDutyRejectsSkippedSlot() {
+        final MealPlan mealPlan = MealPlan.generate(TENANT_ID, TRIP_ID, THREE_DAY_RANGE);
+        final MealSlotId slotId = mealPlan.slots().getFirst().mealSlotId();
+        mealPlan.markSlot(slotId, MealSlotStatus.SKIP);
+
+        assertThatThrownBy(() -> mealPlan.assignKitchenDuty(slotId, List.of(UUID.randomUUID())))
+            .isInstanceOf(BusinessRuleViolationException.class)
+            .hasMessageContaining("kitchenDutyRequiresPlanned");
+    }
+
+    @Test
+    void assignKitchenDutyRejectsEatingOutSlot() {
+        final MealPlan mealPlan = MealPlan.generate(TENANT_ID, TRIP_ID, THREE_DAY_RANGE);
+        final MealSlotId slotId = mealPlan.slots().getFirst().mealSlotId();
+        mealPlan.markSlot(slotId, MealSlotStatus.EATING_OUT);
+
+        assertThatThrownBy(() -> mealPlan.assignKitchenDuty(slotId, List.of(UUID.randomUUID())))
+            .isInstanceOf(BusinessRuleViolationException.class);
+    }
+
+    @Test
+    void assignKitchenDutyWithEmptyListClearsExistingDuty() {
+        final MealPlan mealPlan = MealPlan.generate(TENANT_ID, TRIP_ID, THREE_DAY_RANGE);
+        final MealSlotId slotId = mealPlan.slots().getFirst().mealSlotId();
+        mealPlan.assignKitchenDuty(slotId, List.of(UUID.randomUUID()));
+
+        mealPlan.assignKitchenDuty(slotId, List.of());
+
+        assertThat(mealPlan.slots().getFirst().kitchenDutyParticipantIds()).isEmpty();
+    }
+
+    @Test
+    void markSlotSkipClearsKitchenDuty() {
+        final MealPlan mealPlan = MealPlan.generate(TENANT_ID, TRIP_ID, THREE_DAY_RANGE);
+        final MealSlotId slotId = mealPlan.slots().getFirst().mealSlotId();
+        mealPlan.assignKitchenDuty(slotId, List.of(UUID.randomUUID(), UUID.randomUUID()));
+
+        mealPlan.markSlot(slotId, MealSlotStatus.SKIP);
+
+        assertThat(mealPlan.slots().getFirst().kitchenDutyParticipantIds()).isEmpty();
+    }
+
+    @Test
+    void newSlotsHaveEmptyKitchenDutyByDefault() {
+        final MealPlan mealPlan = MealPlan.generate(TENANT_ID, TRIP_ID, THREE_DAY_RANGE);
+
+        assertThat(mealPlan.slots())
+            .allMatch(s -> s.kitchenDutyParticipantIds().isEmpty());
     }
 }

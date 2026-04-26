@@ -49,6 +49,7 @@ public class PlaywrightHooks {
             new BrowserType.LaunchOptions().setHeadless(true));
         context = browser.newContext();
         page = context.newPage();
+        page.onDialog(dialog -> dialog.accept());
     }
 
     @AfterAll

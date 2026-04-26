@@ -21,6 +21,7 @@ import de.evia.travelmate.common.events.trips.ParticipantRemovedFromTrip;
 import de.evia.travelmate.common.events.trips.StayPeriodUpdated;
 import de.evia.travelmate.common.events.trips.TripCompleted;
 import de.evia.travelmate.common.events.trips.TripCreated;
+import de.evia.travelmate.common.events.trips.TripDeleted;
 import de.evia.travelmate.common.events.trips.AccommodationPriceSet;
 import de.evia.travelmate.expense.application.command.AddReceiptCommand;
 import de.evia.travelmate.expense.application.command.ApproveReceiptCommand;
@@ -118,6 +119,13 @@ public class ExpenseService {
         );
         tripProjectionRepository.save(projection);
         LOG.info("Updated stay period for participant {} in trip {}", event.participantId(), event.tripId());
+    }
+
+    public void onTripDeleted(final TripDeleted event) {
+        final UUID tripId = event.tripId();
+        expenseRepository.deleteByTripId(tripId);
+        tripProjectionRepository.deleteByTripId(tripId);
+        LOG.info("Deleted expense data for trip {} in tenant {}", tripId, event.tenantId());
     }
 
     public void onTripCompleted(final TripCompleted event) {

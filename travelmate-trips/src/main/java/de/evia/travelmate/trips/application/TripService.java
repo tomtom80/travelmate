@@ -15,13 +15,20 @@ import de.evia.travelmate.common.domain.DuplicateEntityException;
 import de.evia.travelmate.common.domain.EntityNotFoundException;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.common.events.trips.ParticipantJoinedTrip;
+import de.evia.travelmate.common.events.trips.TripDeleted;
 import de.evia.travelmate.trips.application.command.CreateTripCommand;
+import de.evia.travelmate.trips.application.command.EditTripCommand;
 import de.evia.travelmate.trips.application.command.AddParticipantToTripCommand;
 import de.evia.travelmate.trips.application.command.GrantTripOrganizerCommand;
 import de.evia.travelmate.trips.application.command.RemoveParticipantFromTripCommand;
 import de.evia.travelmate.trips.application.command.SetStayPeriodCommand;
 import de.evia.travelmate.trips.application.representation.TripRepresentation;
 import de.evia.travelmate.trips.domain.accommodation.AccommodationRepository;
+import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationPollRepository;
+import de.evia.travelmate.trips.domain.accommodationpoll.AccommodationPollStatus;
+import de.evia.travelmate.trips.domain.datepoll.DatePollRepository;
+import de.evia.travelmate.trips.domain.invitation.InvitationRepository;
+import de.evia.travelmate.trips.domain.mealplan.MealPlanRepository;
 import de.evia.travelmate.trips.domain.travelparty.TravelParty;
 import de.evia.travelmate.trips.domain.travelparty.TravelPartyRepository;
 import de.evia.travelmate.trips.domain.shoppinglist.ShoppingListRepository;
@@ -41,6 +48,10 @@ public class TripService {
     private final TripRepository tripRepository;
     private final TravelPartyRepository travelPartyRepository;
     private final AccommodationRepository accommodationRepository;
+    private final AccommodationPollRepository accommodationPollRepository;
+    private final DatePollRepository datePollRepository;
+    private final InvitationRepository invitationRepository;
+    private final MealPlanRepository mealPlanRepository;
     private final ShoppingListRepository shoppingListRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final TripParticipationEventPublisher tripParticipationEventPublisher;
@@ -48,12 +59,20 @@ public class TripService {
     public TripService(final TripRepository tripRepository,
                        final TravelPartyRepository travelPartyRepository,
                        final AccommodationRepository accommodationRepository,
+                       final AccommodationPollRepository accommodationPollRepository,
+                       final DatePollRepository datePollRepository,
+                       final InvitationRepository invitationRepository,
+                       final MealPlanRepository mealPlanRepository,
                        final ShoppingListRepository shoppingListRepository,
                        final ApplicationEventPublisher eventPublisher,
                        final TripParticipationEventPublisher tripParticipationEventPublisher) {
         this.tripRepository = tripRepository;
         this.travelPartyRepository = travelPartyRepository;
         this.accommodationRepository = accommodationRepository;
+        this.accommodationPollRepository = accommodationPollRepository;
+        this.datePollRepository = datePollRepository;
+        this.invitationRepository = invitationRepository;
+        this.mealPlanRepository = mealPlanRepository;
         this.shoppingListRepository = shoppingListRepository;
         this.eventPublisher = eventPublisher;
         this.tripParticipationEventPublisher = tripParticipationEventPublisher;
@@ -120,6 +139,38 @@ public class TripService {
         return tripRepository.findAllByParticipantId(participantId).stream()
             .map(TripRepresentation::new)
             .toList();
+    }
+
+    public void deleteTrip(final TripId tripId) {
+        final Trip trip = findTrip(tripId);
+        if (trip.status() != TripStatus.PLANNING) {
+            throw new BusinessRuleViolationException("trip.error.deleteRequiresPlanningStatus");
+        }
+        accommodationPollRepository.findLatestByTripId(trip.tenantId(), tripId)
+            .filter(poll -> poll.status() == AccommodationPollStatus.AWAITING_BOOKING)
+            .ifPresent(poll -> {
+                throw new BusinessRuleViolationException("trip.error.deleteBlockedByBookingAttempt");
+            });
+        invitationRepository.deleteByTripId(tripId);
+        mealPlanRepository.deleteByTripId(tripId);
+        shoppingListRepository.findByTripIdAndTenantId(tripId, trip.tenantId())
+            .ifPresent(shoppingListRepository::delete);
+        datePollRepository.findLatestByTripId(trip.tenantId(), tripId)
+            .ifPresent(datePollRepository::delete);
+        accommodationPollRepository.findLatestByTripId(trip.tenantId(), tripId)
+            .ifPresent(accommodationPollRepository::delete);
+        accommodationRepository.deleteByTripId(tripId);
+        tripRepository.delete(trip);
+        eventPublisher.publishEvent(new TripDeleted(
+            trip.tenantId().value(), tripId.value(), LocalDate.now()
+        ));
+    }
+
+    public void editTrip(final EditTripCommand command) {
+        final Trip trip = findTrip(new TripId(command.tripId()));
+        trip.rename(new TripName(command.name()));
+        trip.updateDescription(command.description());
+        tripRepository.save(trip);
     }
 
     public void confirmTrip(final TripId tripId) {

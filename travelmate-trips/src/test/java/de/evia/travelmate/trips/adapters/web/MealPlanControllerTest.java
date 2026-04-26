@@ -29,6 +29,7 @@ import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.trips.application.MealPlanService;
 import de.evia.travelmate.trips.application.RecipeService;
 import de.evia.travelmate.trips.application.TripService;
+import de.evia.travelmate.trips.application.command.AssignKitchenDutyCommand;
 import de.evia.travelmate.trips.application.command.AssignRecipeToSlotCommand;
 import de.evia.travelmate.trips.application.command.GenerateMealPlanCommand;
 import de.evia.travelmate.trips.application.command.UpdateMealSlotCommand;
@@ -102,9 +103,9 @@ class MealPlanControllerTest {
         final MealPlanRepresentation mealPlan = new MealPlanRepresentation(
             MEAL_PLAN_UUID, TENANT_UUID, TRIP_UUID,
             List.of(
-                new MealSlotRepresentation(SLOT_UUID, LocalDate.of(2026, 7, 1), "BREAKFAST", "PLANNED", null, null),
-                new MealSlotRepresentation(UUID.randomUUID(), LocalDate.of(2026, 7, 1), "LUNCH", "PLANNED", null, null),
-                new MealSlotRepresentation(UUID.randomUUID(), LocalDate.of(2026, 7, 1), "DINNER", "PLANNED", null, null)
+                new MealSlotRepresentation(SLOT_UUID, LocalDate.of(2026, 7, 1), "BREAKFAST", "PLANNED", null, null, List.of()),
+                new MealSlotRepresentation(UUID.randomUUID(), LocalDate.of(2026, 7, 1), "LUNCH", "PLANNED", null, null, List.of()),
+                new MealSlotRepresentation(UUID.randomUUID(), LocalDate.of(2026, 7, 1), "DINNER", "PLANNED", null, null, List.of())
             ));
 
         when(tripService.findById(new TripId(TRIP_UUID))).thenReturn(trip);
@@ -177,6 +178,29 @@ class MealPlanControllerTest {
         mockMvc.perform(post("/" + otherTenantTrip + "/mealplan/generate")
                 .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL))))
             .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void assignKitchenDutyRedirectsToOverview() throws Exception {
+        final UUID participantId = UUID.randomUUID();
+
+        mockMvc.perform(post("/" + TRIP_UUID + "/mealplan/slots/" + SLOT_UUID + "/kitchen-duty")
+                .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL)))
+                .param("participantIds", participantId.toString()))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/" + TRIP_UUID + "/mealplan"));
+
+        verify(mealPlanService).assignKitchenDuty(any(AssignKitchenDutyCommand.class));
+    }
+
+    @Test
+    void assignKitchenDutyWithoutParticipantsAcceptsEmptyList() throws Exception {
+        mockMvc.perform(post("/" + TRIP_UUID + "/mealplan/slots/" + SLOT_UUID + "/kitchen-duty")
+                .with(jwt().jwt(j -> j.claim("email", MEMBER_EMAIL))))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/" + TRIP_UUID + "/mealplan"));
+
+        verify(mealPlanService).assignKitchenDuty(any(AssignKitchenDutyCommand.class));
     }
 
     @Test

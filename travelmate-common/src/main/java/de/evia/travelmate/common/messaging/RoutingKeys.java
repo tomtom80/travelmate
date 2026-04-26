@@ -24,5 +24,6 @@ public final class RoutingKeys {
     public static final String PARTICIPANT_REMOVED = "trips.participant-removed";
     public static final String STAY_PERIOD_UPDATED = "trips.stay-period-updated";
     public static final String TRIP_COMPLETED = "trips.trip-completed";
+    public static final String TRIP_DELETED = "trips.trip-deleted";
     public static final String ACCOMMODATION_PRICE_SET = "trips.accommodation.price-set";
 }

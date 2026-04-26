@@ -1,7 +1,12 @@
 package de.evia.travelmate.trips.adapters.persistence;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 import org.springframework.stereotype.Repository;
 
@@ -17,6 +22,9 @@ import de.evia.travelmate.trips.domain.trip.TripId;
 
 @Repository
 public class MealPlanRepositoryAdapter implements MealPlanRepository {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+        .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     private final MealPlanJpaRepository jpaRepository;
 
@@ -52,6 +60,11 @@ public class MealPlanRepositoryAdapter implements MealPlanRepository {
         return jpaRepository.existsSlotWithRecipeId(recipeId);
     }
 
+    @Override
+    public void deleteByTripId(final TripId tripId) {
+        jpaRepository.deleteByTripId(tripId.value());
+    }
+
     private void syncSlots(final MealPlanJpaEntity entity, final MealPlan mealPlan) {
         for (final MealSlot slot : mealPlan.slots()) {
             final Optional<MealSlotJpaEntity> existing = entity.getSlots().stream()
@@ -60,12 +73,15 @@ public class MealPlanRepositoryAdapter implements MealPlanRepository {
             if (existing.isPresent()) {
                 existing.get().setStatus(slot.status().name());
                 existing.get().setRecipeId(slot.recipeId());
+                existing.get().setKitchenDutyParticipantIdsJson(serializeKitchenDuty(slot.kitchenDutyParticipantIds()));
             } else {
-                entity.getSlots().add(new MealSlotJpaEntity(
+                final MealSlotJpaEntity newSlot = new MealSlotJpaEntity(
                     slot.mealSlotId().value(), entity,
                     slot.date(), slot.mealType().name(),
                     slot.status().name(), slot.recipeId()
-                ));
+                );
+                newSlot.setKitchenDutyParticipantIdsJson(serializeKitchenDuty(slot.kitchenDutyParticipantIds()));
+                entity.getSlots().add(newSlot);
             }
         }
     }
@@ -77,7 +93,8 @@ public class MealPlanRepositoryAdapter implements MealPlanRepository {
                 s.getDate(),
                 MealType.valueOf(s.getMealType()),
                 MealSlotStatus.valueOf(s.getStatus()),
-                s.getRecipeId()
+                s.getRecipeId(),
+                deserializeKitchenDuty(s.getKitchenDutyParticipantIdsJson())
             ))
             .toList();
         return new MealPlan(
@@ -86,5 +103,27 @@ public class MealPlanRepositoryAdapter implements MealPlanRepository {
             new TripId(entity.getTripId()),
             slots
         );
+    }
+
+    private String serializeKitchenDuty(final List<UUID> participantIds) {
+        if (participantIds == null || participantIds.isEmpty()) {
+            return null;
+        }
+        try {
+            return OBJECT_MAPPER.writeValueAsString(participantIds);
+        } catch (final com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new IllegalStateException("Failed to serialize kitchen duty participants", e);
+        }
+    }
+
+    private List<UUID> deserializeKitchenDuty(final String json) {
+        if (json == null || json.isBlank()) {
+            return List.of();
+        }
+        try {
+            return OBJECT_MAPPER.readValue(json, new TypeReference<List<UUID>>() {});
+        } catch (final com.fasterxml.jackson.core.JsonProcessingException e) {
+            throw new IllegalStateException("Failed to deserialize kitchen duty participants", e);
+        }
     }
 }

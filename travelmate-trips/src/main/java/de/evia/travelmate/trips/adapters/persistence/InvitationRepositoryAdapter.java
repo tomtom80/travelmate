@@ -91,6 +91,11 @@ public class InvitationRepositoryAdapter implements InvitationRepository {
         return jpaRepository.existsByTripIdAndInviteeEmail(tripId.value(), inviteeEmail);
     }
 
+    @Override
+    public void deleteByTripId(final TripId tripId) {
+        jpaRepository.deleteByTripId(tripId.value());
+    }
+
     private Invitation toDomain(final InvitationJpaEntity entity) {
         return new Invitation(
             new InvitationId(entity.getInvitationId()),

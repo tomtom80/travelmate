@@ -71,6 +71,16 @@ public class MealPlan extends AggregateRoot {
         findSlot(slotId).clearRecipe();
     }
 
+    public void assignKitchenDuty(final MealSlotId slotId, final List<UUID> participantIds) {
+        argumentIsNotNull(slotId, "slotId");
+        argumentIsNotNull(participantIds, "participantIds");
+        if (participantIds.isEmpty()) {
+            findSlot(slotId).clearKitchenDuty();
+            return;
+        }
+        findSlot(slotId).assignKitchenDuty(participantIds);
+    }
+
     private MealSlot findSlot(final MealSlotId slotId) {
         return slots.stream()
             .filter(s -> s.mealSlotId().equals(slotId))

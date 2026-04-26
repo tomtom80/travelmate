@@ -178,6 +178,50 @@ public class TripPlanningSteps {
         navigateAndWait("/trips/" + UUID.randomUUID());
     }
 
+    @When("I open the trip edit form")
+    public void iOpenTheTripEditForm() {
+        ensureCurrentTripDetailPage();
+        page.locator("a[href$='/edit']").first().click();
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+    }
+
+    @When("I change the trip name to {string}")
+    public void iChangeTheTripNameTo(final String newName) {
+        page.fill("input[name=name]", newName);
+        lastTripName = newName;
+    }
+
+    @When("I change the trip description to {string}")
+    public void iChangeTheTripDescriptionTo(final String newDescription) {
+        page.fill("textarea[name=description], input[name=description]", newDescription);
+    }
+
+    @When("I submit the edit-trip form")
+    public void iSubmitTheEditTripForm() {
+        page.locator("form button[type=submit]").first().click();
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+        currentTripDetailUrl = page.url();
+    }
+
+    @When("I click the trip delete button")
+    public void iClickTheTripDeleteButton() {
+        ensureCurrentTripDetailPage();
+        page.locator("form[action$='/delete'] button[type=submit]").click();
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+    }
+
+    @Then("I am back on the trip list")
+    public void iAmBackOnTheTripList() {
+        final String url = page.url();
+        assertThat(url.endsWith("/trips/") || url.endsWith("/trips"))
+            .as("Expected to be on the trip list, but was %s", url).isTrue();
+    }
+
+    @Then("the trip {string} is no longer in the trip list")
+    public void theTripIsNoLongerInTheTripList(final String tripName) {
+        assertThat(page.content()).doesNotContain(tripName);
+    }
+
     @Then("I receive an error response or redirect")
     public void iReceiveAnErrorResponseOrRedirect() {
         final String content = page.content();

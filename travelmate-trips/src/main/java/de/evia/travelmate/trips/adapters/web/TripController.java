@@ -30,6 +30,7 @@ import de.evia.travelmate.trips.application.InvitationService;
 import de.evia.travelmate.trips.application.MealPlanService;
 import de.evia.travelmate.trips.application.TripService;
 import de.evia.travelmate.trips.application.command.CreateTripCommand;
+import de.evia.travelmate.trips.application.command.EditTripCommand;
 import de.evia.travelmate.trips.application.command.AddParticipantToTripCommand;
 import de.evia.travelmate.trips.application.command.GrantTripOrganizerCommand;
 import de.evia.travelmate.trips.application.command.InviteExternalCommand;
@@ -162,6 +163,36 @@ public class TripController {
         tripService.createTrip(
             new CreateTripCommand(identity.tenantId().value(), name, description, identity.memberId())
         );
+        return "redirect:/";
+    }
+
+    @GetMapping("/{tripId}/edit")
+    public String editForm(@AuthenticationPrincipal final Jwt jwt,
+                           @PathVariable final UUID tripId,
+                           final Model model) {
+        final ResolvedIdentity identity = requireIdentity(jwt);
+        final TripRepresentation trip = tripService.findById(new TripId(tripId));
+        validateTripAccess(trip, identity);
+        model.addAttribute("view", "trip/edit");
+        model.addAttribute("trip", trip);
+        return "layout/default";
+    }
+
+    @PostMapping("/{tripId}/edit")
+    public String edit(@AuthenticationPrincipal final Jwt jwt,
+                       @PathVariable final UUID tripId,
+                       @RequestParam final String name,
+                       @RequestParam(required = false) final String description) {
+        requireIdentity(jwt);
+        tripService.editTrip(new EditTripCommand(tripId, name, description));
+        return "redirect:/" + tripId;
+    }
+
+    @PostMapping("/{tripId}/delete")
+    public String delete(@AuthenticationPrincipal final Jwt jwt,
+                         @PathVariable final UUID tripId) {
+        requireIdentity(jwt);
+        tripService.deleteTrip(new TripId(tripId));
         return "redirect:/";
     }
 

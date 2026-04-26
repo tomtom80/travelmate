@@ -128,7 +128,6 @@ public class RecipeSteps {
             row.locator("a[href*='/edit']").click();
             page.waitForLoadState();
         } else if ("Löschen".equals(aktion)) {
-            page.onDialog(dialog -> dialog.accept());
             row.locator("form[action*='/delete'] button[type=submit]").click();
             page.waitForLoadState();
         }

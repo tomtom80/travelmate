@@ -24,4 +24,6 @@ public interface InvitationRepository {
     boolean existsByTripIdAndInviteeId(TripId tripId, UUID inviteeId);
 
     boolean existsByTripIdAndInviteeEmail(TripId tripId, String inviteeEmail);
+
+    void deleteByTripId(TripId tripId);
 }

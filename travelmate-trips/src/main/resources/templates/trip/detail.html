@@ -29,6 +29,10 @@
                 </div>
 
                 <div class="page-actions" th:if="${isOrganizer}">
+                    <a th:if="${trip.status() == 'PLANNING' || trip.status() == 'CONFIRMED'}"
+                       th:href="@{/{id}/edit(id=${trip.tripId()})}"
+                       role="button" class="secondary outline"
+                       th:text="#{trip.edit}">Bearbeiten</a>
                     <form th:if="${trip.status() == 'PLANNING' && trip.startDate() != null && trip.endDate() != null && hasAccommodation}" method="post"
                           th:action="@{/{id}/confirm(id=${trip.tripId()})}">
                         <button type="submit" th:text="#{trip.confirm}">Bestaetigen</button>
@@ -372,6 +376,20 @@
             </article>
         </div>
     </section>
+
+    <!-- Danger Zone -->
+    <article class="section-card" th:if="${isOrganizer && trip.status() == 'PLANNING'}">
+        <div class="section-heading">
+            <div>
+                <h2 th:text="#{trip.dangerZone}">Gefahrenzone</h2>
+            </div>
+        </div>
+        <form method="post" th:action="@{/{id}/delete(id=${trip.tripId()})}"
+              onsubmit="return confirm(this.dataset.confirmMsg)"
+              th:data-confirm-msg="#{trip.delete.confirm}">
+            <button type="submit" class="contrast" th:text="#{trip.delete}">Reise l\u00f6schen</button>
+        </form>
+    </article>
 
     <a th:href="@{/}" role="button" class="outline" th:text="#{common.back}">Zurück</a>
 </div>

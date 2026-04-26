@@ -19,8 +19,8 @@ public class Trip extends AggregateRoot {
 
     private final TripId tripId;
     private final TenantId tenantId;
-    private final TripName name;
-    private final String description;
+    private TripName name;
+    private String description;
     private DateRange dateRange;
     private final UUID organizerId;
     private final List<UUID> organizerIds;
@@ -190,6 +190,17 @@ public class Trip extends AggregateRoot {
         this.status = TripStatus.CANCELLED;
     }
 
+    public void rename(final TripName newName) {
+        argumentIsNotNull(newName, "newName");
+        assertEditableStatus("rename");
+        this.name = newName;
+    }
+
+    public void updateDescription(final String newDescription) {
+        assertEditableStatus("update description");
+        this.description = newDescription;
+    }
+
     public void updateDateRange(final DateRange newDateRange) {
         argumentIsNotNull(newDateRange, "newDateRange");
         assertStatus(TripStatus.PLANNING, "update date range");
@@ -205,6 +216,14 @@ public class Trip extends AggregateRoot {
         if (this.status != expected) {
             throw new IllegalStateException(
                 "Cannot " + action + " trip in status " + this.status + " (expected: " + expected + ")");
+        }
+    }
+
+    private void assertEditableStatus(final String action) {
+        if (this.status != TripStatus.PLANNING && this.status != TripStatus.CONFIRMED) {
+            throw new IllegalStateException(
+                "Cannot " + action + " trip in status " + this.status
+                    + " (expected: PLANNING or CONFIRMED)");
         }
     }
 

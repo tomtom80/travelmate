@@ -18,4 +18,6 @@ public interface InvitationJpaRepository extends JpaRepository<InvitationJpaEnti
     boolean existsByTripIdAndInviteeId(UUID tripId, UUID inviteeId);
 
     boolean existsByTripIdAndInviteeEmail(UUID tripId, String inviteeEmail);
+
+    void deleteByTripId(UUID tripId);
 }

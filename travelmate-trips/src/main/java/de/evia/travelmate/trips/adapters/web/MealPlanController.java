@@ -1,6 +1,8 @@
 package de.evia.travelmate.trips.adapters.web;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.TreeMap;
 import java.util.UUID;
@@ -21,6 +23,7 @@ import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.trips.application.MealPlanService;
 import de.evia.travelmate.trips.application.RecipeService;
 import de.evia.travelmate.trips.application.TripService;
+import de.evia.travelmate.trips.application.command.AssignKitchenDutyCommand;
 import de.evia.travelmate.trips.application.command.AssignRecipeToSlotCommand;
 import de.evia.travelmate.trips.application.command.GenerateMealPlanCommand;
 import de.evia.travelmate.trips.application.command.UpdateMealSlotCommand;
@@ -31,6 +34,7 @@ import de.evia.travelmate.trips.application.representation.TripRepresentation;
 import de.evia.travelmate.trips.domain.mealplan.MealSlotId;
 import de.evia.travelmate.trips.domain.mealplan.MealSlotStatus;
 import de.evia.travelmate.trips.domain.trip.TripId;
+import de.evia.travelmate.trips.domain.travelparty.TravelParty;
 import de.evia.travelmate.trips.domain.travelparty.TravelPartyRepository;
 
 @Controller
@@ -78,12 +82,32 @@ public class MealPlanController {
                 Collectors.toList()
             ));
 
+        final Map<UUID, String> participantNames = buildParticipantNameMap(trip);
+        final List<Map.Entry<UUID, String>> participantOptions = participantNames.entrySet().stream()
+            .sorted(Map.Entry.comparingByValue())
+            .toList();
+
         model.addAttribute("view", "mealplan/overview");
         model.addAttribute("trip", trip);
         model.addAttribute("mealPlan", mealPlan);
         model.addAttribute("slotsByDate", slotsByDate);
         model.addAttribute("recipes", recipes);
+        model.addAttribute("participantNames", participantNames);
+        model.addAttribute("participantOptions", participantOptions);
         return "layout/default";
+    }
+
+    private Map<UUID, String> buildParticipantNameMap(final TripRepresentation trip) {
+        final Map<UUID, String> names = new HashMap<>();
+        for (final TravelParty party : travelPartyRepository.findAll()) {
+            party.members().forEach(m -> names.put(m.memberId(),
+                (m.firstName() + " " + m.lastName()).trim()));
+            party.dependents().forEach(d -> names.put(d.dependentId(),
+                (d.firstName() + " " + d.lastName()).trim()));
+        }
+        return trip.participantIds().stream()
+            .filter(names::containsKey)
+            .collect(Collectors.toMap(id -> id, names::get, (a, b) -> a));
     }
 
     @PostMapping("/{tripId}/mealplan/slots/{slotId}/status")
@@ -114,6 +138,19 @@ public class MealPlanController {
         } else {
             mealPlanService.clearRecipe(new TripId(tripId), new MealSlotId(slotId));
         }
+        return "redirect:/" + tripId + "/mealplan";
+    }
+
+    @PostMapping("/{tripId}/mealplan/slots/{slotId}/kitchen-duty")
+    public String assignKitchenDuty(@AuthenticationPrincipal final Jwt jwt,
+                                    @PathVariable final UUID tripId,
+                                    @PathVariable final UUID slotId,
+                                    @RequestParam(name = "participantIds", required = false) final List<UUID> participantIds) {
+        final ResolvedIdentity identity = requireIdentity(jwt);
+        validateTripAccess(tripId, identity);
+        mealPlanService.assignKitchenDuty(new AssignKitchenDutyCommand(
+            tripId, slotId, participantIds != null ? participantIds : List.of()
+        ));
         return "redirect:/" + tripId + "/mealplan";
     }
 

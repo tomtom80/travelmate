@@ -33,6 +33,7 @@ import de.evia.travelmate.common.events.trips.ParticipantRemovedFromTrip;
 import de.evia.travelmate.common.events.trips.StayPeriodUpdated;
 import de.evia.travelmate.common.events.trips.TripCompleted;
 import de.evia.travelmate.common.events.trips.TripCreated;
+import de.evia.travelmate.common.events.trips.TripDeleted;
 import de.evia.travelmate.expense.application.command.AddReceiptCommand;
 import de.evia.travelmate.expense.application.command.ApproveReceiptCommand;
 import de.evia.travelmate.expense.application.command.ConfirmAdvancePaymentsCommand;
@@ -454,6 +455,29 @@ class ExpenseServiceTest {
 
         assertThatThrownBy(() -> expenseService.onTripCompleted(event))
             .isInstanceOf(EntityNotFoundException.class);
+    }
+
+    // --- onTripDeleted ---
+
+    @Test
+    void onTripDeletedRemovesExpenseAndProjection() {
+        final TripDeleted event = new TripDeleted(TENANT_UUID, TRIP_ID, LocalDate.now());
+
+        expenseService.onTripDeleted(event);
+
+        verify(expenseRepository).deleteByTripId(TRIP_ID);
+        verify(tripProjectionRepository).deleteByTripId(TRIP_ID);
+    }
+
+    @Test
+    void onTripDeletedIsIdempotentWhenNothingExists() {
+        final TripDeleted event = new TripDeleted(TENANT_UUID, TRIP_ID, LocalDate.now());
+
+        expenseService.onTripDeleted(event);
+        expenseService.onTripDeleted(event);
+
+        verify(expenseRepository, org.mockito.Mockito.times(2)).deleteByTripId(TRIP_ID);
+        verify(tripProjectionRepository, org.mockito.Mockito.times(2)).deleteByTripId(TRIP_ID);
     }
 
     // --- addReceipt ---

@@ -98,6 +98,31 @@
             </option>
         </select>
     </form>
+    <div th:if="${slot.status() == 'PLANNED'}" class="kitchen-duty" style="margin-top:0.4rem;">
+        <small th:text="#{mealplan.kitchenDuty.title}">Kuechendienst</small>
+        <div th:if="${not #lists.isEmpty(slot.kitchenDutyParticipantIds())}"
+             style="font-size:0.85rem; margin-bottom:0.25rem;">
+            <span th:each="pid, iter : ${slot.kitchenDutyParticipantIds()}">
+                <span th:text="${participantNames.get(pid) ?: '?'}">Name</span><span th:if="${!iter.last}">, </span>
+            </span>
+        </div>
+        <em th:if="${#lists.isEmpty(slot.kitchenDutyParticipantIds())}"
+            th:text="#{mealplan.kitchenDuty.empty}"
+            style="font-size:0.8rem;">Niemand zugewiesen</em>
+        <form method="post"
+              th:action="@{/{tid}/mealplan/slots/{sid}/kitchen-duty(tid=${trip.tripId()},sid=${slot.slotId()})}"
+              style="margin:0.25rem 0 0 0;">
+            <select name="participantIds" multiple size="3"
+                    style="margin-bottom:0.25rem; padding:0.25rem; font-size:0.8rem; min-width:9rem;">
+                <option th:each="opt : ${participantOptions}"
+                        th:value="${opt.key}"
+                        th:selected="${slot.kitchenDutyParticipantIds().contains(opt.key)}"
+                        th:text="${opt.value}">Name</option>
+            </select>
+            <button type="submit" class="outline" style="padding:0.15rem 0.5rem; font-size:0.8rem;"
+                    th:text="#{mealplan.kitchenDuty.assign}">Zuweisen</button>
+        </form>
+    </div>
 </div>
 </body>
 </html>

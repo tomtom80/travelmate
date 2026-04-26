@@ -535,10 +535,11 @@ start collaborative planning before the final dates are decided.
 
 ---
 
-#### US-TRIPS-005: Edit Trip Details
+#### US-TRIPS-005: Edit Trip Details ✅ Done (Iteration 17)
 **Epic**: E-TRIPS-01
 **Priority**: Should
 **Size**: S
+**Status**: ✅ Implemented in Iteration 17 (v0.17.0)
 **As an** Organizer, **I want** to edit a Trip's name or description, **so that** I can adjust
 plans without bypassing collaborative decisions.
 
@@ -553,18 +554,21 @@ plans without bypassing collaborative decisions.
 
 ---
 
-#### US-TRIPS-006: Delete Trip
+#### US-TRIPS-006: Delete Trip ✅ Done (Iteration 17)
 **Epic**: E-TRIPS-01
 **Priority**: Should
-**Size**: S
+**Size**: M
+**Status**: ✅ Implemented in Iteration 17 (v0.17.0); siehe ADR-0023
 **As an** Organizer, **I want** to delete a Trip that is still in PLANNING, **so that** I can remove mistakenly created trips.
 
 ##### Acceptance Criteria
 - **Given** a Trip is in PLANNING, **When** I click "Delete" and confirm, **Then** the Trip and all associated Invitations are deleted.
 - **Given** a Trip is not in PLANNING, **When** I try to delete, **Then** deletion is not allowed.
+- **Given** an AccommodationPoll is in AWAITING_BOOKING status, **When** I try to delete, **Then** deletion is blocked.
 
 ##### Technical Notes
 - New event: TripDeleted (for Expense cleanup)
+- Cascade order: invitations → mealPlan → shoppingList → datePoll → accommodationPoll → accommodation → trip → publish event
 
 ---
 
@@ -638,10 +642,11 @@ plans without bypassing collaborative decisions.
 
 ---
 
-#### US-TRIPS-014: Remove Participant from Trip
+#### US-TRIPS-014: Remove Participant from Trip ✅ Done
 **Epic**: E-TRIPS-02
 **Priority**: Should
 **Size**: S
+**Status**: ✅ Already implemented in earlier iteration (TripService.removeParticipantFromTrip)
 **As an** Organizer, **I want** to remove a Participant from a Trip, **so that** the participant list is accurate.
 
 ##### Acceptance Criteria
@@ -790,10 +795,11 @@ plans without bypassing collaborative decisions.
 
 ---
 
-#### US-TRIPS-035: Assign Kitchen Duty to Travel Parties
+#### US-TRIPS-035: Assign Kitchen Duty to Travel Parties ✅ Done (Iteration 17)
 **Epic**: E-TRIPS-04
 **Priority**: Should
 **Size**: M
+**Status**: ✅ Implemented in Iteration 17 (v0.17.0); MealSlot speichert kitchenDutyParticipantIds via Flyway V25
 **As an** Organizer, **I want** to assign one or more travel parties as kitchen duty for an executed meal, **so that** cooking and dishwashing responsibility is transparent.
 
 ##### Acceptance Criteria

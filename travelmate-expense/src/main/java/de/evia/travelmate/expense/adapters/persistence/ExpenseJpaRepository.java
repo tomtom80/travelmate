@@ -10,4 +10,6 @@ public interface ExpenseJpaRepository extends JpaRepository<ExpenseJpaEntity, UU
     Optional<ExpenseJpaEntity> findByTenantIdAndTripId(UUID tenantId, UUID tripId);
 
     boolean existsByTripId(UUID tripId);
+
+    void deleteByTripId(UUID tripId);
 }

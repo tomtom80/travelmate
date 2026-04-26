@@ -35,6 +35,9 @@ public class MealSlotJpaEntity {
     @Column(name = "recipe_id")
     private UUID recipeId;
 
+    @Column(name = "kitchen_duty_participant_ids", columnDefinition = "text")
+    private String kitchenDutyParticipantIdsJson;
+
     protected MealSlotJpaEntity() {
     }
 
@@ -56,4 +59,6 @@ public class MealSlotJpaEntity {
     public void setStatus(final String status) { this.status = status; }
     public UUID getRecipeId() { return recipeId; }
     public void setRecipeId(final UUID recipeId) { this.recipeId = recipeId; }
+    public String getKitchenDutyParticipantIdsJson() { return kitchenDutyParticipantIdsJson; }
+    public void setKitchenDutyParticipantIdsJson(final String json) { this.kitchenDutyParticipantIdsJson = json; }
 }
