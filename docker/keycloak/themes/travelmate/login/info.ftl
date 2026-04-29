@@ -19,7 +19,17 @@
                 <script>window.location.href = "${client.baseUrl?no_esc}";</script>
                 <p><a href="${client.baseUrl}" role="button">${kcSanitize(msg("backToApplication"))?no_esc}</a></p>
             <#else>
-                <p><a href="http://localhost:8080/oauth2/authorization/keycloak" role="button">${kcSanitize(msg("doLogIn"))?no_esc}</a></p>
+                <#assign sectionClientBaseUrl = "" />
+                <#if client?? && client.baseUrl?has_content>
+                    <#assign sectionClientBaseUrl = client.baseUrl />
+                </#if>
+                <#assign sectionRealmAppBaseUrl = "" />
+                <#if realm.attributes?? && realm.attributes["appBaseUrl"]?? && realm.attributes["appBaseUrl"]?has_content>
+                    <#assign sectionRealmAppBaseUrl = realm.attributes["appBaseUrl"] />
+                </#if>
+                <#assign sectionAppBaseUrl = (sectionClientBaseUrl?has_content)?then(sectionClientBaseUrl?replace("/iam/?$", "", "r"), sectionRealmAppBaseUrl) />
+                <#assign sectionAppLoginUrl = sectionAppBaseUrl + "/oauth2/authorization/keycloak" />
+                <p><a href="${sectionAppLoginUrl}" role="button">${kcSanitize(msg("doLogIn"))?no_esc}</a></p>
             </#if>
         </#if>
     </#if>

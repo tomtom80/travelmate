@@ -1,12 +1,15 @@
 /* Travelmate Keycloak Login Theme */
 
-/* ── Brand Colors ──────────────────────────────────── */
+/* ── Brand tokens (mirrored from travelmate-iam style.css) ───────── */
 :root {
     --tm-primary: #3366CC;
     --tm-primary-hover: #2952a3;
-    --tm-text: #1a1a2e;
+    --tm-primary-soft: #99BBEE;
+    --tm-text: #162030;
+    --tm-text-soft: #526071;
     --tm-muted: #6b7280;
     --tm-border: #d1d5db;
+    --tm-border-soft: rgba(216, 222, 233, 0.92);
     --tm-bg-light: #f9fafb;
     --tm-danger: #dc2626;
     --tm-success-bg: #ecfdf5;
@@ -21,6 +24,22 @@
     --tm-info-bg: #eff6ff;
     --tm-info-border: #bfdbfe;
     --tm-info-text: #1e40af;
+    --tm-radius-sm: 0.5rem;
+    --tm-radius-2xl: 1.35rem;
+    --tm-shadow-soft: 0 18px 48px rgba(15, 23, 42, 0.08);
+    --tm-font-sans: "Manrope", -apple-system, system-ui, BlinkMacSystemFont,
+                    "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* ── Page shell ─────────────────────────────────────── */
+body {
+    min-height: 100vh;
+    color: var(--tm-text);
+    font-family: var(--tm-font-sans);
+    background:
+        radial-gradient(circle at top left, rgba(22, 163, 74, 0.12), transparent 26%),
+        radial-gradient(circle at top right, rgba(51, 102, 204, 0.12), transparent 30%),
+        linear-gradient(180deg, #f8fcfa 0%, #f5f8fc 45%, #eef4fb 100%);
 }
 
 /* ── Navigation ────────────────────────────────────── */
@@ -119,9 +138,10 @@
     max-width: 420px;
     margin: 3rem auto;
     padding: 2rem;
-    border: 1px solid var(--tm-border);
-    border-radius: 0.75rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid var(--tm-border-soft);
+    border-radius: var(--tm-radius-2xl);
+    box-shadow: var(--tm-shadow-soft);
 }
 
 .kc-card header {
@@ -149,6 +169,9 @@
     border-color: var(--tm-primary);
     color: #fff;
     width: 100%;
+    border-radius: var(--tm-radius-sm);
+    font-weight: 700;
+    letter-spacing: 0.01em;
 }
 
 .kc-card button[type="submit"]:hover,

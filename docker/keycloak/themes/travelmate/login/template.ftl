@@ -6,6 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
     <title>${msg("loginTitle",(realm.displayName!''))}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     <link href="${url.resourcesPath}/css/travelmate.css" rel="stylesheet" />
     <#if properties.scripts?has_content>
@@ -37,10 +40,21 @@
     </#if>
 </head>
 <body>
+    <#assign clientBaseUrl = "" />
+    <#if client?? && client.baseUrl?has_content>
+        <#assign clientBaseUrl = client.baseUrl />
+    </#if>
+    <#assign realmAppBaseUrl = "" />
+    <#if realm.attributes?? && realm.attributes["appBaseUrl"]?? && realm.attributes["appBaseUrl"]?has_content>
+        <#assign realmAppBaseUrl = realm.attributes["appBaseUrl"] />
+    </#if>
+    <#assign appBaseUrl = (clientBaseUrl?has_content)?then(clientBaseUrl?replace("/iam/?$", "", "r"), realmAppBaseUrl) />
+    <#assign appLoginUrl = appBaseUrl + "/oauth2/authorization/keycloak" />
+    <#assign appSignupUrl = appBaseUrl + "/iam/signup" />
     <nav class="container nav-bar">
         <ul>
             <li>
-                <a href="http://localhost:8080/" class="nav-brand">
+                <a href="${appBaseUrl}" class="nav-brand">
                     <img src="${url.resourcesPath}/img/logo.svg" alt="Travelmate" class="nav-logo">
                 </a>
             </li>
@@ -52,7 +66,7 @@
             </li>
         </ul>
         <ul class="nav-links">
-            <li><a href="http://localhost:8080/iam/signup">${msg("doRegister")}</a></li>
+            <li><a href="${appSignupUrl}">${msg("doRegister")}</a></li>
             <#if locale?? && locale.supported?size gt 1>
                 <li class="nav-lang-item">
                     <details class="nav-lang-dropdown">
@@ -65,7 +79,7 @@
                     </details>
                 </li>
             </#if>
-            <li><a href="http://localhost:8080/oauth2/authorization/keycloak">${msg("doLogIn")}</a></li>
+            <li><a href="${appLoginUrl}">${msg("doLogIn")}</a></li>
         </ul>
     </nav>
 

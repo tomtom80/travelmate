@@ -49,9 +49,19 @@
             </form>
         </#if>
     <#elseif section = "info">
+        <#assign sectionClientBaseUrl = "" />
+        <#if client?? && client.baseUrl?has_content>
+            <#assign sectionClientBaseUrl = client.baseUrl />
+        </#if>
+        <#assign sectionRealmAppBaseUrl = "" />
+        <#if realm.attributes?? && realm.attributes["appBaseUrl"]?? && realm.attributes["appBaseUrl"]?has_content>
+            <#assign sectionRealmAppBaseUrl = realm.attributes["appBaseUrl"] />
+        </#if>
+        <#assign sectionAppBaseUrl = (sectionClientBaseUrl?has_content)?then(sectionClientBaseUrl?replace("/iam/?$", "", "r"), sectionRealmAppBaseUrl) />
+        <#assign sectionAppSignupUrl = sectionAppBaseUrl + "/iam/signup" />
         <hr>
         <p class="kc-registration-link">
-            ${msg("noAccount")} <a tabindex="8" href="http://localhost:8080/iam/signup">${msg("doRegister")}</a>
+            ${msg("noAccount")} <a tabindex="8" href="${sectionAppSignupUrl}">${msg("doRegister")}</a>
         </p>
     <#elseif section = "socialProviders">
         <#if realm.password && social?? && social.providers?has_content>
