@@ -3,6 +3,7 @@ package de.evia.travelmate.iam.adapters.web;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.never;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -33,6 +34,7 @@ import de.evia.travelmate.iam.application.representation.AccountRepresentation;
 import de.evia.travelmate.iam.application.representation.DependentRepresentation;
 import de.evia.travelmate.iam.application.representation.InviteMemberResult;
 import de.evia.travelmate.iam.application.representation.TenantRepresentation;
+import de.evia.travelmate.iam.adapters.mail.RegistrationEmailService;
 import de.evia.travelmate.iam.domain.IamTestFixtures;
 import de.evia.travelmate.iam.domain.account.Account;
 import de.evia.travelmate.iam.domain.account.AccountId;
@@ -42,7 +44,7 @@ import de.evia.travelmate.iam.domain.account.FullName;
 import de.evia.travelmate.iam.domain.account.KeycloakUserId;
 import de.evia.travelmate.iam.domain.account.Username;
 
-@SpringBootTest
+@SpringBootTest(properties = "travelmate.public-url=https://travelmate-demo.de")
 @AutoConfigureMockMvc
 @ActiveProfiles("test")
 class DashboardControllerTest {
@@ -63,6 +65,9 @@ class DashboardControllerTest {
 
     @MockitoBean
     private AccountRepository accountRepository;
+
+    @MockitoBean
+    private RegistrationEmailService registrationEmailService;
 
     @Test
     void dashboardShowsTenantAndMembers() throws Exception {
@@ -155,6 +160,8 @@ class DashboardControllerTest {
         verify(accountService).inviteMember(
             new InviteMemberCommand(TENANT_UUID, "anna@example.com", "Anna", "Schmidt",
                 LocalDate.of(1990, 5, 15)));
+        verify(registrationEmailService).sendRegistrationEmail(
+            "anna@example.com", "Anna", "https://travelmate-demo.de/iam/register?token=test-token-value");
     }
 
     @Test
@@ -177,6 +184,8 @@ class DashboardControllerTest {
             .andExpect(status().isOk())
             .andExpect(view().name("dashboard/members :: memberList"))
             .andExpect(model().attributeExists("memberError"));
+
+        verify(registrationEmailService, never()).sendRegistrationEmail(any(), any(), any());
     }
 
     private Account createAccount() {

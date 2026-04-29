@@ -90,6 +90,8 @@ class ParticipantDeletionLifecycleIT extends E2ETestBase {
 
         ensureParticipantOnTrip(MEMBER_NAME);
         ensureParticipantOnTrip(COMPANION_NAME);
+        waitForIamTripParticipation(tripId, MEMBER_FIRST_NAME, MEMBER_LAST_NAME);
+        waitForIamTripParticipation(tripId, COMPANION_FIRST_NAME, COMPANION_LAST_NAME);
 
         navigateAndWait("/trips/" + tripId + "/shoppinglist");
         if (page.locator("form[action$='/shoppinglist/generate']").count() > 0) {

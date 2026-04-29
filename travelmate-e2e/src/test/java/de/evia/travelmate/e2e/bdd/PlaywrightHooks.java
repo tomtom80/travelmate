@@ -91,6 +91,7 @@ public class PlaywrightHooks {
 
     static void createTripWithoutDates(final String tripName, final String description) {
         navigateAndWait("/trips/new");
+        assertTripsCreateForm("Trips create form was not available before creating '" + tripName + "'");
         page.locator("#name, input[name=name]").first().fill(tripName);
         if (description != null) {
             page.locator("textarea[name=description], #description").first().fill(description);
@@ -196,13 +197,42 @@ public class PlaywrightHooks {
     }
 
     static void waitForTripsReady() {
-        for (int i = 0; i < 10; i++) {
-            navigateAndWait("/trips/");
-            if (!page.content().contains("Forbidden") && !page.content().contains("403")) {
+        for (int i = 0; i < 60; i++) {
+            navigateAndWait("/trips/new");
+            if (isTripsCreateForm()) {
                 return;
             }
             page.waitForTimeout(500);
         }
+        throw new AssertionError("Trips projection did not become usable. " + pageDiagnostics());
+    }
+
+    private static void assertTripsCreateForm(final String message) {
+        if (!isTripsCreateForm()) {
+            throw new AssertionError(message + ". " + pageDiagnostics());
+        }
+    }
+
+    private static boolean isTripsCreateForm() {
+        final String content = page.content();
+        return !content.contains("Forbidden")
+            && !content.contains("403")
+            && page.locator("#name, input[name=name]").count() > 0
+            && page.locator("main button[type=submit]").count() > 0;
+    }
+
+    private static String pageDiagnostics() {
+        String text;
+        try {
+            text = page.locator("body").innerText();
+        } catch (final Exception e) {
+            text = page.content();
+        }
+        text = text.replaceAll("\\s+", " ").trim();
+        if (text.length() > 500) {
+            text = text.substring(0, 500);
+        }
+        return "url=" + page.url() + ", body=\"" + text + "\"";
     }
 
     static void ensureLoggedOut() {

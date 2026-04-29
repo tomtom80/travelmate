@@ -1,6 +1,7 @@
 package de.evia.travelmate.trips.adapters.web;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
@@ -26,6 +27,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
+import de.evia.travelmate.common.domain.DuplicateEntityException;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.trips.application.AccommodationPollService;
 import de.evia.travelmate.trips.application.AccommodationService;
@@ -279,6 +281,25 @@ class TripControllerTest {
             .andExpect(status().isOk())
             .andExpect(view().name("trip/invitations :: invitationList"))
             .andExpect(model().attributeExists("invitations"));
+    }
+
+    @Test
+    void inviteExternalWithDuplicateEmailReturnsFragmentWithInlineError() throws Exception {
+        doThrow(new DuplicateEntityException("invitation.error.alreadyExists"))
+            .when(invitationService).inviteExternal(any());
+        when(invitationService.findByTripId(new TripId(TRIP_UUID))).thenReturn(List.of());
+
+        mockMvc.perform(post("/" + TRIP_UUID + "/invitations/external")
+                .with(jwt().jwt(j -> j.claim("email", ORGANIZER_EMAIL)))
+                .header("HX-Request", "true")
+                .param("email", "dup@test.de")
+                .param("firstName", "Dup")
+                .param("lastName", "User")
+                .param("dateOfBirth", "1990-01-01"))
+            .andExpect(status().isConflict())
+            .andExpect(view().name("trip/invitations :: invitationList"))
+            .andExpect(model().attribute("invitationError",
+                "Diese E-Mail-Adresse wurde für diese Reise bereits eingeladen."));
     }
 
     @Test

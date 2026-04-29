@@ -4,6 +4,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -182,6 +183,8 @@ class AccountServiceTest {
         assertThatThrownBy(() -> accountService.deleteMember(IamTestFixtures.ACCOUNT_ID, IamTestFixtures.TENANT_ID))
             .isInstanceOf(BusinessRuleViolationException.class)
             .hasMessageContaining("tripParticipation");
+        verify(accountRepository, never()).deleteById(any(AccountId.class));
+        verify(eventPublisher, never()).publishEvent(any(MemberRemovedFromTenant.class));
     }
 
     @Test
@@ -192,6 +195,8 @@ class AccountServiceTest {
         assertThatThrownBy(() -> accountService.deleteDependent(dependentId))
             .isInstanceOf(BusinessRuleViolationException.class)
             .hasMessageContaining("tripParticipation");
+        verify(dependentRepository, never()).deleteById(any(DependentId.class));
+        verify(eventPublisher, never()).publishEvent(any(DependentRemovedFromTenant.class));
     }
 
     @Test

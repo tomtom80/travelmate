@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -94,9 +95,10 @@ abstract class E2ETestBase {
 
     static void createTripWithoutDates(final Page targetPage, final String tripName, final String description) {
         navigateAndWait(targetPage, "/trips/new");
-        targetPage.fill("input[name=name]", tripName);
+        assertTripsCreateForm(targetPage, "Trips create form was not available before creating '" + tripName + "'");
+        targetPage.locator("input[name=name]").first().fill(tripName);
         if (description != null) {
-            targetPage.fill("textarea[name=description], #description", description);
+            targetPage.locator("textarea[name=description], #description").first().fill(description);
         }
         targetPage.locator("main button[type=submit]").click();
         targetPage.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
@@ -249,13 +251,97 @@ abstract class E2ETestBase {
     }
 
     static void waitForTripsReady(final Page targetPage) {
-        for (int i = 0; i < 10; i++) {
-            navigateAndWait(targetPage, "/trips/");
-            if (!targetPage.content().contains("Forbidden") && !targetPage.content().contains("403")) {
+        for (int i = 0; i < 60; i++) {
+            navigateAndWait(targetPage, "/trips/new");
+            if (isTripsCreateForm(targetPage)) {
                 return;
             }
             targetPage.waitForTimeout(500);
         }
+        throw new AssertionError("Trips projection did not become usable. " + pageDiagnostics(targetPage));
+    }
+
+    static void waitForIamTripParticipation(final String tripId, final String firstName, final String lastName) {
+        waitForIamProjectionCount("""
+            select count(*)
+            from trip_participation tp
+            where tp.trip_id = '%s'::uuid
+              and tp.participant_id in (
+                  select account_id from account where first_name = '%s' and last_name = '%s'
+                  union
+                  select dependent_id from dependent where first_name = '%s' and last_name = '%s'
+              )
+            """.formatted(
+            sqlLiteral(tripId),
+            sqlLiteral(firstName), sqlLiteral(lastName),
+            sqlLiteral(firstName), sqlLiteral(lastName)
+        ));
+    }
+
+    private static void assertTripsCreateForm(final Page targetPage, final String message) {
+        if (!isTripsCreateForm(targetPage)) {
+            throw new AssertionError(message + ". " + pageDiagnostics(targetPage));
+        }
+    }
+
+    private static boolean isTripsCreateForm(final Page targetPage) {
+        final String content = targetPage.content();
+        return !content.contains("Forbidden")
+            && !content.contains("403")
+            && targetPage.locator("input[name=name]").count() > 0
+            && targetPage.locator("main button[type=submit]").count() > 0;
+    }
+
+    private static String pageDiagnostics(final Page targetPage) {
+        String text;
+        try {
+            text = targetPage.locator("body").innerText();
+        } catch (final Exception e) {
+            text = targetPage.content();
+        }
+        text = text.replaceAll("\\s+", " ").trim();
+        if (text.length() > 500) {
+            text = text.substring(0, 500);
+        }
+        return "url=" + targetPage.url() + ", body=\"" + text + "\"";
+    }
+
+    private static void waitForIamProjectionCount(final String sql) {
+        for (int i = 0; i < 60; i++) {
+            if (queryIamCount(sql) > 0) {
+                return;
+            }
+            page.waitForTimeout(500);
+        }
+        throw new AssertionError("IAM projection did not contain expected row for SQL: " + sql);
+    }
+
+    private static long queryIamCount(final String sql) {
+        return queryComposePsqlCount("postgres-iam", "travelmate_iam", sql);
+    }
+
+    private static long queryComposePsqlCount(final String service, final String database, final String sql) {
+        try {
+            final Process process = new ProcessBuilder(
+                "docker", "compose", "exec", "-T", service,
+                "psql", "-U", "travelmate", "-d", database, "-tAc", sql
+            ).start();
+            if (!process.waitFor(10, TimeUnit.SECONDS)) {
+                process.destroyForcibly();
+                return 0L;
+            }
+            final String output = new String(process.getInputStream().readAllBytes(), StandardCharsets.UTF_8).trim();
+            if (process.exitValue() != 0 || output.isBlank()) {
+                return 0L;
+            }
+            return Long.parseLong(output);
+        } catch (final Exception e) {
+            return 0L;
+        }
+    }
+
+    private static String sqlLiteral(final String value) {
+        return value.replace("'", "''");
     }
 
     /**
