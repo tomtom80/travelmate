@@ -26,9 +26,12 @@ Die Architekturentscheidungen werden als Architecture Decision Records (ADRs) do
 | **Import-Pipeline-Pattern und SSRF-Schutz** (ADR-0016) | Wiederverwendbares Import-Pipeline-Muster (Input -> Analyse -> Vorschau -> Edit -> Speichern); Port-Abstraktion im Domain-Layer; SSRF-Schutz via HtmlFetcher (HTTPS-Only, Private-IP-Blacklist, DNS-Rebinding-Schutz, Size-Limit, Timeout); Jsoup + JSON-LD/OG-Extraktion fuer Accommodation URL Import |
 | **OCR-Technologiewahl Kassenzettel-Scan** (ADR-0017) | ReceiptScanPort als austauschbarer Domain-Port; Tesseract (self-hosted) als Default-Implementierung; CategoryGuesser-Heuristik fuer automatische Kategorievorschlaege; DSGVO-konform (keine Cloud-Uebermittlung); Foto nur transient verarbeitet |
 | **Party-zentrierte Reiseverwaltung und Expense-Sicht** (Iteration 12) | Trips erlaubt parteibasierte Teilnehmerpflege, StayPeriods und Mehrfach-Organizer; Expense arbeitet mit `PartyAccount` als Hauptsicht, altersbasierten Gewichtungsvorschlaegen und laufendem Kontoverlauf statt person-zentrierter Ausgleichsliste |
-
 | **Separate Poll-Aggregat-Entwurf** (ADR-0019) | Zwei separate Aggregate (DatePoll, AccommodationPoll) statt generischem Poll&lt;T&gt; — unterschiedliche Abstimmungsmodi, Invarianten und Ergebnisaktionen erfordern eigene Aggregate nach DDD-Korrektheit |
 | **Trip als Planungscontainer** (ADR-0021, ersetzt ADR-0020) | Trip kann ohne finales dateRange existieren; DatePoll bestätigt dateRange, AccommodationPoll bestätigt Unterkunft; löst Widerspruch zwischen Pflichtfeld und Abstimmungslogik |
 | **Booking-Workflow im AccommodationPoll-Aggregat** (ADR-0022) | BookingAttempt-Entities innerhalb AccommodationPoll; Fallback-Logik auf Poll selbst; kein separates BookingWorkflow-Aggregate; atomare Zustandsübergänge |
+| **Trip-Loeschen mit kaskadierender Event-Propagation** (ADR-0023) | Trip-Loeschung bleibt im Trips SCS fachlich verantwortlich und propagiert Cleanup-Events an Downstream-SCS statt Fremddaten direkt zu loeschen |
+| **Organizer-Rolle als trip-lokale Eigenschaft** (ADR-0024) | Mehrere Organisatoren werden im Trip-Aggregat verwaltet; globale IAM-Rollen und trip-spezifische Verantwortung bleiben sauber getrennt |
+| **Event-Versionierung und Naming-Konvention** (ADR-0025) | Brechende Event-Schemaaenderungen sollen explizit versioniert werden; Event-Namen folgen einer einheitlichen Vergangenheitsform |
+| **Zentralisierter GlobalExceptionHandler** (ADR-0026, vorgeschlagen) | Gemeinsames Fehlerverhalten ueber mehrere SCS soll konsolidiert werden, ohne die DDD-Grenzen der Fachmodule aufzuweichen |
 
 Detaillierte Begründungen, Alternativen und Konsequenzen sind in den einzelnen ADRs beschrieben.

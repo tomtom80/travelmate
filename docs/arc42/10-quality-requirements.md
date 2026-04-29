@@ -1,5 +1,20 @@
 # 10. Quality Requirements
 
+## Current Status Note
+
+The historical quality scenarios below still describe the architectural intent of Travelmate. For the current path to a major release, the governing planning baseline is:
+
+- latest stable release: `v0.18.0`
+- current repository version: `0.19.0-SNAPSHOT`
+- go-live target: `v1.0.0` via the roadmap in [`../backlog/roadmap-v1.0.0.md`](../backlog/roadmap-v1.0.0.md)
+
+The major-release planning sharpened four quality priorities that now dominate delivery:
+
+1. observability and diagnosability
+2. event integrity and recoverability
+3. tenant isolation and security hardening
+4. release repeatability and rollback capability
+
 This section documents the results of a Quality Storming session (INNOQ methodology) applied to the Travelmate platform. It covers quality attributes, concrete scenarios, priority trade-offs, observable metrics, and an evolution roadmap.
 
 ---
@@ -257,6 +272,23 @@ Scenarios are rated using **MoSCoW priority** (Must/Should/Could/Won't) crossed 
 - **Mitigation:** PWA Service Worker can cache rendered HTML pages for offline viewing.
 
 ### 5.5 Security Strictness vs. Test Simplicity
+
+## 6. Go-Live Quality Focus 2026
+
+For the current go-live path, the following quality scenarios have first-order delivery priority:
+
+| Focus | Practical interpretation for the roadmap |
+|------|-------------------------------------------|
+| Reliability | no silent event loss, operational visibility, repeatable recovery |
+| Security | tenant isolation, CSRF correctness, production-safe secrets and auth hardening |
+| Maintainability | executable architecture and event rules, not only documented conventions |
+| Operability | backup, restore, audit logging, rollback, and deployment promotion |
+| Testability | stable E2E, contract tests, and pre-release verification |
+
+These roadmap-driven priorities are elaborated in:
+
+- [`../backlog/roadmap-v1.0.0.md`](../backlog/roadmap-v1.0.0.md)
+- [`11-risks-and-technical-debt.md`](./11-risks-and-technical-debt.md)
 
 **Decision:** Disable security in test profile (`@Profile("test")`) for faster, simpler tests.
 

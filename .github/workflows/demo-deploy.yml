@@ -117,7 +117,8 @@ jobs:
           tar czf - \
             docker-compose.demo.yml \
             scripts/deploy-demo.sh \
-            docker/keycloak/realm-export.json \
+            docker/keycloak/realm-export.template.json \
+            docker/keycloak/init-realm-from-env.sh \
             docker/keycloak/init-smtp-from-env.sh \
             docker/keycloak/themes \
           | ssh demo "tar xzf - -C '${DEMO_APP_DIR}'"

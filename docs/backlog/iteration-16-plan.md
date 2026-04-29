@@ -4,13 +4,13 @@
 **Target Version**: v0.16.0
 **Input**: Visuelles Review der Hero-Layout-Überarbeitung (Commit 4430c17), Screenshots mit Mobile-Overflow- und PDF-Problemen
 
-**Status**: IN PROGRESS
+**Status**: DONE (released via `v0.16.0` and `v0.16.1`)
 
 ---
 
 ## Planning Goal
 
-Iteration 16 ist eine reine Polish-Iteration. Sie behebt UI-Probleme, die bei der
+Iteration 16 war eine reine Polish-Iteration. Sie behebt UI-Probleme, die bei der
 Hero-Layout-Überarbeitung in Iteration 15 (v0.15.8) aufgefallen sind, und bringt die
 Abrechnungs-PDF auf das Travelmate Corporate-Identity-Niveau.
 

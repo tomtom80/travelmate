@@ -1,17 +1,20 @@
 # Travelmate
 
-Travelmate is a multi-tenant travel planning platform built as a Maven monorepo. It combines identity and access management, trip planning, and expense management in a Self-Contained Systems architecture with a server-rendered UI.
+Travelmate helps families plan trips, manage participants, and keep shared travel expenses transparent.
 
-## Release
+## Current State
 
-Current repository release state: `v0.14.1`
+- Latest stable release: `v0.18.0`
+- Working version on `main`: `0.19.0-SNAPSHOT`
+- Current focus: CI and delivery hardening, documentation refresh, and production-readiness follow-ups
 
-Patch release `v0.14.1` includes:
+Delivered product scope today:
 
-- cross-party date and accommodation polls with consistent winner visibility
-- lifecycle-safe trip planning without upfront date ranges and with democratic accommodation takeover
-- poll dashboards aligned to the default UI, including result emphasis and vote visualizations
-- refreshed E2E and BDD coverage for multi-party voting, selection and expense follow-up flows
+- travel party sign-up, member invitations, dependent management, and registration via invitation token
+- trip CRUD, participant management, external email invitations, and trip-local multi-organizer support
+- collaborative planning with date polls and accommodation polls, including booking confirmation flow
+- recipes, meal plans, shopping lists, accommodation management, and accommodation URL import
+- expense tracking with receipt capture, OCR-assisted scan flow, weightings, advance payments, and settlement PDF export
 
 ## Architecture Overview
 
@@ -20,9 +23,9 @@ Modules:
 - `travelmate-common`: shared kernel for domain primitives and event contracts
 - `travelmate-gateway`: Spring Cloud Gateway with OIDC login and token relay
 - `travelmate-iam`: travel parties, accounts, dependents, registration
-- `travelmate-trips`: trips, invitations, participants, recipes, meal plans, shopping lists
-- `travelmate-expense`: party account, receipts, weightings, advance payments
-- `travelmate-e2e`: Playwright and Cucumber based end-to-end tests
+- `travelmate-trips`: trips, invitations, participants, recipes, meal plans, shopping lists, planning polls
+- `travelmate-expense`: receipts, weightings, advance payments, settlements
+- `travelmate-e2e`: Playwright and Cucumber based end-to-end tests (enabled via Maven profile)
 
 Technology:
 
@@ -41,90 +44,82 @@ Prerequisites:
 - Java 21
 - Docker and Docker Compose
 
-Start infrastructure:
+Start local infrastructure:
 
 ```bash
 docker compose up -d
 ```
 
-Build the project:
+Run the build:
 
 ```bash
-./mvnw clean verify
+./mvnw -B -ntp verify
 ```
 
-Build and start all services with Compose:
+Start the local stack:
 
 ```bash
 docker compose up --build
 ```
 
-## Betriebsmodi
-
-### Lokale Entwicklung
-
-Die lokale Entwicklungsumgebung bleibt beim bestehenden Compose-Stack:
-
-```bash
-docker compose up -d
-./mvnw clean verify
-```
-
-Merkmale:
-
-- nutzt `docker-compose.yml`
-- verwendet lokale PostgreSQL-, RabbitMQ-, Keycloak- und Mailpit-Container
-- ist fuer Weiterentwicklung und lokale Tests gedacht
-
-### Demo-Umgebung
-
-Fuer eine oeffentlich erreichbare Demo gibt es einen getrennten Betriebsweg:
-
-- Compose-Datei: [`docker-compose.demo.yml`](./docker-compose.demo.yml)
-- Beispiel-Variablen: [`.env.demo.example`](./.env.demo.example)
-- Reverse Proxy: [`Caddyfile.demo`](./Caddyfile.demo)
-- automatischer Redeploy: [`scripts/deploy-demo.sh`](./scripts/deploy-demo.sh)
-- Server-Bootstrap: [`scripts/bootstrap-demo-server.sh`](./scripts/bootstrap-demo-server.sh)
-- konkrete Demo-Env-Vorlage: [`.env.demo.hetzner-brevo.example`](./.env.demo.hetzner-brevo.example)
-- GitHub Actions CI: [`.github/workflows/ci.yml`](./.github/workflows/ci.yml)
-- GitHub Actions Demo-Deploy: [`.github/workflows/demo-deploy.yml`](./.github/workflows/demo-deploy.yml)
-
-Merkmale:
-
-- verwendet echtes SMTP statt Mailpit
-- ist fuer haeufige Redeployments per GitHub Actions ausgelegt
-- laeuft typischerweise auf einer separaten Hetzner-VM
-- ist bewusst vom lokalen Dev-Setup getrennt
-
-Weiterfuehrende Betriebsdoku:
-
-- [`docs/operations/2026-03-26-demo-hosting-empfehlung.md`](./docs/operations/2026-03-26-demo-hosting-empfehlung.md)
-- [`docs/operations/2026-03-26-demo-betriebskonzept.md`](./docs/operations/2026-03-26-demo-betriebskonzept.md)
-- [`docs/operations/2026-03-26-kubernetes-hosting-marktrecherche.md`](./docs/operations/2026-03-26-kubernetes-hosting-marktrecherche.md)
-
-## Tests
-
-Run tests for a single module:
-
-```bash
-./mvnw -pl travelmate-trips clean test
-```
-
 Run the E2E suite:
 
 ```bash
-./mvnw -Pe2e -pl travelmate-e2e clean verify -DskipTests=false
+./mvnw -Pe2e -pl travelmate-e2e verify
 ```
+
+## Operating Modes
+
+### Local Development
+
+The local setup uses the standard Compose stack:
+
+```bash
+docker compose up -d
+./mvnw -B -ntp verify
+```
+
+Characteristics:
+
+- uses `docker-compose.yml`
+- runs local PostgreSQL, RabbitMQ, Keycloak, and Mailpit containers
+- is intended for development, integration tests, and E2E verification
+
+### Demo Delivery
+
+The public demo uses a separate delivery path:
+
+- Compose file: [`docker-compose.demo.yml`](./docker-compose.demo.yml)
+- example variables: [`.env.demo.example`](./.env.demo.example)
+- reverse proxy: [`Caddyfile.demo`](./Caddyfile.demo)
+- redeploy script: [`scripts/deploy-demo.sh`](./scripts/deploy-demo.sh)
+- server bootstrap: [`scripts/bootstrap-demo-server.sh`](./scripts/bootstrap-demo-server.sh)
+- GitHub Actions CI: [`.github/workflows/ci.yml`](./.github/workflows/ci.yml)
+- GitHub Actions demo deploy: [`.github/workflows/demo-deploy.yml`](./.github/workflows/demo-deploy.yml)
+
+Important GitHub and GHCR prerequisites:
+
+- repository Actions workflow permissions must allow `Read and write`
+- the workflow already requests `packages: write`, so `GITHUB_TOKEN` is sufficient only if the GHCR package is linked to this repository
+- existing GHCR packages such as `ghcr.io/<owner>/travelmate-iam` must either be linked to `tomtom80/travelmate` or explicitly grant repository access under `Manage Actions access`
+
+Further operations notes:
+
+- [`docs/operations/2026-03-26-demo-hosting-empfehlung.md`](./docs/operations/2026-03-26-demo-hosting-empfehlung.md)
+- [`docs/operations/2026-03-26-demo-betriebskonzept.md`](./docs/operations/2026-03-26-demo-betriebskonzept.md)
+- [`docs/operations/2026-03-27-demo-go-live-checkliste.md`](./docs/operations/2026-03-27-demo-go-live-checkliste.md)
+- [`docs/operations/2026-04-27-release-and-demo-delivery-status.md`](./docs/operations/2026-04-27-release-and-demo-delivery-status.md)
 
 ## Documentation
 
-Technical and product documentation is available under [`docs/`](./docs/README.md):
+The main documentation lives under [`docs/`](./docs/README.md):
 
-- Architecture: `docs/arc42/`
-- Decisions: `docs/adr/`
-- Backlog and releases: `docs/backlog/`
-- Design and UX: `docs/design/`
-- Test cases: `docs/test-cases/`
+- architecture: `docs/arc42/`
+- ADRs: `docs/adr/`
+- backlog and releases: `docs/backlog/`
+- design and UX: `docs/design/`
+- operations: `docs/operations/`
+- test cases: `docs/test-cases/`
 
 ## License
 
