@@ -2,6 +2,9 @@
 <html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
 <body>
 <div th:fragment="invitationList">
+    <article class="message-card message-card--error" th:if="${invitationError}" role="alert">
+        <p th:text="${invitationError}">Diese E-Mail-Adresse wurde bereits eingeladen.</p>
+    </article>
     <figure class="table-cards">
         <table th:if="${!invitations.isEmpty()}">
             <thead>

@@ -1,51 +1,194 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org">
+<html xmlns:th="http://www.thymeleaf.org" lang="de">
 <head>
-    <meta charset="UTF-8">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title th:text="'Einladung zur Reise ' + ${tripName} + ' &mdash; Travelmate'">Einladung zur Reise</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap');
+  body { margin: 0; padding: 0; background: #eef4fb; font-family: "Manrope", -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: #162030; -webkit-font-smoothing: antialiased; line-height: 1.5; }
+  table { border-collapse: collapse; border-spacing: 0; }
+  img { border: 0; display: block; max-width: 100%; height: auto; }
+  a { color: #3366CC; text-decoration: none; }
+  .preheader { display: none !important; visibility: hidden; opacity: 0; color: transparent; height: 0; width: 0; overflow: hidden; }
+</style>
 </head>
-<body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-    <h2>Einladung zur Reise</h2>
+<body>
 
-    <p>Hallo <span th:text="${inviteeFirstName}">Max</span>,</p>
+<div class="preheader">
+  <span th:text="${inviterFirstName} + ' hat dich zur Reise ' + ${tripName} + ' eingeladen.'">Lisa hat dich zur Reise Skiurlaub 2026 eingeladen.</span>
+</div>
 
-    <p>
-        <strong th:text="${inviterFirstName + ' ' + inviterLastName}">Lisa Mustermann</strong>
-        hat dich zur Reise
-        <strong th:text="${tripName}">Skiurlaub 2026</strong>
-        eingeladen.
-    </p>
+<table role="presentation" width="100%" style="background:#eef4fb;padding:24px 12px;">
+  <tr>
+    <td align="center">
 
-    <table>
+      <table role="presentation" width="600" style="max-width:600px;width:100%;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 18px 48px rgba(15,23,42,0.08);">
+
+        <!-- ===== Header band ===== -->
         <tr>
-            <td><strong>Reise:</strong></td>
-            <td th:text="${tripName}">Skiurlaub 2026</td>
+          <td style="background:linear-gradient(180deg,#f7fbff,#eef4fb);padding:24px 32px;border-bottom:1px solid #d8dee9;">
+            <table role="presentation" width="100%">
+              <tr>
+                <td>
+                  <table role="presentation"><tr>
+                    <td style="vertical-align:middle;padding-right:8px;">
+                      <svg width="32" height="32" viewBox="0 0 40 40">
+                        <circle cx="20" cy="20" r="19" fill="#3366CC"/>
+                        <path d="M5 27 Q20 12 35 27" stroke="#99BBEE" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+                        <g fill="#fff">
+                          <circle cx="13.5" cy="17" r="2"/><rect x="11.5" y="19.5" width="4" height="6.5" rx="1.5"/>
+                          <circle cx="20" cy="14.5" r="2.2"/><rect x="17.8" y="17.3" width="4.4" height="7.2" rx="1.6"/>
+                          <circle cx="26.5" cy="17" r="2"/><rect x="24.5" y="19.5" width="4" height="6.5" rx="1.5"/>
+                        </g>
+                      </svg>
+                    </td>
+                    <td style="vertical-align:middle;font-weight:700;font-size:18px;letter-spacing:-0.01em;color:#162030;">
+                      <span style="color:#3366CC;">Travel</span>mate
+                    </td>
+                  </tr></table>
+                </td>
+                <td align="right" style="font-size:11px;color:#526071;letter-spacing:0.08em;text-transform:uppercase;font-weight:700;">
+                  REISEEINLADUNG &middot; TRIP INVITATION
+                </td>
+              </tr>
+            </table>
+          </td>
         </tr>
+
+        <!-- ===== Eyebrow + headline ===== -->
         <tr>
-            <td><strong>Von:</strong></td>
-            <td th:text="${tripStartDate}">15.03.2026</td>
+          <td style="padding:32px 36px 8px 36px;">
+            <p style="margin:0 0 8px 0;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#3366CC;">
+              Du bist eingeladen
+            </p>
+            <h1 style="margin:0;font-size:30px;line-height:1.15;font-weight:700;letter-spacing:-0.01em;color:#162030;"
+                th:text="${tripName}">Skiurlaub 2026</h1>
+            <p style="margin:6px 0 0 0;font-size:15px;color:#526071;font-weight:500;">
+              <strong style="color:#162030;" th:text="${inviterFirstName + ' ' + inviterLastName}">Lisa Mustermann</strong>
+              hat dich eingeladen, diese Reise gemeinsam zu planen.
+            </p>
+          </td>
         </tr>
+
+        <!-- ===== Trip metadata stats ===== -->
         <tr>
-            <td><strong>Bis:</strong></td>
-            <td th:text="${tripEndDate}">22.03.2026</td>
+          <td style="padding:20px 36px 0 36px;">
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="border-collapse:separate;border-spacing:8px 0;">
+              <tr>
+                <td style="background:#f8fafc;border:1px solid #d8dee9;border-radius:12px;padding:14px 16px;">
+                  <p style="margin:0 0 4px;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#526071;">Von &middot; From</p>
+                  <p style="margin:0;font-size:15px;font-weight:700;color:#162030;line-height:1.25;" th:text="${tripStartDate}">15.03.2026</p>
+                </td>
+                <td style="background:#f8fafc;border:1px solid #d8dee9;border-radius:12px;padding:14px 16px;">
+                  <p style="margin:0 0 4px;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#526071;">Bis &middot; To</p>
+                  <p style="margin:0;font-size:15px;font-weight:700;color:#162030;line-height:1.25;" th:text="${tripEndDate}">22.03.2026</p>
+                </td>
+                <td style="background:#f8fafc;border:1px solid #d8dee9;border-radius:12px;padding:14px 16px;">
+                  <p style="margin:0 0 4px;font-size:10px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#526071;">Reise &middot; Trip</p>
+                  <p style="margin:0;font-size:15px;font-weight:700;color:#162030;line-height:1.25;" th:text="${tripName}">Skiurlaub 2026</p>
+                </td>
+              </tr>
+            </table>
+          </td>
         </tr>
-    </table>
 
-    <p style="margin-top: 24px;">
-        <a th:href="${invitationLink}"
-           style="display: inline-block; padding: 12px 24px; background-color: #1095c1; color: #fff; text-decoration: none; border-radius: 4px; font-weight: bold;">
-            Einladung annehmen
-        </a>
-    </p>
+        <!-- ===== Body copy ===== -->
+        <tr>
+          <td style="padding:24px 36px 0 36px;">
+            <p style="margin:0 0 12px;font-size:15px;color:#162030;line-height:1.6;">
+              Hallo <span th:text="${inviteeFirstName}">Max</span>,<br><br>
+              <strong th:text="${inviterFirstName}">Lisa</strong> hat in Travelmate eine gemeinsame Reise angelegt, damit ihr die Zeit zusammen planen koennt &mdash; Termine, Unterkunft, Verpflegung, alles drum und dran. Sobald du zusagst, bist du Teil der Reisegruppe, kannst &uuml;ber Termine abstimmen, Belege einreichen und siehst in Echtzeit, wer wem etwas schuldet.
+            </p>
+          </td>
+        </tr>
 
-    <p style="margin-top: 16px; font-size: 0.9em; color: #666;">
-        Oder klicke auf diesen Link:
-        <a th:href="${invitationLink}" th:text="${invitationLink}">https://travelmate.de/trips/invitations/123</a>
-    </p>
+        <!-- ===== Primary CTA ===== -->
+        <tr>
+          <td style="padding:28px 36px 0 36px;">
+            <table role="presentation" cellspacing="0" cellpadding="0">
+              <tr>
+                <td style="background:#3366CC;border-radius:8px;">
+                  <a th:href="${invitationLink}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.01em;">
+                    Einladung annehmen
+                  </a>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:14px 0 0 0;font-size:13px;color:#526071;">
+              Falls der Button nicht funktioniert, kopiere diesen Link in deinen Browser:<br>
+              <a th:href="${invitationLink}" th:text="${invitationLink}" style="color:#3366CC;font-weight:500;text-decoration:none;word-break:break-all;">https://travelmate.de/trips/invitations/123</a>
+            </p>
+          </td>
+        </tr>
 
-    <hr style="margin-top: 32px; border: none; border-top: 1px solid #ddd;">
+        <!-- ===== What happens next ===== -->
+        <tr>
+          <td style="padding:32px 36px 0 36px;">
+            <p style="margin:0 0 8px;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#3366CC;">
+              Wie es weitergeht
+            </p>
+            <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:8px;">
+              <tr>
+                <td style="padding:10px 0;border-bottom:1px solid #f1f4f8;font-size:14px;">
+                  <table role="presentation"><tr>
+                    <td style="vertical-align:top;width:28px;color:#3366CC;font-weight:700;font-size:13px;">1.</td>
+                    <td>
+                      <strong style="color:#162030;">&Uuml;ber Termine abstimmen.</strong><br>
+                      <span style="color:#526071;font-size:13px;">Stimmt gemeinsam ab, welche Reisetermine f&uuml;r alle passen.</span>
+                    </td>
+                  </tr></table>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:10px 0;border-bottom:1px solid #f1f4f8;font-size:14px;">
+                  <table role="presentation"><tr>
+                    <td style="vertical-align:top;width:28px;color:#3366CC;font-weight:700;font-size:13px;">2.</td>
+                    <td>
+                      <strong style="color:#162030;">Unterkunft und Mahlzeiten planen.</strong><br>
+                      <span style="color:#526071;font-size:13px;">Schlagt Unterk&uuml;nfte vor, plant Mahlzeiten und Eink&auml;ufe gemeinsam.</span>
+                    </td>
+                  </tr></table>
+                </td>
+              </tr>
+              <tr>
+                <td style="padding:10px 0;font-size:14px;">
+                  <table role="presentation"><tr>
+                    <td style="vertical-align:top;width:28px;color:#3366CC;font-weight:700;font-size:13px;">3.</td>
+                    <td>
+                      <strong style="color:#162030;">Belege erfassen, Ausgleich automatisch.</strong><br>
+                      <span style="color:#526071;font-size:13px;">W&auml;hrend der Reise einfach Belege einreichen &mdash; der Kostenausgleich passiert am Ende.</span>
+                    </td>
+                  </tr></table>
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
 
-    <p style="font-size: 0.85em; color: #999;">
-        Diese E-Mail wurde automatisch versandt.
-    </p>
+        <!-- ===== Footer ===== -->
+        <tr>
+          <td style="padding:32px 36px 28px 36px;">
+            <table role="presentation" width="100%">
+              <tr>
+                <td style="border-top:1px solid #d8dee9;padding-top:20px;font-size:12px;color:#526071;line-height:1.6;">
+                  Versehentlich erhalten? Du kannst diese E-Mail einfach ignorieren &mdash; ohne Zusage passiert nichts.
+                </td>
+              </tr>
+              <tr>
+                <td style="padding-top:18px;font-size:11px;color:#8a98aa;">
+                  <strong style="color:#526071;">Travelmate</strong> &middot; Gemeinsam Reisen planen
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+
 </body>
 </html>

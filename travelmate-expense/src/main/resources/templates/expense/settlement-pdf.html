@@ -2,90 +2,356 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8" />
+    <title th:text="'Reisekostenabrechnung — ' + ${tripName}">Reisekostenabrechnung</title>
     <style>
-        @page { size: A4; margin: 1.5cm; }
+        /* === Print-first stylesheet — A4 portrait === */
+        @page { size: A4; margin: 18mm 16mm 18mm 16mm; }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; }
         body {
             font-family: Helvetica, Arial, sans-serif;
+            color: #162030;
             font-size: 10pt;
-            color: #333;
-            margin: 0;
+            line-height: 1.5;
         }
-        h1 { font-size: 16pt; color: #3366CC; margin-bottom: 2pt; }
-        h2 {
-            font-size: 12pt;
-            margin-top: 14pt;
-            margin-bottom: 6pt;
+
+        /* === Header band === */
+        .doc-header {
+            border-bottom: 2px solid #3366CC;
+            padding-bottom: 6mm;
+            margin-bottom: 8mm;
+        }
+        .doc-header-row { width: 100%; }
+        .doc-header-row > tbody > tr > td { vertical-align: bottom; }
+        .brand-lockup { border-collapse: collapse; }
+        .brand-lockup td { padding: 0; vertical-align: middle; }
+        .brand-mark { width: 36px; height: 36px; }
+        .brand-word {
+            padding-left: 6px !important;
+            font-weight: 700;
+            font-size: 14pt;
+            letter-spacing: -0.01em;
+            color: #162030;
+        }
+        .brand-word .accent { color: #3366CC; }
+        .doc-meta {
+            text-align: right;
+            font-size: 8.5pt;
+            color: #526071;
+            line-height: 1.4;
+        }
+        .doc-meta .doc-num {
+            color: #162030;
+            font-weight: 700;
+        }
+        .doc-title { margin-top: 6mm; }
+        .eyebrow {
             color: #3366CC;
-            border-bottom: 2px solid #E07B00;
-            padding-bottom: 4pt;
-        }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 10pt; }
-        th, td { padding: 3pt 6pt; text-align: left; border-bottom: 1px solid #eee; font-size: 9pt; }
-        th { background-color: #f0f4fa; font-weight: bold; border-bottom: 2px solid #d1d8e6; }
-        .amount { text-align: right; }
-        .positive { color: #16a34a; font-weight: bold; }
-        .negative { color: #dc2626; font-weight: bold; }
-        .header-meta {
-            font-size: 9pt;
-            color: #666;
-            margin-bottom: 14pt;
-            border-bottom: 1px solid #E07B00;
-            padding-bottom: 8pt;
-        }
-        .footer {
-            margin-top: 20pt;
             font-size: 8pt;
-            color: #999;
-            border-top: 1px solid #ddd;
-            padding-top: 6pt;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin: 0 0 2mm;
         }
+        .eyebrow-de { color: #526071; }
+        h1 {
+            font-size: 20pt;
+            font-weight: 700;
+            line-height: 1.1;
+            margin: 0;
+            letter-spacing: -0.01em;
+            color: #162030;
+        }
+        .h1-sub {
+            font-size: 10pt;
+            font-weight: 500;
+            color: #526071;
+            margin: 1mm 0 0;
+        }
+
+        /* === Summary tiles (table because Flying Saucer doesn't do CSS grid) === */
+        .summary {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 4mm 0;
+            margin: 0 -4mm 8mm -4mm;
+        }
+        .summary td {
+            width: 25%;
+            border: 1px solid #d8dee9;
+            border-radius: 6px;
+            padding: 4mm;
+            background-color: #f8fafc;
+            vertical-align: top;
+        }
+        .summary .label {
+            font-size: 7.5pt;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #526071;
+            font-weight: 700;
+            margin: 0 0 1mm;
+        }
+        .summary .value {
+            font-size: 13pt;
+            font-weight: 700;
+            line-height: 1.1;
+            margin: 0;
+            color: #162030;
+        }
+        .summary .sub {
+            font-size: 8pt;
+            color: #526071;
+            margin: 1mm 0 0;
+        }
+
+        /* === Section heading === */
+        .section { margin-top: 10mm; page-break-inside: avoid; }
+        .section-head {
+            width: 100%;
+            margin-bottom: 4mm;
+            padding-bottom: 2mm;
+            border-bottom: 1px solid #d8dee9;
+        }
+        .section-head h2 {
+            margin: 0;
+            font-size: 12pt;
+            font-weight: 700;
+            color: #162030;
+        }
+
+        /* === Reisepartei-Karten === */
         .party-card {
-            border: 1pt solid #d1d8e6;
-            padding: 8pt 10pt;
-            margin-bottom: 8pt;
+            border: 1px solid #d8dee9;
+            border-radius: 8px;
+            background-color: #ffffff;
+            padding: 5mm 6mm;
+            margin-bottom: 4mm;
             page-break-inside: avoid;
         }
         .party-card__name {
-            font-size: 10pt;
-            font-weight: bold;
+            font-size: 11pt;
+            font-weight: 700;
             color: #3366CC;
-            margin: 0 0 2pt 0;
+            margin: 0 0 1mm 0;
         }
         .party-card__members {
-            font-size: 8pt;
-            color: #666;
-            margin: 0 0 6pt 0;
+            font-size: 8.5pt;
+            color: #526071;
+            margin: 0 0 4mm 0;
         }
-        .kv-grid { width: 100%; }
-        .kv-grid td { padding: 2pt 4pt; font-size: 9pt; border-bottom: none; }
-        .kv-grid td:first-child { color: #666; width: 50%; }
-        .kv-grid td:last-child { text-align: right; font-weight: 600; }
-        .kv-total td { border-top: 1pt solid #ccc; font-weight: bold; }
-        .entry-table { margin-top: 6pt; }
-        .entry-table th { font-size: 8pt; }
-        .entry-table td { font-size: 8pt; }
+
+        /* === Key-Value Summary innerhalb Karte === */
+        .kv-grid { width: 100%; border-collapse: collapse; }
+        .kv-grid td {
+            padding: 1.5mm 2mm;
+            font-size: 9.5pt;
+            border-bottom: 1px solid #f1f4f8;
+            vertical-align: middle;
+        }
+        .kv-grid tr:last-child td { border-bottom: none; }
+        .kv-grid td:first-child {
+            color: #526071;
+            width: 60%;
+        }
+        .kv-grid td:last-child {
+            text-align: right;
+            font-weight: 600;
+            font-variant-numeric: tabular-nums;
+            white-space: nowrap;
+            color: #162030;
+        }
+        .kv-total td {
+            border-top: 2px solid #3366CC !important;
+            border-bottom: none !important;
+            padding-top: 2.5mm !important;
+            font-weight: 700;
+            font-size: 10.5pt;
+        }
+        .pos { color: #166534; font-weight: 700; }
+        .neg { color: #991b1b; font-weight: 700; }
+        .zero { color: #526071; font-weight: 700; }
+
+        /* === Entry-Tabelle innerhalb Karte === */
+        .entry-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 4mm;
+        }
+        .entry-table th {
+            text-align: left;
+            font-size: 7.5pt;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #526071;
+            font-weight: 700;
+            padding: 2mm;
+            border-bottom: 1px solid #d8dee9;
+        }
+        .entry-table th.amount { text-align: right; }
+        .entry-table td {
+            padding: 2mm;
+            border-bottom: 1px solid #f1f4f8;
+            font-size: 8.5pt;
+            vertical-align: top;
+        }
+        .entry-table tr:last-child td { border-bottom: none; }
+        .entry-table .amount {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* === Allgemeine Tabelle (Kategorie / Vorauszahlungen) === */
+        .data-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            font-size: 9pt;
+            margin-bottom: 4mm;
+        }
+        .data-table thead th {
+            text-align: left;
+            font-size: 7.5pt;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #526071;
+            font-weight: 700;
+            padding: 2mm;
+            border-bottom: 1px solid #d8dee9;
+        }
+        .data-table thead th.amount { text-align: right; }
+        .data-table tbody td {
+            padding: 2mm;
+            border-bottom: 1px solid #f1f4f8;
+            vertical-align: top;
+        }
+        .data-table tbody tr:last-child td { border-bottom: none; }
+        .data-table .amount {
+            text-align: right;
+            font-variant-numeric: tabular-nums;
+            font-weight: 600;
+            white-space: nowrap;
+        }
+
+        /* === Kategorie-Chips === */
+        .cat {
+            display: inline-block;
+            padding: 0.5mm 2mm;
+            border-radius: 3px;
+            font-size: 7.5pt;
+            font-weight: 700;
+            background-color: #eff6ff;
+            color: #1e40af;
+        }
+        .cat.lodging { background-color: #eff6ff; color: #1e40af; }
+        .cat.food { background-color: #fef3c7; color: #92400e; }
+        .cat.transport { background-color: #dcfce7; color: #166534; }
+        .cat.activity { background-color: #f3e8ff; color: #6b21a8; }
+        .cat.shopping { background-color: #fce7f3; color: #9d174d; }
+        .cat.other { background-color: #f1f5f9; color: #334155; }
+
+        /* === Notes block === */
+        .notes {
+            margin-top: 8mm;
+            padding: 4mm 5mm;
+            background-color: #f8fafc;
+            border-left: 3px solid #3366CC;
+            border-radius: 4px;
+            page-break-inside: avoid;
+        }
+        .notes .label {
+            font-size: 7.5pt;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #3366CC;
+            font-weight: 700;
+            margin: 0 0 1mm;
+        }
+        .notes p {
+            margin: 0 0 1.5mm;
+            font-size: 9pt;
+            line-height: 1.5;
+        }
+        .notes p:last-child { margin-bottom: 0; }
+
+        /* === Footer === */
+        .footer {
+            margin-top: 12mm;
+            padding-top: 4mm;
+            border-top: 1px solid #d8dee9;
+            font-size: 8pt;
+            color: #526071;
+            width: 100%;
+        }
+        .footer td { vertical-align: middle; }
+        .footer .center { text-align: center; }
+        .footer .right { text-align: right; }
+        .footer strong { color: #162030; }
     </style>
 </head>
 <body>
-    <!-- Header -->
-    <h1 th:text="${tripName}">Reisename</h1>
-    <div class="header-meta">
-        <span th:text="${tripStartDate}">01.07.2026</span> &ndash; <span th:text="${tripEndDate}">14.07.2026</span>
-        &nbsp;&nbsp;|&nbsp;&nbsp;
-        <span th:text="#{expense.pdf.generated}">Erstellt am</span>: <span th:text="${generatedDate}">19.03.2026</span>
-        &nbsp;&nbsp;|&nbsp;&nbsp;
-        <span th:text="#{expense.pdf.createdWith}">Erstellt mit Travelmate</span>
+
+    <!-- ======= HEADER ======= -->
+    <div class="doc-header">
+        <table class="doc-header-row">
+            <tr>
+                <td>
+                    <table class="brand-lockup"><tr>
+                        <td><svg class="brand-mark" viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg"><circle cx="20" cy="20" r="19" fill="#3366CC"/><path d="M5 27 Q20 12 35 27" stroke="#99BBEE" stroke-width="1.6" fill="none" stroke-linecap="round"/><g fill="#fff"><circle cx="13.5" cy="17" r="2"/><rect x="11.5" y="19.5" width="4" height="6.5" rx="1.5"/><circle cx="20" cy="14.5" r="2.2"/><rect x="17.8" y="17.3" width="4.4" height="7.2" rx="1.6"/><circle cx="26.5" cy="17" r="2"/><rect x="24.5" y="19.5" width="4" height="6.5" rx="1.5"/></g></svg></td>
+                        <td class="brand-word"><span class="accent">Travel</span>mate</td>
+                    </tr></table>
+                </td>
+                <td class="doc-meta">
+                    <div class="doc-num" th:text="${tripName}">Reisename</div>
+                    <div>
+                        <span th:text="#{expense.pdf.generated}">Erstellt am</span>:
+                        <span th:text="${generatedDate}">19.03.2026</span>
+                    </div>
+                    <div th:text="#{expense.pdf.createdWith}">Erstellt mit Travelmate</div>
+                </td>
+            </tr>
+        </table>
+        <div class="doc-title">
+            <p class="eyebrow">REISEKOSTENABRECHNUNG &middot; <span class="eyebrow-de">EXPENSE SETTLEMENT</span></p>
+            <h1 th:text="${tripName}">Reisename</h1>
+            <p class="h1-sub">
+                <span th:text="${tripStartDate}">01.07.2026</span>
+                &ndash;
+                <span th:text="${tripEndDate}">14.07.2026</span>
+            </p>
+        </div>
     </div>
 
-    <!-- Total -->
-    <p>
-        <strong th:text="#{expense.totalAmount}">Gesamtbetrag</strong>:
-        <span th:text="${#numbers.formatDecimal(expense.totalAmount(), 1, 'POINT', 2, 'COMMA')}">0,00</span> EUR
-    </p>
+    <!-- ======= SUMMARY TILES ======= -->
+    <table class="summary">
+        <tr>
+            <td>
+                <p class="label" th:text="#{expense.totalAmount}">Gesamtbetrag</p>
+                <p class="value" th:text="${#numbers.formatDecimal(expense.totalAmount(), 1, 'POINT', 2, 'COMMA') + ' EUR'}">0,00 EUR</p>
+            </td>
+            <td>
+                <p class="label">Reisepartei</p>
+                <p class="value" th:text="${expense.partyAccounts().size()}">0</p>
+                <p class="sub">Konten / Accounts</p>
+            </td>
+            <td>
+                <p class="label">Belege / Receipts</p>
+                <p class="value" th:text="${expense.receipts() != null ? expense.receipts().size() : 0}">0</p>
+            </td>
+            <td>
+                <p class="label">Reisezeitraum</p>
+                <p class="value" style="font-size: 11pt;" th:text="${tripStartDate} + ' – ' + ${tripEndDate}">01.07.&ndash;14.07.</p>
+            </td>
+        </tr>
+    </table>
 
-    <!-- Party Accounts as Cards -->
-    <div th:if="${!expense.partyAccounts().isEmpty()}">
-        <h2 th:text="#{expense.partyAccount}">Reisekonto nach Reisepartei</h2>
+    <!-- ======= REISEKONTO JE REISEPARTEI ======= -->
+    <div th:if="${!expense.partyAccounts().isEmpty()}" class="section">
+        <div class="section-head">
+            <h2 th:text="#{expense.partyAccount}">Reisekonto nach Reisepartei</h2>
+        </div>
 
         <div th:each="account : ${expense.partyAccounts()}" class="party-card">
             <p class="party-card__name" th:text="${account.partyName()}">Familie Muster</p>
@@ -93,42 +359,40 @@
                 <span th:each="name, iter : ${account.memberNames()}" th:text="${name + (iter.last ? '' : ', ')}"></span>
             </p>
 
-            <!-- Key-Value Summary -->
             <table class="kv-grid">
                 <tr>
                     <td th:text="#{expense.partyAccount.fairShare}">Aktueller Anteil</td>
-                    <td th:text="${#numbers.formatDecimal(account.fairShare(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
+                    <td th:text="${#numbers.formatDecimal(account.fairShare(), 1, 'POINT', 2, 'COMMA') + ' EUR'}">0,00 EUR</td>
                 </tr>
                 <tr>
                     <td th:text="#{expense.partyAccount.receiptCredits}">Belegguthaben</td>
-                    <td th:text="${#numbers.formatDecimal(account.receiptCredits(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
+                    <td th:text="${#numbers.formatDecimal(account.receiptCredits(), 1, 'POINT', 2, 'COMMA') + ' EUR'}">0,00 EUR</td>
                 </tr>
                 <tr th:if="${account.advancePaymentsPlanned().signum() > 0}">
                     <td th:text="#{expense.partyAccount.advancePlanned}">Geplante Anzahlung</td>
-                    <td th:text="${#numbers.formatDecimal(account.advancePaymentsPlanned(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
+                    <td th:text="${#numbers.formatDecimal(account.advancePaymentsPlanned(), 1, 'POINT', 2, 'COMMA') + ' EUR'}">0,00 EUR</td>
                 </tr>
                 <tr th:if="${account.advancePaymentsPaid().signum() > 0}">
                     <td th:text="#{expense.partyAccount.advancePaid}">Vorauszahlungen</td>
-                    <td th:text="${#numbers.formatDecimal(account.advancePaymentsPaid(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
+                    <td th:text="${#numbers.formatDecimal(account.advancePaymentsPaid(), 1, 'POINT', 2, 'COMMA') + ' EUR'}">0,00 EUR</td>
                 </tr>
                 <tr th:if="${account.advancePaymentsOutstanding().signum() > 0}">
                     <td th:text="#{expense.partyAccount.advanceOutstanding}">Noch einzahlen</td>
-                    <td th:text="${#numbers.formatDecimal(account.advancePaymentsOutstanding(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
+                    <td th:text="${#numbers.formatDecimal(account.advancePaymentsOutstanding(), 1, 'POINT', 2, 'COMMA') + ' EUR'}">0,00 EUR</td>
                 </tr>
                 <tr class="kv-total">
                     <td th:text="#{expense.partyAccount.currentBalance}">Aktueller Stand</td>
                     <td>
-                        <span th:if="${account.creditAmount().signum() > 0}" class="positive"
-                              th:text="'+' + ${#numbers.formatDecimal(account.creditAmount(), 1, 'POINT', 2, 'COMMA')} + ' EUR'"></span>
-                        <span th:if="${account.outstandingAmount().signum() > 0}" class="negative"
-                              th:text="'-' + ${#numbers.formatDecimal(account.outstandingAmount(), 1, 'POINT', 2, 'COMMA')} + ' EUR'"></span>
-                        <span th:if="${account.currentBalance().signum() == 0}"
-                              th:text="${#numbers.formatDecimal(account.currentBalance(), 1, 'POINT', 2, 'COMMA')} + ' EUR'"></span>
+                        <span th:if="${account.creditAmount().signum() > 0}" class="pos"
+                              th:text="'+ ' + ${#numbers.formatDecimal(account.creditAmount(), 1, 'POINT', 2, 'COMMA')} + ' EUR'">+ 0,00 EUR</span>
+                        <span th:if="${account.outstandingAmount().signum() > 0}" class="neg"
+                              th:text="'− ' + ${#numbers.formatDecimal(account.outstandingAmount(), 1, 'POINT', 2, 'COMMA')} + ' EUR'">− 0,00 EUR</span>
+                        <span th:if="${account.currentBalance().signum() == 0}" class="zero"
+                              th:text="${#numbers.formatDecimal(account.currentBalance(), 1, 'POINT', 2, 'COMMA')} + ' EUR'">0,00 EUR</span>
                     </td>
                 </tr>
             </table>
 
-            <!-- Account Entries sub-table -->
             <table th:if="${!account.entries().isEmpty()}" class="entry-table">
                 <thead>
                     <tr>
@@ -141,19 +405,21 @@
                 <tbody>
                     <tr th:each="entry : ${account.entries()}">
                         <td th:text="#{${'expense.partyAccount.entry.' + entry.type()}}">Typ</td>
-                        <td th:text="${entry.label()}"></td>
-                        <td class="amount" th:text="${#numbers.formatDecimal(entry.amount(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
-                        <td class="amount" th:text="${#numbers.formatDecimal(entry.runningBalance(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
+                        <td th:text="${entry.label()}">Beschreibung</td>
+                        <td class="amount" th:text="${#numbers.formatDecimal(entry.amount(), 1, 'POINT', 2, 'COMMA') + ' EUR'}">0,00 EUR</td>
+                        <td class="amount" th:text="${#numbers.formatDecimal(entry.runningBalance(), 1, 'POINT', 2, 'COMMA') + ' EUR'}">0,00 EUR</td>
                     </tr>
                 </tbody>
             </table>
         </div>
     </div>
 
-    <!-- Category Breakdown -->
-    <div th:if="${!expense.categoryBreakdown().isEmpty()}">
-        <h2 th:text="#{expense.categoryBreakdown}">Ausgaben nach Kategorie</h2>
-        <table>
+    <!-- ======= AUSGABEN NACH KATEGORIE ======= -->
+    <div th:if="${!expense.categoryBreakdown().isEmpty()}" class="section">
+        <div class="section-head">
+            <h2 th:text="#{expense.categoryBreakdown}">Ausgaben nach Kategorie</h2>
+        </div>
+        <table class="data-table">
             <thead>
                 <tr>
                     <th th:text="#{expense.receipt.category}">Kategorie</th>
@@ -164,19 +430,24 @@
             </thead>
             <tbody>
                 <tr th:each="cat : ${expense.categoryBreakdown()}">
-                    <td th:text="#{${'expense.category.' + cat.category()}}">Kategorie</td>
-                    <td class="amount" th:text="${#numbers.formatDecimal(cat.total(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
-                    <td class="amount" th:text="${#numbers.formatDecimal(cat.percentage(), 1, 'POINT', 1, 'COMMA') + ' %'}"></td>
-                    <td class="amount" th:text="${cat.receiptCount()}"></td>
+                    <td>
+                        <span class="cat" th:classappend="${' ' + cat.category().name().toLowerCase()}"
+                              th:text="#{${'expense.category.' + cat.category()}}">Kategorie</span>
+                    </td>
+                    <td class="amount" th:text="${#numbers.formatDecimal(cat.total(), 1, 'POINT', 2, 'COMMA') + ' EUR'}">0,00 EUR</td>
+                    <td class="amount" th:text="${#numbers.formatDecimal(cat.percentage(), 1, 'POINT', 1, 'COMMA') + ' %'}">0,0 %</td>
+                    <td class="amount" th:text="${cat.receiptCount()}">0</td>
                 </tr>
             </tbody>
         </table>
     </div>
 
-    <!-- Advance Payments -->
-    <div th:if="${!expense.advancePayments().isEmpty()}">
-        <h2 th:text="#{advance.title}">Vorauszahlungen</h2>
-        <table>
+    <!-- ======= VORAUSZAHLUNGEN ======= -->
+    <div th:if="${!expense.advancePayments().isEmpty()}" class="section">
+        <div class="section-head">
+            <h2 th:text="#{advance.title}">Vorauszahlungen</h2>
+        </div>
+        <table class="data-table">
             <thead>
                 <tr>
                     <th th:text="#{advance.party}">Reisepartei</th>
@@ -186,8 +457,8 @@
             </thead>
             <tbody>
                 <tr th:each="ap : ${expense.advancePayments()}">
-                    <td th:text="${ap.partyName()}"></td>
-                    <td class="amount" th:text="${#numbers.formatDecimal(ap.amount(), 1, 'POINT', 2, 'COMMA') + ' EUR'}"></td>
+                    <td th:text="${ap.partyName()}">Reisepartei</td>
+                    <td class="amount" th:text="${#numbers.formatDecimal(ap.amount(), 1, 'POINT', 2, 'COMMA') + ' EUR'}">0,00 EUR</td>
                     <td>
                         <span th:if="${ap.paid()}" th:text="#{advance.paid}">Bezahlt</span>
                         <span th:if="${!ap.paid()}" th:text="#{advance.unpaid}">Offen</span>
@@ -201,9 +472,26 @@
         </table>
     </div>
 
-    <!-- Footer -->
-    <div class="footer">
+    <!-- ======= NOTES ======= -->
+    <div class="notes">
+        <p class="label">HINWEIS &middot; NOTE</p>
         <p th:text="#{expense.pdf.disclaimer}">Diese Abrechnung ist nicht rechtsverbindlich.</p>
     </div>
+
+    <!-- ======= FOOTER ======= -->
+    <table class="footer">
+        <tr>
+            <td>
+                <strong>Travelmate</strong> &middot; <span th:text="#{expense.pdf.createdWith}">Erstellt mit Travelmate</span>
+            </td>
+            <td class="center">
+                <span th:text="${generatedDate}">19.03.2026</span>
+            </td>
+            <td class="right">
+                <strong th:text="${tripName}">Reisename</strong>
+            </td>
+        </tr>
+    </table>
+
 </body>
 </html>
