@@ -50,7 +50,7 @@ echo "SMTP configured for travelmate realm via environment variables"
 APP_BASE_URL_VALUE="${APP_BASE_URL:-http://localhost:8080}"
 
 CLIENT_UUID=$(/opt/keycloak/bin/kcadm.sh get clients -r travelmate -q "clientId=travelmate-gateway" --fields id 2>/dev/null \
-  | awk -F'"' '/"id"/ {print $4; exit}')
+  | grep -m 1 '"id"' | cut -d '"' -f 4)
 
 if [ -n "$CLIENT_UUID" ]; then
   /opt/keycloak/bin/kcadm.sh update "clients/${CLIENT_UUID}" -r travelmate \
