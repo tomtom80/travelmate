@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import org.springframework.context.MessageSource;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.stereotype.Controller;
@@ -21,6 +22,7 @@ import org.springframework.web.server.ResponseStatusException;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpServletRequest;
 
+import de.evia.travelmate.common.domain.DuplicateEntityException;
 import de.evia.travelmate.common.domain.TenantId;
 
 import de.evia.travelmate.trips.application.AccommodationPollService;
@@ -221,8 +223,16 @@ public class TripController {
                                  final Locale locale,
                                  final Model model) {
         final ResolvedIdentity identity = requireIdentity(jwt);
-        invitationService.inviteExternal(new InviteExternalCommand(
-            identity.tenantId().value(), tripId, email, firstName, lastName, dateOfBirth, identity.memberId()));
+        try {
+            invitationService.inviteExternal(new InviteExternalCommand(
+                identity.tenantId().value(), tripId, email, firstName, lastName, dateOfBirth, identity.memberId()));
+        } catch (final DuplicateEntityException ex) {
+            final String message = messageSource.getMessage(ex.getMessage(), null, ex.getMessage(), locale);
+            response.setStatus(HttpStatus.CONFLICT.value());
+            triggerErrorToast(response, message);
+            model.addAttribute("invitationError", message);
+            return populateInvitationFragment(tripId, identity, model);
+        }
         triggerSuccessToast(response, messageSource.getMessage("invitation.externalInvited", null, locale));
         return populateInvitationFragment(tripId, identity, model);
     }
@@ -526,6 +536,11 @@ public class TripController {
     private void triggerSuccessToast(final HttpServletResponse response, final String message) {
         response.setHeader("HX-Trigger",
             "{\"showToast\":{\"level\":\"success\",\"message\":\"" + message.replace("\"", "\\\"") + "\"}}");
+    }
+
+    private void triggerErrorToast(final HttpServletResponse response, final String message) {
+        response.setHeader("HX-Trigger",
+            "{\"showToast\":{\"level\":\"error\",\"message\":\"" + message.replace("\"", "\\\"") + "\"}}");
     }
 
     private boolean isAccommodationDecisionConfirmed(final TripRepresentation trip) {

@@ -50,13 +50,14 @@ public class GlobalExceptionHandler {
                                         final HttpServletRequest request,
                                         final HttpServletResponse response,
                                         final Model model) {
-        LOG.info("Duplicate entity: {}", ex.getMessage());
+        final String message = resolveMessage(ex.getMessage());
+        LOG.info("Duplicate entity: {}", message);
         response.setStatus(HttpStatus.CONFLICT.value());
         if (isHtmxRequest(request)) {
-            triggerErrorToast(response, ex.getMessage());
+            triggerErrorToast(response, message);
             return "fragments/empty :: empty";
         }
-        model.addAttribute("message", ex.getMessage());
+        model.addAttribute("message", message);
         return "error/error";
     }
 

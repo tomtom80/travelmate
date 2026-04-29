@@ -62,10 +62,19 @@ public class TravelPartyService {
     @Transactional
     public void onDependentAdded(final DependentAddedToTenant event) {
         final TenantId tenantId = new TenantId(event.tenantId());
-        final TravelParty party = findOrCreateParty(tenantId);
-        party.addDependent(event.dependentId(), event.guardianAccountId(),
-            event.firstName(), event.lastName(), event.dateOfBirth());
-        repository.save(party);
+        final TravelParty party = repository.findByTenantId(tenantId)
+            .orElseThrow(() -> new ProjectionNotReadyException(
+                "TravelParty projection not ready for tenant " + event.tenantId()));
+        if (!party.hasMember(event.guardianAccountId())) {
+            throw new ProjectionNotReadyException(
+                "Guardian member projection not ready for tenant " + event.tenantId()
+                    + " and guardian " + event.guardianAccountId());
+        }
+        if (party.findDependent(event.dependentId()).isEmpty()) {
+            party.addDependent(event.dependentId(), event.guardianAccountId(),
+                event.firstName(), event.lastName(), event.dateOfBirth());
+            repository.save(party);
+        }
     }
 
     @Transactional

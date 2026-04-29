@@ -45,17 +45,20 @@ public class DashboardController {
     private final AccountService accountService;
     private final TenantService tenantService;
     private final RegistrationEmailService registrationEmailService;
+    private final RegistrationLinkFactory registrationLinkFactory;
     private final MessageSource messageSource;
 
     public DashboardController(final AccountRepository accountRepository,
                                final AccountService accountService,
                                final TenantService tenantService,
                                final Optional<RegistrationEmailService> registrationEmailService,
+                               final RegistrationLinkFactory registrationLinkFactory,
                                final MessageSource messageSource) {
         this.accountRepository = accountRepository;
         this.accountService = accountService;
         this.tenantService = tenantService;
         this.registrationEmailService = registrationEmailService.orElse(null);
+        this.registrationLinkFactory = registrationLinkFactory;
         this.messageSource = messageSource;
     }
 
@@ -116,7 +119,6 @@ public class DashboardController {
                                @RequestParam final String firstName,
                                @RequestParam final String lastName,
                                @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) final LocalDate dateOfBirth,
-                               final jakarta.servlet.http.HttpServletRequest request,
                                final HttpServletResponse response,
                                final Locale locale,
                                final Model model) {
@@ -126,10 +128,7 @@ public class DashboardController {
                 account.tenantId().value(), email, firstName, lastName, dateOfBirth
             ));
             if (registrationEmailService != null) {
-                final String baseUrl = request.getScheme() + "://" + request.getServerName()
-                    + (request.getServerPort() != 80 && request.getServerPort() != 443
-                    ? ":" + request.getServerPort() : "");
-                final String registrationLink = baseUrl + "/iam/register?token=" + result.tokenValue();
+                final String registrationLink = registrationLinkFactory.registrationLink(result.tokenValue());
                 registrationEmailService.sendRegistrationEmail(email, firstName, registrationLink);
             }
             triggerSuccessToast(response, messageSource.getMessage("member.invited", null, locale));

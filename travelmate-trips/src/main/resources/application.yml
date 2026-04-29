@@ -42,8 +42,13 @@ spring:
     username: ${MAIL_USERNAME:}
     password: ${MAIL_PASSWORD:}
     properties:
+      mail.smtp.from: ${MAIL_FROM:noreply@localhost}
       mail.smtp.auth: ${MAIL_SMTP_AUTH:false}
       mail.smtp.starttls.enable: ${MAIL_SMTP_STARTTLS_ENABLE:false}
+      mail.smtp.ssl.enable: ${MAIL_SMTP_SSL_ENABLE:false}
+      mail.smtp.connectiontimeout: ${MAIL_SMTP_CONNECTION_TIMEOUT:5000}
+      mail.smtp.timeout: ${MAIL_SMTP_TIMEOUT:5000}
+      mail.smtp.writetimeout: ${MAIL_SMTP_WRITE_TIMEOUT:5000}
 
   security:
     oauth2:
@@ -56,6 +61,8 @@ spring:
 
 travelmate:
   base-url: ${TRAVELMATE_BASE_URL:http://localhost:8080}
+  mail:
+    from: ${MAIL_FROM:noreply@localhost}
   llm:
     enabled: ${LLM_ENABLED:false}
     base-url: ${LLM_BASE_URL:http://localhost:11434}

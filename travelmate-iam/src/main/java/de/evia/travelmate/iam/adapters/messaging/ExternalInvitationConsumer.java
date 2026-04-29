@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import de.evia.travelmate.common.events.trips.ExternalUserInvitedToTrip;
 import de.evia.travelmate.iam.adapters.mail.RegistrationEmailService;
+import de.evia.travelmate.iam.adapters.web.RegistrationLinkFactory;
 import de.evia.travelmate.iam.application.SignUpService;
 import de.evia.travelmate.iam.application.command.RegisterExternalUserCommand;
 import de.evia.travelmate.iam.application.representation.InviteMemberResult;
@@ -23,20 +24,21 @@ public class ExternalInvitationConsumer {
 
     private static final Logger LOG = LoggerFactory.getLogger(ExternalInvitationConsumer.class);
 
-    private static final String DEFAULT_BASE_URL = "http://localhost:8080";
-
     private final SignUpService signUpService;
     private final AccountRepository accountRepository;
     private final RegistrationEmailService registrationEmailService;
+    private final RegistrationLinkFactory registrationLinkFactory;
     private final Timer externalUserInvitedTimer;
 
     public ExternalInvitationConsumer(final SignUpService signUpService,
                                      final AccountRepository accountRepository,
                                      final RegistrationEmailService registrationEmailService,
+                                     final RegistrationLinkFactory registrationLinkFactory,
                                      final MeterRegistry meterRegistry) {
         this.signUpService = signUpService;
         this.accountRepository = accountRepository;
         this.registrationEmailService = registrationEmailService;
+        this.registrationLinkFactory = registrationLinkFactory;
         this.externalUserInvitedTimer = Timer.builder("travelmate.event.processing")
             .tag("scs", "iam")
             .tag("event", "ExternalUserInvitedToTrip")
@@ -64,7 +66,7 @@ public class ExternalInvitationConsumer {
                     event.dateOfBirth()
                 )
             );
-            final String registrationLink = DEFAULT_BASE_URL + "/iam/register?token=" + result.tokenValue();
+            final String registrationLink = registrationLinkFactory.registrationLink(result.tokenValue());
             registrationEmailService.sendRegistrationEmail(event.email(), event.firstName(), registrationLink);
             LOG.info("Created new tenant and account for externally invited user {}", event.email());
         } catch (final Exception e) {

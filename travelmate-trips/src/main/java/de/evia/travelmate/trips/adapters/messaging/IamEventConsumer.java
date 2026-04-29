@@ -1,5 +1,9 @@
 package de.evia.travelmate.trips.adapters.messaging;
 
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
+
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Timer;
 
@@ -16,6 +20,7 @@ import de.evia.travelmate.common.events.iam.DependentRemovedFromTenant;
 import de.evia.travelmate.common.events.iam.MemberRemovedFromTenant;
 import de.evia.travelmate.common.events.iam.TenantCreated;
 import de.evia.travelmate.common.events.iam.TenantRenamed;
+import de.evia.travelmate.trips.application.ProjectionNotReadyException;
 import de.evia.travelmate.trips.application.TravelPartyService;
 
 @Component
@@ -27,6 +32,7 @@ public class IamEventConsumer {
     private static final long RETRY_DELAY_MS = 100;
 
     private final TravelPartyService travelPartyService;
+    private final ConcurrentHashMap<UUID, ReentrantLock> tenantLocks = new ConcurrentHashMap<>();
     private final Timer tenantCreatedTimer;
     private final Timer accountRegisteredTimer;
     private final Timer dependentAddedTimer;
@@ -47,47 +53,47 @@ public class IamEventConsumer {
     @RabbitListener(queues = RabbitMqConfig.QUEUE_TENANT_CREATED)
     public void onTenantCreated(final TenantCreated event) {
         tenantCreatedTimer.record(() ->
-            executeWithRetry(() -> travelPartyService.onTenantCreated(event), "TenantCreated", event.tenantId().toString()));
+            executeWithRetry(() -> travelPartyService.onTenantCreated(event), "TenantCreated", event.tenantId()));
     }
 
     @RabbitListener(queues = RabbitMqConfig.QUEUE_ACCOUNT_REGISTERED)
     public void onAccountRegistered(final AccountRegistered event) {
         accountRegisteredTimer.record(() ->
-            executeWithRetry(() -> travelPartyService.onAccountRegistered(event), "AccountRegistered", event.tenantId().toString()));
+            executeWithRetry(() -> travelPartyService.onAccountRegistered(event), "AccountRegistered", event.tenantId()));
     }
 
     @RabbitListener(queues = RabbitMqConfig.QUEUE_TENANT_RENAMED)
     public void onTenantRenamed(final TenantRenamed event) {
         tenantRenamedTimer.record(() ->
-            executeWithRetry(() -> travelPartyService.onTenantRenamed(event), "TenantRenamed", event.tenantId().toString()));
+            executeWithRetry(() -> travelPartyService.onTenantRenamed(event), "TenantRenamed", event.tenantId()));
     }
 
     @RabbitListener(queues = RabbitMqConfig.QUEUE_DEPENDENT_ADDED)
     public void onDependentAdded(final DependentAddedToTenant event) {
         dependentAddedTimer.record(() ->
-            executeWithRetry(() -> travelPartyService.onDependentAdded(event), "DependentAdded", event.tenantId().toString()));
+            executeWithRetry(() -> travelPartyService.onDependentAdded(event), "DependentAdded", event.tenantId()));
     }
 
     @RabbitListener(queues = RabbitMqConfig.QUEUE_MEMBER_REMOVED)
     public void onMemberRemoved(final MemberRemovedFromTenant event) {
         memberRemovedTimer.record(() ->
-            executeWithRetry(() -> travelPartyService.onMemberRemoved(event), "MemberRemoved", event.tenantId().toString()));
+            executeWithRetry(() -> travelPartyService.onMemberRemoved(event), "MemberRemoved", event.tenantId()));
     }
 
     @RabbitListener(queues = RabbitMqConfig.QUEUE_DEPENDENT_REMOVED)
     public void onDependentRemoved(final DependentRemovedFromTenant event) {
         dependentRemovedTimer.record(() ->
-            executeWithRetry(() -> travelPartyService.onDependentRemoved(event), "DependentRemoved", event.tenantId().toString()));
+            executeWithRetry(() -> travelPartyService.onDependentRemoved(event), "DependentRemoved", event.tenantId()));
     }
 
-    private void executeWithRetry(final Runnable action, final String eventType, final String tenantId) {
+    private void executeWithRetry(final Runnable action, final String eventType, final UUID tenantId) {
         for (int attempt = 1; attempt <= MAX_RETRIES; attempt++) {
             try {
-                action.run();
+                withTenantLock(tenantId, action);
                 return;
-            } catch (final DataIntegrityViolationException e) {
-                LOG.info("Concurrent TravelParty modification for tenant {} on {} (attempt {}/{})",
-                    tenantId, eventType, attempt, MAX_RETRIES);
+            } catch (final DataIntegrityViolationException | ProjectionNotReadyException e) {
+                LOG.info("TravelParty projection for tenant {} could not process {} yet (attempt {}/{}): {}",
+                    tenantId, eventType, attempt, MAX_RETRIES, e.getMessage());
                 if (attempt == MAX_RETRIES) {
                     throw e;
                 }
@@ -98,6 +104,16 @@ public class IamEventConsumer {
                     throw e;
                 }
             }
+        }
+    }
+
+    private void withTenantLock(final UUID tenantId, final Runnable action) {
+        final ReentrantLock lock = tenantLocks.computeIfAbsent(tenantId, ignored -> new ReentrantLock());
+        lock.lock();
+        try {
+            action.run();
+        } finally {
+            lock.unlock();
         }
     }
 
