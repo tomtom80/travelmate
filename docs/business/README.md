@@ -5,6 +5,11 @@ This directory holds Travelmate's go-to-market and business strategy documentati
 ## Documents
 
 - **[business-model-and-strategy.md](business-model-and-strategy.md)** — the main strategy document: market analysis, competitor landscape, business model canvas, pricing, go-to-market roadmap, and a concrete 30-day action list.
+- **[customer-interview-guide.md](customer-interview-guide.md)** — practical Mom-Test-based interview script for Phase 0 validation, with synthesis and aggregation templates. Used to feed real pain quotes and personas back into the strategy doc.
+
+## Private notes (not committed)
+
+- `interviews/YYYY-MM-DD-<vorname>.md` — individual customer interview notes containing real names, quotes, and PII. Excluded via `.gitignore` (`docs/business/interviews/`). Keep these locally only or in a private encrypted vault.
 
 ## Conventions
 

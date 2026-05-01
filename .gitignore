@@ -42,6 +42,9 @@ _prototypes/
 # Personal data
 data/
 
+# Customer interview notes — contain real names, quotes, and PII
+docs/business/interviews/
+
 # Maven flatten plugin
 .flattened-pom.xml
 
