@@ -21,6 +21,12 @@ Iteration 21 moves Travelmate from demo-grade delivery toward first production-g
 - **S21-KEYCLOAK-CLIENT-SECRET-ROTATION** — make the `travelmate-gateway`
   Keycloak client secret env-driven so it can be rotated without rebuilding
   the realm template. See story detail below.
+- **S21-PRICING-LIMITS** — enforce Free-tier limits (max 1 active trip, max 5
+  participants per trip) with a soft paywall ("Upgrade to Pro" prompt)
+  when limits hit. Pro and Pay-per-Trip purchases bypass the limit
+  via the entitlements model from S20-PAYMENT-INTEGRATION. Stub only;
+  full ACs at sprint planning. Drives the GTM Phase 2 conversion path
+  (`docs/business/business-model-and-strategy.md` §7).
 - TLS termination and deployment topology documented and implemented for the chosen target
 - backup and restore path documented and practically verifiable
 - CI/CD extended beyond basic verify and demo deploy toward environment promotion

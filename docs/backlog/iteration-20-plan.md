@@ -15,6 +15,12 @@ Iteration 20 completes key onboarding gaps and introduces auditability that late
 - password reset via Keycloak enabled and integrated into the user journey
 - **S20-NAVBAR-USER-DISPLAY** — show the currently logged-in user in the
   navbar, with a dropdown linking to profile and logout. See story detail below.
+- **S20-PAYMENT-INTEGRATION** — Stripe Checkout integration for Pay-per-Trip
+  (€4.99 one-shot per trip pass) and Pro subscription (€4.99/month or
+  €39/year). Includes Stripe webhook handler, subscription/trip-pass
+  domain entities in IAM, and Stripe Tax for DACH VAT. Stub only;
+  full ACs at sprint planning. Foundational for the GTM Phase 2
+  monetization (`docs/business/business-model-and-strategy.md` §7).
 
 ### Non-functional stories
 

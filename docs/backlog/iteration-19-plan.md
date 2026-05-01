@@ -25,6 +25,10 @@ Iteration 19 establishes the operational baseline for all later go-live work. Th
 - **S19-UI-POLISH-DEMO-FEEDBACK** — three cosmetic UI bugs surfaced during
   the 2026-04-30 demo smoke (Keycloak-login logo background, accommodation
   poll mixed locale, edit/cancel button sizing). See story detail below.
+- **S19-LANDING-WAITLIST** — public landing page on travelmate-demo.de
+  with email wait-list signup + Plausible Analytics + Mailerlite
+  integration. Stub only; full ACs to be defined at sprint planning.
+  Drives the GTM Phase 0 validation step. See `docs/business/business-model-and-strategy.md` §8.
 
 ### Non-functional stories
 
