@@ -22,6 +22,9 @@ Iteration 19 establishes the operational baseline for all later go-live work. Th
 - **S19-INVITE-EXISTING** — external invite for existing account no longer
   silently skips: send password-setup link if Keycloak credentials missing,
   otherwise send a re-login notice. See story detail below.
+- **S19-UI-POLISH-DEMO-FEEDBACK** — three cosmetic UI bugs surfaced during
+  the 2026-04-30 demo smoke (Keycloak-login logo background, accommodation
+  poll mixed locale, edit/cancel button sizing). See story detail below.
 
 ### Non-functional stories
 
@@ -45,6 +48,7 @@ Iteration 19 establishes the operational baseline for all later go-live work. Th
 - at least one SCS has working outbox mechanics or a committed implementation path validated in code
 - roadmap-driven DDD and security documentation no longer contradict the current codebase knowingly
 - S19-INVITE-EXISTING acceptance criteria below are met end to end
+- S19-UI-POLISH-DEMO-FEEDBACK acceptance criteria below are met end to end
 
 ---
 
@@ -152,3 +156,82 @@ email that had been used in a prior demo signup attempt was stuck.
   to be partially-anonymous (e.g. show the trip teaser before login). That's
   a separate UX-improvement story for a later iteration.
 - Bulk-invite UI. This story only fixes the single-invite happy path.
+
+---
+
+## Story Detail: S19-UI-POLISH-DEMO-FEEDBACK
+
+### User Story
+
+**As a** demo viewer or first-time user,
+**I want** the UI to feel consistent and polished — no off-color backgrounds,
+no mixed-language labels, no awkward button-size mismatches —
+**so that** the application feels production-ready, not draft.
+
+### Background
+
+Three cosmetic issues surfaced during the 2026-04-30 demo smoke on the
+Hetzner-hosted demo at `https://travelmate-demo.de`:
+
+1. **Login logo darker square** — the Keycloak login page rendered a faintly
+   tinted square around the circular logo. Root cause: `.kc-card` had
+   `background: rgba(255, 255, 255, 0.95)` (5% transparency), and the logo
+   SVG has a 1px transparent ring around the blue circle (viewBox 40×40,
+   circle r=19), so the page gradient bled through that ring more visibly
+   than through the rest of the card.
+   - **Already fixed in hotfix commit** (CSS: `.kc-card` set to opaque
+     `#ffffff`) — this story documents the change for iteration tracking.
+
+2. **Accommodation Poll mixed locale** — the create page at
+   `/trips/{tripId}/accommodationpoll/create` shows the title in English
+   (proper i18n key) but several sub-labels and helper texts are still in
+   German. Root cause: `messages_en.properties` is missing translations for
+   some `accommodationpoll.*` keys, so Thymeleaf falls back to the German
+   default in the template.
+
+3. **Edit Trip vs Cancel button size mismatch** — on the Trip Detail page,
+   the "Edit Trip" link uses PicoCSS class `secondary outline`, while the
+   "Cancel" button uses `contrast`. PicoCSS renders these with different
+   padding/sizing, so the two side-by-side buttons look unbalanced.
+
+### Acceptance Criteria
+
+1. **Login logo**: in DevTools, `.kc-card` shows `background: #ffffff` (opaque),
+   no visible darker square around the logo when viewed against the
+   page-gradient backdrop. Visual regression: hotfix commit
+   `docker/keycloak/themes/travelmate/login/resources/css/travelmate.css:141`.
+
+2. **Accommodation Poll i18n**:
+   - Audit every `#{accommodationpoll.*}` key in
+     `travelmate-trips/src/main/resources/templates/accommodationpoll/create.html`
+     (and related templates)
+   - For each missing English translation, add the key to
+     `travelmate-trips/src/main/resources/messages_en.properties`
+   - Manual probe in the EN locale: every visible label is English; no
+     German fallback text remains in the rendered DOM.
+
+3. **Trip Detail buttons**: `Edit Trip` and `Cancel` (in `templates/trip/detail.html:34,50`)
+   share the same height and padding. Either:
+   - Both use the same PicoCSS class combination (e.g., both `secondary`), or
+   - Custom CSS rule in `style.css` aligns padding/font-size for the two
+     specific buttons.
+   Visual probe: side-by-side rendering shows no perceptible size difference.
+
+### Technical Notes
+
+- The login-logo fix landed before this story is implemented; the AC is
+  satisfied retrospectively. No further code change for that part — only
+  documentation in this plan.
+- Accommodation Poll audit should also check `messages.properties` (default,
+  fallback to DE per Travelmate convention) for completeness, even though
+  the visible bug is in the EN path.
+- The Trip Detail button mismatch may exist in other detail pages too
+  (Recipe-Detail, Accommodation-Detail). Story scope is **Trip Detail
+  only** for now; other pages can be a follow-up if discovered.
+
+### Out of Scope
+
+- A repository-wide audit of all PicoCSS-class uses for size consistency.
+  This story is reactive (3 specific findings), not proactive design-system
+  work.
+- Theme refresh or color-token changes. Existing tokens are kept.
