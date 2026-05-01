@@ -12,6 +12,7 @@ Iteration 21 moves Travelmate from demo-grade delivery toward first production-g
 ### Functional stories
 
 - receipt editing and related expense-flow polish where still required for v1 readiness
+- **Recipe import from URL with SSRF-aware adapter behavior** (moved from iter-19 — SSRF-adapter pattern is its own threat-model exercise, needs Security-led design)
 
 ### Non-functional stories
 

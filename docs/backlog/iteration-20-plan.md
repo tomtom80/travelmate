@@ -13,6 +13,8 @@ Iteration 20 completes key onboarding gaps and introduces auditability that late
 
 - external invitation flow completed as a first-class onboarding channel
 - password reset via Keycloak enabled and integrated into the user journey
+- **Recipe edit flow finalized and verified end to end** (moved from iter-19 — solid feature add, not demo-critical, no direct cash-flow impact)
+- **Recipe delete flow finalized and verified end to end** (moved from iter-19 — same rationale as recipe edit)
 - **S20-NAVBAR-USER-DISPLAY** — show the currently logged-in user in the
   navbar, with a dropdown linking to profile and logout. See story detail below.
 - **S20-PAYMENT-INTEGRATION** — Stripe Checkout integration for Pay-per-Trip
@@ -27,6 +29,8 @@ Iteration 20 completes key onboarding gaps and introduces auditability that late
 - audit logging for security-relevant and business-critical actions
 - explicit documentation updates for security-relevant code/documentation mismatches
 - release and operations docs aligned to the new onboarding and audit flows
+- **Observability baseline with Micrometer and Prometheus-compatible endpoints** (moved from iter-19 — important for scaling but not critical at <10 users)
+- **Centralized roadmap decision for logs, metrics, and traces** (moved from iter-19 — companion to the observability baseline)
 
 ## Planned Deliverables
 
