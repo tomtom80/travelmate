@@ -195,6 +195,7 @@ class TripLifecycleIT extends E2ETestBase {
         page.waitForLoadState();
         assertThat(page.content()).contains("In Planung");
 
+        page.onceDialog(dialog -> dialog.accept());
         page.locator("form[action$='/cancel'] button[type=submit]").click();
         page.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
 

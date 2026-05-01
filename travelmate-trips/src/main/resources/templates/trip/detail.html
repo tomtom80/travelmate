@@ -46,8 +46,10 @@
                         <button type="submit" th:text="#{trip.complete}">Abschliessen</button>
                     </form>
                     <form th:if="${trip.status() != 'COMPLETED' && trip.status() != 'CANCELLED'}" method="post"
-                          th:action="@{/{id}/cancel(id=${trip.tripId()})}">
-                        <button type="submit" class="contrast" th:text="#{trip.cancel}">Absagen</button>
+                          th:action="@{/{id}/cancel(id=${trip.tripId()})}"
+                          onsubmit="return confirm(this.dataset.confirmMsg)"
+                          th:data-confirm-msg="#{trip.cancel.confirm}">
+                        <button type="submit" class="secondary outline" th:text="#{trip.cancel}">Absagen</button>
                     </form>
                 </div>
             </div>
