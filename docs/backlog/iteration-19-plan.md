@@ -1,7 +1,7 @@
 # Iteration 19 — Demo-Hardening + Phase-0-GTM
 
 **Target Version**: `v0.20.0`
-**Status**: PLANNED
+**Status**: DONE
 **Sprint Duration**: ~3 months at 1–3h/week solo pace (~12–36h capacity)
 **In-Scope Total**: 3 stories (~17–39h estimated)
 
