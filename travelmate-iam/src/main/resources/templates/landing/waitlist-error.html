@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+<div th:fragment="fragment" role="alert" aria-live="assertive"
+     style="color:var(--pico-color-red-600,#dc2626);font-weight:600;padding:0.5rem 0;">
+    <span th:text="#{landing.waitlist.error}">Etwas ist schiefgelaufen. Bitte versuche es erneut.</span>
+</div>
+</body>
+</html>
