@@ -21,6 +21,8 @@ public interface AccountRepository {
 
     boolean existsByUsernameAcrossTenants(Username username);
 
+    Optional<Account> findByUsernameAcrossTenants(Username username);
+
     void deleteById(AccountId accountId);
 
     void deleteAllByTenantId(TenantId tenantId);

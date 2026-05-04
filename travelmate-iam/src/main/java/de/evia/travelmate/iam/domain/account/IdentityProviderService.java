@@ -1,5 +1,7 @@
 package de.evia.travelmate.iam.domain.account;
 
+import java.net.URI;
+
 public interface IdentityProviderService {
 
     KeycloakUserId createUser(Email email, FullName fullName, Password password);
@@ -11,6 +13,10 @@ public interface IdentityProviderService {
     void setEmailVerified(KeycloakUserId userId, boolean verified);
 
     void sendVerificationEmail(KeycloakUserId userId);
+
+    boolean hasPasswordCredential(KeycloakUserId userId);
+
+    void sendUpdatePasswordEmail(KeycloakUserId userId, URI redirectUri, String clientId);
 
     void assignRole(KeycloakUserId userId, String roleName);
 
