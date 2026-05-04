@@ -1,298 +1,285 @@
-# Plan: Travelmate Business Model & Strategy Documentation
+# Plan: Iteration 19 Sprint Planning — Cross-Functional Team Approach
 
 ## Context
 
-Du hast Travelmate als technisch durchdachtes SaaS-Produkt gebaut (DDD/Hexagonal/Multi-Tenant, EU-gehostet auf Hetzner, derzeit v0.19.0 mit laufender Demo unter travelmate-demo.de) und willst es jetzt als Geschäft betreiben. **Kein Business-Hintergrund**, **erstes Ziel ist Op-Costs decken** (~€30/Monat = 6 zahlende Kunden à €5/Monat).
+User-Mandat: „as a team plan the next iteration". Konkret bedeutet das:
+- **Iteration 19** ist das Ziel (target version `v0.20.0`, theme „Visibility & Integrity")
+- Aktueller Plan ist mit ~10 Stories **deutlich überladen** für ein Solo-Side-Project mit 1–3h/Woche Marketing+Implementation-Budget
+- Team-Konstellation, die der User aktiviert hat: **Architect + Requirements Engineer**, **UX Designer**, **QA Engineer**, **DevOps + Security** — alle 4 Disziplinen sollen substantiv beitragen
+- Detail-Tiefe: **Sprint-Plan mit Scope-Cut auf 3 Stories**, der Rest wird sauber in spätere Iterationen verschoben
 
-Drei strategische Weichen sind gestellt:
+**Realismus-Check**: Bei 1–3h/Woche × 3-Monats-Sprint = 12–36h verfügbare Coding-Zeit. Das passt zu max. 3 Stories à mittlerer Größe oder 1 große + 2 kleine.
 
-| Dimension | Entscheidung | Implikation |
-|---|---|---|
-| **Zielgruppe** | B2C Freundes-/Familiengruppen | Domain-Sprache „Reisepartei" passt natürlich; Pricing bleibt im Consumer-Bereich (€3-10/Monat); kein Sales-Cycle |
-| **Geo** | DACH-First (DE/AT/CH) | Deutsch als Hauptsprache, EU-Hosting (Hetzner) als Privacy-/DSGVO-Differenzierung gegen US-SaaS |
-| **Zeitbudget** | 1–3h/Woche | Asynchrones Marketing zwingend; Build-in-Public + Content-Marketing; keine aktiven Sales-Aktivitäten |
-
-**Diese drei Weichen prägen das gesamte folgende Dokument.** Ein anderer Constraint-Mix (z. B. 15h/Woche + B2B + International) würde eine völlig andere Strategie erzeugen — Pitch-Deck statt Lifetime-Deal, Cold-Outreach statt Twitter-Build-in-Public.
-
-**Zielartefakt**: Ein umfassendes Business-Strategie-Dokument unter `docs/business/business-model-and-strategy.md` — kommittiert ins Repo, sodass du es iterativ verfeinern und mit der Codebase-History synchron halten kannst. Kein Word-Dokument, kein PDF, kein externer Notion-Workspace — Markdown im Repo, weil das deine bevorzugte Arbeitsumgebung ist und das Business-Dokument neben Architecture (`arc42/`), Backlog (`backlog/`), Operations (`operations/`) den vierten Pfeiler des Repos darstellt.
+**Theme-Refresh-Vorschlag**: Bisher „Visibility & Integrity" (Recipe CRUD + Observability + Outbox-Slice). Mit Sprint-Cut wird das zu „**Demo-Hardening + Phase-0-GTM**" — passt zur tatsächlich gewählten 3-Story-Selektion.
 
 ---
 
-## Ziel-Dokument: Struktur + Inhalt
+## Empfohlener Sprint-Cut
 
-Datei: `docs/business/business-model-and-strategy.md` (neu, ~600–900 Zeilen)
-
-### 1. Executive Summary (½ Seite)
-
-- 3-Sätze-Pitch („Was ist Travelmate, für wen, was ist anders")
-- Einordnung als **Indie-Hacker-Lifestyle-Business**, nicht VC-Startup
-- Klares First-Goal: **Ramen-Profitability** (Op-Costs decken in 12 Monaten)
-- Nordstern-Metrik: **Monthly Recurring Revenue (MRR) = €30** als „funktioniert"-Signal
-
-### 2. Produkt-Status & Value Proposition
-
-- Aktueller Reifegrad (v0.19.0, was funktioniert E2E, was noch nicht)
-- **Unique Value Proposition**: Der einzige integrierte Group-Travel-Workflow — Einladung → Termin-Poll → Unterkunft-Poll → Zimmer-Aufteilung → Mealplan → Einkaufsliste → Abrechnung. Keine andere App deckt diesen kompletten Lifecycle ab.
-- 3 Customer-Pain-Statements aus echten Frustrationen (WhatsApp-Chaos, Excel-Tabellen-Albträume, Geld-Driveby beim Reise-Ende)
-
-### 3. Market Analysis (DACH-Fokus)
-
-- **TAM** (Total Addressable Market): ca. 15M DACH-Erwachsene, die jährlich min. 1× in einer Gruppe reisen
-- **SAM** (Serviceable Addressable Market): ca. 1–2M, die digital affin sind und Coordination-Tools nutzen würden
-- **SOM** (Serviceable Obtainable Market): ca. 5.000–10.000 in 24 Monaten realistisch organisch erreichbar
-- Trends: Post-COVID-Group-Travel-Boom, Mehrgenerationen-Reisen, Climate-aware Travel (= weniger, dafür länger gemeinsam)
-- Saisonalität: Q1 (Sommerreise-Planung) und Q4 (Skifahren/Weihnachten) sind Peak-Acquisition-Fenster
-
-### 4. Konkurrenzanalyse
-
-Tabelle der 8–10 wichtigsten Player mit Bewertung:
-
-| Tool | Stärke | Schwäche | Travelmate-Differenzierung |
-|---|---|---|---|
-| Splitwise | Marktstandard für Expense-Splitting, ~30M User | Nur Expense, nichts vor/nach der Reise | Travelmate deckt den ganzen Workflow |
-| Wanderlog | Schöne Itinerary-UX, Mobile-first | Nur Itinerary, kein Polling, keine Abrechnung | Workflow-Integration |
-| TripIt | Flugbuchungs-Aggregator | Kein Group-Workflow, nur Individual-Reisen | Group-First |
-| Doodle | Excellent Polling | Nur Polling, sonst nix | Polling als Modul, nicht als Produkt |
-| Heytrip / Cospaze / Joinmytrip | Group-Travel-Apps emerging | Mostly EN, kein DACH-Fokus, kein Privacy-Claim | DE-First, DSGVO, EU-Hosting |
-| WhatsApp + Spreadsheets | Free, allgegenwärtig | Chaos, no structure, lost messages | Strukturierte Datenmodellierung |
-| Notion-Templates | Flexibel, Tech-savvy User | Setup-Overhead, kein Group-Sharing-Konzept | Out-of-the-box, geteilte Reisepartei |
-| Airbnb Trips | Built-in für Airbnb-Buchungen | Nur Airbnb-Ökosystem | Anbieterneutral |
-
-Kernergebnis: **Travelmate ist nicht in einer einzelnen Kategorie, sondern an deren Schnittstelle**. Das ist Stärke (USP) und Schwäche (Marketing-Botschaft schwerer zu fassen).
-
-### 5. Business Model Canvas (DACH-B2C-Edition)
-
-Die 9 Felder ausgefüllt, je 4–6 Bullet-Points:
-
-- **Customer Segments**: Reise-organisierende Personen in DACH zwischen 25–65, in Freundes-/Familiengruppen von 4–12. Persona-Beispiele: „Sandra, 38, Mama von 2 Kindern, organisiert seit 5 Jahren die Familienurlaube mit ihrer Schwester-Familie"; „Markus, 52, organisiert seit 10 Jahren die Männer-Skitour mit 8 Kumpels".
-- **Value Propositions**: 3 Kernversprechen (Ende des WhatsApp-Chaos / Faire Abrechnung in 5 Min / Datensouveränität durch EU-Hosting)
-- **Channels**: Organic Search / Build-in-Public / Niche-Communities (r/de, kicktipp-Community, Reise-Foren) / Word-of-Mouth / Konferenz-Talks (1×/Jahr)
-- **Customer Relationships**: Self-serve, Async-Support per Mail, Public-Roadmap als Engagement
-- **Revenue Streams**: 3 Modelle (Free Forever / Pay-per-Trip €5–10 / Pro-Subscription €4.99/Monat) — siehe §7
-- **Key Resources**: Codebase (DDD/Hexagonal), Demo-Server, Domain, Reputation als Tech-Founder, eigenes Netzwerk
-- **Key Activities**: Async-Content (Blog 2×/Monat) / Build-in-Public (LinkedIn/Bluesky 1×/Woche) / Customer-Interviews (1×/Monat) / Codebase-Maintenance
-- **Key Partnerships**: Hetzner (Hosting, ggf. Sponsoring) / Strato (Mail) / OSM (Maps) / ggf. Buchungspartner für Affiliate (Late-Stage)
-- **Cost Structure**: Hosting €15-25/Monat / Mail €5/Monat / Domain €10/Jahr / Tools (Plausible Analytics, Stripe) €10–20/Monat / **Zeit (1–3h/Woche, opportunity cost ignorieren bei Side-Project)**
-
-### 6. Value Proposition Canvas
-
-- **Customer Jobs** (4–6 functional + emotional): Reise organisieren ohne Streit, Abrechnung ohne Excel-Trauma, Mitstreiter mobilisieren, sichtbar als guter Organizer dastehen
-- **Pains** (5–7): WhatsApp-Chat verliert wichtige Infos, Excel-Tabelle wird kaputt-editiert, Streitigkeiten am Reise-Ende über offene Beträge, Niemand fühlt sich für Aufgaben zuständig, Updates via Mail/Chat doppelt-und-dreifach
-- **Gains** (5–7): Klare Übersicht, alle informiert, automatische Abrechnung, einladbar mit einem Klick, konsistente Erinnerungen
-- **Pain Relievers** (Travelmate-Features → Pains): Reisepartei-Modell beendet WhatsApp-Chaos / Auto-Settlement beendet Excel-Trauma / Doodle-Style-Polls beenden „wann passt's?"-Threads
-- **Gain Creators**: PDF-Export für Steuer / Mealplan-Vorschläge / Recipe-Library wiederverwendbar
-
-### 7. Pricing Strategy
-
-**Empfehlung: 3-Stufen-Modell mit Pay-per-Trip-Option**
-
-- **Free Forever** — 1 aktiver Trip, max 5 Teilnehmer, Basis-Features
-  - Hook für viralen Mund-zu-Mund
-  - Limit pusht zu Upgrade, ohne offensichtliches Paywall-Aggro
-- **Pay-per-Trip** — €4.99 einmalig pro Trip, beliebig viele Teilnehmer, alle Features
-  - Psychologisch niedrige Hürde (kein Subscription-Commit)
-  - Passt zu sporadischer Reise-Frequenz (1–3 Trips/Jahr)
-  - Bezahlt durch Organizer, nicht durch Teilnehmer (= 1 Zahlung, viele Beneficiaries → viraler Effekt)
-- **Pro Subscription** — €4.99/Monat oder €39/Jahr (=€3.25/Monat)
-  - Unlimited Trips, alle Features, Premium-Support
-  - Für Heavy-Users (Reise-Organisatoren, die mehrere Trips parallel managen)
-  - Yearly-Discount = 35% incentiviert Lock-In
-
-**Math zum Op-Cost-Ziel (€30/Monat MRR)**:
-- 6 Pro-Monthly-Subscriber, ODER
-- 4 Pro-Yearly-Subscriber + 2 Pay-per-Trip/Monat, ODER
-- 7 Pay-per-Trip/Monat (€35 MRR-Equivalent)
-
-→ Alle drei Pfade machbar. **Pay-per-Trip ist der wahrscheinlichste First-Conversion-Pfad** wegen der niedrigeren Hürde.
-
-**Empfehlung „Lifetime Deal" für Early Adopters**:
-- €49 einmalig für „Pro for Life" während der ersten 3 Monate Public-Beta
-- Bringt Cash sofort (z. B. 10× €49 = €490 Up-Front = 16 Monate Op-Costs gedeckt)
-- Schafft erste Power-User-Community
-- Indie-Hacker-Standard, signalisiert Vertrauen ins Long-Term-Commitment
-
-### 8. Go-to-Market: 12-Monats-Roadmap
-
-Strikt am 1–3h/Woche-Constraint orientiert. Vier Phasen, je quartalsweise. Asynchrone Aktivitäten zuerst, weil sie skalieren.
-
-**Phase 0 — Validation (Monat 0, „jetzt + nächste 4 Wochen")**
-- Landing-Page mit Wait-List unter `travelmate-demo.de` oder eigener Domain
-- Eigenes Netzwerk: 10 Freund/Familie-Reisepartys identifizieren, mit denen du bisher real Reisen organisiert hast — die werden deine ersten 5 Free-Beta-User
-- 30-Min-Customer-Interviews mit 5 davon: „Wie planst du Reisen heute? Was nervt am meisten?" (Aufnehmen, Quotes sammeln, Pain-Statements für Marketing)
-- Setze Plausible Analytics auf (privacy-friendly, EU-konform), kein Google-Analytics
-
-**Phase 1 — Soft Launch (Monat 1–3)**
-- Public-Beta öffnen (Lifetime-Deal-Angebot scharf schalten)
-- Build-in-Public-Account auf Bluesky/LinkedIn starten: 1 Post/Woche („Diese Woche habe ich X gebaut")
-- Erstes 4-Teile-Blog-Content: „Wie wir 8-Personen-Skitouren ohne Excel organisieren", „DSGVO und Reise-Apps", „Warum Splitwise nicht reicht für eine ganze Reise", „Travelmate-Architektur — warum DDD"
-- Submission auf Product Hunt (sehr vorbereitet, einmalig — bringt 100–500 Visits in 24h)
-- Submission auf IndieHackers + r/SideProject + r/de + r/Selbststaendig + Hacker News (Show HN)
-- **Ziel**: 100 Wait-List-Sign-ups, 3 Lifetime-Deal-Käufe = €147 Cash
-
-**Phase 2 — First Paying Users (Monat 4–6)**
-- Wechsel von Lifetime-Deal zu regulärem Pricing
-- 1×/Monat-Newsletter mit Build-Updates an Wait-List
-- 2 Blog-Posts/Monat mit SEO-Fokus auf Long-Tail-Keywords:
-  - „Reisekostenabrechnung Vorlage" (250 monatliche Suchen DE)
-  - „Gruppenreise organisieren Tool" (100 Suchen)
-  - „Skitour Abrechnung Tool" (50 Suchen)
-  - „Familienurlaub planen App" (200 Suchen)
-- Niche-Community-Engagement: 1× Antwort/Woche in passenden Reddit/Forum-Threads (NICHT spammig, sondern wertvoll)
-- **Ziel**: 5 zahlende Pro-Subscriber + 2 Pay-per-Trip = MRR €25 — fast Op-Cost-Coverage
-
-**Phase 3 — Op-Cost-Coverage + Slow Growth (Monat 7–12)**
-- Op-Cost-Coverage erreicht → kein Druck mehr, Strategie kann ruhen oder beschleunigen
-- Optional: Affiliate-Programm mit Booking.com/Airbnb (10€/Buchung) als zusätzliche Revenue-Stream
-- 1× Konferenz-Talk-Submission (z. B. „Selbst-Hosted SaaS Lessons Learned" auf BarCamp Bonn / FrOSCon)
-- Continue Content (1 Post/Monat reicht für SEO-Pflege)
-- **Ziel**: MRR €60–100, ggf. erstes Quartal mit echten Profit über Op-Costs
-
-### 9. Marketing-Channels (Detail)
-
-#### Build-in-Public (Hauptchannel)
-
-- 1×/Woche LinkedIn-Post mit Mini-Story
-- 1×/Woche Bluesky-Thread (kürzer, technischer)
-- Inhalt: Was diese Woche gebaut, was funktioniert, was nicht
-- Zielgruppe sieht: ehrliche, technisch kompetente Person → Vertrauen
-
-#### Content/SEO
-
-- 2 Blog-Posts/Monat in Phase 1, 1/Monat danach
-- Keyword-Recherche: kostenlose Tools (Ubersuggest free, Google Keyword Planner)
-- Long-Tail über Short-Tail (kein Wettbewerb auf „Reise-App")
-- Beispiel-Pipeline:
-  - „Familienurlaub Kostenabrechnung Vorlage" → leitet auf Travelmate-Demo
-  - „Skitour Hütte buchen wie organisieren" → leitet auf Accommodation-Poll-Feature
-  - „Reisekosten gerecht aufteilen mit Kindern" → leitet auf Weighting-Feature
-
-#### Niche-Communities
-
-- r/de, r/Familie, r/Skitour, r/Wandern (passive Beobachtung, gezielte Antwort wenn relevant)
-- kicktipp.de-Forum (Fußball-Saisons, oft mit Reisen verbunden)
-- alpenvereinaktiv-Forum, hike.bike-Foren
-- VHS-Skitour-Gruppen (offline! Flyer + QR auf eigene Initiative)
-
-#### Word-of-Mouth (PROS)
-
-- Empfehlungs-Mail-Vorlage für Beta-User: „Lade deine nächste Reisepartei ein"
-- Referral-Bonus: Wer 3 zahlende Freunde wirbt, bekommt 1 Jahr Pro umsonst (in Phase 3)
-
-### 10. Key Metrics (was zu tracken)
-
-Wenige, klare KPIs (Plausible Analytics + manuelle Spreadsheet, kein BI-Stack):
-
-- **Top-of-Funnel**: Unique Visitors auf travelmate-demo.de / Wait-List-Sign-ups
-- **Activation**: % der Sign-ups, die in 7 Tagen Reise erstellen
-- **Retention**: % der Sign-ups, die Monat 2 noch aktiv
-- **Conversion**: % der Sign-ups, die zahlen (Pay-per-Trip oder Pro)
-- **MRR**: Hauptzahl, monatlich tracken
-- **Churn**: Wie viele Pro-Subscriber kündigen pro Monat (Ziel: <5%)
-
-### 11. Tech-Setup für Sales/Billing
-
-Da du Solo bist und Time-Budget knapp ist — minimal-invasive Tools:
-
-- **Stripe Checkout** für Pay-per-Trip + Subscriptions (eingebunden in IAM-SCS, ~1 Sprint Aufwand)
-- **Stripe Tax** für DACH-Mehrwertsteuer (automatisch)
-- **Plausible Analytics** für Web-Tracking (€10/Monat)
-- **Mailerlite Free** oder **Buttondown** für Newsletter (bis 1.000 Subscribers free)
-- Keine CRM, kein Salesforce, kein HubSpot — eine Spreadsheet reicht
-
-→ Story `S20-PAYMENT-INTEGRATION` einplanen — dazu mehr Detail im Implementation-Plan unten.
-
-### 12. Legal/Tax-Mini-Checklist (DE)
-
-Wichtig für Op-Cost-Coverage-Schritt:
-
-- **Kleinunternehmer-Regelung** (§19 UStG): Bis €22.000 Jahresumsatz keine Mehrwertsteuer-Pflicht — passt für Phase 1+2
-- **Gewerbeanmeldung** (~€20 einmalig) — sobald erste Einnahme generiert
-- **Impressum + DSGVO-Datenschutzerklärung** rechtssicher (Generator-Vorlagen z. B. von e-recht24.de)
-- **Steuer-ID** für Stripe-Auszahlungen
-- **AGB** für SaaS — sehr kurz haltbar, da B2C ohnehin viele Reibungspunkte abdeckt durch §312i BGB
-- **Trennung Privatkonto / Geschäftskonto** (z. B. Holvi, Kontist)
-
-→ Aufnehmen als Operations-Doc `docs/operations/legal-bootstrapping-de.md` (Stub, später ausarbeiten)
-
-### 13. Risiken + Mitigation
-
-| Risiko | Wahrscheinlich | Impact | Mitigation |
-|---|---|---|---|
-| Niemand will zahlen | Hoch | Hoch | Customer-Interviews vor Build-Phase; Lifetime-Deal als Validation |
-| Solo-Burnout | Mittel | Hoch | 1–3h/Woche-Cap einhalten; Code-Pause akzeptieren; Lifestyle, nicht Hustle |
-| Konkurrenz baut Feature nach | Mittel | Mittel | DSGVO-Hosting + DACH-Localization als Burggraben |
-| DSGVO-Verfahren wegen Verstoß | Niedrig | Hoch | Frühe Rechtsprüfung, Strato-Auftragsverarbeitungsvertrag |
-| Hetzner-Outage | Niedrig | Mittel | Backup-Strategie (S21 Backup-Plan), Status-Page |
-| Demo-Stack-Hack via SQL-Injection o. ä. | Mittel | Hoch | Phase 7 Hardening (S21-Iter), Security-Code-Review |
-
-### 14. Konkrete 30-Tage-Action-Liste
-
-Direkt umsetzbar nach Doc-Approval:
-
-| Woche | Tag | Aktivität (max. 1h) |
+| Story | Größe | Begründung |
 |---|---|---|
-| 1 | Mo | Customer-Interview-Liste: 10 Personen aus deinem Reise-Umfeld auflisten |
-| 1 | Mi | Plausible-Analytics-Setup auf travelmate-demo.de |
-| 1 | Sa | Erstes Customer-Interview führen + Notizen aufnehmen |
-| 2 | Mo | Landing-Page mit Wait-List bauen (HTMX-Form auf travelmate-demo.de) |
-| 2 | Mi | Mailerlite-Account anlegen, Wait-List anbinden |
-| 2 | Sa | 2 weitere Customer-Interviews |
-| 3 | Mo | Stripe-Account anlegen (Test-Mode) |
-| 3 | Mi | Erstes Build-in-Public-Post auf LinkedIn („Travelmate v0.19 ist live") |
-| 3 | Sa | Erster Blog-Post-Entwurf: „Wie wir 8-Personen-Skitouren organisieren" |
-| 4 | Mo | Blog-Post veröffentlichen + auf Hacker News submitten |
-| 4 | Mi | Stripe-Integration in IAM-SCS planen (Story S20-PAYMENT) |
-| 4 | Sa | Review: Wie liefen die ersten 4 Wochen? Anpassen? |
+| **S19-INVITE-EXISTING** | M (5–15h) | Demo-Blocker am 2026-04-30 entdeckt — invitee-without-keycloak-account landet auf Login-Sackgasse. Story ist bereits voll spezifiziert mit 7 ACs und Code-Referenzen. Hohe User-Impact, klar abgrenzbar. |
+| **S19-LANDING-WAITLIST** | M (10–20h) | Business-strategischer Trigger für Phase-0-Validation (siehe Business-Strategy-Doc §8). Ohne Wait-List kein Sign-up-Funnel, keine Customer-Interview-Kandidaten skalierbar werben. Aktuell nur als Stub im Backlog. |
+| **S19-UI-POLISH-DEMO-FEEDBACK** | S (2–4h) | Logo-BG-Fix bereits in Hotfix gepusht. Verbleibend: Accommodation-Poll-i18n-Audit + Edit/Cancel-Button-Sizing. Hoher visueller Impact bei minimalem Aufwand. |
+
+**Total: ~17–39h** → passt in 3-Monats-Sprint mit 1–3h/Woche-Capacity.
+
+### Out-of-Scope (verschoben)
+
+| Story | Verschiebt nach | Begründung |
+|---|---|---|
+| Recipe edit | Iter-20 | Solides Feature-Add, aber kein direkter Cash-Flow oder Demo-Critical |
+| Recipe delete | Iter-20 | Wie oben |
+| Recipe import (SSRF-aware) | Iter-21 | Größer als gedacht — SSRF-Adapter-Pattern ist eigenes Threat-Modell-Thema |
+| Observability baseline (Micrometer/Prometheus) | Iter-20 | Wichtig für Skalierung, aber bei <10 User noch nicht kritisch |
+| Centralized roadmap decision für logs/metrics/traces | Iter-20 | Begleit-Task zu Observability |
+| Transactional outbox first slice | Iter-22 | Großer Architektur-Eingriff — gehört in Production-Hardening-Phase |
+| Event versioning + naming conventions executable through tests | Iter-22 | Ähnlich — ist Engineering-Excellence, kein User-Wert |
+| Documentation drift corrections | Iter-19 (continuous) | Lässt sich lose neben den 3 Hauptstories laufen, kein Sprint-Slot |
+| **S19-INVITE-EXISTING** + **S19-UI-POLISH-DEMO-FEEDBACK** + **S19-LANDING-WAITLIST** | **Iter-19 (in scope)** | Die 3 ausgewählten |
 
 ---
 
-## Implementation Steps des Plans
+## Team-Workshop-Choreographie
 
-### Phase 1: Verzeichnis + Doc anlegen
+**Sequential statt parallel** — jeder Agent baut auf dem Output der vorigen auf. Vorteile:
+- Kein Merge-Konflikt auf gemeinsamen Artefakten
+- UX kann die ACs vom RE als Anker verwenden
+- QA kann auf konkreten Wireframes Test-Scenarios schreiben
+- Security kann mit vollem Kontext reviewen
 
+### Session 1 — Architect + Requirements Engineer (co-design)
+
+Dauer: ~30–45 Min Agent-Invocation
+Agenten: `architect-agent` (DDD/Aggregate-Side) + `requirements-engineer-agent` (User-Story-Side)
+
+Output pro Story:
+- DDD-Bewertung: Welche neuen Aggregate / Events nötig?
+- Hexagonal-Konformitäts-Check
+- INVEST-konforme User Story (re-write wo nötig)
+- Acceptance Criteria im Gherkin-Stil (Given-When-Then)
+- Edge-Cases + Error-Scenarios
+- Technical-Notes mit Code-Anchor (file:line)
+
+Konkret pro Story:
+
+**S19-INVITE-EXISTING**:
+- Architect: KeycloakAdminClient-Erweiterung als neues Adapter-Interface, ExistingAccountInviteRouter als pure-domain-Service
+- RE: bestehende ACs (siehe iter-19-plan.md:78-119) sind schon gut — ggf. Edge-Cases ergänzen (Was wenn Keycloak-API timeoutet? Was wenn Mail #1 schon versendet ist und Mail #2 dann fehlschlägt?)
+
+**S19-LANDING-WAITLIST**:
+- Architect: Wait-List ist read-model in IAM (oder neues SCS für Marketing?), Mailerlite als externer Adapter
+- RE: ACs schreiben (Stub bisher!) — Subscriber-Email + Consent + Double-Opt-In + Plausible-Event-Tracking + DSGVO-Loeschpfad
+
+**S19-UI-POLISH-DEMO-FEEDBACK**:
+- Architect: rein UI/Theme-Änderungen, kein Domain-Impact
+- RE: ACs sind bereits ausführlich (iter-19-plan.md S19-UI-POLISH-Sektion) — nur Audit der i18n-Keys und Button-Class-Choice
+
+### Session 2 — UX Designer (Wireframes + Journey-Maps)
+
+Dauer: ~20–30 Min
+Agent: `ux-designer-agent`
+
+Output pro user-facing Story:
+
+**S19-INVITE-EXISTING**:
+- Journey-Map: Invitee-without-Account → Mail #2 erhalten → Password-Setup-Link klicken → Keycloak-PW-Form → Travelmate-Login → Trip-Acceptance
+- Mail-Template-Mockup für „Password setup" (Re-Login-Notice nicht UX-relevant, da Plain-Text-orientiert)
+
+**S19-LANDING-WAITLIST**:
+- Wireframe: Hero + Headline + Pain-Statement + Wait-List-Form + Privacy-Hinweis + Beta-Status
+- Mobile-First-Layout (PWA-Pattern wie der Rest von Travelmate)
+- HTMX-Form-Submit-Pattern (POST → Erfolgs-Toast → Inline-Replacement)
+
+**S19-UI-POLISH-DEMO-FEEDBACK**:
+- Edit/Cancel-Button-Side-by-Side-Vergleich vor/nach Fix (Pico-Class-Vorschlag)
+- i18n-Key-Mapping-Tabelle für Accommodation-Poll-Create-Page
+
+### Session 3 — QA Engineer (BDD-Scenarios + E2E-Test-Plan)
+
+Dauer: ~30 Min
+Agent: `qs-engineer-agent`
+
+Output pro Story:
+- Gherkin-Feature-File pro Story
+- Liste aller Scenarios mit Given-When-Then-Steps
+- Identifikation: Unit-Test vs Integration-Test vs E2E-Test
+- Mocking-Strategie pro Test (Keycloak-Stub? Stripe-Mock? Mailerlite-Stub?)
+
+Konkret:
+
+**S19-INVITE-EXISTING**:
+- Scenario 1: New account → existing skip-behavior preserved
+- Scenario 2: Existing account, no Keycloak password → Password-Setup-Branch
+- Scenario 3: Existing account, has Keycloak password → Re-Login-Notice-Branch
+- Scenario 4: Keycloak-API-Timeout → Retry behavior
+- E2E-Scenario: Full happy-path mit echtem Keycloak
+
+**S19-LANDING-WAITLIST**:
+- Scenario 1: Sign-up with valid email → email in Mailerlite, confirmation page shown
+- Scenario 2: Sign-up with invalid email → form error, no Mailerlite call
+- Scenario 3: Sign-up with already-registered email → graceful idempotent response
+- Scenario 4: Mailerlite-API-Timeout → email in local fallback table
+- Scenario 5: DSGVO Löschanfrage → email aus Mailerlite + lokaler Tabelle entfernt
+
+**S19-UI-POLISH-DEMO-FEEDBACK**:
+- Visual-Regression-Test (Screenshot-Compare) — wenn vorhanden, sonst manuell verifiziert
+- Locale-Switch-Test: EN-Locale-Aufruf zeigt nur englische Labels
+
+### Session 4 — DevOps + Security (Threat-Model + Deployment-Impact)
+
+Dauer: ~20–30 Min
+Agent: `devops-engineer-agent` + `security-expert-agent`
+
+Output:
+
+**Threat-Model pro Story**:
+
+**S19-INVITE-EXISTING**:
+- Spoofing: Kann ein Angreifer Password-Setup-Mails an fremde User triggern? → ACL: nur durch ExternalUserInvitedToTrip-Event
+- Tampering: Kann der Redirect-URI in der Password-Setup-Mail manipuliert werden? → Whitelist über Keycloak Valid-Redirect-URIs
+- Repudiation: Audit-Log für „Password-Setup-Link sent"?
+- Information Disclosure: Mail #2 enthält keine sensiblen Daten außer Email/Trip-Name
+
+**S19-LANDING-WAITLIST**:
+- Spoofing: Bot-Sign-up-Schutz? → reCAPTCHA / Cloudflare-Turnstile / Honeypot-Field?
+- Tampering: SQL-Injection im Email-Feld → Spring-JPA-Schutz reicht
+- Information Disclosure: Mailerlite ist US-Hosted → Standard Contractual Clauses + Privacy-Erklärung-Update
+- DoS: Massen-Sign-up-Attacks → Rate-Limit per IP
+
+**S19-UI-POLISH-DEMO-FEEDBACK**:
+- Niedriges Threat-Profile, aber: i18n-Keys validieren, dass keine HTML-Injection durchrutscht (wenn User-input in Templates)
+
+**Deployment-Impact**:
+- Keine neuen Container-Builds für UI-Polish
+- LANDING-WAITLIST ggf. neue Mailerlite-Env-Vars in `.env.demo`
+- INVITE-EXISTING ggf. neue Keycloak-Admin-Client-Permissions (kann existing admin-cli token reusen?)
+
+---
+
+## Plan-Outcome — Wie der Iter-19-Plan nach dem Workshop aussieht
+
+### Format der Iter-19-Update
+
+Datei: `docs/backlog/iteration-19-plan.md` wird komplett restrukturiert:
+
+```markdown
+# Iteration 19 — Demo-Hardening + Phase-0-GTM
+
+**Target Version**: v0.20.0
+**Status**: PLANNED
+**Sprint-Duration**: 3 Monate (1-3h/Woche Solo-Pace)
+**In-Scope**: 3 Stories (~17-39h Total)
+
+> Note: Originally scoped as "Visibility & Integrity" with ~10 stories.
+> After 2026-05-XX team planning, scope was cut to 3 demo-blocking and
+> business-strategy-driven stories. Recipe CRUD, observability, outbox,
+> event versioning moved to iter-20+. See "Out-of-Scope" section below.
+
+## In-Scope Stories
+
+### S19-INVITE-EXISTING (M, 5-15h)
+[full story detail — already exists, augmented by team session output]
+
+### S19-LANDING-WAITLIST (M, 10-20h)
+[full story detail — newly written by RE based on stub]
+
+### S19-UI-POLISH-DEMO-FEEDBACK (S, 2-4h)
+[existing story detail — minor augmentations]
+
+## Out-of-Scope (moved to later iterations)
+[5-row table with target iteration + reason]
+
+## Sprint Acceptance
+- 3 in-scope stories meet their AC end-to-end
+- Demo on travelmate-demo.de shows the polish improvements
+- Wait-list captures real signups feeding GTM Phase 0
+- Existing-account invitations no longer dead-end
 ```
-docs/business/
-├── README.md                              (kurze Erklärung was hier liegt)
-├── business-model-and-strategy.md         (Hauptdokument, ~700 Zeilen)
-├── pricing.md                             (Detail, ausgegliedert wenn nötig — Phase 2)
-└── personas.md                            (Detail, ausgegliedert wenn nötig — Phase 2)
+
+### Per-Story Detail-Format
+
+Jede der 3 Stories endet mit Sub-Sektionen, die der Team-Session-Output enthalten:
+
+```markdown
+## Story Detail: S19-XYZ
+
+### User Story (RE)
+[INVEST-konforme User-Story]
+
+### Acceptance Criteria (RE)
+[Gherkin Given-When-Then]
+
+### DDD/Architecture Notes (Architect)
+[Aggregate-Impact, neue Events, Hexagonal-Konformität]
+
+### UX Wireframes (UX Designer)
+[Wireframe-Beschreibung oder Mermaid/PlantUML-Diagramm]
+
+### BDD Scenarios (QA)
+[Gherkin-Feature-File-Block, mit Test-Pyramid-Note]
+
+### Threat Model (Security)
+[STRIDE-Kategorien mit Mitigation]
+
+### Deployment Notes (DevOps)
+[Env-Var-Änderungen, Container-Restart-Bedarf, Migration-Notes]
+
+### Out of Scope (RE)
+[explizite Abgrenzungen]
 ```
 
-Phase-1-Scope: nur die Hauptdatei `business-model-and-strategy.md` mit den 14 Sektionen oben. Kein `pricing.md` / `personas.md` separat — gehört initial in die Hauptdatei, kann später extrahiert werden.
+---
 
-### Phase 2: Operations-Stub für Legal/Tax
+## Implementation Steps
 
-`docs/operations/legal-bootstrapping-de.md` — kurzes Skelett (1 Seite) mit Checkliste:
-- Gewerbeanmeldung (Stadt-Link, Kosten, Zeitfenster)
-- Kleinunternehmer-Status §19 UStG
-- Impressum + DSGVO (Generator-Hinweis)
-- Stripe-Onboarding (Steuer-ID nötig)
-- Trennung Privatkonto/Geschäftskonto (Holvi/Kontist)
+### Step 1: Team-Sessions sequenziell durchlaufen
 
-### Phase 3: Iter-Plan-Ergänzungen
+Pro Session:
+1. Agent invoken mit konkretem Story-Kontext
+2. Output sammeln (in temporären File oder Konversation)
+3. Output validieren — passen ACs zur Story? Sind Edge-Cases abgedeckt?
+4. Anpassungen einarbeiten
 
-Story-Stub in den Iteration-Plans, damit das Business-Side den Code-Side leicht koppelt:
+Reihenfolge:
+- **Session 1** (Architect + RE): ~45 Min Agent-Time → 3 angereicherte Story-Definitions
+- **Session 2** (UX): ~30 Min → 3 Wireframes/Journey-Maps
+- **Session 3** (QA): ~30 Min → 3 Gherkin-Feature-Files
+- **Session 4** (DevOps + Security): ~30 Min → 3 Threat-Models + Deployment-Notes
 
-- **iteration-19-plan.md** oder **iteration-20-plan.md**: Story `S20-PAYMENT-INTEGRATION` (Stripe Checkout + Webhook + neue Subscription/Trip-Pass-Aggregate-Felder im IAM-Modul, ~2 Sprints)
-- **iteration-19-plan.md**: Story `S19-LANDING-WAITLIST` (öffentliche Landing-Page für Wait-List + Plausible-Tracking + Mailerlite-Form, ~3 Tage)
-- **iteration-20-plan.md** oder **iteration-21-plan.md**: Story `S21-PRICING-LIMITS` (Free-Tier-Enforcement: max 1 Trip + 5 Teilnehmer für Free-User; Soft-Paywall mit Upgrade-Prompt)
+Zwischen den Sessions: 5 Min Konsolidierung — bringt jede neue Sicht in die Story-Sektion ein.
 
-Diese Stories sind reine Stubs — Acceptance Criteria später beim Sprint-Planning ausarbeiten.
+### Step 2: iter-19-plan.md restrukturieren
 
-### Phase 4: Commit-Strategie
+Komplette Re-Write der Datei nach dem oben skizzierten Format. Die 3 In-Scope-Stories bekommen Volldetails, die Out-of-Scope-Stories nur noch Tabellen-Eintrag mit Verschiebe-Ziel.
 
-Drei separate Commits, weil sie inhaltlich getrennte Dimensionen abdecken:
+### Step 3: Out-of-Scope-Stories in target-iter-Plans migrieren
 
-1. `docs(business): add comprehensive business model and strategy documentation`
-   — die Haupt-Datei
+- iter-20-plan.md erhält:
+  - Recipe edit
+  - Recipe delete
+  - Observability baseline + log/metric/trace decision
+- iter-21-plan.md erhält:
+  - Recipe import (SSRF-aware)
+- iter-22-plan.md erhält:
+  - Transactional outbox first slice
+  - Event versioning executable through tests
 
-2. `docs(operations): add legal bootstrapping checklist for DE solopreneur`
-   — Legal-Stub
+Nur als Stubs mit Story-ID + 1-Zeilen-Beschreibung, keine Volldetails — das wird in den jeweiligen Sprint-Plannings nachgeholt.
 
-3. `docs(backlog): add S19-LANDING-WAITLIST, S20-PAYMENT, S21-PRICING-LIMITS stubs`
-   — Iter-Plan-Stories für die Implementation-Phase
+### Step 4: Commit-Strategie
 
-Push als ein Block (alle drei Commits zusammen). Die Workflow-Pipeline triggert, ist aber Doku-only — keine VM-seitigen Auswirkungen.
+Drei Commits, weil getrennte Concerns:
+
+1. `docs(backlog): refocus iteration 19 on demo hardening + GTM phase 0`
+   — iter-19-plan.md komplett-Update mit den 3 In-Scope-Stories und Out-of-Scope-Tabelle
+2. `docs(backlog): migrate out-of-scope iteration 19 stories to iter-20/21/22`
+   — iter-20/21/22 plan.md jeweils Stubs ergänzen
+3. (optional, falls Team-Output zu groß) — separates Doc unter `docs/backlog/iteration-19-team-notes.md` mit den vollständigen Workshop-Outputs
+
+### Step 5: Push
+
+Standard `git push origin main`. Workflow triggert (nur Doc-Updates, keine VM-Auswirkungen).
 
 ---
 
@@ -300,34 +287,29 @@ Push als ein Block (alle drei Commits zusammen). Die Workflow-Pipeline triggert,
 
 | Datei | Zustand | Rolle |
 |---|---|---|
-| `docs/business/README.md` | NEU | Verzeichnis-Erklärung |
-| `docs/business/business-model-and-strategy.md` | NEU | Hauptdokument |
-| `docs/operations/legal-bootstrapping-de.md` | NEU | Legal-Stub |
-| `docs/backlog/iteration-19-plan.md` | EDIT | +S19-LANDING-WAITLIST |
-| `docs/backlog/iteration-20-plan.md` | EDIT | +S20-PAYMENT-INTEGRATION |
-| `docs/backlog/iteration-21-plan.md` | EDIT | +S21-PRICING-LIMITS |
+| `docs/backlog/iteration-19-plan.md` | EDIT | Komplett restrukturiert: 3 In-Scope-Stories mit Team-Output, Out-of-Scope-Tabelle |
+| `docs/backlog/iteration-20-plan.md` | EDIT | Recipe edit/delete + Observability als Stubs |
+| `docs/backlog/iteration-21-plan.md` | EDIT | Recipe import (SSRF-aware) als Stub |
+| `docs/backlog/iteration-22-plan.md` | EDIT | Outbox + Event versioning als Stubs |
 
 ---
 
 ## Verifikation
 
-Das Plan-Outcome ist erfolgreich, wenn:
+Plan ist erfolgreich, wenn:
 
-1. **Lesbarkeit**: Du kannst das `business-model-and-strategy.md`-Dokument in 20 Min einmal vollständig durchlesen und dabei zustimmen oder direkt Veto-Stellen markieren
-2. **Aktionierbarkeit**: Die 30-Tage-Action-Liste ist konkret genug, dass du **morgen** mit Tag 1 (Customer-Interview-Liste) starten kannst — keine weitere Planung nötig
-3. **Konsistenz**: Pricing-Math im Pricing-Abschnitt stimmt mit Op-Cost-Coverage-Ziel im Executive Summary überein (€30 MRR = 6 Pro à €5)
-4. **Backlog-Anbindung**: Drei neue Story-Stubs (S19-LANDING-WAITLIST, S20-PAYMENT-INTEGRATION, S21-PRICING-LIMITS) sind in den passenden Iter-Plans angelegt → das ist der Bridge vom Business-Doc zum Code
-5. **Wachstums-Ehrlichkeit**: Doc enthält keine Lifestyle-Business-Schönfärberei — explizit benannt, dass 1–3h/Woche eine Op-Cost-Coverage in 9–18 Monaten bedeutet, nicht 3 Monate
+1. **Sprint-Realismus**: Die 3 In-Scope-Stories summieren sich auf ≤39h, was in 3 Monaten × 3h/Woche × 4 Wochen = 36h realistisch ist (mit leichtem Stretch bei niedrigerer wöchentlicher Capacity)
+2. **Team-Coverage**: Jede der 3 Stories hat mindestens je einen Beitrag von Architect, RE, UX, QA, DevOps, Security
+3. **Klare Out-of-Scope-Begründung**: Für jede verschobene Story ist Ziel-Iteration und Begründung dokumentiert
+4. **Backlog-Integrität**: Out-of-Scope-Stories tauchen in iter-20/21/22 als Stubs auf, nicht „verloren" im Backlog
+5. **Lesbarkeit**: User kann den überarbeiteten iter-19-plan.md in 15 Min vollständig lesen und versteht den Sprint-Scope
+6. **Demo-Verbindung**: Jede der 3 Stories adressiert direkt entweder einen Demo-Test-Befund (UI-Polish, INVITE-EXISTING) oder einen Business-Strategy-Trigger (LANDING-WAITLIST)
 
 ---
 
-## Was bewusst _nicht_ im Doc steht
+## Was bewusst NICHT Teil des Sprint-Plans ist
 
-Damit der Doc fokussiert bleibt:
-
-- **Kein Series-A-Pitch-Deck-Material** — VC-Slide-Format wäre an dieser Stelle Theater
-- **Keine 5-Year-Financial-Projections** — bei dieser Unsicherheit reine Phantasie
-- **Keine Hiring-Roadmap** — irrelevant in den ersten 12 Monaten
-- **Keine Internationalisierungs-Strategie** über DACH hinaus — explizit nach DACH-First-Entscheidung verschoben
-- **Kein detailliertes Personality-/Branding-Kapitel** — wird durch Build-in-Public organisch geprägt
-- **Keine Investor-Outreach-Strategie** — Bootstrapping ist die Entscheidung, kein „Vielleicht später VC"-Hedging
+- **Code-Implementierung der 3 Stories**: Planning ≠ Doing. Die Implementierung läuft anschließend in der Sprint-Periode mit normalen Story-Pull-und-Push-Pattern.
+- **Vollausarbeitung der Out-of-Scope-Stories**: Die Stubs in iter-20/21/22 bleiben Stubs, bis ihr eigenes Sprint-Planning sie aufnimmt.
+- **Theme-Reframing über Iter-19 hinaus**: Iter-20/21/22-Themen bleiben unverändert, nur die Stories darin verschieben sich.
+- **Time-Tracking pro Story**: Die 5-15h / 10-20h / 2-4h-Schätzungen sind grob, kein Estimation-Theater. Bei Solopreneur-Pace ist Effort-Tracking weniger wertvoll als „done"-Tracking.

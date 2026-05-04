@@ -28,9 +28,104 @@
 
 .hero p {
     font-size: 1.25rem;
-    max-width: 640px;
+    max-width: 560px;
     margin: 0 auto 2rem;
     color: var(--pico-muted-color);
+}
+
+/* ── Waitlist form inside hero ─────────────────── */
+.hero-waitlist {
+    max-width: 520px;
+    margin: 0 auto;
+    text-align: left;
+}
+
+.hero-waitlist fieldset,
+.hero-waitlist > * {
+    margin-bottom: 0;
+}
+
+/* Side-by-side on desktop: [email input] [button] */
+.waitlist-input-row {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    align-items: stretch;
+}
+
+/* Wrapper div carries the flex-grow; input fills it with width:100% */
+.waitlist-email-wrap {
+    flex: 1;
+    min-width: 0;
+}
+
+.waitlist-email-wrap input[type="email"] {
+    width: 100%;
+    margin-bottom: 0;
+    background: rgba(255, 255, 255, 0.95);
+    border: 1px solid rgba(156, 172, 200, 0.7);
+    box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08), inset 0 1px 2px rgba(255, 255, 255, 0.9);
+    border-radius: var(--pico-border-radius);
+}
+
+.waitlist-email-wrap input[type="email"]:focus {
+    border-color: var(--pico-primary);
+    box-shadow: 0 0 0 3px rgba(51, 102, 204, 0.15);
+}
+
+.waitlist-input-row button {
+    width: auto;        /* override PicoCSS form button width:100% */
+    margin-bottom: 0;
+    white-space: nowrap;
+    flex-shrink: 0;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+}
+
+/* Consent label — compact, muted */
+.waitlist-consent {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    font-size: 0.78rem;
+    color: var(--pico-muted-color);
+    line-height: 1.45;
+    margin-bottom: 0.25rem;
+    cursor: pointer;
+}
+
+.waitlist-consent input[type="checkbox"] {
+    flex-shrink: 0;
+    margin-top: 0.15rem;
+    margin-bottom: 0;
+    width: 1rem;
+    height: 1rem;
+}
+
+.waitlist-consent a {
+    color: var(--pico-primary);
+    text-decoration: underline;
+    text-decoration-color: rgba(51, 102, 204, 0.4);
+    margin-left: 0.2rem;
+}
+
+#waitlist-result {
+    margin-top: 0.75rem;
+    min-height: 1.5rem;
+    font-size: 0.9rem;
+    text-align: center;
+}
+
+/* Social proof below form */
+.hero-social-proof {
+    margin-top: 1.25rem;
+    color: var(--pico-muted-color);
+    font-size: 0.82rem;
+}
+
+.hero-social-proof a {
+    color: var(--pico-primary);
+    font-weight: 600;
 }
 
 .hero-actions {
@@ -121,6 +216,15 @@ footer {
     }
 
     .hero-actions a[role="button"] {
+        width: 100%;
+    }
+
+    /* Stacked on mobile: email above button */
+    .waitlist-input-row {
+        flex-direction: column;
+    }
+
+    .waitlist-input-row button {
         width: 100%;
     }
 }
