@@ -13,6 +13,9 @@ public record ExternalUserInvitedToTrip(
     String firstName,
     String lastName,
     LocalDate dateOfBirth,
+    String tripName,
+    String inviterFirstName,
+    String inviterLastName,
     LocalDate occurredOn
 ) implements DomainEvent {
 }

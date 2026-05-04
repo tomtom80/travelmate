@@ -201,6 +201,73 @@ class KeycloakIdentityProviderAdapterTest {
                 .hasMessageContaining("not found");
         }
 
+        @Test
+        void hasPasswordCredentialReturnsTrueWhenPasswordPresent() {
+            when(realmResource.users()).thenReturn(usersResource);
+            final UserResource userResource = mock(UserResource.class);
+            when(usersResource.get(CREATED_USER_ID)).thenReturn(userResource);
+            final org.keycloak.representations.idm.CredentialRepresentation passwordCred =
+                new org.keycloak.representations.idm.CredentialRepresentation();
+            passwordCred.setType("password");
+            when(userResource.credentials()).thenReturn(List.of(passwordCred));
+
+            assertThat(adapter.hasPasswordCredential(new KeycloakUserId(CREATED_USER_ID))).isTrue();
+        }
+
+        @Test
+        void hasPasswordCredentialReturnsFalseWhenNoPasswordPresent() {
+            when(realmResource.users()).thenReturn(usersResource);
+            final UserResource userResource = mock(UserResource.class);
+            when(usersResource.get(CREATED_USER_ID)).thenReturn(userResource);
+            when(userResource.credentials()).thenReturn(List.of());
+
+            assertThat(adapter.hasPasswordCredential(new KeycloakUserId(CREATED_USER_ID))).isFalse();
+        }
+
+        @Test
+        void hasPasswordCredentialThrowsOnAdminApiError() {
+            when(realmResource.users()).thenReturn(usersResource);
+            final UserResource userResource = mock(UserResource.class);
+            when(usersResource.get(CREATED_USER_ID)).thenReturn(userResource);
+            doThrow(new RuntimeException("Admin API down")).when(userResource).credentials();
+
+            assertThatThrownBy(() -> adapter.hasPasswordCredential(new KeycloakUserId(CREATED_USER_ID)))
+                .isInstanceOf(IdentityProviderException.class)
+                .hasMessageContaining(CREATED_USER_ID);
+        }
+
+        @Test
+        void sendUpdatePasswordEmailDelegatesToExecuteActionsWithRedirectAndClient() {
+            when(realmResource.users()).thenReturn(usersResource);
+            final UserResource userResource = mock(UserResource.class);
+            when(usersResource.get(CREATED_USER_ID)).thenReturn(userResource);
+
+            final URI redirectUri = URI.create("http://localhost:8080/trips/invitations/abc-123");
+            adapter.sendUpdatePasswordEmail(
+                new KeycloakUserId(CREATED_USER_ID), redirectUri, "travelmate-gateway");
+
+            verify(userResource).executeActionsEmail(
+                "travelmate-gateway",
+                "http://localhost:8080/trips/invitations/abc-123",
+                List.of("UPDATE_PASSWORD"));
+        }
+
+        @Test
+        void sendUpdatePasswordEmailThrowsOnAdminApiError() {
+            when(realmResource.users()).thenReturn(usersResource);
+            final UserResource userResource = mock(UserResource.class);
+            when(usersResource.get(CREATED_USER_ID)).thenReturn(userResource);
+            doThrow(new RuntimeException("Admin API down"))
+                .when(userResource).executeActionsEmail(any(String.class), any(String.class), any(List.class));
+
+            assertThatThrownBy(() -> adapter.sendUpdatePasswordEmail(
+                new KeycloakUserId(CREATED_USER_ID),
+                URI.create("http://localhost:8080/x"),
+                "travelmate-gateway"
+            )).isInstanceOf(IdentityProviderException.class)
+                .hasMessageContaining(CREATED_USER_ID);
+        }
+
         private Response mockSuccessResponse() {
             final Response response = mock(Response.class);
             when(response.getStatus()).thenReturn(201);
