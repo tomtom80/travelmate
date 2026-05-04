@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 import org.slf4j.Logger;
@@ -60,8 +61,12 @@ public class ExpenseService {
     }
 
     public void onTripCreated(final TripCreated event) {
-        if (tripProjectionRepository.existsByTripId(event.tripId())) {
-            LOG.info("TripProjection already exists for trip {}, skipping", event.tripId());
+        final Optional<TripProjection> existing = tripProjectionRepository.findByTripId(event.tripId());
+        if (existing.isPresent()) {
+            // Projection was pre-created as a stub (race: ParticipantJoined arrived first) — update the name.
+            existing.get().updateTripName(event.tripName());
+            tripProjectionRepository.save(existing.get());
+            LOG.info("Updated stub TripProjection name to '{}' for trip {}", event.tripName(), event.tripId());
             return;
         }
         final TripProjection projection = TripProjection.create(
@@ -337,7 +342,9 @@ public class ExpenseService {
     }
 
     private BigDecimal defaultWeightingFor(final TripParticipant participant, final LocalDate tripStartDate) {
-        final Integer age = participant.ageOn(tripStartDate);
+        // Fall back to today when trip dates are not yet confirmed so children get the correct default weight.
+        final LocalDate referenceDate = tripStartDate != null ? tripStartDate : LocalDate.now();
+        final Integer age = participant.ageOn(referenceDate);
         if (age == null) {
             return BigDecimal.ONE;
         }

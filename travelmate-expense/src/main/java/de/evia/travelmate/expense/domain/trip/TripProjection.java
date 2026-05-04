@@ -93,6 +93,11 @@ public class TripProjection {
         participants.removeIf(participant -> participant.participantId().equals(participantId));
     }
 
+    public void updateTripName(final String newName) {
+        argumentIsNotBlank(newName, "newName");
+        this.tripName = newName;
+    }
+
     public void setAccommodationTotalPrice(final BigDecimal accommodationTotalPrice) {
         this.accommodationTotalPrice = accommodationTotalPrice;
     }

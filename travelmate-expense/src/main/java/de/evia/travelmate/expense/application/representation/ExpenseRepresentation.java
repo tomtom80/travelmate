@@ -155,10 +155,12 @@ public record ExpenseRepresentation(
             .filter(candidate -> candidate.participantId().equals(weighting.participantId()))
             .findFirst()
             .orElse(null);
+        // Use tripStartDate when confirmed, otherwise today — same reference for both display and weight.
+        // Showing the current age is better UX than "—" when no trip date is set yet.
+        final LocalDate reference = tripStartDate != null ? tripStartDate : LocalDate.now();
         final Integer ageOnTripStart = participant != null
-            ? participant.ageOn(tripStartDate)
+            ? participant.ageOn(reference)
             : null;
-        final String recommendationType = recommendationTypeFor(ageOnTripStart);
         final String participantName = participant != null ? participant.name() : null;
         return new WeightingRepresentation(
             weighting.participantId(),
@@ -166,7 +168,7 @@ public record ExpenseRepresentation(
             weighting.weight(),
             recommendedWeightFor(ageOnTripStart),
             ageOnTripStart,
-            recommendationType
+            recommendationTypeFor(ageOnTripStart)
         );
     }
 

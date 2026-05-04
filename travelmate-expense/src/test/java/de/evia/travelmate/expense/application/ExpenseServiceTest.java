@@ -79,7 +79,7 @@ class ExpenseServiceTest {
             TENANT_UUID, TRIP_ID, "Summer Vacation",
             LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 14), LocalDate.now()
         );
-        when(tripProjectionRepository.existsByTripId(TRIP_ID)).thenReturn(false);
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.empty());
         when(tripProjectionRepository.save(any(TripProjection.class)))
             .thenAnswer(inv -> inv.getArgument(0));
 
@@ -93,16 +93,53 @@ class ExpenseServiceTest {
     }
 
     @Test
-    void onTripCreatedSkipsIfProjectionAlreadyExists() {
+    void onTripCreatedUpdatesNameWhenStubProjectionExists() {
+        // Race condition: ParticipantJoined arrived before TripCreated — stub exists with "Unknown Trip"
+        final TripProjection stub = TripProjection.create(TRIP_ID, TENANT_ID, "Unknown Trip");
         final TripCreated event = new TripCreated(
             TENANT_UUID, TRIP_ID, "Summer Vacation",
             LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 14), LocalDate.now()
         );
-        when(tripProjectionRepository.existsByTripId(TRIP_ID)).thenReturn(true);
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.of(stub));
+        when(tripProjectionRepository.save(any(TripProjection.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
 
         expenseService.onTripCreated(event);
 
-        verify(tripProjectionRepository, never()).save(any());
+        final ArgumentCaptor<TripProjection> captor = ArgumentCaptor.forClass(TripProjection.class);
+        verify(tripProjectionRepository).save(captor.capture());
+        assertThat(captor.getValue().tripName()).isEqualTo("Summer Vacation");
+    }
+
+    @Test
+    void onTripCreated_raceCondition_participantJoinedFirst_thenTripCreated_nameIsNotUnknown() {
+        // Full race condition flow: ParticipantJoined first, then TripCreated heals the stub
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.empty());
+        when(tripProjectionRepository.save(any(TripProjection.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+        when(expenseRepository.findByTripId(any(TenantId.class), any(UUID.class)))
+            .thenReturn(Optional.empty());
+
+        // Step 1: participant joins, no projection yet — stub created
+        final ParticipantJoinedTrip joinEvent = new ParticipantJoinedTrip(
+            TENANT_UUID, TRIP_ID, ALICE, "Alice", LocalDate.now()
+        );
+        expenseService.onParticipantJoined(joinEvent);
+
+        final ArgumentCaptor<TripProjection> stubCaptor = ArgumentCaptor.forClass(TripProjection.class);
+        verify(tripProjectionRepository).save(stubCaptor.capture());
+        final TripProjection stub = stubCaptor.getValue();
+        assertThat(stub.tripName()).isEqualTo("Unknown Trip");
+
+        // Step 2: TripCreated arrives — should update the stub name
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.of(stub));
+        final TripCreated createdEvent = new TripCreated(
+            TENANT_UUID, TRIP_ID, "Summer Vacation",
+            LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 14), LocalDate.now()
+        );
+        expenseService.onTripCreated(createdEvent);
+
+        assertThat(stub.tripName()).isEqualTo("Summer Vacation");
     }
 
     // --- onParticipantJoined ---
@@ -807,6 +844,59 @@ class ExpenseServiceTest {
         );
         expense.clearDomainEvents();
         return expense;
+    }
+
+    // --- defaultWeightingFor with null tripStartDate ---
+
+    @Test
+    void childParticipantGetsHalfWeightingWhenTripStartDateIsNull() {
+        // Child born 8 years ago → age ~8 → should get 0.5, not the 1.0 adult fallback
+        final LocalDate childDob = LocalDate.now().minusYears(8);
+        final UUID partyTenantId = UUID.randomUUID();
+        final ParticipantJoinedTrip event = new ParticipantJoinedTrip(
+            TENANT_UUID, TRIP_ID, ALICE, "Emma Kind", partyTenantId, "Familie Kind",
+            childDob, false, LocalDate.now()
+        );
+        // Projection created WITHOUT startDate (trip dates not yet confirmed)
+        final TripProjection projection = TripProjection.create(TRIP_ID, TENANT_ID, "Familienurlaub");
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.of(projection));
+        when(tripProjectionRepository.save(any(TripProjection.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+        when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.empty());
+        when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        expenseService.onParticipantJoined(event);
+
+        final ArgumentCaptor<Expense> captor = ArgumentCaptor.forClass(Expense.class);
+        verify(expenseRepository).save(captor.capture());
+        final Expense saved = captor.getValue();
+        assertThat(saved.weightings())
+            .as("Child (age 8) must get 0.5 default weighting even without trip start date")
+            .containsExactly(new ParticipantWeighting(ALICE, new BigDecimal("0.5")));
+    }
+
+    @Test
+    void infantParticipantGetsZeroWeightingWhenTripStartDateIsNull() {
+        final LocalDate infantDob = LocalDate.now().minusMonths(18); // 1.5 years old
+        final UUID partyTenantId = UUID.randomUUID();
+        final ParticipantJoinedTrip event = new ParticipantJoinedTrip(
+            TENANT_UUID, TRIP_ID, ALICE, "Baby Kind", partyTenantId, "Familie Kind",
+            infantDob, false, LocalDate.now()
+        );
+        final TripProjection projection = TripProjection.create(TRIP_ID, TENANT_ID, "Familienurlaub");
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.of(projection));
+        when(tripProjectionRepository.save(any(TripProjection.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+        when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.empty());
+        when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        expenseService.onParticipantJoined(event);
+
+        final ArgumentCaptor<Expense> captor = ArgumentCaptor.forClass(Expense.class);
+        verify(expenseRepository).save(captor.capture());
+        assertThat(captor.getValue().weightings())
+            .as("Infant (<3 years) must get 0.0 default weighting even without trip start date")
+            .containsExactly(new ParticipantWeighting(ALICE, BigDecimal.ZERO));
     }
 
     private Expense createOpenExpense() {
