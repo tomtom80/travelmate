@@ -10,6 +10,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css">
     <link rel="stylesheet" th:href="@{/css/style.css}">
     <link rel="stylesheet" th:href="@{/css/landing.css}">
+    <script src="https://unpkg.com/htmx.org@2.0.8" crossorigin="anonymous"></script>
+    <!-- Plausible Analytics (EU-hosted, no cookies) -->
+    <script defer data-domain="travelmate-demo.de" src="https://plausible.io/js/script.js"></script>
 </head>
 <body class="app-shell section-iam">
     <nav class="container nav-bar">
@@ -46,14 +49,52 @@
     <header class="container hero">
         <img th:src="@{/images/logo.svg}" alt="Travelmate" style="height:3rem; margin-bottom:1rem;">
         <hgroup>
-            <h1 th:text="#{landing.hero.headline}">Gemeinsam Reisen planen.</h1>
-            <p th:text="#{landing.hero.subtitle}">Organisiere Reisen mit deiner Familie und Freunden.</p>
+            <h1 th:text="#{landing.waitlist.headline}">Schluss mit WhatsApp-Chaos.</h1>
+            <p th:text="#{landing.waitlist.subheadline}">Travelmate bringt Reiseplanung, Abrechnung und Unterkunftskoordination an einen Ort.</p>
         </hgroup>
-        <div class="hero-actions">
-            <a th:href="@{/signup}" role="button" th:text="#{landing.hero.cta}">Jetzt Reisepartei erstellen</a>
-            <a href="/oauth2/authorization/keycloak" role="button" class="outline" th:text="#{landing.hero.login}">Einloggen</a>
-        </div>
     </header>
+
+    <div class="container" style="max-width:520px;margin:0 auto 2rem;">
+        <article>
+            <hgroup>
+                <h2 th:text="#{landing.waitlist.title}">Frühzugang sichern</h2>
+            </hgroup>
+            <form id="waitlist-form"
+                  hx-post="/iam/landing/waitlist"
+                  hx-target="#waitlist-result"
+                  hx-swap="innerHTML"
+                  hx-disabled-elt="button[type=submit]">
+
+                <label>
+                    <input type="email" name="email" required
+                           th:placeholder="#{landing.waitlist.emailPlaceholder}"
+                           autocomplete="email" />
+                </label>
+
+                <label>
+                    <input type="checkbox" name="consentGiven" required />
+                    <span th:text="#{landing.waitlist.consent}">Ich bin einverstanden …</span>
+                    <a th:href="@{/iam/datenschutz}" th:text="#{landing.waitlist.privacyLink}"
+                       target="_blank" rel="noopener noreferrer">Datenschutzhinweis</a>
+                </label>
+
+                <!-- honeypot: bots fill this, humans don't see it -->
+                <input type="text" name="website" tabindex="-1" autocomplete="off"
+                       style="position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;" />
+
+                <button type="submit" style="width:100%;"
+                        th:text="#{landing.waitlist.submit}">Frühzugang anfordern</button>
+
+                <div id="waitlist-result" role="status" aria-live="polite"></div>
+            </form>
+        </article>
+        <p style="text-align:center;">
+            <small>
+                <span th:text="#{landing.waitlist.demoNote}">Demo verfügbar unter</span>
+                <a href="https://travelmate-demo.de" target="_blank" rel="noopener">travelmate-demo.de</a>
+            </small>
+        </p>
+    </div>
 
     <main class="container">
         <section class="features">
