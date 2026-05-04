@@ -389,4 +389,36 @@ class ExpenseControllerTest {
 
         verify(settlementPdfService).generatePdf(any(), any(), any(), any());
     }
+
+    @Test
+    void weightingInputUsesPointDecimalSeparatorInDeLocale() throws Exception {
+        when(expenseService.findByTripId(new TenantId(TENANT_UUID), TRIP_UUID, true)).thenReturn(expense);
+
+        final String html = mockMvc.perform(get("/" + TRIP_UUID)
+                .with(jwt().jwt(j -> j.claim("email", USER_EMAIL)))
+                .param("lang", "de"))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+
+        // <input type="number"> must carry "1.0" (point), not "1,0" (comma) regardless of locale.
+        // A comma value is silently rejected by browsers leaving the field empty.
+        org.assertj.core.api.Assertions.assertThat(html)
+            .as("Weighting input value must use '.' as decimal separator — not ','")
+            .doesNotContainPattern("input[^>]*type=\"number\"[^>]*value=\"[0-9]+,[0-9]+\"");
+    }
+
+    @Test
+    void weightingInputUsesPointDecimalSeparatorInEnLocale() throws Exception {
+        when(expenseService.findByTripId(new TenantId(TENANT_UUID), TRIP_UUID, true)).thenReturn(expense);
+
+        final String html = mockMvc.perform(get("/" + TRIP_UUID)
+                .with(jwt().jwt(j -> j.claim("email", USER_EMAIL)))
+                .param("lang", "en"))
+            .andExpect(status().isOk())
+            .andReturn().getResponse().getContentAsString();
+
+        org.assertj.core.api.Assertions.assertThat(html)
+            .as("Weighting input value must use '.' as decimal separator in EN locale too")
+            .doesNotContainPattern("input[^>]*type=\"number\"[^>]*value=\"[0-9]+,[0-9]+\"");
+    }
 }

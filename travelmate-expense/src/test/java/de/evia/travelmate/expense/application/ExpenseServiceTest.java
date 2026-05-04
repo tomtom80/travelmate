@@ -79,7 +79,7 @@ class ExpenseServiceTest {
             TENANT_UUID, TRIP_ID, "Summer Vacation",
             LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 14), LocalDate.now()
         );
-        when(tripProjectionRepository.existsByTripId(TRIP_ID)).thenReturn(false);
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.empty());
         when(tripProjectionRepository.save(any(TripProjection.class)))
             .thenAnswer(inv -> inv.getArgument(0));
 
@@ -93,16 +93,53 @@ class ExpenseServiceTest {
     }
 
     @Test
-    void onTripCreatedSkipsIfProjectionAlreadyExists() {
+    void onTripCreatedUpdatesNameWhenStubProjectionExists() {
+        // Race condition: ParticipantJoined arrived before TripCreated — stub exists with "Unknown Trip"
+        final TripProjection stub = TripProjection.create(TRIP_ID, TENANT_ID, "Unknown Trip");
         final TripCreated event = new TripCreated(
             TENANT_UUID, TRIP_ID, "Summer Vacation",
             LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 14), LocalDate.now()
         );
-        when(tripProjectionRepository.existsByTripId(TRIP_ID)).thenReturn(true);
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.of(stub));
+        when(tripProjectionRepository.save(any(TripProjection.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
 
         expenseService.onTripCreated(event);
 
-        verify(tripProjectionRepository, never()).save(any());
+        final ArgumentCaptor<TripProjection> captor = ArgumentCaptor.forClass(TripProjection.class);
+        verify(tripProjectionRepository).save(captor.capture());
+        assertThat(captor.getValue().tripName()).isEqualTo("Summer Vacation");
+    }
+
+    @Test
+    void onTripCreated_raceCondition_participantJoinedFirst_thenTripCreated_nameIsNotUnknown() {
+        // Full race condition flow: ParticipantJoined first, then TripCreated heals the stub
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.empty());
+        when(tripProjectionRepository.save(any(TripProjection.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+        when(expenseRepository.findByTripId(any(TenantId.class), any(UUID.class)))
+            .thenReturn(Optional.empty());
+
+        // Step 1: participant joins, no projection yet — stub created
+        final ParticipantJoinedTrip joinEvent = new ParticipantJoinedTrip(
+            TENANT_UUID, TRIP_ID, ALICE, "Alice", LocalDate.now()
+        );
+        expenseService.onParticipantJoined(joinEvent);
+
+        final ArgumentCaptor<TripProjection> stubCaptor = ArgumentCaptor.forClass(TripProjection.class);
+        verify(tripProjectionRepository).save(stubCaptor.capture());
+        final TripProjection stub = stubCaptor.getValue();
+        assertThat(stub.tripName()).isEqualTo("Unknown Trip");
+
+        // Step 2: TripCreated arrives — should update the stub name
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.of(stub));
+        final TripCreated createdEvent = new TripCreated(
+            TENANT_UUID, TRIP_ID, "Summer Vacation",
+            LocalDate.of(2026, 7, 1), LocalDate.of(2026, 7, 14), LocalDate.now()
+        );
+        expenseService.onTripCreated(createdEvent);
+
+        assertThat(stub.tripName()).isEqualTo("Summer Vacation");
     }
 
     // --- onParticipantJoined ---
