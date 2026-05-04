@@ -846,6 +846,59 @@ class ExpenseServiceTest {
         return expense;
     }
 
+    // --- defaultWeightingFor with null tripStartDate ---
+
+    @Test
+    void childParticipantGetsHalfWeightingWhenTripStartDateIsNull() {
+        // Child born 8 years ago → age ~8 → should get 0.5, not the 1.0 adult fallback
+        final LocalDate childDob = LocalDate.now().minusYears(8);
+        final UUID partyTenantId = UUID.randomUUID();
+        final ParticipantJoinedTrip event = new ParticipantJoinedTrip(
+            TENANT_UUID, TRIP_ID, ALICE, "Emma Kind", partyTenantId, "Familie Kind",
+            childDob, false, LocalDate.now()
+        );
+        // Projection created WITHOUT startDate (trip dates not yet confirmed)
+        final TripProjection projection = TripProjection.create(TRIP_ID, TENANT_ID, "Familienurlaub");
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.of(projection));
+        when(tripProjectionRepository.save(any(TripProjection.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+        when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.empty());
+        when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        expenseService.onParticipantJoined(event);
+
+        final ArgumentCaptor<Expense> captor = ArgumentCaptor.forClass(Expense.class);
+        verify(expenseRepository).save(captor.capture());
+        final Expense saved = captor.getValue();
+        assertThat(saved.weightings())
+            .as("Child (age 8) must get 0.5 default weighting even without trip start date")
+            .containsExactly(new ParticipantWeighting(ALICE, new BigDecimal("0.5")));
+    }
+
+    @Test
+    void infantParticipantGetsZeroWeightingWhenTripStartDateIsNull() {
+        final LocalDate infantDob = LocalDate.now().minusMonths(18); // 1.5 years old
+        final UUID partyTenantId = UUID.randomUUID();
+        final ParticipantJoinedTrip event = new ParticipantJoinedTrip(
+            TENANT_UUID, TRIP_ID, ALICE, "Baby Kind", partyTenantId, "Familie Kind",
+            infantDob, false, LocalDate.now()
+        );
+        final TripProjection projection = TripProjection.create(TRIP_ID, TENANT_ID, "Familienurlaub");
+        when(tripProjectionRepository.findByTripId(TRIP_ID)).thenReturn(Optional.of(projection));
+        when(tripProjectionRepository.save(any(TripProjection.class)))
+            .thenAnswer(inv -> inv.getArgument(0));
+        when(expenseRepository.findByTripId(TENANT_ID, TRIP_ID)).thenReturn(Optional.empty());
+        when(expenseRepository.save(any(Expense.class))).thenAnswer(inv -> inv.getArgument(0));
+
+        expenseService.onParticipantJoined(event);
+
+        final ArgumentCaptor<Expense> captor = ArgumentCaptor.forClass(Expense.class);
+        verify(expenseRepository).save(captor.capture());
+        assertThat(captor.getValue().weightings())
+            .as("Infant (<3 years) must get 0.0 default weighting even without trip start date")
+            .containsExactly(new ParticipantWeighting(ALICE, BigDecimal.ZERO));
+    }
+
     private Expense createOpenExpense() {
         final Expense expense = Expense.create(
             TENANT_ID, TRIP_ID,

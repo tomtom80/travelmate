@@ -342,7 +342,9 @@ public class ExpenseService {
     }
 
     private BigDecimal defaultWeightingFor(final TripParticipant participant, final LocalDate tripStartDate) {
-        final Integer age = participant.ageOn(tripStartDate);
+        // Fall back to today when trip dates are not yet confirmed so children get the correct default weight.
+        final LocalDate referenceDate = tripStartDate != null ? tripStartDate : LocalDate.now();
+        final Integer age = participant.ageOn(referenceDate);
         if (age == null) {
             return BigDecimal.ONE;
         }
