@@ -100,6 +100,34 @@ public class KeycloakIdentityProviderAdapter implements IdentityProviderService 
     }
 
     @Override
+    public boolean hasPasswordCredential(final KeycloakUserId userId) {
+        argumentIsNotNull(userId, "userId");
+        try {
+            return realmResource().users().get(userId.value()).credentials().stream()
+                .anyMatch(credential -> CredentialRepresentation.PASSWORD.equals(credential.getType()));
+        } catch (final Exception e) {
+            throw new IdentityProviderException(
+                "Failed to read credentials for user " + userId.value(), e);
+        }
+    }
+
+    @Override
+    public void sendUpdatePasswordEmail(final KeycloakUserId userId,
+                                        final URI redirectUri,
+                                        final String clientId) {
+        argumentIsNotNull(userId, "userId");
+        argumentIsNotNull(redirectUri, "redirectUri");
+        argumentIsNotBlank(clientId, "clientId");
+        try {
+            realmResource().users().get(userId.value())
+                .executeActionsEmail(clientId, redirectUri.toString(), List.of("UPDATE_PASSWORD"));
+        } catch (final Exception e) {
+            throw new IdentityProviderException(
+                "Failed to send update-password email for user " + userId.value(), e);
+        }
+    }
+
+    @Override
     public void assignRole(final KeycloakUserId userId, final String roleName) {
         try {
             final RoleResource roleResource = realmResource().roles().get(roleName);

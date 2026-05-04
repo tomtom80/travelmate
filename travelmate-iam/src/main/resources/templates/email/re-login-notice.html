@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="de">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Reiseeinladung – jetzt anmelden</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap');
+  body { margin: 0; padding: 0; background: #eef4fb; font-family: "Manrope", -apple-system, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif; color: #162030; -webkit-font-smoothing: antialiased; line-height: 1.5; }
+  table { border-collapse: collapse; border-spacing: 0; }
+  img { border: 0; display: block; max-width: 100%; height: auto; }
+  a { color: #3366CC; text-decoration: none; }
+  .preheader { display: none !important; visibility: hidden; opacity: 0; color: transparent; height: 0; width: 0; overflow: hidden; }
+</style>
+</head>
+<body>
+
+<div class="preheader">
+  Du hast bereits ein Travelmate-Konto. Melde dich an, um die Einladung anzunehmen.
+</div>
+
+<table role="presentation" width="100%" style="background:#eef4fb;padding:24px 12px;">
+  <tr>
+    <td align="center">
+
+      <table role="presentation" width="600" style="max-width:600px;width:100%;background:#ffffff;border-radius:18px;overflow:hidden;box-shadow:0 18px 48px rgba(15,23,42,0.08);">
+
+        <!-- ===== Header band ===== -->
+        <tr>
+          <td style="background:linear-gradient(180deg,#f7fbff,#eef4fb);padding:24px 32px;border-bottom:1px solid #d8dee9;">
+            <table role="presentation" width="100%">
+              <tr>
+                <td>
+                  <table role="presentation"><tr>
+                    <td style="vertical-align:middle;padding-right:8px;">
+                      <svg width="32" height="32" viewBox="0 0 40 40">
+                        <circle cx="20" cy="20" r="19" fill="#3366CC"/>
+                        <path d="M5 27 Q20 12 35 27" stroke="#99BBEE" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+                        <g fill="#fff">
+                          <circle cx="13.5" cy="17" r="2"/><rect x="11.5" y="19.5" width="4" height="6.5" rx="1.5"/>
+                          <circle cx="20" cy="14.5" r="2.2"/><rect x="17.8" y="17.3" width="4.4" height="7.2" rx="1.6"/>
+                          <circle cx="26.5" cy="17" r="2"/><rect x="24.5" y="19.5" width="4" height="6.5" rx="1.5"/>
+                        </g>
+                      </svg>
+                    </td>
+                    <td style="vertical-align:middle;font-weight:700;font-size:18px;letter-spacing:-0.01em;color:#162030;">
+                      <span style="color:#3366CC;">Travel</span>mate
+                    </td>
+                  </tr></table>
+                </td>
+                <td align="right" style="font-size:11px;color:#526071;letter-spacing:0.08em;text-transform:uppercase;font-weight:700;">
+                  EINLADUNG ANNEHMEN &middot; ACCEPT INVITATION
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+        <!-- ===== Headline ===== -->
+        <tr>
+          <td style="padding:32px 36px 8px 36px;">
+            <p style="margin:0 0 8px 0;font-size:11px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:#3366CC;">
+              Reiseeinladung &middot; Trip Invitation
+            </p>
+            <h1 style="margin:0;font-size:30px;line-height:1.15;font-weight:700;letter-spacing:-0.01em;color:#162030;">
+              Hallo <span th:text="${firstName}">Max</span>,
+            </h1>
+            <p style="margin:6px 0 0 0;font-size:15px;color:#526071;font-weight:500;">
+              <span th:text="${inviterFirstName + ' ' + inviterLastName}">Anna Beispiel</span> hat dich zur Reise &bdquo;<span th:text="${tripName}">Sommerurlaub</span>&ldquo; eingeladen.
+            </p>
+          </td>
+        </tr>
+
+        <!-- ===== Body copy ===== -->
+        <tr>
+          <td style="padding:24px 36px 0 36px;">
+            <p style="margin:0 0 12px;font-size:15px;color:#162030;line-height:1.6;">
+              Du hast bereits ein Travelmate-Konto. Melde dich einfach mit deinen bestehenden Zugangsdaten an &mdash; danach findest du die Einladung in deinem Dashboard.
+            </p>
+          </td>
+        </tr>
+
+        <!-- ===== Primary CTA ===== -->
+        <tr>
+          <td style="padding:28px 36px 0 36px;">
+            <table role="presentation" cellspacing="0" cellpadding="0">
+              <tr>
+                <td style="background:#3366CC;border-radius:8px;">
+                  <a th:href="${loginUrl}" style="display:inline-block;padding:14px 28px;font-size:15px;font-weight:700;color:#ffffff;text-decoration:none;letter-spacing:0.01em;">
+                    Jetzt anmelden
+                  </a>
+                </td>
+              </tr>
+            </table>
+            <p style="margin:14px 0 0 0;font-size:13px;color:#526071;">
+              Falls der Button nicht funktioniert, kopiere diesen Link in deinen Browser:<br>
+              <a th:href="${loginUrl}" th:text="${loginUrl}" style="color:#3366CC;font-weight:500;text-decoration:none;word-break:break-all;">https://travelmate.de/</a>
+            </p>
+          </td>
+        </tr>
+
+        <!-- ===== Footer ===== -->
+        <tr>
+          <td style="padding:32px 36px 28px 36px;">
+            <table role="presentation" width="100%">
+              <tr>
+                <td style="border-top:1px solid #d8dee9;padding-top:20px;font-size:12px;color:#526071;line-height:1.6;">
+                  Versehentlich erhalten? Diese E-Mail ignorieren &mdash; ohne Anmeldung passiert nichts.
+                </td>
+              </tr>
+              <tr>
+                <td style="padding-top:18px;font-size:11px;color:#8a98aa;">
+                  <strong style="color:#526071;">Travelmate</strong> &middot; Gemeinsam Reisen planen
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+
+      </table>
+
+    </td>
+  </tr>
+</table>
+
+</body>
+</html>

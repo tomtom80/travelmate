@@ -264,6 +264,9 @@ public class InvitationService {
             command.firstName(),
             command.lastName(),
             command.dateOfBirth(),
+            trip.name().value(),
+            inviter.firstName(),
+            inviter.lastName(),
             LocalDate.now()
         ));
 

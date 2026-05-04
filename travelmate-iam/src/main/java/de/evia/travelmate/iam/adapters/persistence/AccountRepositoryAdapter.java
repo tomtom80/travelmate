@@ -66,6 +66,11 @@ public class AccountRepositoryAdapter implements AccountRepository {
     }
 
     @Override
+    public Optional<Account> findByUsernameAcrossTenants(final Username username) {
+        return jpaRepository.findByUsername(username.value()).map(this::toDomain);
+    }
+
+    @Override
     public void deleteById(final AccountId accountId) {
         jpaRepository.deleteById(accountId.value());
     }
