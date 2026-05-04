@@ -20,7 +20,7 @@ spring:
             - id: iam-public
               uri: ${IAM_SERVICE_URL:http://localhost:8081}
               predicates:
-                - Path=/iam/,/iam/landing,/iam/landing/**,/iam/signup,/iam/signup/**,/iam/register,/iam/register/**,/iam/css/**,/iam/images/**
+                - Path=/iam/,/iam/landing,/iam/landing/**,/iam/datenschutz,/iam/signup,/iam/signup/**,/iam/register,/iam/register/**,/iam/css/**,/iam/images/**
             - id: iam
               uri: ${IAM_SERVICE_URL:http://localhost:8081}
               predicates:

@@ -31,6 +31,13 @@ public class LandingController {
         return "landing";
     }
 
+    @GetMapping("/datenschutz")
+    public String datenschutz(final Model model) {
+        model.addAttribute("title", "Datenschutz");
+        model.addAttribute("view", "legal/datenschutz");
+        return "layout/public";
+    }
+
     @PostMapping("/landing/waitlist")
     public String submitWaitlist(
             @RequestParam(name = "email", defaultValue = "") final String email,
