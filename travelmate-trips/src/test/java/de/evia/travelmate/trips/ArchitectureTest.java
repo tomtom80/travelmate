@@ -6,6 +6,9 @@ import com.tngtech.archunit.junit.ArchTest;
 import com.tngtech.archunit.lang.ArchRule;
 import com.tngtech.archunit.library.dependencies.SlicesRuleDefinition;
 
+import de.evia.travelmate.webcommons.AbstractGlobalExceptionHandler;
+
+import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.classes;
 import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 
 @AnalyzeClasses(packages = "de.evia.travelmate.trips", importOptions = ImportOption.DoNotIncludeTests.class)
@@ -102,4 +105,13 @@ class ArchitectureTest {
             .matching("de.evia.travelmate.trips.(*)..")
             .should().beFreeOfCycles()
             .because("there must be no circular dependencies between top-level packages");
+
+    // --- Rule 5: ADR-0026 — Centralized Exception Handler ---
+
+    @ArchTest
+    static final ArchRule global_exception_handler_must_extend_abstract_base =
+        classes()
+            .that().haveSimpleName("GlobalExceptionHandler")
+            .should().beAssignableTo(AbstractGlobalExceptionHandler.class)
+            .because("all GlobalExceptionHandlers must extend AbstractGlobalExceptionHandler per ADR-0026");
 }

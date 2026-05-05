@@ -8,6 +8,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.support.StaticMessageSource;
 import org.springframework.stereotype.Controller;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
@@ -24,9 +25,10 @@ class GlobalExceptionHandlerTest {
 
     @BeforeEach
     void setUp() {
+        final StaticMessageSource messageSource = new StaticMessageSource();
         mockMvc = MockMvcBuilders
             .standaloneSetup(new TestErrorController())
-            .setControllerAdvice(new GlobalExceptionHandler())
+            .setControllerAdvice(new GlobalExceptionHandler(messageSource))
             .build();
     }
 

@@ -19,6 +19,10 @@
             <groupId>de.evia.travelmate</groupId>
             <artifactId>travelmate-common</artifactId>
         </dependency>
+        <dependency>
+            <groupId>de.evia.travelmate</groupId>
+            <artifactId>travelmate-web-commons</artifactId>
+        </dependency>
 
         <!-- Spring Boot -->
         <dependency>

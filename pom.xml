@@ -21,6 +21,7 @@
 
     <modules>
         <module>travelmate-common</module>
+        <module>travelmate-web-commons</module>
         <module>travelmate-gateway</module>
         <module>travelmate-iam</module>
         <module>travelmate-trips</module>
@@ -49,6 +50,11 @@
             <dependency>
                 <groupId>de.evia.travelmate</groupId>
                 <artifactId>travelmate-common</artifactId>
+                <version>${revision}</version>
+            </dependency>
+            <dependency>
+                <groupId>de.evia.travelmate</groupId>
+                <artifactId>travelmate-web-commons</artifactId>
                 <version>${revision}</version>
             </dependency>
             <dependency>
