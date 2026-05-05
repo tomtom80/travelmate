@@ -60,6 +60,7 @@ class NavigationIT extends E2ETestBase {
     @Order(30)
     void logoutButtonIsPresent() {
         navigateAndWait("/iam/dashboard");
+        openNavUserDropdown(page);
 
         assertThat(page.locator("a.nav-logout-btn").isVisible()).isTrue();
     }
@@ -68,6 +69,7 @@ class NavigationIT extends E2ETestBase {
     @Order(31)
     void logoutRedirectsAwayFromDashboard() {
         navigateAndWait("/iam/dashboard");
+        openNavUserDropdown(page);
         page.locator("a.nav-logout-btn").click();
         page.waitForLoadState();
 

@@ -16,6 +16,7 @@ import de.evia.travelmate.common.domain.EntityNotFoundException;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.common.events.trips.ParticipantJoinedTrip;
 import de.evia.travelmate.common.events.trips.TripDeleted;
+import de.evia.travelmate.webcommons.SecurityAuditContext;
 import de.evia.travelmate.webcommons.audit.AuditEvent;
 import de.evia.travelmate.webcommons.audit.AuditEventSink;
 import de.evia.travelmate.trips.application.command.CreateTripCommand;
@@ -169,7 +170,7 @@ public class TripService {
         eventPublisher.publishEvent(new TripDeleted(
             trip.tenantId().value(), tripId.value(), LocalDate.now()
         ));
-        auditEventSink.record(AuditEvent.success(trip.tenantId().value(), null, null,
+        auditEventSink.record(AuditEvent.success(trip.tenantId().value(), SecurityAuditContext.currentActorId(), null,
             "TRIP_DELETED", "Trip", tripId.value()));
     }
 
@@ -209,7 +210,7 @@ public class TripService {
         final Trip trip = findTrip(tripId);
         trip.cancel();
         tripRepository.save(trip);
-        auditEventSink.record(AuditEvent.success(trip.tenantId().value(), null, null,
+        auditEventSink.record(AuditEvent.success(trip.tenantId().value(), SecurityAuditContext.currentActorId(), null,
             "TRIP_CANCELLED", "Trip", tripId.value()));
     }
 

@@ -10,6 +10,7 @@ import de.evia.travelmate.common.domain.DomainEvent;
 import de.evia.travelmate.common.domain.DuplicateEntityException;
 import de.evia.travelmate.common.domain.EntityNotFoundException;
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.webcommons.SecurityAuditContext;
 import de.evia.travelmate.webcommons.audit.AuditEvent;
 import de.evia.travelmate.webcommons.audit.AuditEventSink;
 import de.evia.travelmate.iam.application.command.CreateTenantCommand;
@@ -110,7 +111,7 @@ public class TenantService {
         }
         tenant.clearDomainEvents();
         auditEventSink.record(AuditEvent.success(
-            tenantId.value(), null, null,
+            tenantId.value(), SecurityAuditContext.currentActorId(), null,
             "TENANT_DELETED", "Tenant", tenantId.value()
         ));
     }

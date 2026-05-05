@@ -24,6 +24,7 @@ import de.evia.travelmate.common.events.trips.TripCompleted;
 import de.evia.travelmate.common.events.trips.TripCreated;
 import de.evia.travelmate.common.events.trips.TripDeleted;
 import de.evia.travelmate.common.events.trips.AccommodationPriceSet;
+import de.evia.travelmate.webcommons.SecurityAuditContext;
 import de.evia.travelmate.webcommons.audit.AuditEvent;
 import de.evia.travelmate.webcommons.audit.AuditEventSink;
 import de.evia.travelmate.expense.application.command.AddReceiptCommand;
@@ -195,7 +196,7 @@ public class ExpenseService {
         final Expense expense = findByTripId(tenantId, tripId);
         expense.removeReceipt(new ReceiptId(receiptId));
         expenseRepository.save(expense);
-        auditEventSink.record(AuditEvent.success(tenantId.value(), null, null,
+        auditEventSink.record(AuditEvent.success(tenantId.value(), SecurityAuditContext.currentActorId(), null,
             "RECEIPT_DELETED", "Receipt", receiptId));
         return ExpenseRepresentation.from(expense);
     }
@@ -262,7 +263,7 @@ public class ExpenseService {
         expense.settle();
         expenseRepository.save(expense);
         publishEvents(expense);
-        auditEventSink.record(AuditEvent.success(tenantId.value(), null, null,
+        auditEventSink.record(AuditEvent.success(tenantId.value(), SecurityAuditContext.currentActorId(), null,
             "EXPENSE_SETTLED", "Expense", expense.expenseId().value()));
         return ExpenseRepresentation.from(expense);
     }

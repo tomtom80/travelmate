@@ -242,11 +242,16 @@ public class PlaywrightHooks {
 
     static void ensureLoggedOut() {
         navigateAndWait("/iam/dashboard");
+        openNavUserDropdown();
         final var logoutButton = page.locator("a.nav-logout-btn");
         if (logoutButton.isVisible()) {
             logoutButton.click();
             page.waitForLoadState();
         }
+    }
+
+    static void openNavUserDropdown() {
+        page.evaluate("document.querySelector('details.nav-user-dropdown')?.setAttribute('open', '')");
     }
 
     static void clickAndWaitForHtmx(final String selector) {

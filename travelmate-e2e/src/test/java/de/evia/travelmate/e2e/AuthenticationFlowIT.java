@@ -133,6 +133,7 @@ class AuthenticationFlowIT extends E2ETestBase {
     @Order(31)
     void logoutRedirectsToLandingPage() {
         navigateAndWait("/iam/dashboard");
+        openNavUserDropdown(page);
         page.locator("a.nav-logout-btn").click();
         page.waitForURL(url -> url.contains(BASE_URL) && !url.contains("/dashboard"), new com.microsoft.playwright.Page.WaitForURLOptions().setTimeout(10000));
         page.waitForLoadState();

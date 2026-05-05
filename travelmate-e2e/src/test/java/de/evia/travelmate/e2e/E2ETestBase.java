@@ -235,11 +235,16 @@ abstract class E2ETestBase {
 
     static void ensureLoggedOut(final Page targetPage) {
         navigateAndWait(targetPage, "/iam/dashboard");
+        openNavUserDropdown(targetPage);
         final var logoutButton = targetPage.locator("a.nav-logout-btn");
         if (logoutButton.isVisible()) {
             logoutButton.click();
             targetPage.waitForLoadState();
         }
+    }
+
+    static void openNavUserDropdown(final Page targetPage) {
+        targetPage.evaluate("document.querySelector('details.nav-user-dropdown')?.setAttribute('open', '')");
     }
 
     /**

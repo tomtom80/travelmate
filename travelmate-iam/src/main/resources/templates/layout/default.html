@@ -43,10 +43,16 @@
                     </div>
                 </details>
             </li>
-            <li>
-                <a href="/logout" class="nav-logout-btn" th:text="#{nav.logout}"
-                   onclick="event.preventDefault(); this.closest('li').querySelector('form').submit();">Abmelden</a>
-                <form method="post" action="/logout" style="display:none;"></form>
+            <li class="nav-user-item">
+                <details class="nav-user-dropdown">
+                    <summary class="nav-user-summary"
+                             th:text="${navUserName != null} ? ${navUserName} : #{nav.user.account}">Konto</summary>
+                    <div class="nav-user-panel">
+                        <a href="/logout" class="nav-logout-btn" th:text="#{nav.logout}"
+                           onclick="event.preventDefault(); this.parentElement.querySelector('form').submit();">Abmelden</a>
+                        <form method="post" action="/logout" style="display:none;"></form>
+                    </div>
+                </details>
             </li>
         </ul>
     </nav>
@@ -86,17 +92,17 @@
             }, 4000);
         }
     });
-    /* Kebab menu: close others on open, close on outside click/Escape */
+    /* Kebab/user menus: close others on open, close on outside click/Escape */
     document.addEventListener('toggle', function(e) {
         if (!(e.target instanceof HTMLDetailsElement)) { return; }
-        var isMenu = e.target.classList.contains('kebab-menu');
+        var isMenu = e.target.classList.contains('kebab-menu') || e.target.classList.contains('nav-user-dropdown');
         if (!isMenu || !e.target.open) { return; }
-        document.querySelectorAll('details.kebab-menu[open]').forEach(function(menu) {
+        document.querySelectorAll('details.kebab-menu[open], details.nav-user-dropdown[open]').forEach(function(menu) {
             if (menu !== e.target) { menu.open = false; }
         });
     });
     document.addEventListener('click', function(e) {
-        document.querySelectorAll('details.kebab-menu[open]').forEach(function(menu) {
+        document.querySelectorAll('details.kebab-menu[open], details.nav-user-dropdown[open]').forEach(function(menu) {
             if (!menu.contains(e.target)) { menu.open = false; }
         });
         var nav = document.querySelector('nav.nav-open');
@@ -104,7 +110,7 @@
     });
     document.addEventListener('keydown', function(e) {
         if (e.key !== 'Escape') { return; }
-        document.querySelectorAll('details.kebab-menu[open]').forEach(function(menu) { menu.open = false; });
+        document.querySelectorAll('details.kebab-menu[open], details.nav-user-dropdown[open]').forEach(function(menu) { menu.open = false; });
         document.querySelectorAll('nav.nav-open').forEach(function(n) { n.classList.remove('nav-open'); });
     });
     </script>

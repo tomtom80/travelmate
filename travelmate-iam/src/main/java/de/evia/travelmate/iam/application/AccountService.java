@@ -12,6 +12,7 @@ import de.evia.travelmate.common.domain.DomainEvent;
 import de.evia.travelmate.common.domain.DuplicateEntityException;
 import de.evia.travelmate.common.domain.EntityNotFoundException;
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.webcommons.SecurityAuditContext;
 import de.evia.travelmate.webcommons.audit.AuditEvent;
 import de.evia.travelmate.webcommons.audit.AuditEventSink;
 import de.evia.travelmate.iam.application.command.AddDependentCommand;
@@ -80,7 +81,7 @@ public class AccountService {
         final Account saved = accountRepository.save(account);
         publishEvents(saved);
         auditEventSink.record(AuditEvent.success(
-            saved.tenantId().value(), null, null,
+            saved.tenantId().value(), SecurityAuditContext.currentActorId(), null,
             "MEMBER_ADDED", "Account", saved.accountId().value()
         ));
         return new AccountRepresentation(saved);
@@ -111,7 +112,7 @@ public class AccountService {
             final InvitationToken token = registrationService.generateToken(saved.accountId());
             publishEvents(saved);
             auditEventSink.record(AuditEvent.success(
-                saved.tenantId().value(), null, null,
+                saved.tenantId().value(), SecurityAuditContext.currentActorId(), null,
                 "INVITATION_SENT", "Account", saved.accountId().value()
             ));
             return new InviteMemberResult(new AccountRepresentation(saved), token.tokenValue());
@@ -136,7 +137,7 @@ public class AccountService {
         final Dependent saved = dependentRepository.save(dependent);
         publishEvents(saved);
         auditEventSink.record(AuditEvent.success(
-            saved.tenantId().value(), null, null,
+            saved.tenantId().value(), SecurityAuditContext.currentActorId(), null,
             "DEPENDENT_ADDED", "Dependent", saved.dependentId().value()
         ));
         return new DependentRepresentation(saved);
@@ -151,7 +152,7 @@ public class AccountService {
         dependent.markForRemoval();
         publishEvents(dependent);
         auditEventSink.record(AuditEvent.success(
-            dependent.tenantId().value(), null, null,
+            dependent.tenantId().value(), SecurityAuditContext.currentActorId(), null,
             "DEPENDENT_REMOVED", "Dependent", dependentId
         ));
         dependentRepository.deleteById(new DependentId(dependentId));
@@ -170,7 +171,7 @@ public class AccountService {
         account.markForRemoval();
         publishEvents(account);
         auditEventSink.record(AuditEvent.success(
-            tenantId.value(), null, null,
+            tenantId.value(), SecurityAuditContext.currentActorId(), null,
             "MEMBER_REMOVED", "Account", accountId.value()
         ));
         try {

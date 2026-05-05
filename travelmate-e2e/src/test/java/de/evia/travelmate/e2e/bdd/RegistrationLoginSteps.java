@@ -115,6 +115,7 @@ public class RegistrationLoginSteps {
 
     @When("I click the logout button")
     public void iClickTheLogoutButton() {
+        openNavUserDropdown();
         page.locator("a.nav-logout-btn").click();
         page.waitForLoadState();
     }
