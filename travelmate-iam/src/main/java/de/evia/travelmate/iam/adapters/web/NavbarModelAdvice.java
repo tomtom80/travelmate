@@ -13,6 +13,11 @@ class NavbarModelAdvice {
         if (jwt == null) {
             return null;
         }
-        return jwt.getClaimAsString("given_name");
+        final String given = jwt.getClaimAsString("given_name");
+        final String family = jwt.getClaimAsString("family_name");
+        if (given != null && family != null) {
+            return given + " " + family;
+        }
+        return given != null ? given : jwt.getClaimAsString("preferred_username");
     }
 }

@@ -45,8 +45,10 @@
             </li>
             <li class="nav-user-item">
                 <details class="nav-user-dropdown">
-                    <summary class="nav-user-summary"
-                             th:text="${navUserName != null} ? ${navUserName} : #{nav.user.account}">Konto</summary>
+                    <summary class="nav-user-summary">
+                        <svg th:replace="~{fragments/icons :: icon-user}"></svg>
+                        <span th:text="${navUserName != null} ? ${navUserName} : #{nav.user.account}">Konto</span>
+                    </summary>
                     <div class="nav-user-panel">
                         <a href="/logout" class="nav-logout-btn" th:text="#{nav.logout}"
                            onclick="event.preventDefault(); this.parentElement.querySelector('form').submit();">Abmelden</a>

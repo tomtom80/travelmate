@@ -537,6 +537,63 @@ a.btn-icon.btn-icon--danger:hover {
     background: #f3f4f6;
     color: var(--tm-primary, #3366CC);
 }
+/* ── User Dropdown ─────────────────────────────── */
+.nav-user-dropdown {
+    position: relative;
+    margin: 0;
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: none;
+    overflow: visible;
+}
+.nav-user-dropdown[open] {
+    padding: 0;
+    border: none;
+    background: none;
+}
+.nav-user-dropdown > summary {
+    all: unset;
+    cursor: pointer;
+    color: #374151;
+    list-style: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    vertical-align: middle;
+}
+.nav-user-dropdown > summary::marker { content: ""; }
+.nav-user-dropdown > summary::-webkit-details-marker { display: none; }
+.nav-user-dropdown > summary::after { content: none; }
+.nav-user-dropdown > summary:hover {
+    color: var(--tm-primary, #3366CC);
+}
+.nav-user-panel {
+    position: absolute;
+    right: 0;
+    top: 100%;
+    z-index: 100;
+    min-width: 9rem;
+    background: #fff;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    padding: 0.25rem 0;
+    margin-top: 0.25rem;
+    animation: none;
+}
+.nav-user-panel .nav-logout-btn {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    color: #374151;
+    font-size: 0.875rem;
+    width: 100%;
+    box-sizing: border-box;
+}
+.nav-user-panel .nav-logout-btn:hover {
+    background: #f3f4f6;
+    color: var(--tm-primary, #3366CC);
+}
 
 @media (max-width: 767px) {
     .nav-bar {
@@ -587,7 +644,8 @@ a.btn-icon.btn-icon--danger:hover {
     /* All main nav items: unified padding + color */
     .nav-links li a,
     .nav-links li .nav-logout-btn,
-    .nav-links li .nav-lang-dropdown > summary {
+    .nav-links li .nav-lang-dropdown > summary,
+    .nav-links li .nav-user-dropdown > summary {
         all: unset;
         box-sizing: border-box;
         display: block;
@@ -600,7 +658,8 @@ a.btn-icon.btn-icon--danger:hover {
     }
     .nav-links li a:hover,
     .nav-links li .nav-logout-btn:hover,
-    .nav-links li .nav-lang-dropdown > summary:hover {
+    .nav-links li .nav-lang-dropdown > summary:hover,
+    .nav-links li .nav-user-dropdown > summary:hover {
         background: #f3f4f6;
         color: var(--tm-primary, #3366CC);
     }
@@ -619,6 +678,26 @@ a.btn-icon.btn-icon--danger:hover {
         font-size: 1rem;
     }
     .nav-lang-panel a:hover {
+        color: var(--tm-primary, #3366CC);
+    }
+    /* User sub-menu: indented under user name */
+    .nav-user-panel {
+        position: static;
+        border: none;
+        box-shadow: none;
+        border-radius: 0;
+        margin: 0;
+        padding: 0;
+        background: #f9fafb;
+    }
+    .nav-user-panel .nav-logout-btn {
+        display: block;
+        padding: 0.75rem 1rem 0.75rem 2rem !important;
+        font-size: 1rem;
+        width: 100%;
+        box-sizing: border-box;
+    }
+    .nav-user-panel .nav-logout-btn:hover {
         color: var(--tm-primary, #3366CC);
     }
 }

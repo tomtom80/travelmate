@@ -10,13 +10,13 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.core.oidc.user.OidcUser;
 import org.springframework.security.web.server.SecurityWebFilterChain;
 import org.springframework.security.web.server.WebFilterExchange;
-import org.springframework.security.web.server.authentication.RedirectServerAuthenticationSuccessHandler;
+import org.springframework.security.web.server.authentication.RedirectServerAuthenticationFailureHandler;
+import org.springframework.security.web.server.authentication.ServerAuthenticationFailureHandler;
+import org.springframework.security.web.server.authentication.ServerAuthenticationSuccessHandler;
 import org.springframework.security.web.server.authentication.logout.ServerLogoutSuccessHandler;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.net.URI;
-
-import reactor.core.publisher.Mono;
 
 @Configuration
 public class SecurityConfig {
@@ -26,15 +26,26 @@ public class SecurityConfig {
 
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(final ServerHttpSecurity http) {
-        final var successHandler = new RedirectServerAuthenticationSuccessHandler("/iam/dashboard");
+        final ServerAuthenticationSuccessHandler successHandler = (exchange, authentication) -> {
+            final var response = exchange.getExchange().getResponse();
+            response.setStatusCode(HttpStatus.FOUND);
+            response.getHeaders().setLocation(URI.create("/iam/dashboard"));
+            return response.setComplete();
+        };
+        final ServerAuthenticationFailureHandler failureHandler =
+            new RedirectServerAuthenticationFailureHandler("/iam/auth-error");
 
         http
             .authorizeExchange(exchanges -> exchanges
-                .pathMatchers("/", "/actuator/health/**", "/manifest.json", "/iam/", "/iam/signup", "/iam/signup/**", "/iam/register", "/iam/register/**", "/iam/css/**", "/iam/images/**").permitAll()
+                .pathMatchers("/", "/actuator/health/**", "/manifest.json",
+                    "/iam/", "/iam/landing", "/iam/landing/**", "/iam/auth-error",
+                    "/iam/signup", "/iam/signup/**", "/iam/register", "/iam/register/**",
+                    "/iam/css/**", "/iam/images/**").permitAll()
                 .anyExchange().authenticated()
             )
             .oauth2Login(oauth2 -> oauth2
                 .authenticationSuccessHandler(successHandler)
+                .authenticationFailureHandler(failureHandler)
             )
             .oauth2Client(Customizer.withDefaults())
             .logout(logout -> logout

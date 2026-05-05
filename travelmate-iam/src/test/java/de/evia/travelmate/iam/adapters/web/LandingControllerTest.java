@@ -4,8 +4,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.doThrow;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import org.junit.jupiter.api.Test;
@@ -109,5 +111,12 @@ class LandingControllerTest {
     void landingPageIsPublicNoAuthRequired() throws Exception {
         mockMvc.perform(get("/landing"))
             .andExpect(status().isOk());
+    }
+
+    @Test
+    void authenticatedUserIsRedirectedToDashboard() throws Exception {
+        mockMvc.perform(get("/landing").with(jwt().jwt(j -> j.subject("kc-user-123"))))
+            .andExpect(status().is3xxRedirection())
+            .andExpect(redirectedUrl("/dashboard"));
     }
 }

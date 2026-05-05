@@ -25,6 +25,7 @@ class PasswordResetIT extends E2ETestBase {
     void setUpRegisteredUser() {
         signUpAndLogin(TENANT_NAME, "Reset", "Tester", EMAIL, INITIAL_PASSWORD);
         ensureLoggedOut();
+        context.clearCookies();
     }
 
     // --- Journey 1: Forgot-Password link is reachable and shows form ---
@@ -58,23 +59,6 @@ class PasswordResetIT extends E2ETestBase {
         page.waitForLoadState();
 
         assertThat(page.content()).doesNotContain("404");
-        assertThat(page.content()).doesNotContain("Kein Benutzer");
-    }
-
-    @Test
-    @Order(21)
-    void unknownEmailShowsSameGenericResponse() {
-        navigateAndWait("/oauth2/authorization/keycloak");
-        page.waitForURL(url -> url.contains("realms/travelmate"));
-        page.locator("a:has-text('Passwort vergessen')").click();
-        page.waitForLoadState();
-
-        page.fill("#username", "nobody-" + RUN_ID + "@nowhere.invalid");
-        page.locator("button[type=submit]").click();
-        page.waitForLoadState();
-
-        assertThat(page.content()).doesNotContain("404");
-        assertThat(page.content()).doesNotContain("not found");
         assertThat(page.content()).doesNotContain("Kein Benutzer");
     }
 
@@ -141,6 +125,26 @@ class PasswordResetIT extends E2ETestBase {
         );
 
         assertThat(page.url()).contains("/iam/");
+    }
+
+    // --- Journey 5: Unknown email shows same generic response ---
+
+    @Test
+    @Order(50)
+    void unknownEmailShowsSameGenericResponse() {
+        context.clearCookies();
+        navigateAndWait("/oauth2/authorization/keycloak");
+        page.waitForURL(url -> url.contains("realms/travelmate"));
+        page.locator("a:has-text('Passwort vergessen')").click();
+        page.waitForLoadState();
+
+        page.fill("#username", "nobody-" + RUN_ID + "@nowhere.invalid");
+        page.locator("button[type=submit]").click();
+        page.waitForLoadState();
+
+        assertThat(page.content()).doesNotContain("404");
+        assertThat(page.content()).doesNotContain("not found");
+        assertThat(page.content()).doesNotContain("Kein Benutzer");
     }
 
     @Test

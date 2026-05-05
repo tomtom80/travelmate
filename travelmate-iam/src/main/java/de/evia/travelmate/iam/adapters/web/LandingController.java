@@ -27,7 +27,10 @@ public class LandingController {
 
     @GetMapping("/landing")
     public String landing(@AuthenticationPrincipal final Jwt jwt, final Model model) {
-        model.addAttribute("isAuthenticated", jwt != null);
+        if (jwt != null) {
+            return "redirect:/dashboard";
+        }
+        model.addAttribute("isAuthenticated", false);
         return "landing";
     }
 

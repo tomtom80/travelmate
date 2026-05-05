@@ -155,6 +155,7 @@ public class RegistrationLoginSteps {
 
     @Given("I am a registered member with a fresh account")
     public void iAmARegisteredMemberWithAFreshAccount() {
+        context.clearCookies();
         scenarioCounter++;
         final String suffix = RUN_ID + "-reset-" + scenarioCounter;
         registeredEmail = "reset-" + suffix + "@e2e.test";
@@ -165,6 +166,7 @@ public class RegistrationLoginSteps {
 
     @Given("I am on the Keycloak login page")
     public void iAmOnTheKeycloakLoginPage() {
+        context.clearCookies();
         page.navigate(BASE_URL + "/oauth2/authorization/keycloak");
         page.waitForURL(url -> url.contains("realms/travelmate"));
     }
