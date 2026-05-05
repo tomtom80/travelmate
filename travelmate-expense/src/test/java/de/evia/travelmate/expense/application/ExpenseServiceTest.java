@@ -49,6 +49,7 @@ import de.evia.travelmate.expense.domain.expense.ParticipantWeighting;
 import de.evia.travelmate.expense.domain.trip.TripParticipant;
 import de.evia.travelmate.expense.domain.trip.TripProjection;
 import de.evia.travelmate.expense.domain.trip.TripProjectionRepository;
+import de.evia.travelmate.webcommons.audit.AuditEventSink;
 
 @ExtendWith(MockitoExtension.class)
 class ExpenseServiceTest {
@@ -67,6 +68,9 @@ class ExpenseServiceTest {
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private AuditEventSink auditEventSink;
 
     @InjectMocks
     private ExpenseService expenseService;

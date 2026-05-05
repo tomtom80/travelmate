@@ -12,6 +12,8 @@ import de.evia.travelmate.common.domain.DomainEvent;
 import de.evia.travelmate.common.domain.DuplicateEntityException;
 import de.evia.travelmate.common.domain.EntityNotFoundException;
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.webcommons.audit.AuditEvent;
+import de.evia.travelmate.webcommons.audit.AuditEventSink;
 import de.evia.travelmate.iam.application.command.AddDependentCommand;
 import de.evia.travelmate.iam.application.command.InviteMemberCommand;
 import de.evia.travelmate.iam.application.command.RegisterAccountCommand;
@@ -43,19 +45,22 @@ public class AccountService {
     private final RegistrationService registrationService;
     private final TripParticipationRepository tripParticipationRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final AuditEventSink auditEventSink;
 
     public AccountService(final AccountRepository accountRepository,
                           final DependentRepository dependentRepository,
                           final IdentityProviderService identityProviderService,
                           final RegistrationService registrationService,
                           final TripParticipationRepository tripParticipationRepository,
-                          final ApplicationEventPublisher eventPublisher) {
+                          final ApplicationEventPublisher eventPublisher,
+                          final AuditEventSink auditEventSink) {
         this.accountRepository = accountRepository;
         this.dependentRepository = dependentRepository;
         this.identityProviderService = identityProviderService;
         this.registrationService = registrationService;
         this.tripParticipationRepository = tripParticipationRepository;
         this.eventPublisher = eventPublisher;
+        this.auditEventSink = auditEventSink;
     }
 
     public AccountRepresentation registerAccount(final RegisterAccountCommand command) {
@@ -74,6 +79,10 @@ public class AccountService {
         );
         final Account saved = accountRepository.save(account);
         publishEvents(saved);
+        auditEventSink.record(AuditEvent.success(
+            saved.tenantId().value(), null, null,
+            "MEMBER_ADDED", "Account", saved.accountId().value()
+        ));
         return new AccountRepresentation(saved);
     }
 
@@ -101,6 +110,10 @@ public class AccountService {
             identityProviderService.assignRole(keycloakUserId, "organizer");
             final InvitationToken token = registrationService.generateToken(saved.accountId());
             publishEvents(saved);
+            auditEventSink.record(AuditEvent.success(
+                saved.tenantId().value(), null, null,
+                "INVITATION_SENT", "Account", saved.accountId().value()
+            ));
             return new InviteMemberResult(new AccountRepresentation(saved), token.tokenValue());
         } catch (final Exception e) {
             identityProviderService.deleteUser(keycloakUserId);
@@ -122,6 +135,10 @@ public class AccountService {
         );
         final Dependent saved = dependentRepository.save(dependent);
         publishEvents(saved);
+        auditEventSink.record(AuditEvent.success(
+            saved.tenantId().value(), null, null,
+            "DEPENDENT_ADDED", "Dependent", saved.dependentId().value()
+        ));
         return new DependentRepresentation(saved);
     }
 
@@ -133,6 +150,10 @@ public class AccountService {
             .orElseThrow(() -> new EntityNotFoundException("Dependent", dependentId.toString()));
         dependent.markForRemoval();
         publishEvents(dependent);
+        auditEventSink.record(AuditEvent.success(
+            dependent.tenantId().value(), null, null,
+            "DEPENDENT_REMOVED", "Dependent", dependentId
+        ));
         dependentRepository.deleteById(new DependentId(dependentId));
     }
 
@@ -148,6 +169,10 @@ public class AccountService {
             .orElseThrow(() -> new EntityNotFoundException("Account", accountId.value().toString()));
         account.markForRemoval();
         publishEvents(account);
+        auditEventSink.record(AuditEvent.success(
+            tenantId.value(), null, null,
+            "MEMBER_REMOVED", "Account", accountId.value()
+        ));
         try {
             identityProviderService.deleteUser(account.keycloakUserId());
         } catch (final Exception ignored) {

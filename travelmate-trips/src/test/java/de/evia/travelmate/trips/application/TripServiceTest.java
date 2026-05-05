@@ -55,6 +55,7 @@ import de.evia.travelmate.trips.domain.trip.DateRange;
 import de.evia.travelmate.trips.domain.trip.Trip;
 import de.evia.travelmate.trips.domain.trip.TripName;
 import de.evia.travelmate.trips.domain.trip.TripRepository;
+import de.evia.travelmate.webcommons.audit.AuditEventSink;
 
 @ExtendWith(MockitoExtension.class)
 class TripServiceTest {
@@ -93,6 +94,9 @@ class TripServiceTest {
 
     @Mock
     private TripParticipationEventPublisher tripParticipationEventPublisher;
+
+    @Mock
+    private AuditEventSink auditEventSink;
 
     @InjectMocks
     private TripService tripService;

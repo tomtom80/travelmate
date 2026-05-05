@@ -10,6 +10,8 @@ import de.evia.travelmate.common.domain.DomainEvent;
 import de.evia.travelmate.common.domain.DuplicateEntityException;
 import de.evia.travelmate.common.domain.EntityNotFoundException;
 import de.evia.travelmate.common.domain.TenantId;
+import de.evia.travelmate.webcommons.audit.AuditEvent;
+import de.evia.travelmate.webcommons.audit.AuditEventSink;
 import de.evia.travelmate.iam.application.command.CreateTenantCommand;
 import de.evia.travelmate.iam.application.command.RenameTenantCommand;
 import de.evia.travelmate.iam.application.representation.TenantRepresentation;
@@ -31,17 +33,20 @@ public class TenantService {
     private final DependentRepository dependentRepository;
     private final IdentityProviderService identityProviderService;
     private final ApplicationEventPublisher eventPublisher;
+    private final AuditEventSink auditEventSink;
 
     public TenantService(final TenantRepository tenantRepository,
                          final AccountRepository accountRepository,
                          final DependentRepository dependentRepository,
                          final IdentityProviderService identityProviderService,
-                         final ApplicationEventPublisher eventPublisher) {
+                         final ApplicationEventPublisher eventPublisher,
+                         final AuditEventSink auditEventSink) {
         this.tenantRepository = tenantRepository;
         this.accountRepository = accountRepository;
         this.dependentRepository = dependentRepository;
         this.identityProviderService = identityProviderService;
         this.eventPublisher = eventPublisher;
+        this.auditEventSink = auditEventSink;
     }
 
     public TenantRepresentation createTenant(final CreateTenantCommand command) {
@@ -104,5 +109,9 @@ public class TenantService {
             eventPublisher.publishEvent(event);
         }
         tenant.clearDomainEvents();
+        auditEventSink.record(AuditEvent.success(
+            tenantId.value(), null, null,
+            "TENANT_DELETED", "Tenant", tenantId.value()
+        ));
     }
 }

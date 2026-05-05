@@ -20,6 +20,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
+import de.evia.travelmate.webcommons.audit.AuditEventSink;
 import de.evia.travelmate.common.domain.BusinessRuleViolationException;
 import de.evia.travelmate.common.domain.DuplicateEntityException;
 import de.evia.travelmate.common.domain.EntityNotFoundException;
@@ -69,6 +70,9 @@ class AccountServiceTest {
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private AuditEventSink auditEventSink;
 
     @InjectMocks
     private AccountService accountService;

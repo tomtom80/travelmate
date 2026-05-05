@@ -15,6 +15,8 @@ import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.common.events.trips.ExternalUserInvitedToTrip;
 import de.evia.travelmate.common.events.trips.InvitationCreated;
 import de.evia.travelmate.common.events.trips.ParticipantJoinedTrip;
+import de.evia.travelmate.webcommons.audit.AuditEvent;
+import de.evia.travelmate.webcommons.audit.AuditEventSink;
 import de.evia.travelmate.trips.application.command.InviteExternalCommand;
 import de.evia.travelmate.trips.application.command.InviteParticipantCommand;
 import de.evia.travelmate.trips.application.representation.InvitationRepresentation;
@@ -38,17 +40,20 @@ public class InvitationService {
     private final TravelPartyRepository travelPartyRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final TripParticipationEventPublisher tripParticipationEventPublisher;
+    private final AuditEventSink auditEventSink;
 
     public InvitationService(final InvitationRepository invitationRepository,
                              final TripRepository tripRepository,
                              final TravelPartyRepository travelPartyRepository,
                              final ApplicationEventPublisher eventPublisher,
-                             final TripParticipationEventPublisher tripParticipationEventPublisher) {
+                             final TripParticipationEventPublisher tripParticipationEventPublisher,
+                             final AuditEventSink auditEventSink) {
         this.invitationRepository = invitationRepository;
         this.tripRepository = tripRepository;
         this.travelPartyRepository = travelPartyRepository;
         this.eventPublisher = eventPublisher;
         this.tripParticipationEventPublisher = tripParticipationEventPublisher;
+        this.auditEventSink = auditEventSink;
     }
 
     public InvitationRepresentation invite(final InviteParticipantCommand command) {
@@ -109,6 +114,8 @@ public class InvitationService {
             inviter.lastName(),
             LocalDate.now()
         ));
+        auditEventSink.record(AuditEvent.success(tenantId.value(), command.invitedBy(), null,
+            "INVITATION_SENT", "Invitation", invitation.invitationId().value()));
 
         return new InvitationRepresentation(invitation);
     }
@@ -231,6 +238,8 @@ public class InvitationService {
                 inviter.lastName(),
                 LocalDate.now()
             ));
+            auditEventSink.record(AuditEvent.success(tenantId.value(), command.invitedBy(), null,
+                "INVITATION_SENT", "Invitation", invitation.invitationId().value()));
 
             return new InvitationRepresentation(invitation);
         }
@@ -269,6 +278,8 @@ public class InvitationService {
             inviter.lastName(),
             LocalDate.now()
         ));
+        auditEventSink.record(AuditEvent.success(tenantId.value(), command.invitedBy(), null,
+            "INVITATION_SENT", "Invitation", invitation.invitationId().value()));
 
         return new InvitationRepresentation(invitation);
     }

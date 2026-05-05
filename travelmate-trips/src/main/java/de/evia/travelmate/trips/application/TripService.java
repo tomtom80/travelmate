@@ -16,6 +16,8 @@ import de.evia.travelmate.common.domain.EntityNotFoundException;
 import de.evia.travelmate.common.domain.TenantId;
 import de.evia.travelmate.common.events.trips.ParticipantJoinedTrip;
 import de.evia.travelmate.common.events.trips.TripDeleted;
+import de.evia.travelmate.webcommons.audit.AuditEvent;
+import de.evia.travelmate.webcommons.audit.AuditEventSink;
 import de.evia.travelmate.trips.application.command.CreateTripCommand;
 import de.evia.travelmate.trips.application.command.EditTripCommand;
 import de.evia.travelmate.trips.application.command.AddParticipantToTripCommand;
@@ -55,6 +57,7 @@ public class TripService {
     private final ShoppingListRepository shoppingListRepository;
     private final ApplicationEventPublisher eventPublisher;
     private final TripParticipationEventPublisher tripParticipationEventPublisher;
+    private final AuditEventSink auditEventSink;
 
     public TripService(final TripRepository tripRepository,
                        final TravelPartyRepository travelPartyRepository,
@@ -65,7 +68,8 @@ public class TripService {
                        final MealPlanRepository mealPlanRepository,
                        final ShoppingListRepository shoppingListRepository,
                        final ApplicationEventPublisher eventPublisher,
-                       final TripParticipationEventPublisher tripParticipationEventPublisher) {
+                       final TripParticipationEventPublisher tripParticipationEventPublisher,
+                       final AuditEventSink auditEventSink) {
         this.tripRepository = tripRepository;
         this.travelPartyRepository = travelPartyRepository;
         this.accommodationRepository = accommodationRepository;
@@ -76,6 +80,7 @@ public class TripService {
         this.shoppingListRepository = shoppingListRepository;
         this.eventPublisher = eventPublisher;
         this.tripParticipationEventPublisher = tripParticipationEventPublisher;
+        this.auditEventSink = auditEventSink;
     }
 
     public TripRepresentation createTrip(final CreateTripCommand command) {
@@ -164,6 +169,8 @@ public class TripService {
         eventPublisher.publishEvent(new TripDeleted(
             trip.tenantId().value(), tripId.value(), LocalDate.now()
         ));
+        auditEventSink.record(AuditEvent.success(trip.tenantId().value(), null, null,
+            "TRIP_DELETED", "Trip", tripId.value()));
     }
 
     public void editTrip(final EditTripCommand command) {
@@ -202,6 +209,8 @@ public class TripService {
         final Trip trip = findTrip(tripId);
         trip.cancel();
         tripRepository.save(trip);
+        auditEventSink.record(AuditEvent.success(trip.tenantId().value(), null, null,
+            "TRIP_CANCELLED", "Trip", tripId.value()));
     }
 
     public void updateDateRange(final TripId tripId, final DateRange newDateRange) {

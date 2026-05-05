@@ -17,6 +17,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 
+import de.evia.travelmate.webcommons.audit.AuditEventSink;
 import de.evia.travelmate.common.domain.DuplicateEntityException;
 import de.evia.travelmate.common.domain.EntityNotFoundException;
 import de.evia.travelmate.common.domain.TenantId;
@@ -48,6 +49,9 @@ class TenantServiceTest {
 
     @Mock
     private ApplicationEventPublisher eventPublisher;
+
+    @Mock
+    private AuditEventSink auditEventSink;
 
     @InjectMocks
     private TenantService tenantService;

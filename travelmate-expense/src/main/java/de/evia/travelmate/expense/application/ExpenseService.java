@@ -24,6 +24,8 @@ import de.evia.travelmate.common.events.trips.TripCompleted;
 import de.evia.travelmate.common.events.trips.TripCreated;
 import de.evia.travelmate.common.events.trips.TripDeleted;
 import de.evia.travelmate.common.events.trips.AccommodationPriceSet;
+import de.evia.travelmate.webcommons.audit.AuditEvent;
+import de.evia.travelmate.webcommons.audit.AuditEventSink;
 import de.evia.travelmate.expense.application.command.AddReceiptCommand;
 import de.evia.travelmate.expense.application.command.ApproveReceiptCommand;
 import de.evia.travelmate.expense.application.command.ConfirmAdvancePaymentsCommand;
@@ -51,13 +53,16 @@ public class ExpenseService {
     private final ExpenseRepository expenseRepository;
     private final TripProjectionRepository tripProjectionRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final AuditEventSink auditEventSink;
 
     public ExpenseService(final ExpenseRepository expenseRepository,
                           final TripProjectionRepository tripProjectionRepository,
-                          final ApplicationEventPublisher eventPublisher) {
+                          final ApplicationEventPublisher eventPublisher,
+                          final AuditEventSink auditEventSink) {
         this.expenseRepository = expenseRepository;
         this.tripProjectionRepository = tripProjectionRepository;
         this.eventPublisher = eventPublisher;
+        this.auditEventSink = auditEventSink;
     }
 
     public void onTripCreated(final TripCreated event) {
@@ -190,6 +195,8 @@ public class ExpenseService {
         final Expense expense = findByTripId(tenantId, tripId);
         expense.removeReceipt(new ReceiptId(receiptId));
         expenseRepository.save(expense);
+        auditEventSink.record(AuditEvent.success(tenantId.value(), null, null,
+            "RECEIPT_DELETED", "Receipt", receiptId));
         return ExpenseRepresentation.from(expense);
     }
 
@@ -255,6 +262,8 @@ public class ExpenseService {
         expense.settle();
         expenseRepository.save(expense);
         publishEvents(expense);
+        auditEventSink.record(AuditEvent.success(tenantId.value(), null, null,
+            "EXPENSE_SETTLED", "Expense", expense.expenseId().value()));
         return ExpenseRepresentation.from(expense);
     }
 
