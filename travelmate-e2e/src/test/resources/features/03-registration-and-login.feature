@@ -61,24 +61,21 @@ Feature: Registration and Login Journey
 
   # ---------- Password Reset ----------
 
-  @manuell
-  Scenario: User requests password reset and lands on the change-password form
-    # Requires Mailpit API + Keycloak forgot-password flow
-    Given I am a registered member with email "anna@example.com"
+  @happy-path
+  Scenario: User completes the full password reset flow and logs in with the new password
+    Given I am a registered member with a fresh account
     And I am on the Keycloak login page
-    When I click "Passwort vergessen"
-    And I enter my email "anna@example.com"
-    And I submit the forgot-password form
-    Then a password reset email arrives in Mailpit for "anna@example.com"
+    When I request a password reset for my account
+    Then a password reset email arrives in Mailpit
+    When I follow the reset link and set "NewSecure456!" as the new password
+    Then I can log in with "NewSecure456!"
+    And the original password no longer grants access
 
-  @manuell
-  Scenario: User completes password reset and can log in with the new password
-    # Requires Mailpit API + Keycloak change-password form
-    Given I am on the Keycloak change-password form via a valid reset link
-    When I enter "NewSecure456!" as the new password
-    And I confirm "NewSecure456!"
-    And I submit the form
-    Then I see a confirmation that the password was changed
+  @security
+  Scenario: Password reset with an unregistered email shows a generic response
+    Given I am on the Keycloak login page
+    When I request a password reset for unknown email "nobody-bdd@nowhere.invalid"
+    Then the response is generic with no email enumeration
 
   # ---------- Login / Logout ----------
 

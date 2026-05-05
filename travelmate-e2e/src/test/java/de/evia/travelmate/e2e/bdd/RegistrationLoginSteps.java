@@ -6,19 +6,19 @@ import static de.evia.travelmate.e2e.bdd.PlaywrightHooks.*;
 import java.util.HashMap;
 import java.util.Map;
 
+import com.microsoft.playwright.options.LoadState;
+
 import io.cucumber.java.en.And;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
 
-/**
- * Step definitions for 03-registration-and-login.feature.
- */
 public class RegistrationLoginSteps {
 
     private static final Map<String, String> formValues = new HashMap<>();
     private static String registeredEmail;
     private static String registeredPassword;
+    private static String resetLink;
     private static int scenarioCounter = 0;
 
     @Given("I am on the signup page {string}")
@@ -148,5 +148,89 @@ public class RegistrationLoginSteps {
         page.fill("#email", registeredEmail);
         page.fill("#password", "Secure123!");
         page.fill("#passwordConfirm", "Secure123!");
+    }
+
+    // ---------- Password Reset ----------
+
+    @Given("I am a registered member with a fresh account")
+    public void iAmARegisteredMemberWithAFreshAccount() {
+        scenarioCounter++;
+        final String suffix = RUN_ID + "-reset-" + scenarioCounter;
+        registeredEmail = "reset-" + suffix + "@e2e.test";
+        registeredPassword = "Test1234!";
+        signUpAndLogin("E2E-ResetBDD " + suffix, "Reset", "User", registeredEmail, registeredPassword);
+        ensureLoggedOut();
+    }
+
+    @Given("I am on the Keycloak login page")
+    public void iAmOnTheKeycloakLoginPage() {
+        page.navigate(BASE_URL + "/oauth2/authorization/keycloak");
+        page.waitForURL(url -> url.contains("realms/travelmate"));
+    }
+
+    @When("I request a password reset for my account")
+    public void iRequestAPasswordResetForMyAccount() {
+        page.locator("a:has-text('Passwort vergessen'), a:has-text('Forgot Password')").first().click();
+        page.waitForLoadState();
+        page.fill("#username", registeredEmail);
+        page.locator("button[type=submit]").click();
+        page.waitForLoadState();
+    }
+
+    @Then("a password reset email arrives in Mailpit")
+    public void aPasswordResetEmailArrivesInMailpit() {
+        resetLink = waitForMailpitLink(registeredEmail, "action-token", 30);
+        assertThat(resetLink).as("Password reset email must arrive in Mailpit for %s", registeredEmail).isNotNull();
+    }
+
+    @When("I follow the reset link and set {string} as the new password")
+    public void iFollowTheResetLinkAndSetNewPassword(final String newPassword) {
+        page.navigate(resetLink);
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+        page.locator("#password-new, input[name='password-new']").first().fill(newPassword);
+        page.locator("#password-confirm, input[name='password-confirm']").first().fill(newPassword);
+        page.locator("button[type=submit], input[type=submit]").first().click();
+        page.waitForLoadState(LoadState.NETWORKIDLE);
+    }
+
+    @Then("I can log in with {string}")
+    public void iCanLogInWith(final String password) {
+        context.clearCookies();
+        page.navigate(BASE_URL + "/oauth2/authorization/keycloak");
+        page.waitForURL(url -> url.contains("realms/travelmate"));
+        page.fill("#username", registeredEmail);
+        page.fill("#password", password);
+        page.click("#kc-login");
+        page.waitForURL(url -> !url.contains("realms/travelmate"),
+            new com.microsoft.playwright.Page.WaitForURLOptions().setTimeout(10000));
+        assertThat(page.url()).contains("/iam/");
+    }
+
+    @Then("the original password no longer grants access")
+    public void theOriginalPasswordNoLongerGrantsAccess() {
+        context.clearCookies();
+        page.navigate(BASE_URL + "/oauth2/authorization/keycloak");
+        page.waitForURL(url -> url.contains("realms/travelmate"));
+        page.fill("#username", registeredEmail);
+        page.fill("#password", registeredPassword);
+        page.click("#kc-login");
+        page.waitForLoadState();
+        assertThat(page.url()).contains("realms/travelmate");
+    }
+
+    @When("I request a password reset for unknown email {string}")
+    public void iRequestAPasswordResetForUnknownEmail(final String unknownEmail) {
+        page.locator("a:has-text('Passwort vergessen'), a:has-text('Forgot Password')").first().click();
+        page.waitForLoadState();
+        page.fill("#username", unknownEmail);
+        page.locator("button[type=submit]").click();
+        page.waitForLoadState();
+    }
+
+    @Then("the response is generic with no email enumeration")
+    public void theResponseIsGenericWithNoEmailEnumeration() {
+        assertThat(page.content()).doesNotContain("not found");
+        assertThat(page.content()).doesNotContain("Kein Benutzer");
+        assertThat(page.content()).doesNotContain("404");
     }
 }

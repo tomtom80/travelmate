@@ -397,11 +397,11 @@ abstract class E2ETestBase {
         targetPage.waitForLoadState(com.microsoft.playwright.options.LoadState.NETWORKIDLE);
     }
 
-    static String waitForMailpitLink(final String email, final String requiredFragment) {
+    public static String waitForMailpitLink(final String email, final String requiredFragment) {
         return waitForMailpitLink(email, requiredFragment, 20);
     }
 
-    static String waitForMailpitLink(final String email, final String requiredFragment, final int attempts) {
+    public static String waitForMailpitLink(final String email, final String requiredFragment, final int attempts) {
         try (final HttpClient client = HttpClient.newHttpClient()) {
             final String encodedQuery = URLEncoder.encode("to:" + email, StandardCharsets.UTF_8);
             for (int attempt = 0; attempt < attempts; attempt++) {

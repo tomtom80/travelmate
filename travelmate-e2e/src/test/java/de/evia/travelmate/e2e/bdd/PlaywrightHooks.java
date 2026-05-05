@@ -1,10 +1,13 @@
 package de.evia.travelmate.e2e.bdd;
 
 import java.net.URI;
+import java.net.URLEncoder;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardCopyOption;
@@ -33,6 +36,8 @@ public class PlaywrightHooks {
 
     static final String BASE_URL = System.getProperty("e2e.baseUrl", "http://localhost:8080");
     static final String IAM_ADMIN_URL = System.getProperty("e2e.iamAdminUrl", "http://localhost:8081/iam");
+    static final String IAM_PUBLIC_URL = System.getProperty("e2e.iamPublicUrl", BASE_URL + "/iam");
+    static final String MAILPIT_URL = System.getProperty("e2e.mailpitUrl", "http://localhost:8025");
     static final String RUN_ID = "bdd" + System.currentTimeMillis();
 
     static final List<String> createdTenantIds = new ArrayList<>();
@@ -408,5 +413,83 @@ public class PlaywrightHooks {
             }
             throw e;
         }
+    }
+
+    static String waitForMailpitLink(final String email, final String requiredFragment) {
+        return waitForMailpitLink(email, requiredFragment, 20);
+    }
+
+    static String waitForMailpitLink(final String email, final String requiredFragment, final int attempts) {
+        try (final HttpClient client = HttpClient.newHttpClient()) {
+            final String encodedQuery = URLEncoder.encode("to:" + email, StandardCharsets.UTF_8);
+            for (int attempt = 0; attempt < attempts; attempt++) {
+                final HttpRequest searchRequest = HttpRequest.newBuilder()
+                    .uri(URI.create(MAILPIT_URL + "/api/v1/search?query=" + encodedQuery))
+                    .GET()
+                    .build();
+                final String searchResponse = client.send(searchRequest, HttpResponse.BodyHandlers.ofString()).body();
+
+                final String messageId = extractJsonField(searchResponse, "ID");
+                if (messageId != null) {
+                    final HttpRequest msgRequest = HttpRequest.newBuilder()
+                        .uri(URI.create(MAILPIT_URL + "/api/v1/message/" + messageId))
+                        .GET()
+                        .build();
+                    final String msgResponse = client.send(msgRequest, HttpResponse.BodyHandlers.ofString()).body();
+
+                    final String link = extractLinkContaining(msgResponse, requiredFragment);
+                    if (link != null) {
+                        return normalizeMailpitLink(link);
+                    }
+                }
+                Thread.sleep(500);
+            }
+        } catch (final Exception e) {
+            System.err.println("Warning: Could not get link from Mailpit: " + e.getMessage());
+        }
+        return null;
+    }
+
+    private static String extractLinkContaining(final String messageJson, final String requiredFragment) {
+        final String unescaped = messageJson.replace("\\\"", "\"").replace("\\u0026", "&");
+        final Pattern pattern = Pattern.compile("href=\"(http[^\"]*?" + Pattern.quote(requiredFragment) + "[^\"]*?)\"");
+        final Matcher matcher = pattern.matcher(unescaped);
+        if (matcher.find()) {
+            return matcher.group(1).replace("&amp;", "&");
+        }
+        final Pattern fallbackPattern = Pattern.compile("(https?://\\S*" + Pattern.quote(requiredFragment) + "\\S*)");
+        final Matcher fallbackMatcher = fallbackPattern.matcher(unescaped);
+        if (fallbackMatcher.find()) {
+            return fallbackMatcher.group(1).replace("&amp;", "&").replaceAll("[\"'<>]$", "");
+        }
+        return null;
+    }
+
+    private static String normalizeMailpitLink(final String link) {
+        return link
+            .replace("http://iam:8081/iam", IAM_PUBLIC_URL)
+            .replace("http://gateway:8080", BASE_URL)
+            .replace("http://trips:8082", BASE_URL + "/trips");
+    }
+
+    private static String extractJsonField(final String json, final String field) {
+        final String searchKey = "\"" + field + "\"";
+        final int keyIndex = json.indexOf(searchKey);
+        if (keyIndex == -1) {
+            return null;
+        }
+        final int colonIndex = json.indexOf(':', keyIndex + searchKey.length());
+        if (colonIndex == -1) {
+            return null;
+        }
+        final int valueStart = json.indexOf('"', colonIndex + 1);
+        if (valueStart == -1) {
+            return null;
+        }
+        final int valueEnd = json.indexOf('"', valueStart + 1);
+        if (valueEnd == -1) {
+            return null;
+        }
+        return json.substring(valueStart + 1, valueEnd);
     }
 }
