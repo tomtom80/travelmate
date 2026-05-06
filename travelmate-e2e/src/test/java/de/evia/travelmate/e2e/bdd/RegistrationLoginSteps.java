@@ -188,6 +188,11 @@ public class RegistrationLoginSteps {
 
     @When("I follow the reset link and set {string} as the new password")
     public void iFollowTheResetLinkAndSetNewPassword(final String newPassword) {
+        // Fresh context prevents Keycloak 26 from reusing the active auth session to
+        // auto-process the action token (which would skip the password form).
+        context.close();
+        context = browser.newContext();
+        page = context.newPage();
         page.navigate(resetLink);
         page.waitForLoadState(LoadState.NETWORKIDLE);
         page.locator("#password-new, input[name='password-new']").first().fill(newPassword);

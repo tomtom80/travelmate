@@ -77,6 +77,11 @@ class PasswordResetIT extends E2ETestBase {
     @Test
     @Order(30)
     void resetLinkLeadsToPasswordUpdateForm() {
+        // Keycloak 26 binds the action token to the active auth session from @Order(10).
+        // A fresh context has no Keycloak cookies, so Keycloak shows the password form.
+        context.close();
+        context = browser.newContext();
+        page = context.newPage();
         navigateAndWait(resetLink);
         page.waitForLoadState();
 

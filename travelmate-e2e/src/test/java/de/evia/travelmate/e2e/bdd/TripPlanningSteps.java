@@ -64,6 +64,7 @@ public class TripPlanningSteps {
     @When("I click the lifecycle button {string}")
     public void iClickTheLifecycleButton(final String buttonText) {
         final String action = mapLifecycleAction(buttonText);
+        page.onceDialog(dialog -> dialog.accept());
         page.locator("form[action$='/" + action + "'] button[type=submit]").click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
     }
@@ -206,6 +207,7 @@ public class TripPlanningSteps {
     @When("I click the trip delete button")
     public void iClickTheTripDeleteButton() {
         ensureCurrentTripDetailPage();
+        page.onceDialog(dialog -> dialog.accept());
         page.locator("form[action$='/delete'] button[type=submit]").click();
         page.waitForLoadState(LoadState.NETWORKIDLE);
     }
